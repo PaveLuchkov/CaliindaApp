@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -56,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textView: TextView
     private lateinit var recordButton: Button
     private lateinit var signInButton: Button
+    private lateinit var signOutButton: Button
 
     // Аудио
     private lateinit var audioRecorder: AudioRecorder
@@ -68,35 +70,39 @@ class MainActivity : AppCompatActivity() {
 
     // Константы
     private val TAG = "MainActivityAuth"
-    // !!! ЗАМЕНИТЕ НА ВАШ WEB CLIENT ID С БЭКЕНДА !!!
-    private val BACKEND_WEB_CLIENT_ID = "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-    // !!! ЗАМЕНИТЕ НА АДРЕС ВАШЕГО БЭКЕНДА !!!
-    private val BACKEND_BASE_URL = "http://172.23.35.166:8000" // Пример
+    private val BACKEND_WEB_CLIENT_ID =
+        "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
+    private val BACKEND_BASE_URL = "http://172.23.35.166:8000" // МОЙ ЛОКАЛЬНЫЙ АЙПИ
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main) // Убедитесь, что используете правильный layout
+        setContentView(R.layout.activity_main)
 
         // Инициализация UI
         textView = findViewById(R.id.resultText)
         recordButton = findViewById(R.id.recordButton)
         signInButton = findViewById(R.id.signInButton)
+        signOutButton = findViewById(R.id.signOutButton)
 
         // Инициализация Аудио
         audioRecorder = AudioRecorder(cacheDir) // Убедитесь, что класс AudioRecorder доступен
 
         // Инициализация Google Sign-In Client и Result Launcher
         configureGoogleSignIn()
-        signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                handleSignInResult(task)
-            } else {
-                // Обработка отмены входа пользователем или другой ошибки
-                Log.w(TAG, "Sign-in flow cancelled or failed with resultCode: ${result.resultCode}")
-                showError("Вход отменен или произошла ошибка")
+        signInLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                    handleSignInResult(task)
+                } else {
+                    // Обработка отмены входа пользователем или другой ошибки
+                    Log.w(
+                        TAG,
+                        "Sign-in flow cancelled or failed with resultCode: ${result.resultCode}"
+                    )
+                    showError("Вход отменен или произошла ошибка")
+                }
             }
-        }
 
         // Настройка слушателей кнопок
         setupClickListeners()
@@ -147,42 +153,68 @@ class MainActivity : AppCompatActivity() {
             currentIdToken = idToken
 
             if (idToken != null && serverAuthCode != null) {
-                // Отправляем ID Token и Auth Code на бэкенд для обмена
                 sendAuthInfoToBackend(idToken, serverAuthCode)
-                updateUI("Вход выполнен: $userEmail. Идет авторизация календаря...")
+                updateUI("Вход выполнен: $userEmail. Идет авторизация календаря...", "Записать")
+
+                // Обновляем кнопки ПОСЛЕ успешной обработки
+                runOnUiThread { // Убедимся что в UI потоке
+                    signInButton.visibility = View.GONE     // Скрываем кнопку входа
+                    signOutButton.visibility = View.VISIBLE // Показываем кнопку выхода
+                    recordButton.isEnabled = true         // Разрешаем запись
+                }
+
             } else {
                 showError("Не удалось получить токен или код авторизации от Google.")
                 Log.w(TAG, "ID Token or Server Auth Code is null after sign-in.")
-                currentIdToken = null // Сбрасываем токен
+                currentIdToken = null
+                runOnUiThread { // Сброс кнопок при ошибке
+                    signInButton.visibility = View.VISIBLE
+                    signOutButton.visibility = View.GONE
+                    recordButton.isEnabled = false
+                }
             }
 
         } catch (e: ApiException) {
-            // Ошибка входа
             Log.w(TAG, "signInResult:failed code=" + e.statusCode, e)
             showError("Ошибка входа Google: ${e.statusCode}")
-            currentIdToken = null // Сбрасываем токен
+            currentIdToken = null
+            runOnUiThread { // Сброс кнопок при ошибке
+                signInButton.visibility = View.VISIBLE
+                signOutButton.visibility = View.GONE
+                recordButton.isEnabled = false
+            }
         }
     }
 
     // Проверка состояния при запуске (адаптировано)
     private fun checkAuthState() {
         Log.d(TAG, "Checking auth state...")
-        // Используем GoogleSignIn.getLastSignedInAccount для проверки предыдущего входа
         val account = GoogleSignIn.getLastSignedInAccount(this)
-        if (account != null && GoogleSignIn.hasPermissions(account, Scope("https://www.googleapis.com/auth/calendar.events"))) {
-            // Пользователь уже вошел и дал разрешение
-            currentIdToken = account.idToken // Получаем ID токен
+        // Добавляем проверку прав, если это важно при старте
+        val requiredScope = Scope("https://www.googleapis.com/auth/calendar.events")
+        if (account != null && GoogleSignIn.hasPermissions(account, requiredScope)) {
+            currentIdToken = account.idToken // Получаем ID токен (может быть устаревшим!)
             val userEmail = account.email
-            Log.i(TAG, "User already signed in: $userEmail")
-            updateUI("Аккаунт: $userEmail (Авторизован)")
-            // Важно: Даже если пользователь вошел, ID токен может быть устаревшим.
-            // Бэкенд должен уметь обрабатывать устаревший токен при вызове /process_audio.
-            // Либо можно инициировать silentSignIn для обновления токена.
+            Log.i(TAG, "User already signed in and has permissions: $userEmail")
+            updateUI("Аккаунт: $userEmail (Авторизован)", "Записать")
+
+            // Обновляем кнопки
+            runOnUiThread {
+                signInButton.visibility = View.GONE
+                signOutButton.visibility = View.VISIBLE
+                recordButton.isEnabled = true
+            }
+            // TODO: Подумайте о silentSignIn для обновления токена при старте, если нужно
             // googleSignInClient.silentSignIn().addOnCompleteListener { task -> handleSignInResult(task) }
         } else {
             Log.i(TAG, "User not signed in or permissions missing.")
-            updateUI("Требуется вход и авторизация")
+            updateUI("Требуется вход и авторизация", "Записать")
             currentIdToken = null
+            runOnUiThread {
+                signInButton.visibility = View.VISIBLE
+                signOutButton.visibility = View.GONE
+                recordButton.isEnabled = false
+            }
         }
     }
 
@@ -198,9 +230,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Кнопка входа теперь запускает новый флоу
         signInButton.setOnClickListener {
             startSignInFlow()
+        }
+
+        signOutButton.setOnClickListener {
+            signOut()
         }
 
         // TODO: Добавить кнопку выхода (Sign Out)
@@ -211,7 +246,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissionsAndRecord() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             // Запрашиваем разрешение
             ActivityCompat.requestPermissions(
                 this,
@@ -281,11 +317,16 @@ class MainActivity : AppCompatActivity() {
 
     // Отправка Auth Code и ID Token на бэкенд для обмена
     private fun sendAuthInfoToBackend(idToken: String, authCode: String) {
-        Log.i(TAG, "Sending Auth Code and ID Token as JSON to backend endpoint: /auth/google/exchange")
+        Log.i(
+            TAG,
+            "Sending Auth Code and ID Token as JSON to backend endpoint: /auth/google/exchange"
+        )
         val client = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .build()
 
         // 1. Создаем JSON объект
@@ -295,7 +336,8 @@ class MainActivity : AppCompatActivity() {
 
         // 2. Создаем RequestBody из JSON строки
         val jsonBody = jsonObject.toString()
-        val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType()) // Указываем JSON media type
+        val requestBody =
+            jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType()) // Указываем JSON media type
 
         // 3. Строим POST запрос с JSON телом
         val request = Request.Builder()
@@ -317,10 +359,16 @@ class MainActivity : AppCompatActivity() {
 
                 try { // Добавим try-catch для JSON парсинга ответа, если нужно
                     if (!response.isSuccessful) {
-                        Log.e(TAG, "Backend error exchanging code (JSON): ${response.code} - $responseBodyString")
+                        Log.e(
+                            TAG,
+                            "Backend error exchanging code (JSON): ${response.code} - $responseBodyString"
+                        )
                         runOnUiThread { showError("Ошибка бэкенда при обмене токенов: ${response.code}") }
                     } else {
-                        Log.i(TAG, "Backend successfully exchanged tokens (JSON). Response: $responseBodyString")
+                        Log.i(
+                            TAG,
+                            "Backend successfully exchanged tokens (JSON). Response: $responseBodyString"
+                        )
                         runOnUiThread {
                             // Обработка успешного ответа (можно парсить JSON ответа, если он есть)
                             updateUI("Авторизация календаря успешна! Готово к созданию событий.")
@@ -341,7 +389,9 @@ class MainActivity : AppCompatActivity() {
             .connectTimeout(60, TimeUnit.SECONDS) // Увеличим таймаут для загрузки файла
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .build()
 
         val requestBody = MultipartBody.Builder()
@@ -460,19 +510,31 @@ class MainActivity : AppCompatActivity() {
         updateUI(eventDetails, "Записать") // Обновляем UI и сбрасываем кнопку
     }
 
-
-    // --- Выход из аккаунта (TODO) ---
-    /*
     private fun signOut() {
-        googleSignInClient.signOut().addOnCompleteListener(this) {
-            Log.i(TAG, "User signed out.")
-            currentIdToken = null
-            updateUI("Выход выполнен. Войдите снова.")
-            // TODO: Возможно, нужно вызвать эндпоинт на бэкенде для инвалидации сессии/токена
-            // Например, googleSignInClient.revokeAccess() для отзыва разрешений
+        Log.i(TAG, "Attempting to sign out...")
+        googleSignInClient.signOut().addOnCompleteListener(this) { task ->
+            if (task.isSuccessful) {
+                Log.i(TAG, "User signed out successfully.")
+                currentIdToken = null // Очищаем сохраненный токен
+                updateUI("Выход выполнен. Войдите снова.", "Записать") // Обновляем текст
+
+                // Обновляем видимость кнопок и доступность записи
+                signInButton.visibility = View.VISIBLE  // Показываем кнопку входа
+                signOutButton.visibility = View.GONE    // Скрываем кнопку выхода
+                recordButton.isEnabled = false        // Блокируем кнопку записи
+                textView.text =
+                    "Вы вышли из аккаунта. Нажмите 'Войти через Google'." // Более явное сообщение
+
+            } else {
+                // Ошибка при выходе
+                Log.w(TAG, "Sign out failed.", task.exception)
+                // Можно показать Toast или обновить TextView
+                showError("Не удалось выполнить выход.")
+            }
         }
+        // TODO: Возможно, нужно вызвать эндпоинт на бэкенде для инвалидации сессии/токена
+        // Например, googleSignInClient.revokeAccess() для отзыва разрешений
     }
-    */  // Add this closing */
 }
 
 // --- Jetpack Compose Preview (если используется) ---
