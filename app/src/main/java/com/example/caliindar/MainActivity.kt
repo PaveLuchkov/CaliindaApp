@@ -25,6 +25,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle // Рекомен�
 import com.example.caliindar.ui.theme.CaliindarTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.* // Используем Material 3
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerInputChange
 
 class MainActivity : ComponentActivity() {
 
@@ -42,13 +60,115 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun RecordButton(
+    uiState: MainUiState,
+    viewModel: MainViewModel,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope() // Scope для запуска корутин (Toast, ViewModel)
+
+    // Лаунчер для запроса разрешения
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        viewModel.updatePermissionStatus(isGranted) // Обновляем статус в ViewModel
+        if (!isGranted) {
+            Toast.makeText(context, "Разрешение на запись отклонено.", Toast.LENGTH_LONG).show()
+            Log.w("RecordButton", "Permission denied by user.")
+        } else {
+            Log.i("RecordButton", "Permission granted by user.")
+        }
+    }
+
+    // Цвета и состояние enabled
+    val fabBackgroundColor = if (uiState.isRecording) {
+        MaterialTheme.colorScheme.error // Красный во время записи
+    } else {
+        MaterialTheme.colorScheme.primary // Стандартный цвет
+    }
+    val fabContentColor = contentColorFor(fabBackgroundColor)
+    // Кнопка активна, если пользователь вошел, не идет загрузка
+    val isEnabled = uiState.isSignedIn && !uiState.isLoading
+
+    FloatingActionButton(
+        onClick = {
+            Log.d("RecordButton", "FAB onClick triggered (should be ignored)")
+        },
+        containerColor = fabBackgroundColor,
+        contentColor = fabContentColor,
+        modifier = modifier
+            .padding(bottom = 12.dp)
+            .pointerInput(isEnabled) {
+                if (!isEnabled) return@pointerInput
+
+                awaitPointerEventScope {
+                    while (true) {
+                        // Ожидаем ПЕРВОГО нажатия пальцем вниз
+                        val down: PointerInputChange = awaitFirstDown(requireUnconsumed = false)
+                        Log.d("RecordButton", "Pointer DOWN detected (awaitFirstDown).")
+
+                        // Проверяем разрешение СРАЗУ после нажатия
+                        val hasPermission = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        // Обновляем статус разрешения в ViewModel в любом случае
+                        viewModel.updatePermissionStatus(hasPermission)
+
+                        if (hasPermission) {
+                            Log.d("RecordButton", "Permission OK. Starting recording...")
+                            // Поглощаем событие Down, чтобы оно не вызвало onClick или другие жесты
+                            down.consume()
+
+                            // Пытаемся начать запись (ViewModel сделает доп. проверки)
+                            // Запускаем в отдельной корутине, чтобы не блокировать UI поток
+                            scope.launch { viewModel.startRecording() }
+
+                            try {
+                                // Ожидаем отпускания пальца или отмены жеста
+                                val upOrCancel: PointerInputChange? = waitForUpOrCancellation()
+
+                                if (upOrCancel != null) {
+                                    Log.d("RecordButton", "Pointer UP/CANCEL detected (waitForUpOrCancellation). Consuming event.")
+                                    upOrCancel.consume()
+                                } else {
+                                    Log.w("RecordButton", "Gesture CANCELLED (waitForUpOrCancellation returned null).")
+                                }
+                            } finally {
+                                Log.i("RecordButton", "Stopping recording (finally block)...")
+                                scope.launch { viewModel.stopRecordingAndSend() }
+                            }
+                        } else {
+                            Log.d("RecordButton", "Permission needed. Launching request...")
+                            down.consume()
+
+                            // Запускаем лаунчер разрешений
+                            scope.launch {
+                                requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                Toast.makeText(context, "Нужно разрешение на запись звука", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            }
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Mic,
+            contentDescription = if (uiState.isRecording) "Идет запись (Отпустите для остановки)" else "Начать запись (Нажмите и удерживайте)"
+        )
+    }
+}
+
+
 // --- Главный Composable экрана ---
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
-    // Собираем состояние из ViewModel
     // collectAsStateWithLifecycle безопасен для жизненного цикла
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current // Получаем контекст для Toast и разрешений
+    val context = LocalContext.current
 
     // --- Лаунчеры для Activity Result ---
 
@@ -133,29 +253,8 @@ fun MainScreen(viewModel: MainViewModel) {
             }
 
             // Кнопка Записи/Стоп
-            Button(
-                onClick = {
-                    // Проверяем разрешение ПЕРЕД попыткой записи
-                    when (PackageManager.PERMISSION_GRANTED) {
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.RECORD_AUDIO
-                        ) -> {
-                            // Разрешение есть, вызываем ViewModel
-                            viewModel.toggleRecording()
-                        }
-                        else -> {
-                            // Разрешения нет, запрашиваем
-                            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                        }
-                    }
-                },
-                // Кнопка доступна только если пользователь вошел и нет загрузки
-                enabled = uiState.isSignedIn && !uiState.isLoading,
-                modifier = Modifier.padding(bottom = 12.dp)
-            ) {
-                Text(text = uiState.recordButtonText)
-            }
+            val uiState by viewModel.uiState.collectAsState() // Получаем состояние
+            RecordButton(uiState = uiState, viewModel = viewModel)
 
             Spacer(modifier = Modifier.height(20.dp)) // Пространство между кнопками
 
@@ -212,6 +311,8 @@ fun DefaultPreview() {
     }
 }
 
+
+
 @Composable
 fun PreviewScreenContent(
     uiState: MainUiState = MainUiState(), // Дефолтное состояние для превью
@@ -246,7 +347,6 @@ fun PreviewScreenContent(
                 enabled = uiState.isSignedIn && !uiState.isLoading,
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
-                Text(text = uiState.recordButtonText)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -319,8 +419,7 @@ fun RecordingPreview() {
                 isSignedIn = true,
                 userEmail = "test@example.com",
                 isPermissionGranted = true,
-                isRecording = true,
-                recordButtonText = "Стоп"
+                isRecording = true
             )
         )
     }

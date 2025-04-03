@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit
 // Состояния UI
 data class MainUiState(
     val message: String = "Нажмите Войти, затем Записать",
-    val recordButtonText: String = "Записать",
     val isRecording: Boolean = false,
     val isSignedIn: Boolean = false,
     val isPermissionGranted: Boolean = false, // Добавим состояние разрешения
@@ -62,7 +61,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val TAG = "MainViewModelAuth"
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-        private const val BACKEND_BASE_URL = "http://172.23.35.166:8000" // ВАШ ЛОКАЛЬНЫЙ IP
+        private const val BACKEND_BASE_URL = "http://172.23.35.249:8000" // ВАШ ЛОКАЛЬНЫЙ IP
     }
 
     init {
@@ -152,7 +151,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isLoading = false,
                 userEmail = null,
                 message = "Требуется вход.",
-                recordButtonText = "Записать",
                 isRecording = false,
                 showAuthError = authError // Показываем ошибку
             )
@@ -233,123 +231,136 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-
-    // Вызывается при нажатии кнопки записи/стоп
-    fun toggleRecording() {
-        if (_uiState.value.isRecording) {
-            stopRecordingAndSend()
-        } else {
-            startRecording()
+    fun updatePermissionStatus(isGranted: Boolean) {
+        if (_uiState.value.isPermissionGranted != isGranted) { // Обновляем только если изменилось
+            _uiState.update { it.copy(isPermissionGranted = isGranted) }
+            Log.d(TAG, "Audio permission status updated to: $isGranted")
         }
     }
 
-    private fun startRecording() {
-        if (!_uiState.value.isPermissionGranted) {
-            _uiState.update { it.copy(showGeneralError = "Нет разрешения на запись аудио") }
-            // UI должен запросить разрешение
+    fun startRecording() {
+        // Проверка записи и токена остается
+        if (_uiState.value.isRecording) {
+            Log.w(TAG, "Start recording called but already recording.")
             return
         }
         if (currentIdToken == null) {
-            _uiState.update { it.copy(showAuthError = "Сначала войдите в аккаунт Google") }
+            Log.w(TAG, "Start recording called but user not signed in (no token).")
+            _uiState.update { it.copy(showGeneralError = "Ошибка: Войдите в систему для записи.") }
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) { // Запись/чтение файла лучше в IO
+        // Проверка разрешения ПЕРЕД запуском корутины
+        if (!_uiState.value.isPermissionGranted) {
+            Log.w(TAG, "Start recording called but permission check failed (isPermissionGranted is false).")
+            // НЕ показываем ошибку через state, как просили.
+            // Пользователь должен увидеть запрос разрешения из Composable
+            // и нажать кнопку снова после предоставления разрешения.
+            _uiState.update { it.copy(message = "Требуется разрешение на запись аудио.") } // Можно обновить сообщение
+            return
+        }
+
+        // Если все проверки пройдены
+        Log.d(TAG, "All checks passed. Launching recording coroutine...")
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                Log.i(TAG, "Starting audio recording...")
                 audioRecorder.startRecording()
+                // Обновляем UI на главном потоке
                 withContext(Dispatchers.Main) {
                     _uiState.update {
                         it.copy(
                             isRecording = true,
-                            recordButtonText = "Стоп",
-                            message = "Запись началась..."
+                            message = "Запись..." // Обновляем сообщение
                         )
                     }
                 }
+                Log.i(TAG, "Recording started successfully.")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting recording", e)
+                // Обработка ошибок старта записи
                 withContext(Dispatchers.Main) {
                     _uiState.update {
                         it.copy(
-                            isRecording = false, // Сбрасываем состояние
-                            recordButtonText = "Записать",
+                            isRecording = false, // Убедимся, что флаг сброшен
+                            message = "Готово к записи.", // Сброс сообщения
                             showGeneralError = "Ошибка начала записи: ${e.message}"
                         )
                     }
                 }
+                // Попытка очистить ресурсы рекордера
+                audioRecorder.cancelRecording()
             }
         }
     }
 
-    private fun stopRecordingAndSend() {
-        var audioFile: File? = null // <--- Объявляем переменную здесь
-        viewModelScope.launch(Dispatchers.IO) { // IO для работы с файлом и сетью
+    // Остается без изменений по сравнению с предыдущим ответом
+    fun stopRecordingAndSend() {
+        if (!_uiState.value.isRecording) {
+            Log.w(TAG, "Stop recording called but not currently recording.")
+            return
+        }
+
+        Log.d(TAG, "Attempting to stop recording and send...")
+        var audioFile: File? = null
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                Log.i(TAG, "Stopping audio recording...")
-                audioFile = audioRecorder.stopRecording() // <--- Присваиваем значение здесь
+                withContext(Dispatchers.Main.immediate) {
+                    _uiState.update {
+                        it.copy(
+                            isRecording = false,
+                            isLoading = true, // Показываем загрузку (отправка)
+                            message = "Обработка и отправка..."
+                        )
+                    }
+                }
+
+                Log.i(TAG, "Stopping audio recorder...")
+                audioFile = audioRecorder.stopRecording()
 
                 if (audioFile != null && currentIdToken != null) {
-                    // Переключаемся на Main для обновления UI перед отправкой
-                    withContext(Dispatchers.Main) {
-                        _uiState.update {
-                            it.copy(
-                                isRecording = false,
-                                recordButtonText = "Записать",
-                                isLoading = true, // Показываем загрузку во время отправки
-                                message = "Отправка аудио на сервер..."
-                            )
-                        }
-                    }
-                    Log.d(TAG, "Audio file to send: ${audioFile?.absolutePath}, Size: ${audioFile?.length()} bytes")
-                    // Отправляем аудио и ID токен (используем !! т.к. проверили на null)
+                    Log.d(TAG, "Audio file obtained: ${audioFile?.absolutePath}, Size: ${audioFile?.length()} bytes. Sending...")
                     sendAudioToBackend(audioFile!!, currentIdToken!!)
 
                 } else {
+                    // Обработка ошибок получения файла / токена
                     val errorMsg = when {
-                        audioFile == null -> "Не удалось получить файл записи."
-                        currentIdToken == null -> "Ошибка: ID токен отсутствует. Войдите снова."
-                        else -> "Неизвестная ошибка при остановке записи."
+                        audioFile == null -> "Не удалось получить файл записи после остановки."
+                        currentIdToken == null -> "Ошибка: ID токен отсутствует перед отправкой. Войдите снова."
+                        else -> "Неизвестная ошибка перед отправкой аудио."
                     }
                     Log.e(TAG, errorMsg)
-                    // Обновляем UI с ошибкой на главном потоке
                     withContext(Dispatchers.Main) {
                         _uiState.update {
                             it.copy(
-                                isRecording = false,
-                                recordButtonText = "Записать",
                                 isLoading = false,
-                                showGeneralError = errorMsg
+                                showGeneralError = errorMsg,
+                                message = "Готово к записи." // Сброс сообщения
                             )
                         }
                     }
                 }
             } catch (e: Exception) {
+                // Обработка ошибок остановки / отправки
                 Log.e(TAG, "Error stopping/sending recording", e)
-                // Обновляем UI с ошибкой на главном потоке
                 withContext(Dispatchers.Main) {
                     _uiState.update {
                         it.copy(
                             isRecording = false,
-                            recordButtonText = "Записать",
                             isLoading = false,
-                            showGeneralError = "Ошибка остановки/отправки: ${e.message}"
+                            showGeneralError = "Ошибка остановки/отправки: ${e.message}",
+                            message = "Готово к записи." // Сброс сообщения
                         )
                     }
                 }
             } finally {
-                // Убедимся, что временный файл удален после отправки или ошибки
-                // Теперь audioFile доступна здесь
-                val deleted = audioFile?.delete() // <--- Удаляем файл
+                // Удаление файла и сброс isLoading (как и раньше)
+                val deleted = audioFile?.delete()
                 if (audioFile != null) {
                     Log.d(TAG, "Temp audio file ${audioFile?.name} deleted: $deleted")
                 }
-
-                // Сбрасываем isLoading на Main потоке, если он все еще true
-                // (на случай если sendAudioToBackend не был вызван или завершился досрочно)
-                if (_uiState.value.isLoading) { // Проверяем текущее состояние
-                    withContext(Dispatchers.Main.immediate) { // immediate чтобы выполнилось до выхода из finally, если возможно
-                        _uiState.update { it.copy(isLoading = false) }
+                if (_uiState.value.isLoading && audioFile == null) {
+                    withContext(Dispatchers.Main.immediate) {
+                        _uiState.update { it.copy(isLoading = false, message = "Готово к записи.") }
                     }
                 }
             }
@@ -479,12 +490,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                          Дата: $eventDate
                          Время: $eventTime
                         """.trimIndent()
+                        /*
                         if (!recognizedText.isNullOrEmpty()) {
                             details += "\nРаспознано: '$recognizedText'"
                         }
                         if (eventLink != null) {
                             details += "\nСсылка: $eventLink"
                         }
+
+                         */
                         details
                     } else {
                         // Если события нет, просто показываем текст

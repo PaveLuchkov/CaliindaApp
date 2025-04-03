@@ -45,6 +45,8 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.googleid)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.material3)
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
