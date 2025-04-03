@@ -1,555 +1,327 @@
 package com.example.caliindar
 
-// Стандартные импорты Android
-import android.content.Intent
+import android.Manifest
+import android.app.Activity.RESULT_OK
+import android.content.Context
 import android.content.pm.PackageManager
-import android.media.MediaRecorder
 import android.os.Bundle
-import android.util.Log
-import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-
-// Импорты Google Sign-In
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.Scope
-
-// Импорты OkHttp (или вашей сетевой библиотеки)
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.logging.HttpLoggingInterceptor
-import java.io.File
-import java.io.IOException
-import java.util.concurrent.TimeUnit
-import okhttp3.MediaType.Companion.toMediaType // Добавьте этот импорт
-import okhttp3.RequestBody.Companion.toRequestBody // Добавьте этот импорт
-
-// Импорты JSON (если нужны для обработки ответа)
-import org.json.JSONObject
-
-// Импорт вашего класса AudioRecorder
-import com.example.caliindar.AudioRecorder // Убедитесь, что путь правильный
-
-// Импорт ваших тем (если используется Jetpack Compose Preview)
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.activity.viewModels // Для by viewModels()
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.* // Используем Material 3
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.caliindar.ui.theme.CaliindarTheme // Убедитесь, что путь правильный
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle // Рекомендуемый способ сбора StateFlow
+import com.example.caliindar.ui.theme.CaliindarTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 
+class MainActivity : ComponentActivity() {
 
-class MainActivity : AppCompatActivity() {
-
-    // UI Элементы
-    private lateinit var textView: TextView
-    private lateinit var recordButton: Button
-    private lateinit var signInButton: Button
-    private lateinit var signOutButton: Button
-
-    // Аудио
-    private lateinit var audioRecorder: AudioRecorder
-    private val REQUEST_RECORD_AUDIO_PERMISSION = 123
-
-    // Google Sign-In
-    private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var signInLauncher: ActivityResultLauncher<Intent>
-    private var currentIdToken: String? = null // Храним ID токен для /process_audio
-
-    // Константы
-    private val TAG = "MainActivityAuth"
-    private val BACKEND_WEB_CLIENT_ID =
-        "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-    private val BACKEND_BASE_URL = "http://172.23.35.166:8000" // МОЙ ЛОКАЛЬНЫЙ АЙПИ
+    // Получаем ViewModel с помощью делегата
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        // Инициализация UI
-        textView = findViewById(R.id.resultText)
-        recordButton = findViewById(R.id.recordButton)
-        signInButton = findViewById(R.id.signInButton)
-        signOutButton = findViewById(R.id.signOutButton)
+        setContent {
+            CaliindarTheme { // Оборачиваем в вашу тему
+                MainScreen(viewModel = viewModel)
+            }
+        }
+    }
+}
 
-        // Инициализация Аудио
-        audioRecorder = AudioRecorder(cacheDir) // Убедитесь, что класс AudioRecorder доступен
+// --- Главный Composable экрана ---
+@Composable
+fun MainScreen(viewModel: MainViewModel) {
+    // Собираем состояние из ViewModel
+    // collectAsStateWithLifecycle безопасен для жизненного цикла
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current // Получаем контекст для Toast и разрешений
 
-        // Инициализация Google Sign-In Client и Result Launcher
-        configureGoogleSignIn()
-        signInLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                    handleSignInResult(task)
-                } else {
-                    // Обработка отмены входа пользователем или другой ошибки
-                    Log.w(
-                        TAG,
-                        "Sign-in flow cancelled or failed with resultCode: ${result.resultCode}"
+    // --- Лаунчеры для Activity Result ---
+
+    // Лаунчер для Google Sign-In
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            if (result.resultCode == RESULT_OK) {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                viewModel.handleSignInResult(task)
+            } else {
+                // Обработка отмены или ошибки входа
+                viewModel.handleSignInResult(
+                    com.google.android.gms.tasks.Tasks.forException(
+                        ApiException(
+                            com.google.android.gms.common.api.Status(
+                                result.resultCode, // Используем resultCode как статус ошибки
+                                "Google Sign-In flow was cancelled or failed."
+                            )
+                        )
                     )
-                    showError("Вход отменен или произошла ошибка")
-                }
+                )
             }
+        }
+    )
 
-        // Настройка слушателей кнопок
-        setupClickListeners()
-
-        // Проверка состояния аутентификации при запуске (опционально)
-        checkAuthState()
-    }
-
-    // --- Google Sign-In Конфигурация и Флоу ---
-
-    private fun configureGoogleSignIn() {
-        Log.d(TAG, "Configuring Google Sign-In...")
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            // Запрашиваем права на календарь
-            .requestScopes(Scope("https://www.googleapis.com/auth/calendar.events"))
-            // Запрашиваем Auth Code для бэкенда (используем WEB client ID бэкенда)
-            .requestServerAuthCode(BACKEND_WEB_CLIENT_ID)
-            // Запрашиваем ID Token (также используем WEB client ID бэкенда)
-            // Бэкенд будет его проверять для идентификации пользователя
-            .requestIdToken(BACKEND_WEB_CLIENT_ID)
-            // Запрашиваем email для отображения и идентификации
-            .requestEmail()
-            .build()
-
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-        Log.d(TAG, "GoogleSignInClient configured.")
-    }
-
-    private fun startSignInFlow() {
-        Log.i(TAG, "Starting Google Sign-In flow...")
-        val signInIntent = googleSignInClient.signInIntent
-        signInLauncher.launch(signInIntent)
-    }
-
-    private fun handleSignInResult(completedTask: com.google.android.gms.tasks.Task<GoogleSignInAccount>) {
-        try {
-            val account = completedTask.getResult(ApiException::class.java)
-            // Вход успешен, получаем данные
-            val idToken = account?.idToken
-            val serverAuthCode = account?.serverAuthCode
-            val userEmail = account?.email
-
-            Log.i(TAG, "Sign-In Success! Email: $userEmail")
-            Log.d(TAG, "ID Token received: ${idToken != null}")
-            Log.d(TAG, "Server Auth Code received: ${serverAuthCode != null}")
-
-            // Сохраняем ID токен для последующих запросов к /process_audio
-            currentIdToken = idToken
-
-            if (idToken != null && serverAuthCode != null) {
-                sendAuthInfoToBackend(idToken, serverAuthCode)
-                updateUI("Вход выполнен: $userEmail. Идет авторизация календаря...", "Записать")
-
-                // Обновляем кнопки ПОСЛЕ успешной обработки
-                runOnUiThread { // Убедимся что в UI потоке
-                    signInButton.visibility = View.GONE     // Скрываем кнопку входа
-                    signOutButton.visibility = View.VISIBLE // Показываем кнопку выхода
-                    recordButton.isEnabled = true         // Разрешаем запись
-                }
-
+    // Лаунчер для запроса разрешения на запись аудио
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted: Boolean ->
+            viewModel.setAudioPermissionGranted(isGranted)
+            if (isGranted) {
+                // Разрешение получено, можно попробовать начать запись снова, если нужно
+                // viewModel.toggleRecording() // Или просто обновить состояние
+                showToast(context, "Разрешение на запись получено")
             } else {
-                showError("Не удалось получить токен или код авторизации от Google.")
-                Log.w(TAG, "ID Token or Server Auth Code is null after sign-in.")
-                currentIdToken = null
-                runOnUiThread { // Сброс кнопок при ошибке
-                    signInButton.visibility = View.VISIBLE
-                    signOutButton.visibility = View.GONE
-                    recordButton.isEnabled = false
-                }
+                showToast(context, "Разрешение на запись НЕ предоставлено")
             }
+        }
+    )
 
-        } catch (e: ApiException) {
-            Log.w(TAG, "signInResult:failed code=" + e.statusCode, e)
-            showError("Ошибка входа Google: ${e.statusCode}")
-            currentIdToken = null
-            runOnUiThread { // Сброс кнопок при ошибке
-                signInButton.visibility = View.VISIBLE
-                signOutButton.visibility = View.GONE
-                recordButton.isEnabled = false
-            }
+    // --- Обработка Side Effects (например, показ Toast) ---
+    val generalError = uiState.showGeneralError
+    LaunchedEffect(generalError) { // Запускается, когда generalError меняется (и не null)
+        if (generalError != null) {
+            showToast(context, "Ошибка: $generalError")
+            viewModel.clearGeneralError() // Сбрасываем ошибку после показа
         }
     }
 
-    // Проверка состояния при запуске (адаптировано)
-    private fun checkAuthState() {
-        Log.d(TAG, "Checking auth state...")
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        // Добавляем проверку прав, если это важно при старте
-        val requiredScope = Scope("https://www.googleapis.com/auth/calendar.events")
-        if (account != null && GoogleSignIn.hasPermissions(account, requiredScope)) {
-            currentIdToken = account.idToken // Получаем ID токен (может быть устаревшим!)
-            val userEmail = account.email
-            Log.i(TAG, "User already signed in and has permissions: $userEmail")
-            updateUI("Аккаунт: $userEmail (Авторизован)", "Записать")
-
-            // Обновляем кнопки
-            runOnUiThread {
-                signInButton.visibility = View.GONE
-                signOutButton.visibility = View.VISIBLE
-                recordButton.isEnabled = true
-            }
-            // TODO: Подумайте о silentSignIn для обновления токена при старте, если нужно
-            // googleSignInClient.silentSignIn().addOnCompleteListener { task -> handleSignInResult(task) }
-        } else {
-            Log.i(TAG, "User not signed in or permissions missing.")
-            updateUI("Требуется вход и авторизация", "Записать")
-            currentIdToken = null
-            runOnUiThread {
-                signInButton.visibility = View.VISIBLE
-                signOutButton.visibility = View.GONE
-                recordButton.isEnabled = false
-            }
+    val authError = uiState.showAuthError
+    LaunchedEffect(authError) { // Отдельный эффект для ошибок аутентификации
+        if (authError != null) {
+            showToast(context, authError) // Показываем сообщение как есть
+            viewModel.clearAuthError() // Сбрасываем ошибку после показа
         }
     }
 
-
-    // --- Слушатели Кнопок ---
-
-    private fun setupClickListeners() {
-        recordButton.setOnClickListener {
-            if (recordButton.text == "Записать") {
-                checkPermissionsAndRecord()
-            } else {
-                stopRecordingAndSend()
-            }
-        }
-
-        signInButton.setOnClickListener {
-            startSignInFlow()
-        }
-
-        signOutButton.setOnClickListener {
-            signOut()
-        }
-
-        // TODO: Добавить кнопку выхода (Sign Out)
-        // signOutButton.setOnClickListener { signOut() }
-    }
-
-    // --- Логика Записи Аудио ---
-
-    private fun checkPermissionsAndRecord() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Запрашиваем разрешение
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.RECORD_AUDIO),
-                REQUEST_RECORD_AUDIO_PERMISSION
-            )
-        } else {
-            // Разрешение есть, начинаем запись
-            startRecording()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
+    // --- UI ---
+    Surface( // Используем Surface из Material 3
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startRecording()
-            } else {
-                showError("Нет разрешения на запись аудио")
-            }
-        }
-    }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Отображение статуса/сообщения
+            Text(
+                text = uiState.message,
+                style = MaterialTheme.typography.bodyLarge, // Стили текста из темы M3
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
 
-    private fun startRecording() {
-        if (currentIdToken == null) {
-            showError("Сначала войдите в аккаунт Google")
-            return
-        }
-        try {
-            Log.i(TAG, "Starting audio recording...")
-            audioRecorder.startRecording() // Убедитесь, что метод существует
-            updateUI("Запись началась...", "Стоп")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error starting recording", e)
-            showError("Ошибка начала записи: ${e.message}")
-        }
-    }
-
-    private fun stopRecordingAndSend() {
-        lifecycleScope.launch { // Используем корутины для асинхронности
-            try {
-                Log.i(TAG, "Stopping audio recording...")
-                val audioFile = audioRecorder.stopRecording() // Убедитесь, что метод существует
-                if (audioFile != null) {
-                    updateUI("Отправка аудио на сервер...", "Записать")
-                    // Отправляем аудио и ТЕКУЩИЙ ID токен на эндпоинт /process_audio
-                    currentIdToken?.let { token ->
-                        sendAudioToBackend(audioFile, token)
-                    } ?: showError("Ошибка: ID токен отсутствует. Попробуйте войти снова.")
-                } else {
-                    showError("Не удалось получить файл записи.")
-                    updateUI("Ошибка записи", "Записать")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping/sending recording", e)
-                showError("Ошибка остановки/отправки записи: ${e.message}")
-                updateUI("Ошибка", "Записать") // Сбрасываем UI
-            }
-        }
-    }
-
-    // --- Сетевые Запросы ---
-
-    // Отправка Auth Code и ID Token на бэкенд для обмена
-    private fun sendAuthInfoToBackend(idToken: String, authCode: String) {
-        Log.i(
-            TAG,
-            "Sending Auth Code and ID Token as JSON to backend endpoint: /auth/google/exchange"
-        )
-        val client = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
-            .build()
-
-        // 1. Создаем JSON объект
-        val jsonObject = JSONObject()
-        jsonObject.put("id_token", idToken)
-        jsonObject.put("auth_code", authCode)
-
-        // 2. Создаем RequestBody из JSON строки
-        val jsonBody = jsonObject.toString()
-        val requestBody =
-            jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType()) // Указываем JSON media type
-
-        // 3. Строим POST запрос с JSON телом
-        val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/auth/google/exchange") // Убедитесь, что URL правильный
-            .post(requestBody) // Отправляем JSON RequestBody
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Network error sending auth info (JSON)", e)
-                runOnUiThread { showError("Сетевая ошибка обмена токенов: ${e.message}") }
+            // Индикатор загрузки
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                // Важно: response.body?.string() можно вызвать только один раз!
-                val responseBodyString = response.body?.string()
-                // Важно закрыть тело ответа, даже если оно пустое или прочитано
-                response.body?.close()
-
-                try { // Добавим try-catch для JSON парсинга ответа, если нужно
-                    if (!response.isSuccessful) {
-                        Log.e(
-                            TAG,
-                            "Backend error exchanging code (JSON): ${response.code} - $responseBodyString"
-                        )
-                        runOnUiThread { showError("Ошибка бэкенда при обмене токенов: ${response.code}") }
-                    } else {
-                        Log.i(
-                            TAG,
-                            "Backend successfully exchanged tokens (JSON). Response: $responseBodyString"
-                        )
-                        runOnUiThread {
-                            // Обработка успешного ответа (можно парсить JSON ответа, если он есть)
-                            updateUI("Авторизация календаря успешна! Готово к созданию событий.")
+            // Кнопка Записи/Стоп
+            Button(
+                onClick = {
+                    // Проверяем разрешение ПЕРЕД попыткой записи
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
+                        ) -> {
+                            // Разрешение есть, вызываем ViewModel
+                            viewModel.toggleRecording()
+                        }
+                        else -> {
+                            // Разрешения нет, запрашиваем
+                            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error processing backend response (JSON)", e)
-                    runOnUiThread { showError("Ошибка обработки ответа сервера: ${e.message}") }
+                },
+                // Кнопка доступна только если пользователь вошел и нет загрузки
+                enabled = uiState.isSignedIn && !uiState.isLoading,
+                modifier = Modifier.padding(bottom = 12.dp)
+            ) {
+                Text(text = uiState.recordButtonText)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp)) // Пространство между кнопками
+
+            // Кнопка Входа (видна, если пользователь НЕ вошел)
+            if (!uiState.isSignedIn) {
+                Button(
+                    onClick = {
+                        val signInIntent = viewModel.getSignInIntent()
+                        googleSignInLauncher.launch(signInIntent)
+                    },
+                    // Блокируем кнопку во время загрузки
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Text("Войти через Google")
                 }
             }
-        })
-    }
 
-    // Отправка аудио и ID токена на бэкенд для обработки
-    private fun sendAudioToBackend(audioFile: File, idToken: String) {
-        Log.i(TAG, "Sending audio and ID token to backend endpoint: /process_audio")
-        val client = OkHttpClient.Builder()
-            .connectTimeout(60, TimeUnit.SECONDS) // Увеличим таймаут для загрузки файла
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
-            .build()
-
-        val requestBody = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart(
-                "audio",
-                audioFile.name,
-                audioFile.asRequestBody("audio/ogg".toMediaTypeOrNull()) // Проверьте media type
-            )
-            // Теперь отправляем только ID токен для идентификации
-            .addFormDataPart("id_token_str", idToken) // Имя поля должно совпадать с FastAPI
-            .build()
-
-        val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/process_audio") // Эндпоинт обработки аудио
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Network error sending audio", e)
-                runOnUiThread { showError("Сетевая ошибка отправки аудио: ${e.message}") }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string() // Читаем тело ответа ОДИН РАЗ
-                if (!response.isSuccessful) {
-                    Log.e(TAG, "Server error processing audio: ${response.code} - $responseBody")
-                    runOnUiThread { showError("Ошибка сервера при обработке аудио: ${response.code}") }
-                } else {
-                    Log.i(TAG, "Audio processed successfully by backend. Response: $responseBody")
-                    runOnUiThread {
-                        // Обрабатываем успешный ответ от /process_audio
-                        handleProcessAudioResponse(responseBody)
-                        // Можно вернуть кнопку записи в исходное состояние
-                        // updateUI("Аудио обработано", "Записать") // Или показать детали события
-                    }
+            // Кнопка Выхода (видна, если пользователь вошел)
+            if (uiState.isSignedIn) {
+                Button(
+                    onClick = { viewModel.signOut() },
+                    // Блокируем кнопку во время загрузки
+                    enabled = !uiState.isLoading
+                ) {
+                    Text("Выйти из аккаунта")
                 }
-                response.body?.close() // Важно закрыть тело ответа
-            }
-        })
-    }
-
-    // --- Обработка Ответов и Обновление UI ---
-
-    // Обработка ответа от /process_audio
-    private fun handleProcessAudioResponse(responseBody: String?) {
-        if (responseBody == null) {
-            showError("Пустой ответ от сервера после обработки аудио.")
-            return
-        }
-        try {
-            val json = JSONObject(responseBody)
-            if (json.optString("status") == "success") {
-                // Попытаемся получить детали события, если они есть
-                val event = json.optJSONObject("event")
-                val eventLink = json.optString("event_link", null) // Ссылка на событие
-
-                if (event != null) {
-                    showEventDetails(event, eventLink)
-                } else {
-                    // Если деталей события нет, просто показываем успех
-                    val recognizedText = json.optString("recognized_text", "")
-                    updateUI("Аудио успешно обработано. Текст: '$recognizedText'", "Записать")
+                // Отображение email вошедшего пользователя (опционально)
+                uiState.userEmail?.let { email ->
+                    Text(
+                        text = "Вошли как: $email",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
-            } else {
-                // Если статус не success, показываем ошибку из detail
-                val detail = json.optString("detail", "Неизвестная ошибка")
-                showError("Ошибка обработки аудио: $detail")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing /process_audio response", e)
-            showError("Ошибка обработки ответа сервера: ${e.message}")
-        }
-    }
-
-
-    // Обновление UI (убедитесь, что элементы существуют в layout)
-    private fun updateUI(message: String, buttonText: String = recordButton.text.toString()) {
-        // Выполняем обновление UI в главном потоке
-        runOnUiThread {
-            textView.text = message
-            recordButton.text = buttonText
-        }
-    }
-
-    // Показ ошибок (Toast и TextView)
-    private fun showError(message: String) {
-        runOnUiThread {
-            textView.text = "❌ $message" // Показываем ошибку в TextView
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show() // Показываем Toast
-            // Можно сбросить состояние кнопки записи при ошибке
-            if (recordButton.text != "Записать") {
-                recordButton.text = "Записать"
             }
         }
-    }
-
-    // Показ деталей созданного события
-    private fun showEventDetails(event: JSONObject, eventLink: String?) {
-        val eventName = event.optString("event_name", "Без названия")
-        val eventDate = event.optString("date", "Не указана")
-        val eventTime = event.optString("time", "Не указано")
-
-        var eventDetails = """
-             Событие создано!
-             Название: $eventName
-             Дата: $eventDate
-             Время: $eventTime
-         """.trimIndent()
-
-        if (eventLink != null) {
-            eventDetails += "\nСсылка: $eventLink"
-        }
-
-        updateUI(eventDetails, "Записать") // Обновляем UI и сбрасываем кнопку
-    }
-
-    private fun signOut() {
-        Log.i(TAG, "Attempting to sign out...")
-        googleSignInClient.signOut().addOnCompleteListener(this) { task ->
-            if (task.isSuccessful) {
-                Log.i(TAG, "User signed out successfully.")
-                currentIdToken = null // Очищаем сохраненный токен
-                updateUI("Выход выполнен. Войдите снова.", "Записать") // Обновляем текст
-
-                // Обновляем видимость кнопок и доступность записи
-                signInButton.visibility = View.VISIBLE  // Показываем кнопку входа
-                signOutButton.visibility = View.GONE    // Скрываем кнопку выхода
-                recordButton.isEnabled = false        // Блокируем кнопку записи
-                textView.text =
-                    "Вы вышли из аккаунта. Нажмите 'Войти через Google'." // Более явное сообщение
-
-            } else {
-                // Ошибка при выходе
-                Log.w(TAG, "Sign out failed.", task.exception)
-                // Можно показать Toast или обновить TextView
-                showError("Не удалось выполнить выход.")
-            }
-        }
-        // TODO: Возможно, нужно вызвать эндпоинт на бэкенде для инвалидации сессии/токена
-        // Например, googleSignInClient.revokeAccess() для отзыва разрешений
     }
 }
 
-// --- Jetpack Compose Preview (если используется) ---
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hi $name!",
-        modifier = modifier
-    )
+// Вспомогательная функция для Toast
+private fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
 }
 
+// --- Preview для Android Studio ---
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun DefaultPreview() {
     CaliindarTheme {
-        Greeting("Android")
+        // НЕ СОЗДАЕМ ЗДЕСЬ НАСТОЯЩИЙ ViewModel!
+        // Вызываем Composable с дефолтным состоянием или моковыми данными.
+        PreviewScreenContent() // Использует uiState по умолчанию из своей сигнатуры
+    }
+}
+
+@Composable
+fun PreviewScreenContent(
+    uiState: MainUiState = MainUiState(), // Дефолтное состояние для превью
+    onRecordClick: () -> Unit = {},
+    onSignInClick: () -> Unit = {},
+    onSignOutClick: () -> Unit = {}
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = uiState.message,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+            }
+
+            Button(
+                onClick = onRecordClick,
+                enabled = uiState.isSignedIn && !uiState.isLoading,
+                modifier = Modifier.padding(bottom = 12.dp)
+            ) {
+                Text(text = uiState.recordButtonText)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            if (!uiState.isSignedIn) {
+                Button(
+                    onClick = onSignInClick,
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Text("Войти через Google")
+                }
+            }
+
+            if (uiState.isSignedIn) {
+                Button(
+                    onClick = onSignOutClick,
+                    enabled = !uiState.isLoading
+                ) {
+                    Text("Выйти из аккаунта")
+                }
+                uiState.userEmail?.let { email ->
+                    Text(
+                        text = "Вошли как: $email",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Пример превью с разными состояниями
+@Preview(showBackground = true, name = "Signed In State")
+@Composable
+fun SignedInPreview() {
+    CaliindarTheme {
+        PreviewScreenContent(
+            uiState = MainUiState(
+                message = "Аккаунт: test@example.com (Авторизован)",
+                isSignedIn = true,
+                userEmail = "test@example.com",
+                isPermissionGranted = true
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Signed Out State")
+@Composable
+fun SignedOutPreview() {
+    CaliindarTheme {
+        PreviewScreenContent(
+            uiState = MainUiState(
+                message = "Требуется вход и авторизация",
+                isSignedIn = false
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Recording State")
+@Composable
+fun RecordingPreview() {
+    CaliindarTheme {
+        PreviewScreenContent(
+            uiState = MainUiState(
+                message = "Запись началась...",
+                isSignedIn = true,
+                userEmail = "test@example.com",
+                isPermissionGranted = true,
+                isRecording = true,
+                recordButtonText = "Стоп"
+            )
+        )
     }
 }
