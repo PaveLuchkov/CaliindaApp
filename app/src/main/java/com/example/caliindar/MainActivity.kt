@@ -52,12 +52,15 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Send
@@ -422,13 +425,14 @@ fun RecordButton(
         RoundedPolygon.star(
             9,
             rounding = CornerRounding(0.3f),
-            radius = 7f
+            radius = 4f
         )
     }
     val morph = remember {
-        Morph(shapeA, shapeB)}
+        Morph(shapeA, shapeB)
+    }
 
-        // --- Анимация вращения ---
+    // --- Анимация вращения ---
     val infiniteTransition = rememberInfiniteTransition("morph_transition")
     val animatedProgress = infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -448,6 +452,12 @@ fun RecordButton(
             // repeatMode = RepeatMode.Reverse // Вращение туда-обратно, как в примере
         ),
         label = "animatedMorphRotation"
+    )
+
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed || uiState.isRecording) 1.45f else 1.0f, // Увеличиваем на 40%
+        animationSpec = tween(durationMillis = 300),
+        label = "RecordButtonScale"
     )
 
     // Лаунчер для запроса разрешения (без изменений)
@@ -475,15 +485,14 @@ fun RecordButton(
         "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isRecording=${uiState.isRecording}"
     )
 
-
         FloatingActionButton(
             onClick = { Log.d("RecordButton", "FAB onClick triggered (ignored)") },
             containerColor = animatedBackgroundColor,
             contentColor = animatedContentColor,
             modifier = modifier
+                .size(56.dp)
                 .pointerInput(isInteractionEnabled) { // Логика нажатия/отпускания (без изменений)
-                    if (!isInteractionEnabled) { /*...*/ return@pointerInput
-                    }
+                    if (!isInteractionEnabled) {return@pointerInput}
                     awaitPointerEventScope {
                         while (true) {
                             val down = awaitFirstDown(requireUnconsumed = false)
@@ -515,18 +524,25 @@ fun RecordButton(
                         }
                     }
                 }
+                .graphicsLayer {
+                    scaleX = animatedScale
+                    scaleY = animatedScale
+                    // Вращение можно оставить здесь ИЛИ положиться на вращение в CustomRotatingMorphShape
+                    // Если вращение в Shape уже есть, здесь его можно убрать:
+                    // rotationZ = if (isPressed || uiState.isRecording) animatedRotation.value else 0f
+                }
                 .clip(
-                    // Используем анимированную форму, если нажато или идет запись, иначе - круг
                     if (isPressed || uiState.isRecording) {
                         CustomRotatingMorphShape(
                             morph = morph,
-                            percentage = animatedProgress.value, // Текущее значение морфинга
-                            rotation = animatedRotation.value   // Текущее значение вращения
+                            percentage = animatedProgress.value,
+                            rotation = animatedRotation.value // Используем вращение из Shape
+                            // rotation = 0f // Если вращение делается в graphicsLayer выше
                         )
                     } else {
                         RoundedCornerShape(16.dp) // Стандартная форма в покое
                     }
-                )
+                ),
         ) {
             Icon(
                 imageVector = Icons.Filled.Mic,
@@ -535,7 +551,6 @@ fun RecordButton(
             )
         }
     }
-
 
 // --- ChatMessageBubble (Keep as is) ---
 @Composable
