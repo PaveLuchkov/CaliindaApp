@@ -43,9 +43,12 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.graphics.shapes)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.googleid)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.material)
+    implementation(libs.androidx.material)
     implementation(libs.material3)
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.credentials)
