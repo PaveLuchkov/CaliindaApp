@@ -44,6 +44,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.graphics.shapes)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.accompanist.systemuicontroller)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.googleid)
     implementation(libs.androidx.material.icons.extended)

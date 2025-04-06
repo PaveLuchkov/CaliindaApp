@@ -3,6 +3,7 @@ package com.example.caliindar
 import android.Manifest
 import android.app.Activity.RESULT_OK
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
@@ -26,6 +27,7 @@ import com.example.caliindar.ui.theme.CaliindarTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.* // Используем Material 3
 import androidx.compose.runtime.*
@@ -87,7 +89,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.material.ContentAlpha
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Matrix
@@ -96,13 +101,17 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.core.view.WindowCompat
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.tasks.Tasks
 import kotlin.coroutines.cancellation.CancellationException
@@ -112,20 +121,63 @@ import kotlin.math.sin
 import kotlin.math.min
 import kotlin.text.toFloat
 import kotlin.times
-
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.navigation.compose.rememberNavController
 
 
 class MainActivity : ComponentActivity() {
-
-    // Получаем ViewModel с помощью делегата
     private val viewModel: MainViewModel by viewModels()
 
+    // Лаунчер остается здесь!
+    private lateinit var googleSignInLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         setContent {
-            CaliindarTheme { // Оборачиваем в вашу тему
-                MainScreen(viewModel = viewModel)
+            CaliindarTheme {
+                // Создаем лаунчер ВНУТРИ @Composable контекста
+                googleSignInLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartActivityForResult(),
+                    onResult = { result ->
+                        // Логика обработки результата остается здесь
+                        if (result.resultCode == RESULT_OK) {
+                            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                            viewModel.handleSignInResult(task)
+                        } else { /* ... обработка ошибки ... */ }
+                    }
+                )
+
+                // --- Навигация ---
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "main") {
+                    composable("main") {
+                        MainScreen(
+                            viewModel = viewModel,
+                            onNavigateToSettings = {
+                                navController.navigate("settings") // Переход на экран настроек
+                            }
+                        )
+                    }
+                    composable("settings") {
+                        SettingsScreen(
+                            viewModel = viewModel, // Получаем ViewModel (возможно, через hiltViewModel())
+                            // Передаем лямбду для запуска входа
+                            onSignInClick = {
+                                val signInIntent = viewModel.getSignInIntent()
+                                if (signInIntent != null) {
+                                    googleSignInLauncher.launch(signInIntent) // Лаунчер вызывается здесь
+                                } else {
+                                    // Можно показать Snackbar или обработать ошибку иначе
+                                    Log.e("MainActivity", "Failed to get sign-in intent for launcher.")
+                                    // scope.launch { snackbarHostState.showSnackbar("...")} // Snackbar нужен будет в SettingsScreen
+                                }
+                            },
+                            onNavigateBack = { navController.popBackStack() } // Лямбда для кнопки "Назад"
+                        )
+                    }
+                }
             }
         }
     }
@@ -134,7 +186,7 @@ class MainActivity : ComponentActivity() {
 // --- Главный Composable экрана ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
@@ -194,50 +246,29 @@ fun MainScreen(viewModel: MainViewModel) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            // --- Top Bar (Keep as is, address TODO later if needed) ---
             TopAppBar(
-                modifier = Modifier
-                    .onGloballyPositioned { coordinates ->
-                        Log.d("TopAppBarSize", "Height: ${coordinates.size.height}")
-                    },
                 title = { Text("Caliinda") },
                 actions = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (uiState.isLoading && !uiState.isRecording) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp).padding(end = 8.dp)
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(end = 8.dp)
                             )
                         }
-                        if (!uiState.isSignedIn) {
-                            Button(
-                                onClick = {
-                                    val signInIntent = viewModel.getSignInIntent()
-                                    if(signInIntent != null) {
-                                        googleSignInLauncher.launch(signInIntent)
-                                    } else {
-                                        Log.e("MainScreen", "Failed to get sign-in intent.")
-                                        scope.launch { snackbarHostState.showSnackbar("Не удалось запустить вход Google.")}
-                                    }
-                                },
-                                enabled = !uiState.isLoading
-                            ) {
-                                Text("Войти")
-                            }
-                        } else {
-                            /* Email display removed for brevity */
-                            Button(
-                                onClick = { viewModel.signOut() },
-                                enabled = !uiState.isLoading
-                            ) {
-                                Text("Выйти")
-                            }
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "Настройки"
+                            )
                         }
                     }
-                },
+                }
             )
+
         },
         bottomBar = {
-            // --- New Bottom Bar Structure ---
             ChatInputBar(
                 uiState = uiState,
                 viewModel = viewModel,
@@ -245,24 +276,21 @@ fun MainScreen(viewModel: MainViewModel) {
                 onTextChanged = { textFieldState = it },
                 onSendClick = {
                     viewModel.sendTextMessage(textFieldState.text)
-                    textFieldState = TextFieldValue("") // Clear field
-                    // Optionally hide keyboard again after sending
-                    // isTextInputVisible = false
+                    textFieldState = TextFieldValue("")
                 },
                 isTextInputVisible = isTextInputVisible,
                 onToggleTextInput = { isTextInputVisible = !isTextInputVisible }
             )
         }
     ) { paddingValues ->
-        // --- Chat Message Area ---
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Apply padding from Scaffold
+                .padding(paddingValues)
                 .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp) // Padding inside the list
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(
                 items = uiState.chatHistory,
@@ -384,11 +412,6 @@ fun ChatInputBar(
     }
 }
 
-
-// --- RecordButton (Keep your existing implementation) ---
-// Make sure its modifier usage and isEnabled logic are compatible
-// The existing pointerInput logic for press-and-hold is correct.
-// Ensure isEnabled inside RecordButton checks uiState.isSignedIn && !uiState.isLoading
 @Composable
 fun RecordButton(
     uiState: MainUiState,
@@ -571,6 +594,47 @@ fun ChatMessageBubble(message: ChatMessage, uriHandler: UriHandler) {
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 uriHandler = uriHandler
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    viewModel: MainViewModel,
+    onSignInClick: () -> Unit, // <-- Принимаем лямбду вместо лаунчера
+    onNavigateBack: () -> Unit // <-- Лямбда для возврата назад
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Настройки") },
+                navigationIcon = { // Кнопка "Назад"
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues).padding(16.dp)) {
+            if (!uiState.isSignedIn) {
+                Button(onClick = onSignInClick) { // <-- Вызываем лямбду
+                    Text("Войти через Google")
+                }
+            } else {
+                Text("Вы вошли как: ${uiState.userEmail ?: "..."}")
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { viewModel.signOut() }) { // Выход остается через ViewModel
+                    Text("Выйти")
+                }
+            }
+            // ... остальное (выбор таймзоны) ...
         }
     }
 }
