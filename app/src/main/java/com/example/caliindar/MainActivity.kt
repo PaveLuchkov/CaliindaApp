@@ -92,6 +92,7 @@ import androidx.compose.material.ContentAlpha
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -102,8 +103,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
@@ -245,29 +248,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Caliinda") },
-                actions = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (uiState.isLoading && !uiState.isRecording) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .padding(end = 8.dp)
-                            )
-                        }
-                        IconButton(onClick = onNavigateToSettings) {
-                            Icon(
-                                imageVector = Icons.Filled.Settings,
-                                contentDescription = "Настройки"
-                            )
-                        }
-                    }
-                }
-            )
-
-        },
+        topBar = {CalendarAppBar(uiState, onNavigateToSettings)},
         bottomBar = {
             ChatInputBar(
                 uiState = uiState,
@@ -410,6 +391,45 @@ fun ChatInputBar(
             }
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CalendarAppBar(uiState: MainUiState, onNavigateToSettings: () -> Unit) {
+    CenterAlignedTopAppBar(
+        title = {
+            androidx.compose.material.Text(
+                "Caliinda",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        navigationIcon = {
+            androidx.compose.material.IconButton(onClick = {}) {
+                androidx.compose.material.Icon(
+                    Icons.Filled.Today,
+                    contentDescription = "Calendar View"
+                )
+            }
+        },
+        actions = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (uiState.isLoading && !uiState.isRecording) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(end = 8.dp)
+                    )
+                }
+                IconButton(onClick = onNavigateToSettings) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Настройки"
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable

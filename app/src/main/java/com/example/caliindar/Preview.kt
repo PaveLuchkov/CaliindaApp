@@ -326,8 +326,8 @@ class RoundedPolygonShape(
 
 fun createRandomShape(
     isStar: Boolean = Random.nextBoolean(),
-    vertices: Int = Random.nextInt(3, 5),
-    rounding: CornerRounding = CornerRounding(Random.nextFloat() * 0.9f),
+    vertices: Int = Random.nextInt(4, 9),
+    rounding: CornerRounding = CornerRounding(Random.nextFloat() * 0.7f),
     radius: Float = Random.nextFloat() * 10f
 ): RoundedPolygon {
     return RoundedPolygon(numVertices = vertices, radius = radius, rounding = rounding)
