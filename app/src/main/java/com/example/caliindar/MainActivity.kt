@@ -693,7 +693,7 @@ private fun showToast(context: Context, message: String) {
 }
 
 // --- Preview для Android Studio ---
-@Preview(showBackground = true)
+// @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     CaliindarTheme {
@@ -773,7 +773,7 @@ fun PreviewScreenContent(
 }
 
 // Пример превью с разными состояниями
-@Preview(showBackground = true, name = "Signed In State")
+// @Preview(showBackground = true, name = "Signed In State")
 @Composable
 fun SignedInPreview() {
     CaliindarTheme {
@@ -788,7 +788,7 @@ fun SignedInPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "Signed Out State")
+// @Preview(showBackground = true, name = "Signed Out State")
 @Composable
 fun SignedOutPreview() {
     CaliindarTheme {
@@ -804,6 +804,23 @@ fun SignedOutPreview() {
 @Preview(showBackground = true, name = "Recording State")
 @Composable
 fun RecordingPreview() {
+    CaliindarTheme {
+        PreviewScreenContent(
+            uiState = MainUiState(
+                message = "Запись началась...",
+                isSignedIn = true,
+                userEmail = "test@example.com",
+                isPermissionGranted = true,
+                isRecording = true
+            )
+        )
+    }
+}
+
+
+// @Preview(showBackground = true, name = "Test")
+@Composable
+fun TestPreview() {
     CaliindarTheme {
         PreviewScreenContent(
             uiState = MainUiState(
