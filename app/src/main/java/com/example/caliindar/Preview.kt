@@ -155,17 +155,12 @@ fun CalendarTimelineScreen() {
     val listState = rememberLazyListState() // Состояние для LazyColumn
 
     var showDatePickerDialog by remember { mutableStateOf(false) }
-    // Инициализируем DatePickerState текущей датой якоря
-    // selectedDateMillis ожидает Long? (миллисекунды UTC)
     val datePickerState = rememberDatePickerState(
-        // Конвертируем LocalDate в миллисекунды UTC для инициализации
         initialSelectedDateMillis = currentDateAnchor
-            .atStartOfDay(ZoneId.systemDefault()) // Берем начало дня в системной зоне
-            .toInstant() // Преобразуем в Instant (UTC по определению)
-            .toEpochMilli(), // Получаем миллисекунды
-        // Можно ограничить выбор дат, если нужно
-        // selectableDates = object : SelectableDates { ... }
-        initialDisplayMode = DisplayMode.Picker // Начать с режима выбора даты
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli(),
+        initialDisplayMode = DisplayMode.Picker
     )
 
     // Ключ для AnimatedContent, пересчитывается только при изменении даты или масштаба
