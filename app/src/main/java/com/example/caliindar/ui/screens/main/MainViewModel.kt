@@ -1,6 +1,6 @@
-package com.example.caliindar
+package com.example.caliindar.ui.screens.main
 
-import android.app.Application // Используем Application Context
+import android.app.Application
 import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -23,50 +23,39 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
+import com.example.caliindar.data.model.ChatMessage
+import com.example.caliindar.util.AudioRecorder
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.TimeUnit
-import androidx.compose.ui.text.capitalize
-import java.util.Locale
+import javax.inject.Inject
 
-// Состояния UI
-data class MainUiState(
-    val isSignedIn: Boolean = false,
-    val userEmail: String? = null,
-    val isLoading: Boolean = false,
-    val isRecording: Boolean = false,
-    val isPermissionGranted: Boolean = false,
-    val message: String = "Требуется вход.", // Оставляем для общих статусов/начального сообщения
-    val showGeneralError: String? = null,
-    val showAuthError: String? = null,
-    val chatHistory: List<ChatMessage> = emptyList() // <-- Добавлено
-)
-
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+// Переносим ViewModel сюда
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    application: Application,
+    private val okHttpClient: OkHttpClient
+): AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
+    // Если AudioRecorder не внедряется, создаем его здесь
     private val audioRecorder = AudioRecorder(application.cacheDir)
     private var currentIdToken: String? = null
-    private var recordingStartTime: Long = 0L // Для минимальной длительности
-
+    private var recordingStartTime: Long = 0L
 
     // Google Sign-In
     private val gso: GoogleSignInOptions
     val googleSignInClient: GoogleSignInClient
 
-    // Сеть
-    private val okHttpClient: OkHttpClient
-
-    // Константы
     companion object {
         private const val TAG = "MainViewModelAuth"
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-        private const val BACKEND_BASE_URL = "http://172.23.35.147:8000" // ВАШ ЛОКАЛЬНЫЙ IP
+        // Лучше вынести URL в BuildConfig или другой модуль
+        private const val BACKEND_BASE_URL = "http://172.23.34.79:8000"
     }
 
     init {
@@ -79,19 +68,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .build()
         googleSignInClient = GoogleSignIn.getClient(application, gso)
 
-        // Инициализация OkHttpClient
-        okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY // Будьте осторожны с BODY в продакшене
-            })
-            .build()
+        // --- УДАЛЕНО: Инициализация OkHttpClient ---
+        // okHttpClient = OkHttpClient.Builder() ... .build()
 
-        // Проверка состояния аутентификации при запуске ViewModel
         checkInitialAuthState()
     }
+
+    // --- Остальной код ViewModel без изменений ---
+    // (handleSignInResult, signOut, checkInitialAuthState, updatePermissionStatus,
+    //  addChatMessage, sendTextMessage, startRecording, stopRecordingAndSend,
+    //  sendAuthInfoToBackend, sendTextToServer, sendAudioToServer,
+    //  executeProcessRequest, handleProcessResponse, clearGeneralError, clearAuthError, onCleared)
 
     fun getSignInIntent(): Intent = googleSignInClient.signInIntent
 
@@ -256,8 +243,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Log.w(TAG, "sendTextMessage called with blank text.")
             return
         }
-        if (!_uiState.value.isSignedIn || currentIdToken == null) { /*...*/ return }
-        if (_uiState.value.isLoading) { /*...*/ return }
+        if (!_uiState.value.isSignedIn || currentIdToken == null) { Log.w(TAG, "Cannot send message: Not signed in or token missing."); return }
+        if (_uiState.value.isLoading) { Log.w(TAG, "Cannot send message: Already loading."); return }
 
         Log.d(TAG, "Attempting to send text message: '$text'")
         addChatMessage(text, isUser = true) // <-- Добавляем сообщение пользователя в чат
@@ -272,9 +259,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startRecording() {
-        if (_uiState.value.isRecording) { /*...*/ return }
-        if (currentIdToken == null) { /*...*/ return }
-        if (!_uiState.value.isPermissionGranted) { /*...*/ return }
+        if (_uiState.value.isRecording) { Log.w(TAG, "Already recording."); return }
+        if (currentIdToken == null) { Log.w(TAG, "Cannot record: Token missing."); return }
+        if (!_uiState.value.isPermissionGranted) { Log.w(TAG, "Cannot record: Permission not granted."); return }
+        // Добавим проверку на isLoading, чтобы не начать запись во время другого запроса
+        if (_uiState.value.isLoading) { Log.w(TAG, "Cannot record: App is busy (isLoading)."); return }
+
 
         Log.d(TAG, "All checks passed. Launching recording coroutine...")
         viewModelScope.launch(Dispatchers.IO) {
@@ -287,26 +277,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Log.i(TAG, "Recording started successfully at $recordingStartTime.")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting recording", e); recordingStartTime = 0L
-                withContext(Dispatchers.Main) { /* Обновление UI с ошибкой */ }
+                withContext(Dispatchers.Main) {
+                    _uiState.update { it.copy(isRecording = false, showGeneralError = "Ошибка начала записи: ${e.message}") }
+                }
                 audioRecorder.cancelRecording()
             }
         }
     }
 
     fun stopRecordingAndSend() {
-        if (!_uiState.value.isRecording) { /*...*/ return }
+        if (!_uiState.value.isRecording) { Log.w(TAG, "Not recording, cannot stop."); return }
 
         val duration = System.currentTimeMillis() - recordingStartTime
         val MIN_RECORDING_DURATION_MS = 500
 
         Log.d(TAG, "Attempting to stop recording. Duration: $duration ms")
 
+        // Сначала обновляем UI, что запись остановлена, но началась обработка
+        // Делаем это до проверки длительности, чтобы кнопка сразу среагировала
+        // Используем immediate, чтобы избежать "залипания" кнопки
+        viewModelScope.launch(Dispatchers.Main.immediate) {
+            _uiState.update { it.copy(isRecording = false, isLoading = true, message = "Обработка...") }
+        }
+
+
         if (duration < MIN_RECORDING_DURATION_MS) {
             Log.w(TAG, "Recording too short ($duration ms). Cancelling without saving.")
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.IO) { // Отмена записи в IO потоке
                 audioRecorder.cancelRecording()
-                withContext(Dispatchers.Main) {
-                    _uiState.update { it.copy(isRecording = false, isLoading = false, message = "Удерживайте кнопку дольше") }
+                withContext(Dispatchers.Main) { // Обновление UI обратно в Main
+                    _uiState.update { it.copy(isLoading = false, message = "Удерживайте кнопку дольше") }
                 }
             }
             recordingStartTime = 0L
@@ -314,14 +314,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         // --- Если длительность достаточная ---
-        // Добавляем плейсхолдер в чат
+        // Добавляем плейсхолдер в чат (можно сделать и после успешной остановки)
         addChatMessage("[Аудиозапись]", isUser = true) // <-- Плейсхолдер
 
         var audioFile: File? = null
-        viewModelScope.launch { // Запускаем в основном scope для управления isLoading
-            withContext(Dispatchers.Main.immediate) {
-                _uiState.update { it.copy(isRecording = false, isLoading = true, message = "Обработка...") }
-            }
+        viewModelScope.launch { // Используем основной scope, так как isLoading уже true
             try {
                 // Получаем файл (может быть IO)
                 audioFile = withContext(Dispatchers.IO) {
@@ -331,34 +328,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (audioFile != null && currentIdToken != null) {
                     Log.d(TAG, "Audio file obtained: ${audioFile?.absolutePath}. Sending...")
-                    // Вызываем обновленный sendAudioToServer
+                    // Вызываем sendAudioToServer (он уже suspend)
                     sendAudioToServer(audioFile!!, currentIdToken!!)
-                    // Не удаляем файл здесь, удалим после отправки
+                    // Не удаляем файл здесь, удалим в finally sendAudioToServer
                 } else {
-                    throw IOException("Failed to obtain audio file or token was null.") // Бросаем исключение для catch блока
+                    // isLoading уже true, обновляем только сообщение/ошибку
+                    _uiState.update { it.copy( showGeneralError = "Не удалось получить аудиофайл или токен.", message = "Ошибка файла") }
+                    // Попытка удалить файл, если он был создан
+                    audioFile?.let { file ->
+                        withContext(Dispatchers.IO) { file.delete() }
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping/sending recording", e)
-                withContext(Dispatchers.Main) {
-                    _uiState.update {
-                        it.copy(
-                            isRecording = false, // На всякий случай
-                            isLoading = false,
-                            showGeneralError = "Ошибка записи/отправки: ${e.message}",
-                            message = "Ошибка записи"
-                        )
-                    }
+                // isLoading уже true, обновляем только сообщение/ошибку
+                _uiState.update {
+                    it.copy(
+                        showGeneralError = "Ошибка записи/отправки: ${e.message}",
+                        message = "Ошибка записи"
+                    )
                 }
                 // Попытка удалить файл, если он был создан, но отправка не началась
                 audioFile?.let { file ->
-                    withContext(Dispatchers.IO) {
-                        val deleted = file.delete()
-                        Log.d(TAG, "Deleted temp audio file after error: $deleted")
-                    }
+                    withContext(Dispatchers.IO) { file.delete() }
                 }
             } finally {
                 recordingStartTime = 0L
-                // isLoading сбрасывается в handleProcessResponse или в catch
+                // isLoading сбросится в sendAudioToServer -> executeProcessRequest -> handleProcessResponse или в catch блоках
             }
         }
     }
@@ -412,7 +408,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Отправка Текста (теперь использует multipart и вызывает handleProcessResponse)
+    // Отправка Текста (теперь использует multipart и вызывает executeProcessRequest)
     private suspend fun sendTextToServer(text: String, idToken: String) {
         Log.i(TAG, "Sending text and ID token to /process")
         val requestBody = MultipartBody.Builder()
@@ -429,7 +425,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         executeProcessRequest(request) // Вызываем общий метод выполнения запроса
     }
 
-    // Отправка Аудио (вызывает handleProcessResponse)
+    // Отправка Аудио (вызывает executeProcessRequest)
     private suspend fun sendAudioToServer(audioFile: File, idToken: String) {
         Log.i(TAG, "Sending audio and ID token to /process")
         val requestBody = MultipartBody.Builder()
@@ -463,22 +459,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         try {
             okHttpClient.newCall(request).execute().use { response ->
                 val responseBodyString = response.body?.string()
-                if (!response.isSuccessful) {
-                    Log.e(TAG, "Server error processing request: ${response.code} - $responseBodyString")
-                    // Пытаемся извлечь detail из JSON ошибки, если есть
-                    var errorDetail = "Ошибка сервера (${response.code})"
-                    try {
-                        val jsonError = JSONObject(responseBodyString ?: "{}")
-                        errorDetail = jsonError.optString("detail", errorDetail)
-                    } catch (_: Exception) {}
-
-                    withContext(Dispatchers.Main) {
+                // Важно: Обработка ответа должна быть в Main потоке для обновления UI
+                withContext(Dispatchers.Main) {
+                    if (!response.isSuccessful) {
+                        Log.e(TAG, "Server error processing request: ${response.code} - $responseBodyString")
+                        var errorDetail = "Ошибка сервера (${response.code})"
+                        try {
+                            val jsonError = JSONObject(responseBodyString ?: "{}")
+                            errorDetail = jsonError.optString("detail", errorDetail)
+                        } catch (_: Exception) {}
                         _uiState.update { it.copy(showGeneralError = errorDetail, isLoading = false, message = "Ошибка обработки") }
-                    }
-                } else {
-                    Log.i(TAG, "Request processed successfully. Response: $responseBodyString")
-                    withContext(Dispatchers.Main) {
-                        handleProcessResponse(responseBodyString) // Вызываем новый обработчик
+                    } else {
+                        Log.i(TAG, "Request processed successfully. Response: $responseBodyString")
+                        handleProcessResponse(responseBodyString) // Вызываем обработчик (он уже Main safe)
                     }
                 }
             }
@@ -496,6 +489,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // --- Новый Обработчик Ответов от /process ---
+    // Эта функция должна вызываться в Main потоке, т.к. обновляет UI
     private fun handleProcessResponse(responseBody: String?) {
         var statusMessage = "Готово." // Статус по умолчанию
         var errorToShow: String? = null
@@ -573,7 +567,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(showAuthError = null) }
     }
 
-    // Вызывается при уничтожении ViewModel
     override fun onCleared() {
         super.onCleared()
         // Остановить запись и освободить ресурсы, если ViewModel уничтожается во время записи

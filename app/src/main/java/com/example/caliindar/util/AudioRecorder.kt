@@ -1,7 +1,7 @@
-package com.example.caliindar
+package com.example.caliindar.util
 
 import android.media.MediaRecorder
-import android.util.Log // Добавьте импорт Log
+import android.util.Log
 import java.io.File
 import java.io.IOException
 
