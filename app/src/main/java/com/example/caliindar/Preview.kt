@@ -79,6 +79,8 @@ import android.util.Log
 import kotlin.math.abs
 
 import androidx.compose.animation.* // Импорты для AnimatedContent и анимаций
+import androidx.compose.animation.core.EaseInExpo
+import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.tween // Для настройки скорости анимации
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.lazy.LazyListState // Убедитесь, что импорт есть
@@ -263,38 +265,60 @@ fun CalendarTimelineScreen() {
 
             // Анимированное содержимое таймлайна
             AnimatedContent(
-                targetState = timelineKey, // Реагируем на изменение ключа (даты или масштаба)
+                targetState = timelineKey,
                 modifier = Modifier.fillMaxSize(),
-                transitionSpec = { // Анимация сдвига вверх/вниз
+                transitionSpec = {
                     val goingBackwards = targetState.date.isBefore(initialState.date)
-                    val animationDuration = 300 // Увеличим немного длительность
-                    val direction = if (goingBackwards) -1 else 1 // -1 вверх, 1 вниз
+                    // Определяем направление сдвига (-1 вверх, 1 вниз)
+                    val slideDirection = if (goingBackwards) -1 else 1
+                    // Длительность анимации (можно немного увеличить для наглядности)
+                    val animationDuration = 400 // мс
 
-                    slideInVertically(animationSpec = tween(animationDuration)) { height -> direction * height } + fadeIn(tween(animationDuration)) togetherWith
-                            slideOutVertically(animationSpec = tween(animationDuration)) { height -> -direction * height } + fadeOut(tween(animationDuration)) using (
-                            SizeTransform(clip = false) // Позволяет контенту выезжать за границы
+                    // Анимация для ВХОДЯЩЕГО контента (нового)
+                    val enterTransition = slideInVertically(
+                        animationSpec = tween(durationMillis = animationDuration, easing = EaseOutExpo) // Более плавная кривая на выходе
+                    ) { height -> slideDirection * height / 2 } + // Начинаем сдвиг с середины? Или с полного height? Попробуем height
+                            // ) { height -> slideDirection * height } +
+                            fadeIn(
+                                animationSpec = tween(durationMillis = animationDuration * 2 / 3, delayMillis = animationDuration / 3) // Появляется чуть позже и не так резко
+                                // animationSpec = tween(durationMillis = animationDuration) // Или просто fade за всю длительность
                             )
+
+                    // Анимация для ВЫХОДЯЩЕГО контента (старого)
+                    val exitTransition = slideOutVertically(
+                        animationSpec = tween(durationMillis = animationDuration, easing = EaseInExpo) // Ускорение в конце
+                    ) { height -> -slideDirection * height } + // Сдвигается в противоположном направлении
+                            fadeOut(
+                                animationSpec = tween(durationMillis = animationDuration / 2) // Исчезает быстрее
+                            )
+
+                    // Объединяем анимации
+                    enterTransition togetherWith exitTransition using SizeTransform(
+                        clip = false // Обязательно, чтобы контент мог выезжать за границы
+                    )
                 }
-            ) { key -> // key = текущий timelineKey
-                // Сброс скролла в начало при смене ключа (даты или масштаба)
+            ) { key ->
+                // ... остальной код внутри AnimatedContent ...
+
                 LaunchedEffect(key) {
-                    // Даем контенту время на отрисовку перед скроллом
-                    // kotlinx.coroutines.delay(50) // Небольшая задержка может помочь в сложных случаях, но обычно не нужна
-                    if (listState.layoutInfo.totalItemsCount > 0 || eventsToShow.isNotEmpty()) { // Доп. проверка
-                        Log.d("TimelineAnimate", "Scrolling to top for key: $key")
+                    // НЕБОЛЬШАЯ ЗАДЕРЖКА перед скроллом может помочь
+                    // Дает анимации время "начаться" визуально перед рывком скролла
+                    delay(50) // 50-100 мс, подбирается экспериментально
+                    if (listState.layoutInfo.totalItemsCount > 0 || eventsToShow.isNotEmpty()) {
+                        Log.d("TimelineAnimate", "Scrolling to top for key: $key after delay")
                         listState.scrollToItem(0)
                     } else {
                         Log.d("TimelineAnimate", "Skipping scroll for key: $key, list empty.")
                     }
                 }
 
-                // Отображение списка событий для текущего ключа
                 TimelineContent(
-                    events = eventsToShow, // Используем данные из derivedStateOf
+                    events = eventsToShow,
                     currentScale = key.scale,
-                    listState = listState, // Передаем ОДИН И ТОТ ЖЕ listState
+                    listState = listState,
                     modifier = Modifier.fillMaxSize()
                 )
+
             }
         }
     }
@@ -701,6 +725,16 @@ fun EventCardDay(
     // или просто одну и ту же форму для консистентности. Убрано рандомное создание.
     // val polygon = remember { RoundedPolygon(...) } // Определить конкретную форму
     // val clip = remember(polygon) { RoundedPolygonShape(polygon = polygon) }
+    val star2Shape = remember {
+        RoundedPolygon.star(
+            3,
+            rounding = CornerRounding(0.4f),
+        )
+    }
+    val clip2Star = remember(star2Shape) {
+        RoundedPolygonShape(polygon = star2Shape)
+    }
+
     val cardShape = RoundedCornerShape(16.dp) // Стандартная форма
 
     val backgroundColor by animateColorAsState( // Анимация цвета фона
@@ -741,8 +775,10 @@ fun EventCardDay(
                 Box(
                     modifier = Modifier
                         .padding(vertical = 6.dp) // Больше отступ
-                        .size(width = 1.dp, height = 10.dp) // Вертикальная линия
+                        .clip(clip2Star)
+                        .size(width = 10.dp, height = 10.dp) // Вертикальная линия
                         .background(iconBackgroundColor.copy(alpha = 0.5f)) // Полупрозрачный
+
                 )
                 Text(
                     text = endTimeStr,
@@ -784,7 +820,6 @@ fun BackgroundShapes(colorScheme: ColorScheme) {
             RoundedPolygon.star(
                 17,
                 rounding = CornerRounding(0.95f),
-        //        radius = 30f,
             )
         }
         val clipStar = remember(starShape) {
@@ -794,7 +829,6 @@ fun BackgroundShapes(colorScheme: ColorScheme) {
             RoundedPolygon.star(
                 4,
                 rounding = CornerRounding(0.6f),
-                //        radius = 30f,
             )
         }
         val clip2Star = remember(starShape) {
@@ -847,10 +881,7 @@ fun EventCard(
     startTimeStr: String, // Принимаем строки
     endTimeStr: String
 ) {
-    // NOTE: Использование createRandomShape() в remember может привести к тому,
-    // что форма будет меняться при рекомпозиции в неожиданных местах.
-    // Лучше генерировать форму вне Composable или передавать ее как параметр.
-    // Пока оставим для примера.
+
     val polygon = remember { createRandomShape() }
     val clip = remember(polygon) { RoundedPolygonShape(polygon = polygon) }
 
@@ -861,11 +892,8 @@ fun EventCard(
 
     Card(
         modifier = Modifier
-            // Высота должна зависеть от контента или быть фиксированной, но аккуратно
             .height(IntrinsicSize.Min) // Попробуем высоту по контенту
-            // .height(if (isCurrent) 100.dp else 65.dp) // Ваши значения, но осторожно с обрезанием текста
             .fillMaxWidth(),
-        //.padding(end = 80.dp), // Этот padding лучше убрать, пусть Row внутри управляет отступами
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isCurrent) 8.dp else 2.dp)
