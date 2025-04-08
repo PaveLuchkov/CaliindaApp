@@ -1,6 +1,8 @@
 package com.example.caliindar
 
+import RoundedPolygonShape
 import android.Manifest
+import android.R
 import android.app.Activity.RESULT_OK
 import android.content.Context
 import android.content.Intent
@@ -27,6 +29,7 @@ import com.example.caliindar.ui.theme.CaliindarTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import android.util.Log
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.* // Используем Material 3
@@ -93,6 +96,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -135,7 +139,15 @@ class MainActivity : ComponentActivity() {
     private lateinit var googleSignInLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            /*
+            statusBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+
+             */
+        )
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -264,20 +276,27 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            state = listState,
+        Box(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(
-                items = uiState.chatHistory,
-                key = { message -> message.id }
-            ) { message ->
-                ChatMessageBubble(message = message, uriHandler = uriHandler)
+                .fillMaxSize()
+        ){
+            BackgroundShapes(colorScheme)
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                items(
+                    items = uiState.chatHistory,
+                    key = { message -> message.id }
+                ) { message ->
+                    ChatMessageBubble(message = message, uriHandler = uriHandler)
+        }
+
             }
         }
     }
@@ -401,14 +420,16 @@ fun CalendarAppBar(uiState: MainUiState, onNavigateToSettings: () -> Unit) {
             androidx.compose.material.Text(
                 "Caliinda",
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontSize = 20.sp,
+           //     color = colorScheme.onSecondaryContainer
             )
         },
         navigationIcon = {
             androidx.compose.material.IconButton(onClick = {}) {
                 androidx.compose.material.Icon(
                     Icons.Filled.Today,
-                    contentDescription = "Calendar View"
+                    contentDescription = "Calendar View",
+               //     tint = colorScheme.onSecondaryContainer
                 )
             }
         },
@@ -711,6 +732,79 @@ fun ClickableLinkText(
 private fun showToast(context: Context, message: String) {
     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
 }
+
+@Composable
+fun BackgroundShapes(colorScheme: ColorScheme) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+        // .padding(16.dp)
+    ) {
+        // Создаем фигуру звезды один раз
+        val starShape = remember {
+            RoundedPolygon.star(
+                17,
+                rounding = CornerRounding(0.95f),
+                //        radius = 30f,
+            )
+        }
+        val clipStar = remember(starShape) {
+            RoundedPolygonShape(polygon = starShape)
+        }
+        val star2Shape = remember {
+            RoundedPolygon.star(
+                4,
+                rounding = CornerRounding(0.4f),
+                radius = 2f
+                //        radius = 30f,
+            )
+        }
+        val clip2Star = remember(starShape) {
+            RoundedPolygonShape(polygon = star2Shape)
+        }
+        val starContainerSize = 300.dp
+        val star2ContainerSize = 200.dp
+        // Холст для отрисовки
+        Box(
+            modifier = Modifier
+                .size(starContainerSize)
+                .align(Alignment.TopEnd)
+                .offset(
+                    x = starContainerSize * 0.2f,
+                    y = -starContainerSize * 0.1f
+                )
+                .clip(clipStar)
+                .background(colorScheme.surfaceContainer),
+        ) {
+
+        }
+        Box(
+            modifier = Modifier
+                .size(star2ContainerSize)
+                .align(Alignment.CenterStart)
+                .offset(
+                    x = -star2ContainerSize * 0.4f
+                )
+                .clip(clip2Star)
+                .background(colorScheme.surfaceContainer),
+        ) {
+
+        }
+        /*
+        Box(
+            modifier = Modifier
+                .padding(start = 42.dp)
+                .fillMaxHeight()
+                .width(3.dp)
+                .background(colorScheme.scrim)
+
+        )
+
+         */
+    }
+}
+
+
 
 // --- Preview для Android Studio ---
 // @Preview(showBackground = true)

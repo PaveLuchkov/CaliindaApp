@@ -66,7 +66,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val TAG = "MainViewModelAuth"
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-        private const val BACKEND_BASE_URL = "http://172.23.35.249:8000" // ВАШ ЛОКАЛЬНЫЙ IP
+        private const val BACKEND_BASE_URL = "http://172.23.35.147:8000" // ВАШ ЛОКАЛЬНЫЙ IP
     }
 
     init {
