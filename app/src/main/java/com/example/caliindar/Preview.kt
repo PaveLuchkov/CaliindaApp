@@ -1,3 +1,4 @@
+import android.R.attr.enabled
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -66,6 +67,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.TextButton
 
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -82,6 +84,7 @@ import androidx.compose.animation.* // Импорты для AnimatedContent и 
 import androidx.compose.animation.core.EaseInExpo
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.tween // Для настройки скорости анимации
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.lazy.LazyListState // Убедитесь, что импорт есть
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -100,6 +103,8 @@ import kotlin.math.sqrt
 import androidx.compose.runtime.rememberCoroutineScope // Добавить импорт
 import kotlinx.coroutines.launch // Добавить импорт
 import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.ZoneId
 
 // Уровни масштаба
 enum class TimeScale {
@@ -139,8 +144,8 @@ data class TimelineKey(val date: LocalDate, val scale: TimeScale)
 
 // --- Оптимизированный Composable Экран ---
 
-@OptIn(ExperimentalAnimationApi::class)
-@Preview(showBackground = true, device = "id:pixel_6a")
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, device = "id:pixel_6a", wallpaper = GREEN_DOMINATED_EXAMPLE)
 @Composable
 fun CalendarTimelineScreen() {
 
@@ -148,6 +153,20 @@ fun CalendarTimelineScreen() {
     var currentScale by rememberSaveable { mutableStateOf(TimeScale.Day) }
     var currentDateAnchor by rememberSaveable { mutableStateOf(LocalDate.now()) }
     val listState = rememberLazyListState() // Состояние для LazyColumn
+
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    // Инициализируем DatePickerState текущей датой якоря
+    // selectedDateMillis ожидает Long? (миллисекунды UTC)
+    val datePickerState = rememberDatePickerState(
+        // Конвертируем LocalDate в миллисекунды UTC для инициализации
+        initialSelectedDateMillis = currentDateAnchor
+            .atStartOfDay(ZoneId.systemDefault()) // Берем начало дня в системной зоне
+            .toInstant() // Преобразуем в Instant (UTC по определению)
+            .toEpochMilli(), // Получаем миллисекунды
+        // Можно ограничить выбор дат, если нужно
+        // selectableDates = object : SelectableDates { ... }
+        initialDisplayMode = DisplayMode.Picker // Начать с режима выбора даты
+    )
 
     // Ключ для AnimatedContent, пересчитывается только при изменении даты или масштаба
     val timelineKey by remember {
@@ -217,6 +236,18 @@ fun CalendarTimelineScreen() {
         }
     }
 
+    val navigateToToday: () -> Unit = {
+        Log.d("Navigation", "Navigating to Today")
+        currentDateAnchor = LocalDate.now()
+        // Сброс состояния DatePicker тоже может быть полезен, если он был открыт
+        showDatePickerDialog = false
+    }
+
+    val showDatePicker: () -> Unit = {
+        Log.d("Navigation", "Showing Date Picker")
+        showDatePickerDialog = true
+    }
+
     // --- Nested Scroll Connection для Перехвата Overscroll ---
     val nestedScrollConnection = rememberOverscrollNavigator(
         listState = listState,
@@ -249,7 +280,14 @@ fun CalendarTimelineScreen() {
 
     // --- UI ---
     Scaffold(
-        topBar = { CalendarAppBar(title = currentDateAnchor.format(currentDateFormat)) },
+        topBar = {
+            CalendarAppBar(
+                title = currentDateAnchor.format(currentDateFormat),
+                // --- Передаем новые колбеки ---
+                onTitleClick = showDatePicker,
+                onTodayClick = navigateToToday
+            )
+                 },
         bottomBar = { CalendarBottomBar() },
         containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
@@ -272,7 +310,7 @@ fun CalendarTimelineScreen() {
                     // Определяем направление сдвига (-1 вверх, 1 вниз)
                     val slideDirection = if (goingBackwards) -1 else 1
                     // Длительность анимации (можно немного увеличить для наглядности)
-                    val animationDuration = 400 // мс
+                    val animationDuration = 200 // мс
 
                     // Анимация для ВХОДЯЩЕГО контента (нового)
                     val enterTransition = slideInVertically(
@@ -319,6 +357,49 @@ fun CalendarTimelineScreen() {
                     modifier = Modifier.fillMaxSize()
                 )
 
+            }
+        }
+        if (showDatePickerDialog) {
+            // Используем структуру из документации, но с нашей логикой
+            DatePickerDialog(
+                onDismissRequest = { // Это вызывается при клике вне диалога или системной кнопке "Назад"
+                    showDatePickerDialog = false
+                    Log.d("DatePicker", "Dialog Dismissed (via onDismissRequest)")
+                },
+                confirmButton = {
+                    TextButton(
+                        // Нажатие "OK"
+                        onClick = {
+                            // 1. Обновляем дату, если она выбрана
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val selectedDate = Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                Log.d("DatePicker", "Date Confirmed: $selectedDate")
+                                currentDateAnchor = selectedDate // <<< Обновляем наше состояние
+                            } ?: Log.w("DatePicker", "Confirm clicked but selectedDateMillis is null")
+
+                            // 2. Закрываем диалог
+                            showDatePickerDialog = false // <<< Закрываем наше окно
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        // Нажатие "Cancel"
+                        onClick = {
+                            // Просто закрываем диалог
+                            showDatePickerDialog = false // <<< Закрываем наше окно
+                            Log.d("DatePicker", "Dialog Cancelled (via dismissButton)")
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            ) { // Основное содержимое диалога
+                DatePicker(state = datePickerState)
             }
         }
     }
@@ -665,26 +746,38 @@ fun GenericTimelineEventRow(event: TimelineEvent, scale: TimeScale) {
 // --- Верхняя панель приложения ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarAppBar(title: String) {
+fun CalendarAppBar(
+    title: String,
+    onTitleClick: () -> Unit, // <<< Новый параметр
+    onTodayClick: () -> Unit  // <<< Новый параметр
+) {
     CenterAlignedTopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        title = {
+            // --- Делаем заголовок кликабельным ---
+            Box( // Используем Box для удобного применения clickable
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small) // Опционально: визуальный эффект при клике
+                    .clickable(onClick = onTitleClick) // <<< Применяем колбек
+                    .padding(horizontal = 8.dp, vertical = 4.dp) // Небольшой отступ для кликабельной области
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        },
         navigationIcon = {
-            IconButton(onClick = { /* TODO: Go to Today */ }) { // Добавим действие
+            // --- Применяем колбек к кнопке Today ---
+            IconButton(onClick = onTodayClick) { // <<< Применяем колбек
                 Icon(Icons.Filled.Today, contentDescription = "Go to Today")
             }
         },
         actions = {
-            IconButton(onClick = { /* TODO: Действие для настроек */ }) {
+            IconButton(onClick = { /* Settings action */ }) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings")
             }
         },
-        // Добавим цвета для соответствия теме
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = colorScheme.surface, // Или surfaceVariant
-            titleContentColor = colorScheme.onSurface,
-            navigationIconContentColor = colorScheme.onSurface,
-            actionIconContentColor = colorScheme.onSurface
-        )
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors( /* ... как было ... */)
     )
 }
 
