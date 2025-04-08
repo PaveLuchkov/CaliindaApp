@@ -77,6 +77,19 @@ import java.time.YearMonth
 import android.util.Log
 import kotlin.math.abs
 
+import androidx.compose.animation.* // Импорты для AnimatedContent и анимаций
+import androidx.compose.animation.core.tween // Для настройки скорости анимации
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.lazy.LazyListState // Убедитесь, что импорт есть
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion
+import kotlinx.coroutines.launch // Для запуска корутины сброса скролла
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.awaitEachGesture // <<< Импорт
+import androidx.compose.ui.input.pointer.* // <<< Импорт для PointerEvent, PointerId и т.д.
+import kotlin.math.abs // Для abs()
+import kotlin.math.sqrt
+
 //  уровни масштаба
 enum class TimeScale {
     Day, Week, Month, Year
@@ -94,25 +107,62 @@ data class TimelineEvent(
     val applicableScale: List<TimeScale> // Указываем, на каких масштабах событие релевантно
 )
 
+@Immutable
+data class TimelineKey(val date: LocalDate, val scale: TimeScale)
+
+fun getNextScale(current: TimeScale): TimeScale? {
+    return when (current) {
+        TimeScale.Year -> TimeScale.Month
+        TimeScale.Month -> TimeScale.Week
+        TimeScale.Week -> TimeScale.Day
+        TimeScale.Day -> null // Дальше некуда
+    }
+}
+
+fun getPreviousScale(current: TimeScale): TimeScale? {
+    return when (current) {
+        TimeScale.Day -> TimeScale.Week
+        TimeScale.Week -> TimeScale.Month
+        TimeScale.Month -> TimeScale.Year
+        TimeScale.Year -> null // Дальше некуда
+    }
+}
+
+
+@OptIn(ExperimentalAnimationApi::class)
 @Preview(showBackground = true, device = "id:pixel_6a")
 @Composable
 fun CalendarTimelineScreen() {
 
     // --- Состояния ---
     var currentScale by remember { mutableStateOf(TimeScale.Day) }
-    var currentZoom by remember { mutableStateOf(1f) }
+        //  var currentZoom by remember { mutableStateOf(1f) }
     // Добавляем состояние для текущей даты/периода
     var currentDateAnchor by remember { mutableStateOf(LocalDate.now()) }
     val listState = rememberLazyListState() // Состояние для LazyColumn
 
+    val timelineKey by remember {
+        derivedStateOf { TimelineKey(currentDateAnchor, currentScale) }
+    }
+
     // --- Константы и Помощники ---
-    val zoomSensitivityFactor = 1f // <<< Увеличьте/уменьшите для настройки чувствительности зума
+    val zoomSensitivityFactor = 1.5f // <<< Увеличьте/уменьшите для настройки чувствительности зума
     val zoomThresholds = remember {
         mapOf(
-            TimeScale.Day to (0.7f to Float.MAX_VALUE), // Порог уменьшения чуть ближе к 1
-            TimeScale.Week to (0.4f to 1.6f),
-            TimeScale.Month to (0.2f to 1.8f),
-            TimeScale.Year to (0.0f to 2.0f)
+            // Порог для перехода ОТ ЭТОГО МАСШТАБА к ПРЕДЫДУЩЕМУ (более мелкому)
+            TimeScale.Day to 0.7f,
+            TimeScale.Week to 0.4f,
+            TimeScale.Month to 0.2f,
+            TimeScale.Year to 0.0f, // Не используется для zoom-out
+        )
+    }
+    // Пороги для Zoom IN (переход к более детальному масштабу)
+    val zoomInThresholds = remember {
+        mapOf(
+            TimeScale.Year to 2.0f,  // От Года к Месяцу
+            TimeScale.Month to 1.8f, // От Месяца к Неделе
+            TimeScale.Week to 1.6f,  // От Недели к Дню
+            TimeScale.Day to Float.MAX_VALUE // От Дня некуда
         )
     }
     val currentDateFormat = remember(currentScale) { // Формат для отображения текущего периода
@@ -142,8 +192,6 @@ fun CalendarTimelineScreen() {
             TimeScale.Month -> currentDateAnchor.minusMonths(1)
             TimeScale.Year -> currentDateAnchor.minusYears(1)
         }
-        // Можно добавить сброс позиции скролла при навигации
-        // coroutineScope.launch { listState.scrollToItem(0) }
     }
     val navigateToNextPeriod: () -> Unit = {
         currentDateAnchor = when (currentScale) {
@@ -152,7 +200,6 @@ fun CalendarTimelineScreen() {
             TimeScale.Month -> currentDateAnchor.plusMonths(1)
             TimeScale.Year -> currentDateAnchor.plusYears(1)
         }
-        // coroutineScope.launch { listState.scrollToItem(0) }
     }
 
     // --- Nested Scroll Connection для перехвата overscroll ---
@@ -162,15 +209,15 @@ fun CalendarTimelineScreen() {
         // Состояние для накопления overscroll ВНИЗ (когда тянем список вверх на нижнем краю)
         var accumulatedOverscrollDown by mutableStateOf(0f)
         // Порог, который нужно превысить для навигации (подбирается экспериментально)
-        val overscrollNavigationThreshold = 600f // <<< Попробуйте это значение, можно увеличить/уменьшить
+        val overscrollNavigationThreshold = 200f // <<< Попробуйте это значение, можно увеличить/уменьшить
 
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 // Работаем только с жестом перетаскивания
-                if (source == NestedScrollSource.Drag) {
+                if (source == NestedScrollSource.UserInput) {
                     val deltaY = available.y
-                    val canScrollBackward = listState.canScrollBackward // Может ли скроллить вверх
-                    val canScrollForward = listState.canScrollForward   // Может ли скроллить вниз
+                    val canScrollBackward = listState.canScrollBackward
+                    val canScrollForward = listState.canScrollForward
 
                     when {
                         // Пытаемся скроллить ВВЕРХ (тянем палец ВНИЗ, deltaY > 0), но УЖЕ наверху (!canScrollBackward)
@@ -226,7 +273,7 @@ fun CalendarTimelineScreen() {
                 // Если после обработки скролла LazyColumn'ом что-то осталось (например, при fling),
                 // можно тоже сбросить аккумуляторы здесь, на всякий случай.
                 // Хотя логика в onPreScroll должна покрывать большинство случаев сброса.
-                if(source == NestedScrollSource.Drag && available.y != 0f) {
+                if(source == NestedScrollSource.UserInput && available.y != 0f) {
                     // Если есть остаточный скролл после обработки LazyColumn'ом,
                     // возможно, мы достигли края в этом же событии, сбросим на всякий.
                     // accumulatedOverscrollUp = 0f
@@ -251,70 +298,221 @@ fun CalendarTimelineScreen() {
         containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
 
+        var gestureZoomLevel by rememberSaveable { mutableStateOf(1f) }
+
         Box(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                // --- Применяем Nested Scroll ---
                 .nestedScroll(nestedScrollConnection)
-                // --- Обработчик жестов масштабирования ---
+                // --- Начало pointerInput с ручной обработкой ---
                 .pointerInput(Unit) {
-                    detectTransformGestures { centroid, pan, zoom, rotation ->
+                    // awaitEachGesture гарантирует сброс состояния для каждого нового жеста
+                    awaitEachGesture {
+                        // --- Состояние для ЭТОГО КОНКРЕТНОГО ЖЕСТА ---
+                        var gestureZoomLevel = 1.0f // Накопленный зум для текущего жеста
+                        var scaleChangedDuringThisGesture = false // Блокировка смены масштаба
+                        var pastTouchSlop = false // Пройден ли порог случайного касания
+                        var lockedPointerId1: PointerId? = null
+                        var lockedPointerId2: PointerId? = null
+                        var lastDistance = -1.0f // Предыдущее расстояние между пальцами
 
-                        // --- Усиленный зум ---
-                        val effectiveZoom = 1 + (zoom - 1) * zoomSensitivityFactor
-                        // --------------------
+                        Log.d("ZoomGesture", "--- New Gesture Sequence ---")
 
-                        val newZoom = currentZoom * effectiveZoom // Используем усиленный зум
-                        val clampedZoom = newZoom.coerceIn(0.05f, 5f)
+                        // Цикл обработки событий внутри текущего жеста
+                        while (true) {
+                            val event: PointerEvent = awaitPointerEvent(PointerEventPass.Main)
+                            val changes = event.changes
 
-                        val (zoomOutThreshold, zoomInThreshold) = zoomThresholds[currentScale] ?: (0f to Float.MAX_VALUE)
-
-                        val nextScale = when {
-                            clampedZoom < zoomOutThreshold -> when (currentScale) {
-                                TimeScale.Day -> TimeScale.Week
-                                TimeScale.Week -> TimeScale.Month
-                                TimeScale.Month -> TimeScale.Year
-                                TimeScale.Year -> TimeScale.Year
+                            // --- Проверка окончания жеста ---
+                            if (changes.all { !it.pressed }) {
+                                Log.d("ZoomGesture", "Gesture End Detected (all pointers up)")
+                                break // Выход из цикла while для этого жеста
                             }
-                            clampedZoom > zoomInThreshold -> when (currentScale) {
-                                TimeScale.Day -> TimeScale.Day
-                                TimeScale.Week -> TimeScale.Day
-                                TimeScale.Month -> TimeScale.Week
-                                TimeScale.Year -> TimeScale.Month
-                            }
-                            else -> currentScale
-                        }
 
-                        if (nextScale != currentScale) {
-                            currentScale = nextScale
-                            // При смене масштаба можно сбросить дату к началу недели/месяца/года
-                            currentDateAnchor = when(nextScale) {
-                                TimeScale.Day -> currentDateAnchor // Оставляем тот же день
-                                TimeScale.Week -> currentDateAnchor.with(java.time.DayOfWeek.MONDAY) // Начало недели
-                                TimeScale.Month -> currentDateAnchor.withDayOfMonth(1) // Начало месяца
-                                TimeScale.Year -> currentDateAnchor.withDayOfYear(1) // Начало года
+                            // --- Отслеживание двух пальцев для зума ---
+                            val pointers = changes.filter { it.pressed }
+
+                            // Если количество пальцев изменилось (стало не 2), сбрасываем трекинг зума
+                            if (pointers.size != 2 && lockedPointerId1 != null) {
+                                Log.d("ZoomGesture", "Pointer count != 2, resetting internal zoom track.")
+                                gestureZoomLevel = 1.0f // Сброс зума в рамках жеста
+                                lastDistance = -1.0f
+                                lockedPointerId1 = null
+                                lockedPointerId2 = null
+                                pastTouchSlop = false
+                                continue // Переход к следующему событию
                             }
-                            currentZoom = 1f
-                            Log.d("Timeline", "Scale changed to $currentScale, Date anchor: $currentDateAnchor")
-                        } else {
-                            currentZoom = clampedZoom
-                        }
-                    }
-                }
+
+                            // --- Обработка, если ровно два пальца нажаты ---
+                            if (pointers.size == 2) {
+                                // Если еще не зафиксировали пальцы, делаем это
+                                if (lockedPointerId1 == null) {
+                                    lockedPointerId1 = pointers[0].id
+                                    lockedPointerId2 = pointers[1].id
+                                    lastDistance = -1f // Сброс для первого расчета
+                                    Log.d("ZoomGesture", "Locked on pointers: $lockedPointerId1, $lockedPointerId2")
+                                }
+
+                                // Находим изменения для зафиксированных пальцев
+                                val pointer1Change = changes.find { it.id == lockedPointerId1 }
+                                val pointer2Change = changes.find { it.id == lockedPointerId2 }
+
+                                if (pointer1Change != null && pointer2Change != null) {
+                                    // --- Проверка Touch Slop ---
+                                    if (!pastTouchSlop) {
+                                        val slop = viewConfiguration.touchSlop
+                                        // Простое смещение хотя бы одного пальца
+                                        val distance1 = pointer1Change.position - pointer1Change.previousPosition
+                                        val distance2 = pointer2Change.position - pointer2Change.previousPosition
+                                        if (distance1.getDistanceSquared() > slop * slop || distance2.getDistanceSquared() > slop * slop) {
+                                            pastTouchSlop = true
+                                            Log.d("ZoomGesture", "Touch slop passed")
+                                            // Важно: пересчитать lastDistance после прохождения slop
+                                            val dxInit = pointer1Change.position.x - pointer2Change.position.x
+                                            val dyInit = pointer1Change.position.y - pointer2Change.position.y
+                                            lastDistance = sqrt(dxInit*dxInit + dyInit*dyInit)
+
+                                        }
+                                    }
+
+                                    // --- Вычисление и применение зума (только после touch slop) ---
+                                    if (pastTouchSlop) {
+                                        val dx = pointer1Change.position.x - pointer2Change.position.x
+                                        val dy = pointer1Change.position.y - pointer2Change.position.y
+                                        val currentDistance = sqrt(dx*dx + dy*dy)
+
+                                        // Вычисляем множитель зума для текущего шага
+                                        if (lastDistance > 0.01f) { // Избегаем деления на ноль/малое число
+                                            val stepZoom = currentDistance / lastDistance
+                                            val effectiveStepZoom = 1.0f + (stepZoom - 1.0f) * zoomSensitivityFactor
+
+                                            // Накапливаем зум для всего жеста
+                                            gestureZoomLevel *= effectiveStepZoom
+                                            gestureZoomLevel = gestureZoomLevel.coerceIn(0.05f, 5.0f) // Ограничиваем
+
+                                            Log.d("ZoomGesture", "Step: Dist=$currentDistance, StepZoom=$stepZoom, AccumZoom=$gestureZoomLevel, Locked=$scaleChangedDuringThisGesture")
+
+
+                                            // --- Логика смены масштаба (та же, что была) ---
+                                            if (!scaleChangedDuringThisGesture) {
+                                                val zoomOutThreshold = zoomThresholds[currentScale] ?: 0f
+                                                val previousScale = getPreviousScale(currentScale)
+                                                val zoomInThreshold = zoomInThresholds[currentScale] ?: Float.MAX_VALUE
+                                                val nextScale = getNextScale(currentScale)
+                                                var scaleChanged = false
+
+                                                // Проверяем Zoom Out
+                                                if (previousScale != null && gestureZoomLevel < zoomOutThreshold) {
+                                                    Log.d("ZoomGesture", "--> Zoom Out Triggered: $currentScale -> $previousScale")
+                                                    currentScale = previousScale
+                                                    scaleChanged = true
+                                                }
+                                                // Проверяем Zoom In
+                                                else if (nextScale != null && gestureZoomLevel > zoomInThreshold) {
+                                                    Log.d("ZoomGesture", "--> Zoom In Triggered: $currentScale -> $nextScale")
+                                                    currentScale = nextScale
+                                                    scaleChanged = true
+                                                }
+
+                                                // Если масштаб изменился
+                                                if (scaleChanged) {
+                                                    Log.d("ZoomGesture", "** Scale Changed to: $currentScale! Locking gesture. **")
+                                                    scaleChangedDuringThisGesture = true // Блокируем
+                                                    currentDateAnchor = when(currentScale) {
+                                                        TimeScale.Day -> currentDateAnchor // Оставляем тот же день
+                                                        TimeScale.Week -> currentDateAnchor.with(java.time.DayOfWeek.MONDAY) // Начало недели
+                                                        TimeScale.Month -> currentDateAnchor.withDayOfMonth(1) // Начало месяца
+                                                        TimeScale.Year -> currentDateAnchor.withDayOfYear(1) // Начало года
+                                                    }
+                                                    // Сброс зума для начала накопления в новом масштабе
+                                                    gestureZoomLevel = 1.0f
+                                                    // Сброс расстояния, т.к. относительный зум изменился
+                                                    lastDistance = -1.0f
+                                                }
+                                            } // Конец if (!scaleChangedDuringThisGesture)
+                                        } // Конец if (lastDistance > 0.01f)
+
+                                        // Обновляем предыдущее расстояние для следующего шага, если не сбросили
+                                        if(lastDistance > 0) {
+                                            lastDistance = currentDistance
+                                        }
+
+                                    } // Конец if (pastTouchSlop)
+                                } else {
+                                    // Один из пальцев "потерялся" - сброс трекинга
+                                    Log.d("ZoomGesture", "Lost locked pointer, resetting internal zoom track.")
+                                    gestureZoomLevel = 1.0f
+                                    lastDistance = -1.0f
+                                    lockedPointerId1 = null
+                                    lockedPointerId2 = null
+                                    pastTouchSlop = false
+                                }
+                            } // Конец if (pointers.size == 2)
+
+                            // Потребляем события, чтобы они не шли дальше (если нужно)
+                            changes.forEach { it.consume() }
+
+                        } // Конец цикла while(true)
+                    } // Конец awaitEachGesture
+                } // Конец pointerInput
+            // --- Конец pointerInput с ручной обработкой ---
         ) {
             BackgroundShapes(MaterialTheme.colorScheme)
 
-            // Убрал отладочный текст масштаба, он теперь в AppBar
-            // Text(...)
+            // --- Анимация смены контента ---
+            AnimatedContent(
+                targetState = timelineKey, // Реагируем на изменение ключа (даты или масштаба)
+                modifier = Modifier.fillMaxSize(),
+                transitionSpec = {
+                    // Определяем направление: вперед или назад по дате?
+                    val goingBackwards = targetState.date.isBefore(initialState.date)
+                    // Можно добавить логику для масштаба, если нужна другая анимация
 
-            // Основной контент - таймлайн
-            TimelineContent(
-                events = eventsToShow, // Передаем динамически обновляемый список
-                currentScale = currentScale,
-                listState = listState, // Передаем состояние списка
-                modifier = Modifier.fillMaxSize() // Занимает все доступное место в Box
+                    val enterTransition: EnterTransition
+                    val exitTransition: ExitTransition
+                    val animationDuration = 200 // Длительность анимации
+
+                    if (goingBackwards) {
+                        // Переход НАЗАД: старый уходит ВНИЗ, новый приходит СВЕРХУ
+                        enterTransition = slideInVertically(animationSpec = tween(animationDuration)) { height -> -height } + fadeIn(tween(animationDuration))
+                        exitTransition = slideOutVertically(animationSpec = tween(animationDuration)) { height -> height } + fadeOut(tween(animationDuration))
+                    } else {
+                        // Переход ВПЕРЕД: старый уходит ВВЕРХ, новый приходит СНИЗУ
+                        enterTransition = slideInVertically(animationSpec = tween(animationDuration)) { height -> height } + fadeIn(tween(animationDuration))
+                        exitTransition = slideOutVertically(animationSpec = tween(animationDuration)) { height -> -height } + fadeOut(tween(animationDuration))
+                    }
+
+
+//                     if (targetState.scale != initialState.scale) {
+//                         enterTransition = fadeIn(...) + scaleIn(...)
+//                         exitTransition = fadeOut(...) + scaleOut(...)
+//                     }
+
+                    enterTransition togetherWith exitTransition using(
+                            SizeTransform(clip = false) // Позволяет выезжать за границы
+                            )
+                }
+            ) { key -> // Лямбда контента получает текущий ключ (key = timelineKey)
+
+                // >>> ВАЖНО: Сбрасываем скролл в начало при смене ключа <<<
+                // Используем LaunchedEffect, который сработает, когда 'key' изменится
+                LaunchedEffect(key) {
+                    // Проверяем, что список не пуст, прежде чем скроллить
+                    if (listState.layoutInfo.totalItemsCount > 0) {
+                        Log.d("TimelineAnimate", "Scrolling to top for key: $key")
+                        listState.scrollToItem(0) // Скролл к первому элементу
+                    }
+                }
+
+
+                TimelineContent(
+                    events = eventsToShow, // Используем .value от derivedStateOf
+                    currentScale = key.scale,   // Можно использовать key.scale
+                    listState = listState,      // <<< Передаем тот же самый listState
+                    modifier = Modifier.fillMaxSize()
             )
+                }
         }
     }
 }
@@ -325,7 +523,7 @@ fun CalendarTimelineScreen() {
 fun TimelineContent(
     events: List<TimelineEvent>,
     currentScale: TimeScale,
-    listState: androidx.compose.foundation.lazy.LazyListState, // Принимаем состояние
+    listState: LazyListState, // Принимаем состояние
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
