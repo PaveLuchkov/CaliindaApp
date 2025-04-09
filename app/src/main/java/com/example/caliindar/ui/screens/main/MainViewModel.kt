@@ -1,8 +1,17 @@
 package com.example.caliindar.ui.screens.main
 
+import android.annotation.SuppressLint
 import android.app.Application
+import android.content.Context
 import android.content.Intent
+import androidx.credentials.CredentialManager
+import android.credentials.GetCredentialException
+import android.credentials.GetCredentialRequest
+import android.credentials.GetCredentialResponse
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -26,113 +35,204 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import com.example.caliindar.data.model.ChatMessage
 import com.example.caliindar.util.AudioRecorder
+import com.google.android.gms.auth.api.identity.AuthorizationClient
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.AuthorizationResult
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
-
+import kotlin.coroutines.cancellation.CancellationException
 // Переносим ViewModel сюда
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    application: Application,
-    private val okHttpClient: OkHttpClient
-): AndroidViewModel(application) {
+    @ApplicationContext private val applicationContext: Context, // Inject Context
+    private val okHttpClient: OkHttpClient // Твой OkHttpClient
+    // private val backendApi: YourBackendApi // Раскомментируй, если перейдешь на Retrofit/Ktor
+) : AndroidViewModel(applicationContext as Application) { // Остаемся на AndroidViewModel, если нужен Application
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    // Если AudioRecorder не внедряется, создаем его здесь
-    private val audioRecorder = AudioRecorder(application.cacheDir)
-    private var currentIdToken: String? = null
-    private var recordingStartTime: Long = 0L
+    // --- Старые и Новые Клиенты ---
+    private val credentialManager: CredentialManager = CredentialManager.create(applicationContext)
+    private val authorizationClient: AuthorizationClient = Identity.getAuthorizationClient(applicationContext)
+    private val googleSignInClient: GoogleSignInClient // Только для signOut
 
-    // Google Sign-In
-    private val gso: GoogleSignInOptions
-    val googleSignInClient: GoogleSignInClient
-
+    // --- Конфигурация ---
     companion object {
         private const val TAG = "MainViewModelAuth"
-        private const val BACKEND_WEB_CLIENT_ID =
-            "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-        // Лучше вынести URL в BuildConfig или другой модуль
+        // ID ВЕБ-КЛИЕНТА твоего бэкенда
+        private const val BACKEND_WEB_CLIENT_ID = "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
+        // Базовый URL бэкенда (лучше вынести)
         private const val BACKEND_BASE_URL = "http://172.23.34.79:8000"
     }
 
+    // Скоупы, необходимые бэкенду для Calendar API
+    private val requiredScopes = listOf(
+        Scope("https://www.googleapis.com/auth/calendar.events")
+        // Можно добавить OIDC скоупы, если бэкенд их использует:
+        // Scope("openid"), Scope("email"), Scope("profile")
+    )
+
+    // --- Вспомогательные переменные состояния ---
+    private var pendingIdToken: String? = null // Для передачи между шагами
+    private var currentIdToken: String? = null // Для запросов к /process после входа
+    private var currentSignInJob: Job? = null // Для отмены процесса входа/авторизации
+
+    // AudioRecorder и время записи (без изменений)
+    private val audioRecorder = AudioRecorder(applicationContext.cacheDir)
+    private var recordingStartTime: Long = 0L
+
     init {
-        // Инициализация Google Sign-In Client
-        gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestScopes(Scope("https://www.googleapis.com/auth/calendar.events"))
-            .requestServerAuthCode(BACKEND_WEB_CLIENT_ID)
-            .requestIdToken(BACKEND_WEB_CLIENT_ID)
-            .requestEmail()
+        // Инициализируем GoogleSignInClient ТОЛЬКО для signOut
+        val gsoForSignOut = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail() // Email может быть полезен для логов при выходе
             .build()
-        googleSignInClient = GoogleSignIn.getClient(application, gso)
+        googleSignInClient = GoogleSignIn.getClient(applicationContext, gsoForSignOut)
 
-        // --- УДАЛЕНО: Инициализация OkHttpClient ---
-        // okHttpClient = OkHttpClient.Builder() ... .build()
-
-        checkInitialAuthState()
+        // Проверяем начальное состояние (упрощено)
+        checkInitialAuthStateSimplified()
     }
 
-    // --- Остальной код ViewModel без изменений ---
-    // (handleSignInResult, signOut, checkInitialAuthState, updatePermissionStatus,
-    //  addChatMessage, sendTextMessage, startRecording, stopRecordingAndSend,
-    //  sendAuthInfoToBackend, sendTextToServer, sendAudioToServer,
-    //  executeProcessRequest, handleProcessResponse, clearGeneralError, clearAuthError, onCleared)
-
-    fun getSignInIntent(): Intent = googleSignInClient.signInIntent
-
-    // Вызывается после получения результата от Google Sign-In Activity
-    fun handleSignInResult(completedTask: com.google.android.gms.tasks.Task<GoogleSignInAccount>) {
-        viewModelScope.launch {
+    // --- Шаг 1: Инициация всего процесса входа/авторизации ---
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    fun startSignInProcess() {
+        // Отменяем предыдущий процесс, если он был запущен
+        currentSignInJob?.cancel()
+        currentSignInJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, message = "Запрос аккаунта Google...", showAuthError = null, showGeneralError = null) }
             try {
-                val account = completedTask.getResult(ApiException::class.java)
-                val idToken = account?.idToken
-                val serverAuthCode = account?.serverAuthCode
-                val userEmail = account?.email
-
-                Log.i(TAG, "Sign-In Success! Email: $userEmail")
-                Log.d(TAG, "ID Token received: ${idToken != null}")
-                Log.d(TAG, "Server Auth Code received: ${serverAuthCode != null}")
-
-                if (idToken != null && serverAuthCode != null) {
-                    currentIdToken = idToken // Сохраняем токен
-                    _uiState.update {
-                        it.copy(
-                            isLoading = true,
-                            message = "Вход выполнен: $userEmail. Авторизация календаря...",
-                            showAuthError = null
-                        )
-                    }
-                    // Отправляем данные на бэкенд
-                    val exchangeSuccess = sendAuthInfoToBackend(idToken, serverAuthCode)
-                    if (exchangeSuccess) {
-                        _uiState.update {
-                            it.copy(
-                                isSignedIn = true,
-                                userEmail = userEmail,
-                                message = "Авторизация успешна! Готово к записи.",
-                                isLoading = false
-                            )
-                        }
-                    } else {
-                        // Ошибка обмена, сбрасываем состояние
-                        signOutInternally("Ошибка авторизации на сервере.")
-                    }
-                } else {
-                    Log.w(TAG, "ID Token or Server Auth Code is null after sign-in.")
-                    signOutInternally("Не удалось получить токен/код от Google.")
-                }
-
-            } catch (e: ApiException) {
-                Log.w(TAG, "signInResult:failed code=" + e.statusCode, e)
-                signOutInternally("Ошибка входа Google: ${e.statusCode}")
+                // --- Запускаем Шаг 1.1: Аутентификация через Credential Manager ---
+                signInWithCredentialManager()
+            } catch (e: CancellationException) {
+                _uiState.update { it.copy(isLoading = false, message = "Вход отменен.") }
+                Log.i(TAG, "Sign-in process cancelled.")
             } catch (e: Exception) {
-                Log.e(TAG, "Error handling sign in result", e)
-                signOutInternally("Неизвестная ошибка при входе: ${e.message}")
+                // Общая ошибка на старте процесса
+                Log.e(TAG, "Error starting sign in process", e)
+                resetAuthState("Ошибка инициации входа: ${e.message}")
             }
         }
     }
+
+    // --- Шаг 1.1: Аутентификация (Получение idToken) ---
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private suspend fun signInWithCredentialManager() {
+        // val nonce = generateNonce() // Генерируем Nonce
+
+        val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(BACKEND_WEB_CLIENT_ID)
+            .build()
+            // TODO .setNonce(nonce) // <--- Передавай Nonce, если бэкенд его проверяет ДЛЯ БЕЗОПАСНОСТИ!!!!
+
+
+        val request: GetCredentialRequest = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        try {
+            Log.d(TAG, "Requesting credential from CredentialManager...")
+            val result = credentialManager.getCredential(applicationContext, request)
+            Log.d(TAG, "Credential received successfully.")
+            handleCredentialResultAndProceed(result) // Успех -> Шаг 1.2
+
+        } catch (e: GetCredentialException) {
+            Log.e(TAG, "getCredential failed", e)
+            handleCredentialError(e) // Обработка ошибок Credential Manager
+        }
+        // Другие Exception пробросятся в startSignInProcess
+    }
+
+    // --- Шаг 1.2: Обработка результата Credential Manager и запуск Шага 2 ---
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private suspend fun handleCredentialResultAndProceed(result: GetCredentialResponse) {
+        when (val credential = result.credential) {
+            is GoogleIdTokenCredential -> {
+                val idToken = credential.idToken
+                pendingIdToken = idToken // Временно сохраняем
+
+                val userEmail = credential.displayName ?: credential.id
+                Log.i(TAG, "Credential Manager Sign-In Success! Email/ID: $userEmail")
+                Log.d(TAG, "ID Token length: ${idToken.length}")
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = true,
+                        message = "Аккаунт получен (${userEmail}). Запрос доступа к календарю...",
+                    )
+                }
+                requestAuthorizationCode() // Запускаем Шаг 2
+
+            }
+            else -> {
+                Log.e(TAG, "Unexpected credential type: ${credential.type}")
+                resetAuthState("Неожиданный тип учетных данных.")
+            }
+        }
+    }
+
+    private suspend fun requestAuthorizationCode() {
+        val idToken = pendingIdToken // Получаем сохраненный idToken
+        if (idToken == null) {
+            resetAuthState("Внутренняя ошибка: ID токен отсутствует.")
+            return
+        }
+
+        // val nonce = generateNonce() // Новый Nonce для этого шага, если нужен
+
+        val request: AuthorizationRequest = AuthorizationRequest.builder()
+            .setRequestedScopes(requiredScopes) // Явно указываем скоупы!
+            // .setServerClientId(BACKEND_WEB_CLIENT_ID), нет в библиотеке
+            // .setNonce(nonce) // <--- Передавай Nonce, если бэкенд проверяет его при ОБМЕНЕ КОДА
+            // TODO: Уточнить, нужно ли явно передавать аккаунт/idToken в AuthorizationRequest
+            // Попробуем без этого, т.к. сессия уже активна.
+            .build()
+
+        try {
+            Log.d(TAG, "Requesting authorization from AuthorizationClient...")
+            val result: AuthorizationResult = authorizationClient.authorize(request).await()
+
+            // --- Успех Шага 2 -> Переходим к Шагу 3 ---
+            val authCode = result.serverAuthCode
+            val grantedScopes = result.grantedScopes
+
+            if (authCode != null) {
+                Log.i(TAG, "Authorization Success! Auth Code received.")
+                Log.d(TAG, "Granted scopes: ${grantedScopes.map { it.toString() }}")
+
+                // --- Шаг 3: Отправка данных на бэкенд ---
+                sendAuthInfoToBackend(idToken, authCode) // Передаем оба токена
+
+            } else {
+                Log.w(TAG, "Authorization succeeded but auth code is null?")
+                resetAuthState("Ошибка авторизации: не получен код доступа.")
+            }
+
+        } catch (e: ApiException) {
+            Log.e(TAG, "Authorization failed with ApiException", e)
+            if (e.statusCode == CommonStatusCodes.CANCELED) {
+                resetAuthState("Авторизация календаря отменена.")
+            } else {
+                resetAuthState("Ошибка авторизации Google: ${e.statusCode}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error during authorization", e)
+            resetAuthState("Неизвестная ошибка при авторизации: ${e.message}")
+        } finally {
+            pendingIdToken = null // Очищаем временный idToken в любом случае
+        }
+    }
+
+    fun getSignInIntent(): Intent = googleSignInClient.signInIntent
 
     // Обработка ошибок аутентификации (внутренняя)
     private fun signOutInternally(authError: String) {
@@ -151,78 +251,47 @@ class MainViewModel @Inject constructor(
 
     // Вызывается при нажатии кнопки выхода
     fun signOut() {
+        currentSignInJob?.cancel() // Отменяем любой текущий процесс входа
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, message = "Выход...") }
             try {
-                googleSignInClient.signOut().addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.i(TAG, "User signed out successfully from Google.")
-                        signOutInternally("Вы успешно вышли.") // Используем общий метод сброса
-                        // Опционально: уведомить бэкенд об выходе
-                    } else {
-                        Log.w(TAG, "Google Sign out failed.", task.exception)
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                showGeneralError = "Не удалось выйти из Google аккаунта."
-                            )
-                        }
-                    }
-                }
+                // Выходим из Google аккаунта на устройстве
+                googleSignInClient.signOut().await()
+                Log.i(TAG, "User signed out successfully from Google.")
+                resetAuthState("Вы успешно вышли.") // Сбрасываем состояние
+                // TODO: Опционально уведомить бэкенд об выходе (если он хранит сессии)
+                // backendApi.notifySignOut(currentIdToken) // Пример
             } catch (e: Exception) {
                 Log.e(TAG, "Error during sign out", e)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        showGeneralError = "Ошибка при выходе: ${e.message}"
-                    )
-                }
+                // Даже если ошибка, сбрасываем состояние локально
+                resetAuthState("Ошибка при выходе: ${e.message}")
             }
         }
     }
 
-    private fun checkInitialAuthState() {
-        viewModelScope.launch { // Запускаем в корутине
-            // Silent sign-in для обновления токена, если пользователь уже входил
-            try {
-                val accountTask = googleSignInClient.silentSignIn()
-                if (accountTask.isSuccessful) {
-                    // Пользователь вошел и токен обновлен
-                    Log.d(TAG, "Silent sign in success")
-                    handleSignInResult(accountTask) // Обрабатываем как обычный вход
-                } else {
-                    // Пользователь не вошел или не дал согласия
-                    Log.d(TAG, "Silent sign in failed or user not signed in")
-                    // Проверим, есть ли последний залогиненный аккаунт (без обновления токена)
-                    val lastAccount = GoogleSignIn.getLastSignedInAccount(getApplication())
-                    val requiredScope = Scope("https://www.googleapis.com/auth/calendar.events")
-                    if (lastAccount != null && GoogleSignIn.hasPermissions(lastAccount, requiredScope)) {
-                        currentIdToken = lastAccount.idToken // Токен может быть старым!
-                        Log.i(TAG, "User was already signed in (token might be stale): ${lastAccount.email}")
-                        _uiState.update {
-                            it.copy(
-                                isSignedIn = true,
-                                userEmail = lastAccount.email,
-                                message = "Аккаунт: ${lastAccount.email} (Авторизован)",
-                                isLoading = false
-                            )
-                        }
-                        // Важно: Не отправляем на бэкенд старый authCode!
-                        // Возможно, стоит запросить новый токен у бэкенда, если он может это сделать
-                    } else {
-                        Log.i(TAG, "User not signed in or permissions missing.")
-                        signOutInternally("Требуется вход и авторизация") // Сброс состояния
-                    }
+    private fun checkInitialAuthStateSimplified() {
+        // Просто проверяем, есть ли последняя учетная запись для отображения email
+        // НЕ ПЫТАЕМСЯ сделать silent sign-in или получить токены здесь
+        viewModelScope.launch {
+            val lastAccount = GoogleSignIn.getLastSignedInAccount(applicationContext)
+            if (lastAccount != null) {
+                // Если есть аккаунт, покажем email, но состояние останется isSignedIn=false
+                // Пользователю все равно нужно будет нажать "Войти", чтобы получить свежие токены/код
+                _uiState.update {
+                    it.copy(
+                        userEmail = lastAccount.email,
+                        message = "Аккаунт: ${lastAccount.email}. Нажмите 'Войти'."
+                    )
                 }
-            } catch (e: ApiException) {
-                Log.w(TAG, "Silent sign in failed with API exception", e)
-                signOutInternally("Ошибка проверки аккаунта: ${e.statusCode}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking initial auth state", e)
-                signOutInternally("Ошибка проверки аккаунта: ${e.message}")
+                Log.i(TAG, "Found last signed-in account: ${lastAccount.email}, but require explicit sign-in.")
+            } else {
+                // Нет аккаунта, сбрасываем состояние
+                resetAuthState()
+                Log.i(TAG, "No last signed-in account found.")
             }
         }
     }
+
     fun updatePermissionStatus(isGranted: Boolean) {
         if (_uiState.value.isPermissionGranted != isGranted) { // Обновляем только если изменилось
             _uiState.update { it.copy(isPermissionGranted = isGranted) }
@@ -362,10 +431,11 @@ class MainViewModel @Inject constructor(
 
     // Возвращает true при успехе, false при ошибке
     private suspend fun sendAuthInfoToBackend(idToken: String, authCode: String): Boolean = withContext(Dispatchers.IO) {
+        _uiState.update { it.copy(isLoading = true, message = "Обмен данными с сервером...") }
         Log.i(TAG, "Sending Auth Info (JSON) to /auth/google/exchange")
         val jsonObject = JSONObject().apply {
             put("id_token", idToken)
-            put("auth_code", authCode)
+            put("auth_code", authCode) // Имя поля должно совпадать с FastAPI моделью
         }
         val requestBody = jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
         val request = Request.Builder()
@@ -373,39 +443,77 @@ class MainViewModel @Inject constructor(
             .post(requestBody)
             .build()
 
+        var success = false
         try {
-            okHttpClient.newCall(request).execute().use { response -> // Используем execute для suspend функции
-                val responseBodyString = response.body?.string() // Читаем тело ОДИН РАЗ
+            okHttpClient.newCall(request).execute().use { response ->
+                val responseBodyString = response.body?.string()
                 if (!response.isSuccessful) {
                     Log.e(TAG, "Backend error exchanging code (JSON): ${response.code} - $responseBodyString")
+                    val detail = parseErrorDetail(responseBodyString) ?: "Ошибка сервера (${response.code})"
                     // Обновляем UI с ошибкой на главном потоке
-                    withContext(Dispatchers.Main) {
-                        _uiState.update { it.copy(showAuthError = "Ошибка сервера при обмене токенов: ${response.code}", isLoading = false) }
+                    withContext(Dispatchers.Main.immediate) { // immediate для быстрого UI update
+                        resetAuthState(detail) // Сбрасываем состояние с ошибкой
                     }
-                    return@withContext false // Неудача
                 } else {
                     Log.i(TAG, "Backend successfully exchanged tokens (JSON). Response: $responseBodyString")
-                    // Можно обновить UI здесь же или просто вернуть true
-                    withContext(Dispatchers.Main) {
-                        // Не обновляем сообщение здесь, это сделает handleSignInResult
-                        // _uiState.update { it.copy(message = "Авторизация календаря успешна!", isLoading = false) }
+                    // Парсим email из ответа, если бэкенд его возвращает
+                    val responseJson = try { JSONObject(responseBodyString ?: "{}") } catch (_: Exception) { JSONObject() }
+                    val userEmail = responseJson.optString("user_email", null)
+
+                    // УСПЕХ! Обновляем UI
+                    withContext(Dispatchers.Main.immediate) {
+                        currentIdToken = idToken // Сохраняем для запросов к /process
+                        _uiState.update {
+                            it.copy(
+                                isSignedIn = true,
+                                userEmail = userEmail, // Отображаем email от бэкенда
+                                message = "Авторизация успешна! Готово к записи.",
+                                isLoading = false,
+                                showAuthError = null,
+                                showGeneralError = null
+                            )
+                        }
                     }
-                    return@withContext true // Успех
+                    success = true
                 }
             }
         } catch (e: IOException) {
             Log.e(TAG, "Network error sending auth info (JSON)", e)
-            withContext(Dispatchers.Main) {
-                _uiState.update { it.copy(showAuthError = "Сетевая ошибка обмена токенов: ${e.message}", isLoading = false) }
+            withContext(Dispatchers.Main.immediate) {
+                resetAuthState("Сетевая ошибка обмена токенов: ${e.message}")
             }
-            return@withContext false // Неудача
-        } catch (e: Exception) { // Ловим другие возможные ошибки (e.g., JSON parsing)
+        } catch (e: Exception) {
             Log.e(TAG, "Error processing backend response for auth exchange", e)
-            withContext(Dispatchers.Main) {
-                _uiState.update { it.copy(showAuthError = "Ошибка обработки ответа сервера: ${e.message}", isLoading = false) }
+            withContext(Dispatchers.Main.immediate) {
+                resetAuthState("Ошибка обработки ответа сервера: ${e.message}")
             }
-            return@withContext false // Неудача
         }
+        return@withContext success // Возвращаем результат операции
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun handleCredentialError(e: GetCredentialException) {
+        val message = when (e) {
+            // Добавь другие типы ошибок по необходимости
+            else -> "Не найден аккаунт Google для входа."
+        }
+        resetAuthState(message) // Сбрасываем состояние с ошибкой
+    }
+
+    // --- Сброс состояния аутентификации (бывший signOutInternally) ---
+    private fun resetAuthState(errorMessage: String? = null) {
+        pendingIdToken = null
+        currentIdToken = null // Сбрасываем основной токен
+        _uiState.update {
+            // Создаем НОВЫЙ объект состояния, сбрасывая все поля, кроме, возможно, истории чата и пермишенов
+            MainUiState(
+                message = errorMessage ?: "Требуется вход.", // Показываем ошибку или стандартное сообщение
+                showAuthError = errorMessage, // Дублируем в поле ошибки для показа Snackbar/Toast
+                isPermissionGranted = it.isPermissionGranted, // Сохраняем статус пермишена
+                chatHistory = it.chatHistory // Сохраняем историю чата
+            )
+        }
+        Log.i(TAG, "Auth state reset. Message: $errorMessage")
     }
 
     // Отправка Текста (теперь использует multipart и вызывает executeProcessRequest)
@@ -511,7 +619,7 @@ class MainViewModel @Inject constructor(
                         statusMessage = message // "Event created successfully!"
                         val eventName = event?.optString("event_name", "Событие") ?: "Событие"
                         // Формируем подтверждение для чата
-                        botResponse = "✅ ${eventName} создано!" + (eventLink?.let { "\n[Ссылка на событие]($it)" } ?: "")
+                        botResponse = "✅ $eventName создано!" + eventLink.let { "\n[Ссылка на событие]($it)" }
                         Log.i(TAG, "Event creation successful.")
                     }
                     "clarification_needed" -> {
