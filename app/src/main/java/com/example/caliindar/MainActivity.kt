@@ -49,17 +49,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CaliindarTheme {
-                // Получаем ViewModel здесь, если она нужна для обработки результата лаунчера
-                // Либо передаем обработку результата через лямбду в NavHost -> Screen,
-                // где ViewModel будет получен через hiltViewModel()
-                // Оставим получение ViewModel внутри Composable, где он нужен
                 val viewModel: MainViewModel = hiltViewModel()
-
-
-
-
-                // Передаем лямбду для запуска Sign-In в NavHost
-                // ViewModel будет получен внутри экранов через hiltViewModel()
                 AppNavHost(
                     onSignInClick = { // Тип этой лямбды () -> Unit
                         viewModel.startSignInProcess()

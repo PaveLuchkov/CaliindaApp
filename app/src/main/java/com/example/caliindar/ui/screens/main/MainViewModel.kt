@@ -1,6 +1,8 @@
 package com.example.caliindar.ui.screens.main
 
 
+import android.R
+import android.accounts.Account
 import android.app.Application
 import android.content.Context
 import androidx.credentials.CredentialManager
@@ -52,6 +54,7 @@ import androidx.credentials.CredentialOption
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialResponse
 import com.google.android.gms.common.Scopes
+import java.util.UUID
 
 // Переносим ViewModel сюда
 @HiltViewModel
@@ -80,11 +83,12 @@ class MainViewModel @Inject constructor(
 
     // Скоупы, необходимые бэкенду для Calendar API
     private val requiredScopes = listOf(
-        Scope("https://www.googleapis.com/auth/calendar.events")
+       Scope("https://www.googleapis.com/auth/calendar.events")
     )
 
     // --- Вспомогательные переменные состояния ---
     private var pendingIdToken: String? = null // Для передачи между шагами
+    private var pendingUSerEmail: String = ""
     private var currentIdToken: String? = null // Для запросов к /process после входа
     private var currentSignInJob: Job? = null // Для отмены процесса входа/авторизации
 
@@ -175,7 +179,8 @@ class MainViewModel @Inject constructor(
                         val idToken = googleIdTokenCredential.idToken // Получаем токен из созданного объекта
                         pendingIdToken = idToken // Временно сохраняем
 
-                        val userEmail = googleIdTokenCredential.displayName ?: googleIdTokenCredential.id
+                        val userEmail = googleIdTokenCredential.id
+                        pendingUSerEmail = userEmail // Временно сохраняем
                         Log.i(TAG, "Credential Manager Sign-In Success! Email/ID: $userEmail")
                         Log.d(TAG, "ID Token length: ${idToken.length}") // Возможно, idToken здесь не null
 
@@ -200,9 +205,6 @@ class MainViewModel @Inject constructor(
                     resetAuthState("Неожиданный тип CustomCredential: ${credential.type}")
                 }
             }
-            // Опционально: можно добавить обработку других *конкретных* типов, если они ожидаются
-            // is PasswordCredential -> { ... }
-            // is PublicKeyCredential -> { ... }
 
             else -> { // Сюда попадает, если это НЕ CustomCredential и НЕ другие обработанные типы
                 val actualClassName = credential::class.java.name
@@ -229,22 +231,22 @@ class MainViewModel @Inject constructor(
             return
         }
 
-        // val nonce = generateNonce() // Новый Nonce для этого шага, если нужен
 
         Log.d(TAG, "Building AuthorizationRequest with scopes: ${requiredScopes.joinToString { it.scopeUri }}") // Лог перед созданием запроса
 
         val request: AuthorizationRequest = AuthorizationRequest.builder()
+            .requestOfflineAccess(BACKEND_WEB_CLIENT_ID)
             .setRequestedScopes(requiredScopes) // Явно указываем скоупы!
-            // .setServerClientId(BACKEND_WEB_CLIENT_ID), нет в библиотеке
-            // .setNonce(nonce) // <--- Передавай Nonce, если бэкенд проверяет его при ОБМЕНЕ КОДА
-            .setOptOutIncludingGrantedScopes(true)
             .build()
+
 
         try {
             // --- ЛОГ ПЕРЕД ВЫЗОВОМ ---
             Log.i(TAG, "Attempting to call authorizationClient.authorize()...")
 
             val result: AuthorizationResult = authorizationClient.authorize(request).await()
+
+
 
             // --- ЛОГ СРАЗУ ПОСЛЕ ВЫЗОВА ---
             val authCode = result.serverAuthCode
