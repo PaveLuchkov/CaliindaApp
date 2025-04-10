@@ -62,8 +62,7 @@ class MainActivity : ComponentActivity() {
                 // ViewModel будет получен внутри экранов через hiltViewModel()
                 AppNavHost(
                     onSignInClick = { // Тип этой лямбды () -> Unit
-                        val signInIntent = viewModel.getSignInIntent() // Используем захваченный viewModel
-                        googleSignInLauncher.launch(signInIntent)
+                        viewModel.startSignInProcess()
                     }
                 )
             }

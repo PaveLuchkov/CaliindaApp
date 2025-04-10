@@ -1,19 +1,17 @@
 package com.example.caliindar.ui.screens.main
 
-import android.annotation.SuppressLint
+
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import androidx.credentials.CredentialManager
-import android.credentials.GetCredentialException
-import android.credentials.GetCredentialRequest
-import android.credentials.GetCredentialResponse
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.caliindar.util.parseErrorDetail
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -50,6 +48,11 @@ import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
+import androidx.credentials.CredentialOption
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialResponse
+import com.google.android.gms.common.Scopes
+
 // Переносим ViewModel сюда
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -72,14 +75,12 @@ class MainViewModel @Inject constructor(
         // ID ВЕБ-КЛИЕНТА твоего бэкенда
         private const val BACKEND_WEB_CLIENT_ID = "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
         // Базовый URL бэкенда (лучше вынести)
-        private const val BACKEND_BASE_URL = "http://172.23.34.79:8000"
+        private const val BACKEND_BASE_URL = "http://10.4.70.185:8000"
     }
 
     // Скоупы, необходимые бэкенду для Calendar API
     private val requiredScopes = listOf(
         Scope("https://www.googleapis.com/auth/calendar.events")
-        // Можно добавить OIDC скоупы, если бэкенд их использует:
-        // Scope("openid"), Scope("email"), Scope("profile")
     )
 
     // --- Вспомогательные переменные состояния ---
@@ -155,27 +156,67 @@ class MainViewModel @Inject constructor(
     // --- Шаг 1.2: Обработка результата Credential Manager и запуск Шага 2 ---
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private suspend fun handleCredentialResultAndProceed(result: GetCredentialResponse) {
+        // Лог перед обработкой
+        Log.d(TAG, "Processing credential result...")
+
         when (val credential = result.credential) {
-            is GoogleIdTokenCredential -> {
-                val idToken = credential.idToken
-                pendingIdToken = idToken // Временно сохраняем
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            is CustomCredential -> {
+                Log.i(TAG, "Received CustomCredential. Checking type...")
+                // Проверяем ТИП внутри CustomCredential
+                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    Log.i(TAG, "CustomCredential type matches Google ID Token. Creating specific credential...")
+                    try {
+                        // Используем статический метод для создания GoogleIdTokenCredential из данных CustomCredential
+                        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
 
-                val userEmail = credential.displayName ?: credential.id
-                Log.i(TAG, "Credential Manager Sign-In Success! Email/ID: $userEmail")
-                Log.d(TAG, "ID Token length: ${idToken.length}")
+                        // --- Дальше логика как и была, но используем googleIdTokenCredential ---
+                        Log.i(TAG, "Credential check 'is GoogleIdTokenCredential' (via CustomCredential) SUCCEEDED.")
+                        val idToken = googleIdTokenCredential.idToken // Получаем токен из созданного объекта
+                        pendingIdToken = idToken // Временно сохраняем
 
-                _uiState.update {
-                    it.copy(
-                        isLoading = true,
-                        message = "Аккаунт получен (${userEmail}). Запрос доступа к календарю...",
-                    )
+                        val userEmail = googleIdTokenCredential.displayName ?: googleIdTokenCredential.id
+                        Log.i(TAG, "Credential Manager Sign-In Success! Email/ID: $userEmail")
+                        Log.d(TAG, "ID Token length: ${idToken.length}") // Возможно, idToken здесь не null
+
+                        _uiState.update {
+                            it.copy(
+                                isLoading = true,
+                                message = "Аккаунт получен (${userEmail}). Запрос доступа к календарю...",
+                            )
+                        }
+                        requestAuthorizationCode() // Запускаем Шаг 2
+
+                    } catch (e: Exception) {
+                        // Ошибка при извлечении данных из CustomCredential
+                        Log.e(TAG, "Failed to create GoogleIdTokenCredential from CustomCredential data", e)
+                        resetAuthState("Ошибка обработки учетных данных Google: ${e.message}")
+                    }
+                } else {
+                    // Получили CustomCredential, но с другим типом (маловероятно для Google Sign-In)
+                    Log.e(TAG, "Received CustomCredential with unexpected type: ${credential.type}")
+                    Log.e(TAG, "-> Check 'is GoogleIdTokenCredential' FAILED (was CustomCredential with wrong type).")
+                    Log.e(TAG, "-> Credential data Bundle: ${credential.data}") // Логируем бандл на всякий случай
+                    resetAuthState("Неожиданный тип CustomCredential: ${credential.type}")
                 }
-                requestAuthorizationCode() // Запускаем Шаг 2
-
             }
-            else -> {
-                Log.e(TAG, "Unexpected credential type: ${credential.type}")
-                resetAuthState("Неожиданный тип учетных данных.")
+            // Опционально: можно добавить обработку других *конкретных* типов, если они ожидаются
+            // is PasswordCredential -> { ... }
+            // is PublicKeyCredential -> { ... }
+
+            else -> { // Сюда попадает, если это НЕ CustomCredential и НЕ другие обработанные типы
+                val actualClassName = credential::class.java.name
+                val typeProperty = credential.type
+                Log.e(TAG, "Unexpected credential class type!")
+                Log.e(TAG, "-> Check 'is GoogleIdTokenCredential' FAILED.")
+                Log.e(TAG, "-> Actual credential object class: $actualClassName") // Логируем имя класса
+                Log.e(TAG, "-> Credential.type property value: $typeProperty") // Логируем свойство type
+                try {
+                    Log.e(TAG, "-> Credential data Bundle: ${credential.data}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "-> Failed to get credential data Bundle: $e")
+                }
+                resetAuthState("Неожиданный класс учетных данных (Класс: $actualClassName, Тип: $typeProperty)")
             }
         }
     }
@@ -183,69 +224,73 @@ class MainViewModel @Inject constructor(
     private suspend fun requestAuthorizationCode() {
         val idToken = pendingIdToken // Получаем сохраненный idToken
         if (idToken == null) {
-            resetAuthState("Внутренняя ошибка: ID токен отсутствует.")
+            resetAuthState("Внутренняя ошибка: ID токен отсутствует перед запросом Authorize.") // Уточнил сообщение
+            Log.w(TAG, "requestAuthorizationCode called but pendingIdToken is null.") // Добавил лог
             return
         }
 
         // val nonce = generateNonce() // Новый Nonce для этого шага, если нужен
 
+        Log.d(TAG, "Building AuthorizationRequest with scopes: ${requiredScopes.joinToString { it.scopeUri }}") // Лог перед созданием запроса
+
         val request: AuthorizationRequest = AuthorizationRequest.builder()
             .setRequestedScopes(requiredScopes) // Явно указываем скоупы!
             // .setServerClientId(BACKEND_WEB_CLIENT_ID), нет в библиотеке
             // .setNonce(nonce) // <--- Передавай Nonce, если бэкенд проверяет его при ОБМЕНЕ КОДА
-            // TODO: Уточнить, нужно ли явно передавать аккаунт/idToken в AuthorizationRequest
-            // Попробуем без этого, т.к. сессия уже активна.
+            .setOptOutIncludingGrantedScopes(true)
             .build()
 
         try {
-            Log.d(TAG, "Requesting authorization from AuthorizationClient...")
+            // --- ЛОГ ПЕРЕД ВЫЗОВОМ ---
+            Log.i(TAG, "Attempting to call authorizationClient.authorize()...")
+
             val result: AuthorizationResult = authorizationClient.authorize(request).await()
 
-            // --- Успех Шага 2 -> Переходим к Шагу 3 ---
+            // --- ЛОГ СРАЗУ ПОСЛЕ ВЫЗОВА ---
             val authCode = result.serverAuthCode
-            val grantedScopes = result.grantedScopes
+            val grantedScopes = result.grantedScopes?.map { it.toString() } ?: emptyList() // Безопасное получение скоупов
+            Log.i(TAG, "authorizationClient.authorize() completed.")
+            Log.d(TAG, " -> Returned Auth Code: ${authCode ?: "null"}") // Логируем код (или null)
+            Log.d(TAG, " -> Returned Granted Scopes: $grantedScopes") // Логируем полученные скоупы
 
+            // --- Успех Шага 2 -> Переходим к Шагу 3 ---
             if (authCode != null) {
-                Log.i(TAG, "Authorization Success! Auth Code received.")
-                Log.d(TAG, "Granted scopes: ${grantedScopes.map { it.toString() }}")
-
+                Log.i(TAG, "Authorization Success! Auth Code received. Proceeding to send to backend.")
                 // --- Шаг 3: Отправка данных на бэкенд ---
                 sendAuthInfoToBackend(idToken, authCode) // Передаем оба токена
-
             } else {
-                Log.w(TAG, "Authorization succeeded but auth code is null?")
-                resetAuthState("Ошибка авторизации: не получен код доступа.")
+                // --- ЛОГ, ЕСЛИ КОД = NULL ---
+                Log.w(TAG, "Authorization completed BUT auth code is NULL. Granted scopes: $grantedScopes.")
+                // Возможно, разрешения уже были даны ранее ИЛИ Google не вернул код по другой причине.
+                // Если grantedScopes содержит нужный скоуп календаря, возможно, можно продолжить без нового authCode?
+                // НО! Для ОБМЕНА на бэкенде обычно нужен свежий authCode при первом запросе скоупа.
+                // Вероятнее всего, это состояние ошибки или неожиданное поведение.
+                resetAuthState("Ошибка авторизации: не получен одноразовый код доступа от Google, хотя операция завершилась. Проверьте разрешения аккаунта.") // Более подробное сообщение
             }
 
         } catch (e: ApiException) {
-            Log.e(TAG, "Authorization failed with ApiException", e)
-            if (e.statusCode == CommonStatusCodes.CANCELED) {
-                resetAuthState("Авторизация календаря отменена.")
+            // --- УЛУЧШЕННОЕ ЛОГИРОВАНИЕ ОШИБКИ ApiException ---
+            val statusCode = e.statusCode
+            val statusMessage = e.statusMessage // Может быть null
+            val statusCodeString = CommonStatusCodes.getStatusCodeString(statusCode) // Человекочитаемый статус
+            Log.e(TAG, "Authorization failed with ApiException. Status: $statusCodeString ($statusCode), Message: $statusMessage", e) // Полный лог ошибки
+
+            if (statusCode == CommonStatusCodes.CANCELED) {
+                resetAuthState("Авторизация календаря отменена пользователем.") // Уточнил
             } else {
-                resetAuthState("Ошибка авторизации Google: ${e.statusCode}")
+                // Показываем более детальную ошибку
+                resetAuthState("Ошибка авторизации Google: $statusCodeString ($statusCode)")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error during authorization", e)
-            resetAuthState("Неизвестная ошибка при авторизации: ${e.message}")
+            // --- ЛОГ ДРУГИХ ОШИБОК ---
+            Log.e(TAG, "Unexpected error during authorizationClient.authorize()", e)
+            resetAuthState("Неизвестная ошибка при авторизации календаря: ${e.message}")
         } finally {
-            pendingIdToken = null // Очищаем временный idToken в любом случае
-        }
-    }
-
-    fun getSignInIntent(): Intent = googleSignInClient.signInIntent
-
-    // Обработка ошибок аутентификации (внутренняя)
-    private fun signOutInternally(authError: String) {
-        currentIdToken = null
-        _uiState.update {
-            it.copy(
-                isSignedIn = false,
-                isLoading = false,
-                userEmail = null,
-                message = "Требуется вход.",
-                isRecording = false,
-                showAuthError = authError // Показываем ошибку
-            )
+            // pendingIdToken = null // Пока не будем очищать здесь, чтобы можно было попробовать еще раз, если это была временная ошибка? Или очищать? Решим по логам.
+            // Очищать нужно, если мы УСПЕШНО отправили на бэкенд или точно знаем, что процесс прерван с ошибкой.
+            Log.d(TAG, "Exiting requestAuthorizationCode function.") // Лог выхода
+            // Оставляем очистку здесь, т.к. предполагаем, что каждый вызов startSignInProcess должен начинаться чисто.
+            pendingIdToken = null
         }
     }
 
