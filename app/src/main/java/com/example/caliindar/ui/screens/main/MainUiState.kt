@@ -12,5 +12,4 @@ data class MainUiState(
     val message: String = "Требуется вход.", // Оставляем для общих статусов/начального сообщения
     val showGeneralError: String? = null,
     val showAuthError: String? = null,
-    val chatHistory: List<ChatMessage> = emptyList()
 )

@@ -1,5 +1,9 @@
 package com.example.caliindar.ui.screens.main
 
+import android.Manifest
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,13 +11,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.caliindar.ui.common.BackgroundShapes // <-- Импорт
 import com.example.caliindar.ui.screens.main.components.* // <-- Импорт компонентов
+import com.example.caliindar.ui.screens.main.components.AI.AiVisualizer
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,6 +35,11 @@ fun MainScreen(
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
     var isTextInputVisible by remember { mutableStateOf(false) }
+    val aiState by viewModel.aiState.collectAsState()
+    val aiMessage by viewModel.aiMessage.collectAsState()
+    val isAiRotating by viewModel.isAiRotating.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // --- УБРАЛИ дублирующийся googleSignInLauncher отсюда ---
 
@@ -44,13 +57,26 @@ fun MainScreen(
         }
     }
 
-    // Scroll chat to bottom when new message arrives
-    LaunchedEffect(uiState.chatHistory.size) {
-        if (uiState.chatHistory.isNotEmpty()) {
-            // Возможно, стоит добавить проверку, не скроллит ли пользователь сам
-            listState.animateScrollToItem(uiState.chatHistory.size - 1)
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        Log.d("MainScreen", "Permission result: $isGranted")
+        viewModel.updatePermissionStatus(isGranted)
+        if (!isGranted) {
+            // Handle permission denial (e.g., show message)
+            scope.launch { /* Show snackbar or message */ }
         }
     }
+
+    LaunchedEffect(Unit) {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        viewModel.updatePermissionStatus(hasPermission)
+    }
+
+
+    var isFabPressed by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -86,21 +112,14 @@ fun MainScreen(
             // Используем BackgroundShapes из папки common
             BackgroundShapes(MaterialTheme.colorScheme) // Передаем текущую цветовую схему
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp) // Добавляем отступы сверху/снизу списка
-            ) {
-                items(
-                    items = uiState.chatHistory,
-                    key = { message -> message.id } // Используем id как ключ
-                ) { message ->
-                    ChatMessageBubble(message = message, uriHandler = uriHandler)
-                }
-            }
+            AiVisualizer(
+                aiState = aiState,
+                aiMessage = aiMessage,
+                modifier = Modifier.fillMaxSize(), // Visualizer's container fills the Box
+                uriHandler = uriHandler
+            )
+
+
         }
     }
 }

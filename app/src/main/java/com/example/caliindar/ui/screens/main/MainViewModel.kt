@@ -27,9 +27,21 @@ import org.json.JSONObject
 import com.example.caliindar.data.model.ChatMessage
 import com.example.caliindar.util.AudioRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
+
+enum class AiVisualizerState {
+    IDLE,      // Начальное состояние / Ничего не происходит (кнопка видима)
+    RECORDING, // Пользователь записывает голос (фигура большая, крутится внизу)
+    THINKING,  // ИИ обрабатывает запрос (фигура меньше, крутится в центре)
+    ASKING,    // ИИ задает уточняющий вопрос (фигура внизу, показывает текст)
+    RESULT,     // ИИ показывает результат/событие (фигура внизу, показывает текст/данные)
+    ERROR
+}
 
 // Переносим ViewModel сюда
 @HiltViewModel
@@ -40,6 +52,17 @@ class MainViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+
+    private val _aiState = MutableStateFlow(AiVisualizerState.IDLE)
+    val aiState: StateFlow<AiVisualizerState> = _aiState.asStateFlow()
+
+    private val _aiMessage = MutableStateFlow<String?>(null) // Текст для ASKING/RESULT
+    val aiMessage: StateFlow<String?> = _aiMessage.asStateFlow()
+
+    val isAiRotating: StateFlow<Boolean> = aiState.map {
+        it == AiVisualizerState.RECORDING || it == AiVisualizerState.THINKING
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // Если AudioRecorder не внедряется, создаем его здесь
     private val audioRecorder = AudioRecorder(application.cacheDir)
@@ -55,7 +78,7 @@ class MainViewModel @Inject constructor(
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
         // Лучше вынести URL в BuildConfig или другой модуль
-        private const val BACKEND_BASE_URL = "http://172.23.34.79:8000"
+        private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
     }
 
     init {
@@ -68,17 +91,9 @@ class MainViewModel @Inject constructor(
             .build()
         googleSignInClient = GoogleSignIn.getClient(application, gso)
 
-        // --- УДАЛЕНО: Инициализация OkHttpClient ---
-        // okHttpClient = OkHttpClient.Builder() ... .build()
 
         checkInitialAuthState()
     }
-
-    // --- Остальной код ViewModel без изменений ---
-    // (handleSignInResult, signOut, checkInitialAuthState, updatePermissionStatus,
-    //  addChatMessage, sendTextMessage, startRecording, stopRecordingAndSend,
-    //  sendAuthInfoToBackend, sendTextToServer, sendAudioToServer,
-    //  executeProcessRequest, handleProcessResponse, clearGeneralError, clearAuthError, onCleared)
 
     fun getSignInIntent(): Intent = googleSignInClient.signInIntent
 
@@ -230,12 +245,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun addChatMessage(text: String, isUser: Boolean) {
-        val newMessage = ChatMessage(text = text, isUser = isUser)
-        _uiState.update {
-            it.copy(chatHistory = it.chatHistory + newMessage)
-        }
-    }
 
     // --- Отправка Текстового Сообщения ---
     fun sendTextMessage(text: String) {
@@ -247,13 +256,15 @@ class MainViewModel @Inject constructor(
         if (_uiState.value.isLoading) { Log.w(TAG, "Cannot send message: Already loading."); return }
 
         Log.d(TAG, "Attempting to send text message: '$text'")
-        addChatMessage(text, isUser = true) // <-- Добавляем сообщение пользователя в чат
+ //       addChatMessage(text, isUser = true) // <-- Добавляем сообщение пользователя в чат
 
         viewModelScope.launch {
             withContext(Dispatchers.Main.immediate) {
-                _uiState.update { it.copy(isLoading = true, message = "Отправка...") } // Общий статус
+                _uiState.update { it.copy(isLoading = true, message = "Отправка...") }
+                // Set AI state to THINKING immediately for text input too
+                _aiState.value = AiVisualizerState.THINKING
+                _aiMessage.value = null
             }
-            // Вызываем обновленный sendTextToBackend
             sendTextToServer(text = text, idToken = currentIdToken!!)
         }
     }
@@ -272,15 +283,20 @@ class MainViewModel @Inject constructor(
                 audioRecorder.startRecording()
                 recordingStartTime = System.currentTimeMillis()
                 withContext(Dispatchers.Main) {
+                    // Update UI state (isRecording for button logic if needed)
                     _uiState.update { it.copy(isRecording = true, message = "Запись...") }
+                    // Set AI Visualizer State
+                    _aiState.value = AiVisualizerState.RECORDING
+                    _aiMessage.value = null // Clear any previous message
                 }
                 Log.i(TAG, "Recording started successfully at $recordingStartTime.")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting recording", e); recordingStartTime = 0L
                 withContext(Dispatchers.Main) {
                     _uiState.update { it.copy(isRecording = false, showGeneralError = "Ошибка начала записи: ${e.message}") }
+                    _aiState.value = AiVisualizerState.IDLE // Revert state on error
                 }
-                audioRecorder.cancelRecording()
+                audioRecorder.cancelRecording() // Ensure cleanup
             }
         }
     }
@@ -293,20 +309,21 @@ class MainViewModel @Inject constructor(
 
         Log.d(TAG, "Attempting to stop recording. Duration: $duration ms")
 
-        // Сначала обновляем UI, что запись остановлена, но началась обработка
-        // Делаем это до проверки длительности, чтобы кнопка сразу среагировала
-        // Используем immediate, чтобы избежать "залипания" кнопки
         viewModelScope.launch(Dispatchers.Main.immediate) {
             _uiState.update { it.copy(isRecording = false, isLoading = true, message = "Обработка...") }
+            _aiState.value = AiVisualizerState.THINKING
+            _aiMessage.value = null
         }
 
 
         if (duration < MIN_RECORDING_DURATION_MS) {
             Log.w(TAG, "Recording too short ($duration ms). Cancelling without saving.")
-            viewModelScope.launch(Dispatchers.IO) { // Отмена записи в IO потоке
+            viewModelScope.launch(Dispatchers.IO) {
                 audioRecorder.cancelRecording()
-                withContext(Dispatchers.Main) { // Обновление UI обратно в Main
+                withContext(Dispatchers.Main) {
+                    // Reset isLoading, show message, revert AI state
                     _uiState.update { it.copy(isLoading = false, message = "Удерживайте кнопку дольше") }
+                    _aiState.value = AiVisualizerState.IDLE
                 }
             }
             recordingStartTime = 0L
@@ -315,46 +332,44 @@ class MainViewModel @Inject constructor(
 
         // --- Если длительность достаточная ---
         // Добавляем плейсхолдер в чат (можно сделать и после успешной остановки)
-        addChatMessage("[Аудиозапись]", isUser = true) // <-- Плейсхолдер
+    //    addChatMessage("[Аудиозапись]", isUser = true) // <-- Плейсхолдер
 
         var audioFile: File? = null
-        viewModelScope.launch { // Используем основной scope, так как isLoading уже true
+        viewModelScope.launch {
             try {
-                // Получаем файл (может быть IO)
                 audioFile = withContext(Dispatchers.IO) {
                     Log.i(TAG, "Stopping audio recorder...")
-                    audioRecorder.stopRecording() // Может бросить исключение
+                    audioRecorder.stopRecording()
                 }
 
                 if (audioFile != null && currentIdToken != null) {
                     Log.d(TAG, "Audio file obtained: ${audioFile?.absolutePath}. Sending...")
-                    // Вызываем sendAudioToServer (он уже suspend)
+                    // AI state is already THINKING
                     sendAudioToServer(audioFile!!, currentIdToken!!)
-                    // Не удаляем файл здесь, удалим в finally sendAudioToServer
                 } else {
-                    // isLoading уже true, обновляем только сообщение/ошибку
-                    _uiState.update { it.copy( showGeneralError = "Не удалось получить аудиофайл или токен.", message = "Ошибка файла") }
-                    // Попытка удалить файл, если он был создан
-                    audioFile?.let { file ->
-                        withContext(Dispatchers.IO) { file.delete() }
+                    // Error getting file or token
+                    withContext(Dispatchers.Main) { // Ensure UI update on Main
+                        _uiState.update { it.copy( showGeneralError = "Не удалось получить аудиофайл или токен.", message = "Ошибка файла", isLoading = false) }
+                        _aiState.value = AiVisualizerState.IDLE // Revert state
                     }
+                    audioFile?.let { file -> withContext(Dispatchers.IO) { file.delete() } }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping/sending recording", e)
-                // isLoading уже true, обновляем только сообщение/ошибку
-                _uiState.update {
-                    it.copy(
-                        showGeneralError = "Ошибка записи/отправки: ${e.message}",
-                        message = "Ошибка записи"
-                    )
+                withContext(Dispatchers.Main) { // Ensure UI update on Main
+                    _uiState.update {
+                        it.copy(
+                            showGeneralError = "Ошибка записи/отправки: ${e.message}",
+                            message = "Ошибка записи",
+                            isLoading = false // Reset loading on error
+                        )
+                    }
+                    _aiState.value = AiVisualizerState.IDLE // Revert state
                 }
-                // Попытка удалить файл, если он был создан, но отправка не началась
-                audioFile?.let { file ->
-                    withContext(Dispatchers.IO) { file.delete() }
-                }
+                audioFile?.let { file -> withContext(Dispatchers.IO) { file.delete() } }
             } finally {
                 recordingStartTime = 0L
-                // isLoading сбросится в sendAudioToServer -> executeProcessRequest -> handleProcessResponse или в catch блоках
+                // isLoading and aiState are handled within the success/error paths of sendAudioToServer -> handleProcessResponse
             }
         }
     }
@@ -459,7 +474,6 @@ class MainViewModel @Inject constructor(
         try {
             okHttpClient.newCall(request).execute().use { response ->
                 val responseBodyString = response.body?.string()
-                // Важно: Обработка ответа должна быть в Main потоке для обновления UI
                 withContext(Dispatchers.Main) {
                     if (!response.isSuccessful) {
                         Log.e(TAG, "Server error processing request: ${response.code} - $responseBodyString")
@@ -468,10 +482,14 @@ class MainViewModel @Inject constructor(
                             val jsonError = JSONObject(responseBodyString ?: "{}")
                             errorDetail = jsonError.optString("detail", errorDetail)
                         } catch (_: Exception) {}
+                        // Update general state AND revert AI state
                         _uiState.update { it.copy(showGeneralError = errorDetail, isLoading = false, message = "Ошибка обработки") }
+                        _aiState.value = AiVisualizerState.IDLE // Revert on network/server error
+                        _aiMessage.value = null
                     } else {
                         Log.i(TAG, "Request processed successfully. Response: $responseBodyString")
-                        handleProcessResponse(responseBodyString) // Вызываем обработчик (он уже Main safe)
+                        // AI state is THINKING here, handleProcessResponse will change it
+                        handleProcessResponse(responseBodyString)
                     }
                 }
             }
@@ -479,11 +497,25 @@ class MainViewModel @Inject constructor(
             Log.e(TAG, "Network error during /process request", e)
             withContext(Dispatchers.Main) {
                 _uiState.update { it.copy(showGeneralError = "Сетевая ошибка: ${e.message}", isLoading = false, message = "Ошибка сети") }
+                _aiState.value = AiVisualizerState.IDLE // Revert on network/server error
+                _aiMessage.value = null
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error executing /process request", e)
             withContext(Dispatchers.Main) {
                 _uiState.update { it.copy(showGeneralError = "Ошибка обработки запроса: ${e.message}", isLoading = false, message = "Ошибка") }
+                _aiState.value = AiVisualizerState.IDLE // Revert on network/server error
+                _aiMessage.value = null
+            }
+        } finally {
+            // Ensure isLoading is false if an exception occurs before response handling
+            if (_uiState.value.isLoading && _aiState.value != AiVisualizerState.THINKING) {
+                withContext(Dispatchers.Main.immediate) { // Use immediate to avoid race conditions
+                    if (_uiState.value.isLoading) { // Double check
+                        _uiState.update { it.copy(isLoading = false) }
+                        Log.w(TAG,"Reset isLoading flag in executeProcessRequest finally block")
+                    }
+                }
             }
         }
     }
@@ -491,47 +523,54 @@ class MainViewModel @Inject constructor(
     // --- Новый Обработчик Ответов от /process ---
     // Эта функция должна вызываться в Main потоке, т.к. обновляет UI
     private fun handleProcessResponse(responseBody: String?) {
-        var statusMessage = "Готово." // Статус по умолчанию
+        var finalAiState = AiVisualizerState.IDLE // Default to IDLE if processing finishes or errors out badly
+        var messageForVisualizer: String? = null
+        var statusMessage = "Готово."
         var errorToShow: String? = null
-        var botResponse: String? = null // Ответ или вопрос от бота
 
         if (responseBody.isNullOrBlank()) {
             errorToShow = "Пустой ответ от сервера."
             statusMessage = "Ошибка ответа"
+            finalAiState = AiVisualizerState.ERROR // Or IDLE
         } else {
             try {
                 val json = JSONObject(responseBody)
                 val status = json.optString("status")
-                val message = json.optString("message") // Сообщение от бэкенда (вопрос, ошибка, успех)
+                val message = json.optString("message")
 
                 when (status) {
                     "success" -> {
                         val event = json.optJSONObject("event")
                         val eventLink = json.optString("event_link", null)
-                        statusMessage = message // "Event created successfully!"
                         val eventName = event?.optString("event_name", "Событие") ?: "Событие"
-                        // Формируем подтверждение для чата
-                        botResponse = "✅ ${eventName} создано!" + (eventLink?.let { "\n[Ссылка на событие]($it)" } ?: "")
+                        statusMessage = "Событие создано" // Shorter status
+                        // Format message for visualizer
+                        messageForVisualizer = "✅ ${eventName} создано!" + (eventLink?.let { "\n[Ссылка]($it)" } ?: "")
+                        finalAiState = AiVisualizerState.RESULT
                         Log.i(TAG, "Event creation successful.")
                     }
                     "clarification_needed" -> {
-                        statusMessage = "Требуется уточнение..."
-                        botResponse = message // Вопрос от LLM
-                        Log.i(TAG, "Clarification needed: $botResponse")
+                        statusMessage = "Требуется уточнение"
+                        messageForVisualizer = message // Use the backend message directly
+                        finalAiState = AiVisualizerState.ASKING
+                        Log.i(TAG, "Clarification needed: $messageForVisualizer")
                     }
-                    "error" -> {
-                        errorToShow = message // Сообщение об ошибке от бэкенда/LLM
-                        statusMessage = "Ошибка обработки"
-                        Log.e(TAG, "Backend processing error: $errorToShow")
-                    }
-                    "info", "unsupported" -> { // Обработка других статусов от бэкенда
-                        statusMessage = message // Информационное сообщение
-                        botResponse = message
+                    "info", "unsupported" -> { // Treat info like a result/message
+                        statusMessage = message // Use backend message as status
+                        messageForVisualizer = message
+                        finalAiState = AiVisualizerState.RESULT // Show info like a result
                         Log.i(TAG, "Backend info/unsupported response: $message")
                     }
-                    else -> { // Неизвестный статус
+                    "error" -> {
+                        errorToShow = message
+                        statusMessage = "Ошибка обработки"
+                        finalAiState = AiVisualizerState.ERROR // Or IDLE
+                        Log.e(TAG, "Backend processing error: $errorToShow")
+                    }
+                    else -> {
                         errorToShow = "Неизвестный статус ответа: '$status'"
                         statusMessage = "Ошибка ответа"
+                        finalAiState = AiVisualizerState.ERROR // Or IDLE
                         Log.w(TAG, "Unknown status from backend: $status")
                     }
                 }
@@ -539,23 +578,29 @@ class MainViewModel @Inject constructor(
                 Log.e(TAG, "Error parsing /process response", e)
                 errorToShow = "Ошибка парсинга ответа: ${e.message}"
                 statusMessage = "Ошибка ответа"
+                finalAiState = AiVisualizerState.ERROR // Or IDLE
             }
         }
 
-        // Обновляем UI один раз
+        // --- Single UI Update ---
         _uiState.update { currentState ->
-            // Добавляем ответ бота в историю, если он есть
-            val updatedHistory = botResponse?.let { responseText ->
-                currentState.chatHistory + ChatMessage(text = responseText, isUser = false)
-            } ?: currentState.chatHistory
-
             currentState.copy(
-                isLoading = false, // Сбрасываем загрузку
-                message = statusMessage, // Обновляем общий статус
-                showGeneralError = errorToShow,
-                chatHistory = updatedHistory // Обновляем историю чата
+                isLoading = false, // Processing finished
+                message = statusMessage,
+                showGeneralError = errorToShow
+                // REMOVED: chatHistory update
             )
         }
+        // Update AI Visualizer state AFTER uiState update
+        _aiMessage.value = messageForVisualizer
+        _aiState.value = if (finalAiState == AiVisualizerState.ERROR) AiVisualizerState.IDLE else finalAiState // Go IDLE on error
+        // If there was an error, maybe flash ERROR state briefly? For now, go IDLE.
+
+        // If we went back to IDLE or showed an error, clear the message
+        if (_aiState.value == AiVisualizerState.IDLE) {
+            _aiMessage.value = null
+        }
+        // isRotating is derived automatically from aiState, no need to set it here.
     }
 
 
@@ -563,6 +608,12 @@ class MainViewModel @Inject constructor(
     fun clearGeneralError() {
         _uiState.update { it.copy(showGeneralError = null) }
     }
+    // Optionally reset AI state if an error message is cleared
+    // if (_aiState.value == AiVisualizerState.ERROR) { // Or just always reset?
+    //     _aiState.value = AiVisualizerState.IDLE
+    //     _aiMessage.value = null
+    // }
+
     fun clearAuthError() {
         _uiState.update { it.copy(showAuthError = null) }
     }

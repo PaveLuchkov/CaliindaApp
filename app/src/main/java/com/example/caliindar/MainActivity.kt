@@ -39,6 +39,10 @@ import dagger.hilt.android.AndroidEntryPoint
 
 // Math (you might want to put these inside a utility class/file)
 
+enum class AiVisualizerState {
+    IDLE, RECORDING, THINKING, ASKING, RESULT, ERROR // Добавил состояние ERROR
+}
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
