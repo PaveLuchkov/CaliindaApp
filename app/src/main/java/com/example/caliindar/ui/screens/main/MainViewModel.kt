@@ -30,8 +30,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.io.IOException
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
 import javax.inject.Inject
 
 enum class AiVisualizerState {
@@ -164,6 +169,45 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private suspend fun getFreshIdToken(): String? {
+        Log.d(TAG, "Attempting to get fresh ID token via silent sign-in...")
+        return try {
+            val account = googleSignInClient.silentSignIn().await() // await() вместо addOnCompleteListener
+            val freshToken = account?.idToken
+            if (freshToken != null) {
+                Log.i(TAG, "Silent sign-in successful, got fresh token for: ${account.email}")
+                currentIdToken = freshToken // Обновляем сохраненный токен
+                // Убедимся, что UI тоже в актуальном состоянии (на случай, если silentSignIn сработал после ошибки)
+                _uiState.update {
+                    it.copy(
+                        isSignedIn = true,
+                        userEmail = account.email,
+                        message = "Аккаунт: ${account.email} (Авторизован)",
+                        isLoading = it.isLoading, // Не меняем isLoading здесь
+                        showAuthError = null
+                    )
+                }
+                freshToken
+            } else {
+                Log.w(TAG, "Silent sign-in successful but ID token is null.")
+                signOutInternally("Ошибка: Не удалось получить токен после тихого входа.")
+                null
+            }
+        } catch (e: ApiException) {
+            Log.w(TAG, "Silent sign-in failed: ${e.statusCode}", e)
+            // Частые коды: SIGN_IN_REQUIRED (нужен явный вход), RESOLUTION_REQUIRED
+            signOutInternally("Сессия истекла или отозвана. Требуется вход.") // Важно сбросить состояние
+            null // Возвращаем null, сигнализируя о неудаче
+        } catch (e: Exception) {
+            Log.e(TAG, "Silent sign-in failed with generic exception", e)
+            // Оставляем пользователя "залогиненным" в UI, но токен получить не можем
+            // Возможно, временная сетевая проблема. Не делаем signOutInternally сразу.
+            _uiState.update { it.copy(showGeneralError = "Не удалось обновить сессию: ${e.message}") }
+            null // Возвращаем null
+        }
+    }
+
+
     // Вызывается при нажатии кнопки выхода
     fun signOut() {
         viewModelScope.launch {
@@ -197,44 +241,44 @@ class MainViewModel @Inject constructor(
     }
 
     private fun checkInitialAuthState() {
-        viewModelScope.launch { // Запускаем в корутине
-            // Silent sign-in для обновления токена, если пользователь уже входил
+        viewModelScope.launch {
             try {
-                val accountTask = googleSignInClient.silentSignIn()
-                if (accountTask.isSuccessful) {
-                    // Пользователь вошел и токен обновлен
-                    Log.d(TAG, "Silent sign in success")
-                    handleSignInResult(accountTask) // Обрабатываем как обычный вход
-                } else {
-                    // Пользователь не вошел или не дал согласия
-                    Log.d(TAG, "Silent sign in failed or user not signed in")
-                    // Проверим, есть ли последний залогиненный аккаунт (без обновления токена)
-                    val lastAccount = GoogleSignIn.getLastSignedInAccount(getApplication())
-                    val requiredScope = Scope("https://www.googleapis.com/auth/calendar.events")
-                    if (lastAccount != null && GoogleSignIn.hasPermissions(lastAccount, requiredScope)) {
-                        currentIdToken = lastAccount.idToken // Токен может быть старым!
-                        Log.i(TAG, "User was already signed in (token might be stale): ${lastAccount.email}")
-                        _uiState.update {
-                            it.copy(
-                                isSignedIn = true,
-                                userEmail = lastAccount.email,
-                                message = "Аккаунт: ${lastAccount.email} (Авторизован)",
-                                isLoading = false
-                            )
-                        }
-                        // Важно: Не отправляем на бэкенд старый authCode!
-                        // Возможно, стоит запросить новый токен у бэкенда, если он может это сделать
-                    } else {
-                        Log.i(TAG, "User not signed in or permissions missing.")
-                        signOutInternally("Требуется вход и авторизация") // Сброс состояния
+                Log.d(TAG, "Checking initial auth state via silent sign-in...")
+                // Пытаемся войти тихо и получить СВЕЖИЙ токен
+                val account = googleSignInClient.silentSignIn().await()
+                val idToken = account?.idToken
+                val serverAuthCode = account?.serverAuthCode // Получаем auth code снова, если нужен
+                val userEmail = account?.email
+
+                if (idToken != null && userEmail != null /* && serverAuthCode != null - возможно, он не нужен здесь? */) {
+                    Log.i(TAG, "Silent sign-in success, processing result for: $userEmail")
+                    currentIdToken = idToken // Сохраняем свежий токен
+                    // Обновляем UI, показывая, что вход выполнен
+                    _uiState.update {
+                        it.copy(
+                            isSignedIn = true,
+                            userEmail = userEmail,
+                            message = "Аккаунт: $userEmail (Авторизован)",
+                            isLoading = false,
+                            showAuthError = null
+                        )
                     }
+                    // НЕ НУЖНО снова вызывать sendAuthInfoToBackend, если пользователь уже был авторизован
+                    // на бэкенде. Тихого входа достаточно для обновления idToken на клиенте.
+                    // Если нужно проверить связь с бэкендом, можно сделать отдельный "ping" или "getUserInfo" запрос.
+
+                } else {
+                    // Silent sign-in не вернул аккаунт или токен
+                    Log.i(TAG, "Silent sign-in did not return a valid account/token.")
+                    signOutInternally("Требуется вход или обновление сессии.") // Считаем не вошедшим
                 }
+
             } catch (e: ApiException) {
-                Log.w(TAG, "Silent sign in failed with API exception", e)
-                signOutInternally("Ошибка проверки аккаунта: ${e.statusCode}")
+                Log.w(TAG, "Silent sign-in failed: ${e.statusCode}", e)
+                signOutInternally("Требуется вход (ошибка ${e.statusCode})") // Считаем не вошедшим
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking initial auth state", e)
-                signOutInternally("Ошибка проверки аккаунта: ${e.message}")
+                signOutInternally("Ошибка проверки аккаунта: ${e.message}") // Считаем не вошедшим
             }
         }
     }
@@ -265,7 +309,7 @@ class MainViewModel @Inject constructor(
                 _aiState.value = AiVisualizerState.THINKING
                 _aiMessage.value = null
             }
-            sendTextToServer(text = text, idToken = currentIdToken!!)
+            sendTextToServer(text = text)
         }
     }
 
@@ -345,7 +389,7 @@ class MainViewModel @Inject constructor(
                 if (audioFile != null && currentIdToken != null) {
                     Log.d(TAG, "Audio file obtained: ${audioFile?.absolutePath}. Sending...")
                     // AI state is already THINKING
-                    sendAudioToServer(audioFile!!, currentIdToken!!)
+                    sendAudioToServer(audioFile!!)
                 } else {
                     // Error getting file or token
                     withContext(Dispatchers.Main) { // Ensure UI update on Main
@@ -424,48 +468,71 @@ class MainViewModel @Inject constructor(
     }
 
     // Отправка Текста (теперь использует multipart и вызывает executeProcessRequest)
-    private suspend fun sendTextToServer(text: String, idToken: String) {
-        Log.i(TAG, "Sending text and ID token to /process")
+    private suspend fun sendTextToServer(text: String) { // Убрали idToken из аргументов
+        val freshToken = getFreshIdToken() // Пытаемся получить свежий токен ПЕРЕД запросом
+
+        if (freshToken == null) {
+            Log.w(TAG, "sendTextToServer failed: Could not get fresh token.")
+            // UI уже должен быть обновлен в getFreshIdToken или signOutInternally
+            _uiState.update { it.copy(isLoading = false) } // Убедимся, что isLoading сброшен
+            _aiState.value = AiVisualizerState.IDLE // Сбросим состояние AI
+            return // Прерываем отправку
+        }
+
+        Log.i(TAG, "Sending text and FRESH ID token to /process")
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("id_token_str", idToken)
-            .addFormDataPart("text", text) // Отправляем текст как form data
+            .addFormDataPart("id_token_str", freshToken) // Используем свежий токен
+            .addFormDataPart("text", text)
             .build()
 
         val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/process") // Единый эндпоинт
+            .url("$BACKEND_BASE_URL/process")
             .post(requestBody)
             .build()
 
-        executeProcessRequest(request) // Вызываем общий метод выполнения запроса
+        executeProcessRequest(request)
     }
 
-    // Отправка Аудио (вызывает executeProcessRequest)
-    private suspend fun sendAudioToServer(audioFile: File, idToken: String) {
-        Log.i(TAG, "Sending audio and ID token to /process")
+    // Отправка Аудио (теперь использует getFreshIdToken)
+    private suspend fun sendAudioToServer(audioFile: File) { // Убрали idToken из аргументов
+        val freshToken = getFreshIdToken() // Пытаемся получить свежий токен ПЕРЕД запросом
+
+        if (freshToken == null) {
+            Log.w(TAG, "sendAudioToServer failed: Could not get fresh token.")
+            _uiState.update { it.copy(isLoading = false) }
+            _aiState.value = AiVisualizerState.IDLE
+            // Удаляем файл, так как отправка не удалась из-за токена
+            withContext(Dispatchers.IO) {
+                val deleted = audioFile.delete()
+                Log.d(TAG, "Temp audio file ${audioFile.name} deleted due to token error: $deleted")
+            }
+            return // Прерываем отправку
+        }
+
+        Log.i(TAG, "Sending audio and FRESH ID token to /process")
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart(
                 "audio",
                 audioFile.name,
-                audioFile.asRequestBody("audio/ogg".toMediaTypeOrNull()) // Убедитесь, что тип правильный
+                audioFile.asRequestBody("audio/ogg".toMediaTypeOrNull())
             )
-            .addFormDataPart("id_token_str", idToken)
+            .addFormDataPart("id_token_str", freshToken) // Используем свежий токен
             .build()
 
         val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/process") // Единый эндпоинт
+            .url("$BACKEND_BASE_URL/process")
             .post(requestBody)
             .build()
 
-        // Выполняем запрос и удаляем файл после
+        // Выполняем запрос и удаляем файл после (в блоке finally)
         try {
             executeProcessRequest(request)
         } finally {
-            // Удаляем файл после попытки отправки
             withContext(Dispatchers.IO) {
                 val deleted = audioFile.delete()
-                Log.d(TAG, "Temp audio file ${audioFile.name} deleted after request: $deleted")
+                Log.d(TAG, "Temp audio file ${audioFile.name} deleted after request attempt: $deleted")
             }
         }
     }
@@ -519,6 +586,43 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+    fun formatEventTime(isoTimeString: String?): String {
+        if (isoTimeString.isNullOrBlank()) {
+            return "Время не указано" // Или просто пустую строку ""
+        }
+        return try {
+            // 1. Парсим строку в OffsetDateTime
+            val offsetDateTime = OffsetDateTime.parse(isoTimeString)
+
+            // 2. Создаем форматтер для вывода (русская локаль)
+            //    d      - день месяца (12)
+            //    LLLL   - полное название месяца в именительном падеже (апрель) - LLLL лучше MMMM для русского
+            //    'в'    - буква "в" как литерал (в кавычках)
+            //    HH     - час (00-23)
+            //    mm     - минуты (00-59)
+            val formatter = DateTimeFormatter.ofPattern("d LLLL", Locale("ru"))
+
+            // 3. Форматируем дату и время
+            offsetDateTime.format(formatter) // Вернет строку типа "12 апреля"
+
+            // ---- Вариант с учетом часового пояса устройства ----
+            // Если вы хотите показать время СО СДВИГОМ на локальный пояс пользователя:
+            // val localZoneId = ZoneId.systemDefault() // Получаем пояс устройства
+            // val localDateTime = offsetDateTime.atZoneSameInstant(localZoneId) // Конвертируем
+            // val formatter = DateTimeFormatter.ofPattern("d LLLL 'в' HH:mm", Locale("ru"))
+            // localDateTime.format(formatter)
+            // -----------------------------------------------------
+
+        } catch (e: DateTimeParseException) {
+            Log.e(TAG, "Error parsing date-time: $isoTimeString", e)
+            "Неверный формат времени" // Возвращаем сообщение об ошибке
+            // Или можно вернуть исходную строку: isoTimeString
+        } catch (e: Exception) {
+            // Ловим другие возможные ошибки
+            Log.e(TAG, "Error formatting date-time: $isoTimeString", e)
+            "Ошибка времени"
+        }
+    }
 
     // --- Новый Обработчик Ответов от /process ---
     // Эта функция должна вызываться в Main потоке, т.к. обновляет UI
@@ -543,9 +647,11 @@ class MainViewModel @Inject constructor(
                         val event = json.optJSONObject("event")
                         val eventLink = json.optString("event_link", null)
                         val eventName = event?.optString("event_name", "Событие") ?: "Событие"
-                        statusMessage = "Событие создано" // Shorter status
+                        val eventTimeISO: String? = event?.optString("start_time", null) ?: "Время"
+                        val eventTime = formatEventTime(eventTimeISO)
+                        statusMessage = "Создал как вы и просили" // Shorter status
                         // Format message for visualizer
-                        messageForVisualizer = "✅ ${eventName} создано!" + (eventLink?.let { "\n[Ссылка]($it)" } ?: "")
+                        messageForVisualizer = "Успешно создано!)\n$eventName\n$eventTime"
                         finalAiState = AiVisualizerState.RESULT
                         Log.i(TAG, "Event creation successful.")
                     }

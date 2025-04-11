@@ -45,7 +45,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.hilt.android) // Используйте ту же версию, что и плагин
+    implementation(libs.hilt.android)
     kapt(libs.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.graphics.shapes)
