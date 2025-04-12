@@ -53,10 +53,10 @@ fun BackgroundShapes(colorScheme: ColorScheme) { // Принимаем ColorSche
         Box(
             modifier = Modifier
                 .size(star2ContainerSize)
-                .align(Alignment.CenterStart)
+                .align(Alignment.TopStart)
                 .offset(
                     x = -star2ContainerSize * 0.4f,
-                    y = star2ContainerSize * 0.3f // Смещаем немного вниз
+                    y = star2ContainerSize * 1.5f // Смещаем немного вниз
                 )
                 .clip(clip2Star)
                 .background(colorScheme.secondaryContainer.copy(alpha = 0.3f)), // Используем цвет темы с альфой

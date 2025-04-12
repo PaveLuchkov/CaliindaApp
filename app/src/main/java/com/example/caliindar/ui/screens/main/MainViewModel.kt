@@ -83,7 +83,8 @@ class MainViewModel @Inject constructor(
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
         // Лучше вынести URL в BuildConfig или другой модуль
-        private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
+//        private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
+        private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
     }
 
     init {
@@ -645,13 +646,13 @@ class MainViewModel @Inject constructor(
                 when (status) {
                     "success" -> {
                         val event = json.optJSONObject("event")
-                        val eventLink = json.optString("event_link", null)
+                        val eventLink: String? = json.optString("event_link")
                         val eventName = event?.optString("event_name", "Событие") ?: "Событие"
                         val eventTimeISO: String? = event?.optString("start_time", null) ?: "Время"
                         val eventTime = formatEventTime(eventTimeISO)
                         statusMessage = "Создал как вы и просили" // Shorter status
                         // Format message for visualizer
-                        messageForVisualizer = "Успешно создано!)\n$eventName\n$eventTime"
+                        messageForVisualizer = "Made it for you!\n$eventName\n$eventTime"
                         finalAiState = AiVisualizerState.RESULT
                         Log.i(TAG, "Event creation successful.")
                     }
@@ -691,7 +692,7 @@ class MainViewModel @Inject constructor(
         // --- Single UI Update ---
         _uiState.update { currentState ->
             currentState.copy(
-                isLoading = false, // Processing finished
+                isLoading = false,
                 message = statusMessage,
                 showGeneralError = errorToShow
                 // REMOVED: chatHistory update
@@ -709,6 +710,15 @@ class MainViewModel @Inject constructor(
         // isRotating is derived automatically from aiState, no need to set it here.
     }
 
+    fun resetAiStateAfterResult() {
+        // Проверяем, что текущее состояние все еще RESULT (или ASKING, если для него тоже нужен сброс)
+        // чтобы не сбросить случайно другое состояние, если оно изменилось во время задержки
+        if (_aiState.value == AiVisualizerState.RESULT) {
+            _aiState.value = AiVisualizerState.IDLE
+            _aiMessage.value = null // Очищаем сообщение при переходе в IDLE
+            Log.d("MainViewModel", "Resetting AI state to IDLE after result timeout.")
+        }
+    }
 
     // Сброс флага ошибки после показа (например, в Snackbar или Toast)
     fun clearGeneralError() {

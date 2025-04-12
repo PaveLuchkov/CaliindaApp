@@ -14,20 +14,21 @@ import com.example.caliindar.ui.screens.main.MainViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onSignInClick: () -> Unit, // Принимаем лямбду из MainActivity/NavHost
-    onNavigateBack: () -> Unit // Лямбда для возврата назад
+    viewModel: MainViewModel, // <--- Принимаем ViewModel как параметр
+    onSignInClick: () -> Unit,
+    onNavigateBack: () -> Unit
 ) {
-    val viewModel: MainViewModel = hiltViewModel()
+    // Используем переданный viewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Показываем ошибки аутентификации, которые могли произойти при входе
+    // Показываем ошибки аутентификации
     LaunchedEffect(uiState.showAuthError) {
         uiState.showAuthError?.let { error ->
             snackbarHostState.showSnackbar(error)
-            viewModel.clearAuthError() // Очищаем ошибку после показа
+            viewModel.clearAuthError()
         }
     }
 
@@ -68,20 +69,16 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = { viewModel.signOut() },
-                    enabled = !uiState.isLoading // Блокируем кнопку во время выхода
+                    enabled = !uiState.isLoading
                 ) {
                     Text("Выйти")
-                }
-                if (uiState.isLoading) { // Показываем индикатор во время выхода
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CircularProgressIndicator()
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // TODO: Добавить сюда выбор таймзоны или другие настройки
-            Text("Другие настройки (например, таймзона) будут здесь.")
+            Text("Другие настройки будут здесь.")
 
         }
     }

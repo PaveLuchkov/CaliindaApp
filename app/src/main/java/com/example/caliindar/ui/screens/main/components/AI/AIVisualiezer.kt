@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.IntOffset
 import com.example.caliindar.ui.screens.main.components.AI.AiStarShape // Import your shape
 import com.example.caliindar.ui.common.ClickableLinkText // Keep if needed for result text
 import com.example.caliindar.ui.screens.main.AiVisualizerState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -30,15 +31,25 @@ fun AiVisualizer(
     aiState: AiVisualizerState,
     aiMessage: String?,
     modifier: Modifier = Modifier,
-    uriHandler: UriHandler // Pass if needed for links
+    uriHandler: UriHandler, // Pass if needed for links
+    onResultShownTimeout: () -> Unit // <-- Новый параметр: лямбда для вызова после таймаута
 ) {
     val targetState = aiState
 
     val BubbleBackgroundColor = colorScheme.secondaryContainer
     val BubbleTextColor = colorScheme.onSecondaryContainer
 
-    // --- 1. Animatable для вращения (как в исходном коде) ---
+    // --- LaunchedEffect для задержки перед IDLE ---
+    LaunchedEffect(targetState) { // Запускается при смене targetState
+        if (targetState == AiVisualizerState.RESULT) {
+            delay(5000L) // Ждем 5 секунд
+            onResultShownTimeout() // Вызываем колбэк после задержки
+        }
+    }
+
+    // --- 1. Animatable для вращения ---
     val rotationAngle = remember { Animatable(0f) }
+    // LaunchedEffect для вращения остается без изменений...
     LaunchedEffect(targetState) {
         val shouldRotate = targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.RECORDING
         if (shouldRotate) {
@@ -47,7 +58,6 @@ fun AiVisualizer(
                 AiVisualizerState.RECORDING -> 80000
                 else -> 5000 // На всякий случай
             }
-            // Запускаем только если еще не запущена и состояние соответствующее
             if (!rotationAngle.isRunning && (targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.RECORDING)) {
                 launch {
                     rotationAngle.animateTo(
@@ -60,12 +70,10 @@ fun AiVisualizer(
                 }
             }
         } else {
-            // Останавливаем плавно, если вращается
             if (rotationAngle.isRunning) {
                 launch {
                     rotationAngle.stop()
                     val currentRotation = rotationAngle.value
-                    // Можно вернуть в 0 или оставить как есть
                     rotationAngle.animateTo(
                         targetValue = 0f, // Возвращаем в 0 для предсказуемости
                         animationSpec = tween(durationMillis = 500, easing = EaseOutCubic)
@@ -75,31 +83,30 @@ fun AiVisualizer(
         }
     }
 
-
     // --- 3. Transition для управления остальными свойствами ---
     val transition = updateTransition(targetState = targetState, label = "AiVisualizerTransition")
 
-    // --- Анимированные свойства (ВОССТАНОВЛЕНЫ ИЗ ИСХОДНОГО КОДА) ---
+    // --- Анимированные свойства ---
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.dp
     val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
 
-    // --- Анимированный Фактор Масштаба (как в исходном коде) ---
+    // --- Анимированный Фактор Масштаба ---
     val animatedScaleFactor by transition.animateFloat(
         transitionSpec = { spring(stiffness = Spring.StiffnessMediumLow) },
         label = "scaleFactor"
     ) { state ->
         when (state) {
             AiVisualizerState.IDLE -> 0f
-            AiVisualizerState.RECORDING -> 5f // Большой масштаб
-            AiVisualizerState.THINKING -> 1f // Базовый масштаб
-            AiVisualizerState.ASKING -> 5f // Большой масштаб
-            AiVisualizerState.RESULT -> 5f // Большой масштаб
+            AiVisualizerState.RECORDING -> 5f
+            AiVisualizerState.THINKING -> 1f
+            AiVisualizerState.ASKING -> 5f
+            AiVisualizerState.RESULT -> 5f
             AiVisualizerState.ERROR -> 0f
         }
     }
 
-    // --- Базовый размер (как в исходном коде) ---
+    // --- Базовый размер ---
     val baseSizeDp = screenWidthDp * 0.4f
 
     val animatedOffsetYRatio by transition.animateFloat(
@@ -107,11 +114,10 @@ fun AiVisualizer(
         label = "offsetYRatio"
     ) { state ->
         when (state) {
-            // Смещения как в исходном коде
             AiVisualizerState.IDLE -> 0.6f
-            AiVisualizerState.RECORDING -> 0.75f // Сильно вниз
-            AiVisualizerState.THINKING -> 0.55f // Стандартное положение
-            AiVisualizerState.ASKING, AiVisualizerState.RESULT -> 0.55f // Такое же как THINKING
+            AiVisualizerState.RECORDING -> 0.75f
+            AiVisualizerState.THINKING -> 0.55f
+            AiVisualizerState.ASKING, AiVisualizerState.RESULT -> 0.55f
             AiVisualizerState.ERROR -> 0.6f
         }
     }
@@ -120,16 +126,14 @@ fun AiVisualizer(
         transitionSpec = { tween(durationMillis = 500) },
         label = "color"
     ) { state ->
-        // Цвета звезды как в исходном коде
         when (state) {
             AiVisualizerState.RECORDING -> MaterialTheme.colorScheme.primaryContainer
             AiVisualizerState.THINKING -> MaterialTheme.colorScheme.secondary
-            AiVisualizerState.ASKING -> MaterialTheme.colorScheme.tertiary // Цвет для ASKING
-            AiVisualizerState.RESULT -> MaterialTheme.colorScheme.primary // Цвет для RESULT
-            else -> MaterialTheme.colorScheme.surface // Для IDLE/ERROR
+            AiVisualizerState.ASKING -> MaterialTheme.colorScheme.tertiary
+            AiVisualizerState.RESULT -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.surface
         }
     }
-    // --- Конец анимированных свойств ---
 
     // Видимость всего компонента
     val isComponentVisible = targetState != AiVisualizerState.IDLE && targetState != AiVisualizerState.ERROR
@@ -141,35 +145,31 @@ fun AiVisualizer(
     AnimatedVisibility(
         visible = isComponentVisible,
         enter = slideInVertically(
-            initialOffsetY = { it / 2 }, // Появляется сверху
+            initialOffsetY = { it / 2 },
             animationSpec = tween(durationMillis = 400, easing = EaseOutCubic)
         ) + fadeIn(animationSpec = tween(durationMillis = 300)),
         exit = slideOutVertically(
-            targetOffsetY = { it / 2 }, // Уезжает вверх
+            targetOffsetY = { it / 2 },
             animationSpec = tween(durationMillis = 300, easing = EaseInCubic)
         ) + fadeOut(animationSpec = tween(durationMillis = 200)),
         modifier = modifier
     ) {
         // Box для позиционирования звезды и бабла
-        // и для применения общего смещения по Y
         Box(
-            // Центрируем содержимое (звезду и бабл) внутри этого Box
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
                 .offset {
                     IntOffset(
                         x = 0,
-                        // Применяем общее смещение по Y из transition
                         y = (animatedOffsetYRatio * screenHeightPx / 2).toInt()
                     )
                 }
         ) {
             // --- 1. Анимированная Звезда (под баблом) ---
-            // Box для управления размером, масштабом и вращением звезды
             Box(
                 modifier = Modifier
-                    .size(baseSizeDp) // Базовый размер
+                    .size(baseSizeDp)
                     .aspectRatio(1f)
                     .graphicsLayer {
                         scaleX = animatedScaleFactor
@@ -180,55 +180,46 @@ fun AiVisualizer(
             ) {
                 Surface(
                     modifier = Modifier
-                        .matchParentSize() // Заполняем Box
-                        .clip(AiStarShape), // Используем твою форму
-                    color = animatedColor, // Анимированный цвет звезды
-                ) {
-                }
+                        .matchParentSize()
+                        .clip(AiStarShape),
+                    color = animatedColor,
+                ) {}
             }
 
             // --- 2. Бабл с текстом (поверх звезды) ---
             AnimatedVisibility(
                 visible = isBubbleVisible,
-                // Анимации появления/исчезания бабла
                 enter = fadeIn(animationSpec = tween(delayMillis = 150, durationMillis = 300)) +
-                        scaleIn( // Появляется с небольшим увеличением
+                        scaleIn(
                             initialScale = 0.8f,
-                            transformOrigin = TransformOrigin(0.5f, 0.5f), // Масштаб от центра
+                            transformOrigin = TransformOrigin(0.5f, 0.5f),
                             animationSpec = tween(delayMillis = 150, durationMillis = 300)
                         ),
                 exit = fadeOut(animationSpec = tween(durationMillis = 150)) +
-                        scaleOut( // Исчезает с небольшим уменьшением
+                        scaleOut(
                             targetScale = 0.8f,
                             transformOrigin = TransformOrigin(0.5f, 0.5f),
                             animationSpec = tween(durationMillis = 150)
                         ),
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .widthIn(max = baseSizeDp * 2f) // Не шире 90% от базового размера звезды
-                    // .widthIn(max = screenWidthDp * 0.75f)
-                    .wrapContentHeight() // Высота по содержимому
+                    .widthIn(max = baseSizeDp * 2f)
+                    .wrapContentHeight()
             ) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp), // Скругление углов бабла
-                    color = BubbleBackgroundColor, // Используем кастомный цвет фона
-                    tonalElevation = 2.dp, // Небольшая тень для отделения
+                    shape = RoundedCornerShape(16.dp),
+                    color = BubbleBackgroundColor,
+                    tonalElevation = 2.dp,
                     modifier = Modifier
                         .padding(horizontal = 1.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = aiMessage ?: "", // Безопасно отображаем текст
-                        style = MaterialTheme.typography.headlineSmall, // Можно настроить стиль
-                        textAlign = TextAlign.Center,
-                        color = BubbleTextColor
-                    )
-                    /*
-                    ClickableLinkText(
                         text = aiMessage ?: "",
-                        uriHandler = uriHandler,
-                        )
-
-                     */
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.Center,
+                        color = BubbleTextColor,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp) // Добавил padding для текста
+                    )
                 }
             }
         }

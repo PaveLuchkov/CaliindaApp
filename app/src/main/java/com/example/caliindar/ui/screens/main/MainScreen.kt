@@ -26,9 +26,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    viewModel: MainViewModel,
     onNavigateToSettings: () -> Unit
 ) {
-    val viewModel: MainViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
     val listState = rememberLazyListState()
@@ -116,7 +116,8 @@ fun MainScreen(
                 aiState = aiState,
                 aiMessage = aiMessage,
                 modifier = Modifier.fillMaxSize(), // Visualizer's container fills the Box
-                uriHandler = uriHandler
+                uriHandler = uriHandler,
+                onResultShownTimeout = { viewModel.resetAiStateAfterResult() }
             )
 
 

@@ -36,6 +36,8 @@ import com.example.caliindar.navigation.AppNavHost
 import com.example.caliindar.ui.theme.CaliindarTheme
 import com.example.caliindar.ui.screens.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.runtime.Composable // Для @Composable AppNavHost
+
 
 // Math (you might want to put these inside a utility class/file)
 
@@ -46,8 +48,24 @@ enum class AiVisualizerState {
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    // Лаунчер остается здесь, так как он нужен для SettingsScreen через AppNavHost
-    private lateinit var googleSignInLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
+    // 1. Получаем ViewModel с помощью делегата, привязанного к Activity
+    private val mainViewModel: MainViewModel by viewModels()
+
+    // 2. Лаунчер регистрируем как поле Activity
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        // Используем mainViewModel, который теперь является свойством Activity
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        mainViewModel.handleSignInResult(task) // Обновляем ЕДИНСТВЕННЫЙ экземпляр
+
+        // Более детальная обработка ошибок, если нужно
+        if (result.resultCode != RESULT_OK) {
+            Log.w("MainActivity", "Google Sign-In failed or cancelled. ResultCode: ${result.resultCode}")
+            // Можно передать фиктивный Task с ошибкой, если handleSignInResult это ожидает
+            // или вызвать отдельный метод viewModel.handleSignInError(result.resultCode)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -55,44 +73,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CaliindarTheme {
-                // Получаем ViewModel здесь, если она нужна для обработки результата лаунчера
-                // Либо передаем обработку результата через лямбду в NavHost -> Screen,
-                // где ViewModel будет получен через hiltViewModel()
-                // Оставим получение ViewModel внутри Composable, где он нужен
-                val viewModel: MainViewModel = hiltViewModel()
-
-                googleSignInLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartActivityForResult(),
-                    onResult = { result ->
-                        // Логика обработки результата остается здесь, используем полученный viewModel
-                        if (result.resultCode == RESULT_OK) {
-                            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                            viewModel.handleSignInResult(task)
-                        } else {
-                            Log.w("MainActivity", "Google Sign-In failed or cancelled in Activity. ResultCode: ${result.resultCode}")
-                            viewModel.handleSignInResult(
-                                Tasks.forException(
-                                    ApiException(
-                                        Status(
-                                            result.resultCode,
-                                            "Google Sign-In flow was cancelled or failed (Activity Result code: ${result.resultCode})."
-                                        )
-                                    )
-                                )
-                            )
-                        }
-                    }
-                )
-
-                // Передаем лямбду для запуска Sign-In в NavHost
-                // ViewModel будет получен внутри экранов через hiltViewModel()
+                // 3. Передаем Activity-scoped ViewModel и лямбду в NavHost
                 AppNavHost(
-                    onSignInClick = { // Тип этой лямбды () -> Unit
-                        val signInIntent = viewModel.getSignInIntent() // Используем захваченный viewModel
-                        if (signInIntent != null) {
-                            googleSignInLauncher.launch(signInIntent) // Используем захваченный launcher
-                        } else {
-                            Log.e("MainActivity", "Failed to get sign-in intent for launcher.")
+                    viewModel = mainViewModel, // <--- Передаем экземпляр из Activity
+                    onSignInClick = { // Лямбда захватывает свойство Activity 'googleSignInLauncher' и 'mainViewModel'
+                        val signInIntent = mainViewModel.getSignInIntent()
+                        // Добавим проверку на null для надежности
+                        signInIntent.let {
+                            googleSignInLauncher.launch(it)
                         }
                     }
                 )

@@ -3,13 +3,10 @@ package com.example.caliindar.ui.screens.main.components
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.IconButton // Используем Material (не M3) для старых иконок
-import androidx.compose.material.Icon
-import androidx.compose.material.Text // Используем Material (не M3) для старого Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.* // Используем Material 3 для AppBar и ProgressIndicator
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,9 +25,8 @@ fun CalendarAppBar(
         title = {
             Text( // Material Text
                 "Caliinda",
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Black,
                 fontSize = 20.sp,
-                // color = MaterialTheme.colorScheme.onSurface // Цвет обычно наследуется
             )
         },
         navigationIcon = {
@@ -38,7 +34,6 @@ fun CalendarAppBar(
                 Icon( // Material Icon
                     Icons.Filled.Today,
                     contentDescription = "Calendar View",
-                    // tint = MaterialTheme.colorScheme.onSurfaceVariant // Тинт обычно наследуется
                 )
             }
         },
@@ -56,7 +51,7 @@ fun CalendarAppBar(
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
-                        contentDescription = "Настройки"
+                        contentDescription = "Настройки",
                     )
                 }
             }

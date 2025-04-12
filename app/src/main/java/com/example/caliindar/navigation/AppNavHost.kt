@@ -1,6 +1,8 @@
 package com.example.caliindar.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -10,21 +12,30 @@ import com.example.caliindar.ui.screens.main.MainViewModel
 
 @Composable
 fun AppNavHost(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    viewModel: MainViewModel,
     onSignInClick: () -> Unit
 ) {
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = NavRoutes.Main.route) {
+    NavHost(
+        navController = navController,
+        startDestination = NavRoutes.Main.route, // Используем объект роута
+        modifier = modifier // Применяем Modifier
+    ) {
         composable(NavRoutes.Main.route) {
+            // 2. Передаем полученный viewModel в MainScreen
             MainScreen(
-                // viewModel = hiltViewModel(), // Можно так, или внутри самого MainScreen
+                viewModel = viewModel,
                 onNavigateToSettings = {
                     navController.navigate(NavRoutes.Settings.route)
                 }
             )
         }
         composable(NavRoutes.Settings.route) {
+            // 3. Передаем полученный viewModel в SettingsScreen
             SettingsScreen(
-                onSignInClick = onSignInClick,
+                viewModel = viewModel,
+                onSignInClick = onSignInClick, // Передаем лямбду для кнопки
                 onNavigateBack = { navController.popBackStack() }
             )
         }
