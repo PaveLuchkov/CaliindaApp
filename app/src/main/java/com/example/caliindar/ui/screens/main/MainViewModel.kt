@@ -5,6 +5,8 @@ import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.caliindar.data.local.EventDao
+import com.example.caliindar.data.mapper.EventMapper
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -27,7 +29,10 @@ import org.json.JSONObject
 import com.example.caliindar.data.model.ChatMessage
 import com.example.caliindar.util.AudioRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
@@ -39,6 +44,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
@@ -58,7 +64,8 @@ enum class AiVisualizerState {
 @HiltViewModel
 class MainViewModel @Inject constructor(
     application: Application,
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val eventDao: EventDao
 ): AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -88,8 +95,8 @@ class MainViewModel @Inject constructor(
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
         // Лучше вынести URL в BuildConfig или другой модуль
-//        private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
-        private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
+        private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
+        //private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
     }
 
     init {
@@ -114,6 +121,14 @@ class MainViewModel @Inject constructor(
         object Idle : EventsUiState // Начальное состояние или если не запрашивали
     }
 
+    sealed interface EventNetworkState {
+        object Idle : EventNetworkState
+        object Loading : EventNetworkState
+        data class Error(val message: String) : EventNetworkState
+    }
+    private val _eventNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
+    val eventNetworkState: StateFlow<EventNetworkState> = _eventNetworkState.asStateFlow()
+
     // StateFlow для управления состоянием событий
     private val _eventsState = MutableStateFlow<EventsUiState>(EventsUiState.Idle)
     val eventsState: StateFlow<EventsUiState> = _eventsState.asStateFlow()
@@ -121,6 +136,38 @@ class MainViewModel @Inject constructor(
     // Дата, для которой отображаем события (по умолчанию - сегодня)
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
+
+
+    @OptIn(ExperimentalCoroutinesApi::class) // Для flatMapLatest
+    val calendarEventsState: StateFlow<List<CalendarEvent>> = selectedDate.flatMapLatest { date ->
+        // Вычисляем начало и конец дня в UTC миллисекундах
+        val startOfDayUTC = date.atStartOfDay(ZoneOffset.UTC)
+        val startMillis = startOfDayUTC.toInstant().toEpochMilli()
+        // Конец дня - это начало следующего дня
+        val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
+
+        Log.d(TAG, "Observing DB for date: $date (Range UTC millis: $startMillis..<$endMillis)")
+
+        // Получаем Flow из DAO
+        eventDao.getEventsForDateRangeFlow(startMillis, endMillis)
+            .map { entityList ->
+                // Маппим Entity в Domain/UI модель
+                entityList.map { EventMapper.mapToDomain(it) }
+            }
+            .catch { e ->
+                // Обработка ошибок чтения из БД (маловероятно, но возможно)
+                Log.e(TAG, "Error reading events from DB for date $date", e)
+                emit(emptyList<CalendarEvent>()) // Возвращаем пустой список при ошибке
+                // Можно также обновить _eventNetworkState для отображения ошибки БД
+                _eventNetworkState.value = EventNetworkState.Error("Ошибка чтения локальных событий")
+            }
+    }.stateIn( // Преобразуем Flow в StateFlow для UI
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000), // Начинаем сбор, когда есть подписчики
+        initialValue = emptyList() // Начальное значение - пустой список
+    )
+
+
 
 
     fun getSignInIntent(): Intent = googleSignInClient.signInIntent
@@ -315,11 +362,84 @@ class MainViewModel @Inject constructor(
 // - ---- -- -  БЛОК КАЛЕНДАРЯ
 
     // Функция для вызова при необходимости загрузить/обновить события
-    fun fetchEventsForSelectedDate() {
-        // Запускаем в корутине
+    internal fun fetchEventsForSelectedDate() {
+        // Используем Job, чтобы избежать запуска нескольких одновременных запросов
+        // (Хотя проверка _eventNetworkState уже частично решает это)
+        if (_eventNetworkState.value is EventNetworkState.Loading) return
+
         viewModelScope.launch {
-            val date = _selectedDate.value // Берем текущую выбранную дату
-            fetchEvents(date)
+            val dateToFetch = _selectedDate.value // Берем текущую выбранную дату
+            Log.i(TAG, "Starting background fetch for events on date: $dateToFetch")
+
+            if (!_uiState.value.isSignedIn) {
+                Log.w(TAG, "Cannot fetch events: User not signed in.")
+                // Не меняем eventNetworkState, т.к. это не ошибка сети
+                return@launch
+            }
+
+            // Устанавливаем состояние загрузки для UI (например, индикатора в AppBar)
+            _eventNetworkState.value = EventNetworkState.Loading
+
+            val freshToken = getFreshIdToken() // Получаем свежий ID токен
+            if (freshToken == null) {
+                Log.w(TAG, "Cannot fetch events: Failed to get fresh ID token.")
+                _eventNetworkState.value = EventNetworkState.Error("Ошибка аутентификации для обновления")
+                // signOutInternally уже был вызван внутри getFreshIdToken, если токен получить не удалось
+                return@launch
+            }
+
+            // Формируем URL для эндпоинта бэкенда
+            val url = "$BACKEND_BASE_URL/calendar/events?date=${dateToFetch.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
+            val request = Request.Builder()
+                .url(url)
+                .get()
+                .header("Authorization", "Bearer $freshToken")
+                .build()
+
+            try {
+                val networkEvents: List<CalendarEvent> = withContext(Dispatchers.IO) {
+                    okHttpClient.newCall(request).execute().use { response ->
+                        val responseBodyString = response.body?.string()
+                        if (!response.isSuccessful) {
+                            val errorMsg = parseBackendError(responseBodyString, response.code)
+                            Log.e(TAG, "Error fetching events from backend: ${response.code} - $errorMsg")
+                            throw IOException("Backend error: ${response.code} - $errorMsg") // Бросаем исключение
+                        }
+                        if (responseBodyString.isNullOrBlank()) {
+                            Log.w(TAG, "Empty response body received for events on $dateToFetch.")
+                            emptyList() // Пустой ответ - значит нет событий
+                        } else {
+                            Log.i(TAG, "Events fetched successfully from network for $dateToFetch.")
+                            parseEventsResponse(responseBodyString) // Парсим ответ
+                        }
+                    }
+                } // End Dispatchers.IO
+
+                // --- Успешный ответ сети ---
+                // Маппим сетевые события в Entity
+                val eventEntities = networkEvents.mapNotNull { EventMapper.mapToEntity(it) }
+
+                // Определяем диапазон для очистки/вставки в БД (начало и конец дня в UTC)
+                val startOfDayUTC = dateToFetch.atStartOfDay(ZoneOffset.UTC)
+                val startMillis = startOfDayUTC.toInstant().toEpochMilli()
+                val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
+
+                // Сохраняем в БД (атомарно удаляем старые для этого дня и вставляем новые)
+                Log.d(TAG, "Updating DB for $dateToFetch. Deleting range $startMillis..<$endMillis, Inserting ${eventEntities.size} events.")
+                eventDao.clearAndInsertEventsForRange(startMillis, endMillis, eventEntities)
+                Log.i(TAG, "Successfully updated DB with events for $dateToFetch.")
+
+                // Сбрасываем состояние ошибки/загрузки
+                _eventNetworkState.value = EventNetworkState.Idle
+
+            } catch (e: IOException) { // Ловим сетевые ошибки и ошибки ответа сервера
+                Log.e(TAG, "Network error fetching events for $dateToFetch", e)
+                _eventNetworkState.value = EventNetworkState.Error("Ошибка сети: ${e.message}")
+            } catch (e: Exception) { // Ловим ошибки парсинга JSON или другие неожиданные
+                Log.e(TAG, "Error processing events response for $dateToFetch", e)
+                _eventNetworkState.value = EventNetworkState.Error("Ошибка обработки данных: ${e.message}")
+            }
+            // 'finally' не нужен, т.к. состояние сбрасывается в Idle или Error внутри try/catch
         }
     }
 
@@ -381,25 +501,33 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // TODO Вам нужно будет адаптировать ее под реальную структуру вашего JSON
     private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
         val events = mutableListOf<CalendarEvent>()
-        val jsonArray = JSONArray(jsonString) // Предполагаем, что бэкенд возвращает массив
-        for (i in 0 until jsonArray.length()) {
-            val eventObject = jsonArray.getJSONObject(i)
-            events.add(
-                CalendarEvent(
-                    id = eventObject.getString("id"), // Убедитесь, что имена полей совпадают
-                    summary = eventObject.getString("summary"),
-                    startTime = eventObject.getString("startTime"),
-                    endTime = eventObject.getString("endTime"),
-                    description = eventObject.optString("description", null),
-                    location = eventObject.optString("location", null)
+        try {
+            val jsonArray = org.json.JSONArray(jsonString)
+            for (i in 0 until jsonArray.length()) {
+                val eventObject = jsonArray.getJSONObject(i)
+                events.add(
+                    CalendarEvent(
+                        id = eventObject.getString("id"),
+                        summary = eventObject.getString("summary"),
+                        startTime = eventObject.getString("startTime"), // Строка ISO
+                        endTime = eventObject.getString("endTime"),     // Строка ISO
+                        description = eventObject.optString("description", null),
+                        location = eventObject.optString("location", null)
+                    )
                 )
-            )
+            }
+        } catch (e: org.json.JSONException) {
+            Log.e(TAG, "Failed to parse events JSON array", e)
+            // Можно бросить исключение, чтобы оно было поймано в fetchEventsForSelectedDate
+            throw e
         }
         return events
     }
+
+
+
 
     private fun parseBackendError(responseBody: String?, code: Int): String {
         return try {
@@ -413,35 +541,83 @@ class MainViewModel @Inject constructor(
     // Функция для изменения выбранной даты (если захотите добавить выбор даты)
     fun setSelectedDate(newDate: LocalDate) {
         if (newDate != _selectedDate.value) {
+            Log.d(TAG, "Selected date changed to: $newDate")
             _selectedDate.value = newDate
-            fetchEventsForSelectedDate() // Сразу загружаем события для новой даты
+            fetchEventsForSelectedDate()
         }
     }
 
-    fun formatEventListTime(startTimeStr: String, endTimeStr: String): String {
+    fun refreshEvents() {
+        if (_eventNetworkState.value is EventNetworkState.Loading) {
+            Log.d(TAG, "Refresh request ignored, already loading events.")
+            return // Не запускаем, если уже идет загрузка
+        }
+        Log.d(TAG, "Manual refresh triggered for date: ${_selectedDate.value}")
+        fetchEventsForSelectedDate()
+    }
+
+    fun formatEventTimeForDisplay(timeString: String?, pattern: String = "HH:mm"): String {
+        if (timeString.isNullOrBlank()) return "--:--" // Или другой плейсхолдер
         return try {
-            val startTime = OffsetDateTime.parse(startTimeStr)
-            val endTime = OffsetDateTime.parse(endTimeStr)
+            // 1. Парсим строку (она должна быть ISO 8601, скорее всего UTC из маппера)
+            val offsetDateTime = OffsetDateTime.parse(timeString)
 
-            //TODO Проверяем, событие на весь день? (Обычно такие события заканчиваются в полночь следующего дня)
-            // Google API может возвращать только дату для событий на весь день (e.g., "2023-10-28")
-            // Вам нужно будет обрабатывать это на бэкенде или здесь.
-            // Пока предполагаем, что всегда есть время.
+            // 2. Получаем системный часовой пояс устройства
+            val localZoneId = ZoneId.systemDefault()
 
-            val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale("ru"))
+            // 3. Конвертируем время В ЛОКАЛЬНЫЙ часовой пояс
+            val localDateTime = offsetDateTime.atZoneSameInstant(localZoneId)
 
-            "${startTime.format(formatter)} - ${endTime.format(formatter)}"
+            // 4. Создаем форматтер для вывода
+            val formatter = DateTimeFormatter.ofPattern(pattern, Locale("ru"))
 
+            // 5. Форматируем ЛОКАЛЬНОЕ время
+            localDateTime.format(formatter)
+
+        } catch (e: DateTimeParseException) {
+            // Пробуем распарсить как дату (для событий "весь день")
+            try {
+                // Если парсится как LocalDate, это событие на весь день
+                java.time.LocalDate.parse(timeString)
+                "Весь день" // Возвращаем специальную строку
+            } catch (e2: DateTimeParseException) {
+                Log.e(TAG, "Error parsing date/time string for display: $timeString", e)
+                "Ошибка времени"
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error formatting event list time: $startTimeStr, $endTimeStr", e)
+            Log.e(TAG, "Error formatting date/time for display: $timeString", e)
             "Ошибка времени"
         }
     }
 
+    // Используем новую функцию в методе для списка
+    fun formatEventListTime(startTimeStr: String, endTimeStr: String): String {
+        val startTimeFormatted = formatEventTimeForDisplay(startTimeStr)
+        val endTimeFormatted = formatEventTimeForDisplay(endTimeStr)
+
+        // Если оба "Весь день", возвращаем просто "Весь день"
+        if (startTimeFormatted == "Весь день" && endTimeFormatted == "Весь день") {
+            return "Весь день"
+        }
+        // Если только начало "Весь день" (маловероятно, но все же)
+        if (startTimeFormatted == "Весь день") {
+            return "до $endTimeFormatted"
+        }
+        // Если только конец "Весь день" (тоже маловероятно)
+        if (endTimeFormatted == "Весь день") {
+            return "$startTimeFormatted весь день"
+        }
+
+        // Обычный случай с временем
+        return "$startTimeFormatted - $endTimeFormatted"
+    }
+
+    // Используем новую функцию и в методе для AI Visualizer (если нужно время)
 
 
 
-    // --------------- БЛОК АИ
+
+        // --------------- БЛОК АИ
     // --- Отправка Текстового Сообщения ---
     fun sendTextMessage(text: String) {
         if (text.isBlank()) {
@@ -874,8 +1050,21 @@ class MainViewModel @Inject constructor(
             Log.d("MainViewModel", "Resetting AI state to IDLE after result timeout.")
         }
     }
+    fun formatDisplayTime(isoTimeString: String?): String {
+        if (isoTimeString.isNullOrBlank()) return "Время не указано"
+        // Используем ту же логику форматирования с учетом пояса, но другой паттерн
+        val localTimeStr =
+            formatEventTimeForDisplay(isoTimeString, "d MMMM") // Получаем дату в лок. поясе
+        // Если вернулась ошибка или "Весь день", используем это
+        if (localTimeStr == "Ошибка времени" || localTimeStr == "Весь день") {
+            return localTimeStr
+        }
+        // Иначе возвращаем отформатированную дату
+        return localTimeStr
+    }
 
-    // Сброс флага ошибки после показа (например, в Snackbar или Toast)
+    fun clearNetworkError() { _eventNetworkState.update { EventNetworkState.Idle } }
+
     fun clearGeneralError() {
         _uiState.update { it.copy(showGeneralError = null) }
     }
@@ -899,4 +1088,8 @@ class MainViewModel @Inject constructor(
         }
         Log.d(TAG, "MainViewModel cleared")
     }
+
+
 }
+
+

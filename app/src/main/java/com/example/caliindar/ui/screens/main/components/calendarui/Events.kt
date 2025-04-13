@@ -1,5 +1,6 @@
 package com.example.caliindar.ui.screens.main.components.calendarui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,19 @@ fun EventListItem(
     event: CalendarEvent,
     timeFormatter: (String, String) -> String // Передаем функцию форматирования
 ) {
+    //TODO Можно улучшить: если startTime/endTime это только дата (YYYY-MM-DD), писать "Весь день"
+    val timeText = try {
+        // Простая проверка: если строка содержит 'T', считаем, что есть время
+        if (event.startTime.contains("T") && event.endTime.contains("T")) {
+            timeFormatter(event.startTime, event.endTime)
+        } else {
+            "Весь день"
+        }
+    } catch (e: Exception) {
+        Log.w("EventListItem", "Could not format time: ${e.message}")
+        "Время?" // Запасной вариант
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,8 +65,10 @@ fun EventListItem(
             style = typography.bodyMedium,
             color = colorScheme.onSurfaceVariant
         )
+
         if (!event.description.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(4.dp))
+            /*
             Text(
                 text = event.description,
                 style = typography.bodySmall,
@@ -60,6 +76,8 @@ fun EventListItem(
                 maxLines = 2, // Ограничим описание
                 overflow = TextOverflow.Ellipsis
             )
+
+             */
         }
         // Можно добавить местоположение и т.д.
     }
@@ -68,49 +86,21 @@ fun EventListItem(
 
 @Composable
 fun EventsList(
-    eventsState: MainViewModel.EventsUiState,
+    events: List<CalendarEvent>,
     timeFormatter: (String, String) -> String,
-    onRetry: () -> Unit // Добавим кнопку "Повторить" для ошибок
+    modifier: Modifier = Modifier
 ) {
-    when (eventsState) {
-        is MainViewModel.EventsUiState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+    if (events.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.TopCenter) {
+            Text("На эту дату событий нет", style = typography.bodyLarge)
         }
-        is MainViewModel.EventsUiState.Success -> {
-            if (eventsState.events.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("На сегодня событий нет", style = typography.bodyLarge)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(eventsState.events, key = { it.id }) { event ->
-                        EventListItem(event = event, timeFormatter = timeFormatter)
-                    }
-                }
-            }
-        }
-        is MainViewModel.EventsUiState.Error -> {
-            Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Ошибка загрузки событий:", style = typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(eventsState.message, style = typography.bodyMedium, textAlign = TextAlign.Center)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onRetry) {
-                        Text("Повторить")
-                    }
-                }
-            }
-        }
-        is MainViewModel.EventsUiState.Idle -> {
-            // Ничего не показываем или сообщение "Загрузка данных..."
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Загрузка событий...", style = typography.bodyLarge)
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(items = events, key = { it.id }) { event ->
+                EventListItem(event = event, timeFormatter = timeFormatter)
             }
         }
     }

@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.sp
 fun CalendarAppBar(
     isLoading: Boolean, // Принимаем конкретные состояния
     isRecording: Boolean,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    isBusy: Boolean
 ) {
     CenterAlignedTopAppBar(
         title = {

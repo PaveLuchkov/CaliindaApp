@@ -6,8 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,10 +15,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.caliindar.ui.common.BackgroundShapes // <-- Импорт
-import com.example.caliindar.ui.screens.main.components.* // <-- Импорт компонентов
+import com.example.caliindar.ui.common.BackgroundShapes
+import com.example.caliindar.ui.screens.main.components.*
 import com.example.caliindar.ui.screens.main.components.AI.AiVisualizer
 import com.example.caliindar.ui.screens.main.components.calendarui.EventsList
 import kotlinx.coroutines.launch
@@ -28,8 +25,13 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.ui.Alignment
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -48,6 +50,9 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
     val eventsState by viewModel.eventsState.collectAsStateWithLifecycle() // Собираем состояние событий
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val calendarEvents by viewModel.calendarEventsState.collectAsStateWithLifecycle()
+    val eventNetworkState by viewModel.eventNetworkState.collectAsStateWithLifecycle()
+
     // --- УБРАЛИ дублирующийся googleSignInLauncher отсюда ---
 
     // --- Side Effects (Snackbar) ---
@@ -63,6 +68,13 @@ fun MainScreen(
             viewModel.clearAuthError()
         }
     }
+
+        // SwipeRefresh
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = eventNetworkState is MainViewModel.EventNetworkState.Loading,
+        onRefresh = { viewModel.refreshEvents() }
+    )
+
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -90,8 +102,10 @@ fun MainScreen(
         topBar = {
             CalendarAppBar( // Передаем только нужные данные
                 isLoading = uiState.isLoading,
+                isBusy = uiState.isLoading || eventNetworkState is MainViewModel.EventNetworkState.Loading,
                 isRecording = uiState.isRecording,
                 onNavigateToSettings = onNavigateToSettings
+                // TODO: Добавить кнопку/иконку для вызова DatePicker -> viewModel.setSelectedDate()
             )
         },
         bottomBar = {
@@ -115,40 +129,56 @@ fun MainScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
+                .pullRefresh(pullRefreshState) // Применяем SwipeRefresh
         ) {
-            // Используем BackgroundShapes из папки common
-            BackgroundShapes(MaterialTheme.colorScheme) // Передаем текущую цветовую схему
+            // --- Слой 1: Фон (самый нижний) ---
+            BackgroundShapes(
+                colorScheme = MaterialTheme.colorScheme,
+                modifier = Modifier.fillMaxSize()
+            )
 
+            // --- Слой 2: Контент (Заголовок + Список событий) ---
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Заголовок
+                Text(
+                    text = "События на ${selectedDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, // Сделаем жирнее
+                    color = MaterialTheme.colorScheme.onSurface, // Используем основной цвет текста на фоне
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp) // Немного больше отступ
+                )
+
+                // Список Событий (Занимает оставшееся место в Column)
+                EventsList(
+                    events = calendarEvents,
+                    timeFormatter = viewModel::formatEventListTime,
+                    // Применяем Modifier для веса и фона (если нужен контраст)
+                    modifier = Modifier
+                        .weight(1f) // Занимает все доступное пространство в Column
+                        .fillMaxWidth()
+                    // .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.1f)) // Очень легкий фон для списка, если нужно
+                )
+            } // End Column
+
+            // --- Слой 3: AI Visualizer (рисуется поверх фона и списка) ---
             AiVisualizer(
                 aiState = aiState,
                 aiMessage = aiMessage,
-                modifier = Modifier.fillMaxSize(), // Visualizer's container fills the Box
+                modifier = Modifier.fillMaxSize(), // Занимает всю область Box, но рисует где нужно
                 uriHandler = uriHandler,
                 onResultShownTimeout = { viewModel.resetAiStateAfterResult() }
             )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-            // Заголовок секции событий (опционально)
-            Text(
-                text = "События на ${selectedDate.format(DateTimeFormatter.ofPattern("d MMMM", Locale("ru")))}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            // --- Слой 4: Индикатор SwipeRefresh (поверх всего остального) ---
+            PullRefreshIndicator(
+                refreshing = eventNetworkState is MainViewModel.EventNetworkState.Loading,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter), // Выравниваем по верху Box
+                // Опционально: настроить цвета индикатора
+                // contentColor = MaterialTheme.colorScheme.primary,
+                // backgroundColor = MaterialTheme.colorScheme.surface
             )
 
-            // Область для списка событий
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                    //      .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)) // Полупрозрачный фон для списка
-            ) {
-                // Передаем состояние, форматтер времени и обработчик повтора
-                EventsList(
-                    eventsState = eventsState,
-                    timeFormatter = viewModel::formatEventListTime, // Передаем ссылку на функцию
-                    onRetry = { viewModel.fetchEventsForSelectedDate() }
-                )
-            }
-        }
-    }
-}
+        } // End основной Box
+    } // End Scaffold
+} // End MainScreen

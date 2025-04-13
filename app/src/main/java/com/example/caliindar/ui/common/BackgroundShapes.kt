@@ -15,7 +15,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 
 @Composable
-fun BackgroundShapes(colorScheme: ColorScheme) { // Принимаем ColorScheme
+fun BackgroundShapes(colorScheme: ColorScheme, modifier: Modifier = Modifier) { // Принимаем ColorScheme
     Box(
         modifier = Modifier
             .fillMaxSize()

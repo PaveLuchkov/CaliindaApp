@@ -8,6 +8,12 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import android.content.Context
+import androidx.room.Room
+import com.example.caliindar.data.local.AppDatabase
+import com.example.caliindar.data.local.EventDao
+import dagger.hilt.android.qualifiers.ApplicationContext
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -32,4 +38,29 @@ object NetworkModule {
     }
 
     // TODO: Сюда же можно добавить @Provides для Retrofit, Gson и т.д., если они понадобятся
+}
+
+@Module
+@InstallIn(SingletonComponent::class) // Живет пока живет приложение
+object DatabaseModule {
+
+    @Provides
+    @Singleton // Гарантирует один экземпляр базы данных
+    fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
+        return Room.databaseBuilder(
+            appContext,
+            AppDatabase::class.java,
+            "caliindar_database" // Имя файла БД
+        )
+            // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
+            // Но для production нужно реализовать правильные миграции!
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    @Provides
+    @Singleton // DAO тоже должен быть синглтоном, т.к. зависит от синглтона БД
+    fun provideEventDao(appDatabase: AppDatabase): EventDao {
+        return appDatabase.eventDao()
+    }
 }
