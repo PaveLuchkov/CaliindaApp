@@ -76,8 +76,9 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
             // TODO: Добавить сюда выбор таймзоны или другие настройки
+            Text("Часовой пояс: как на устройстве")
+            Spacer(modifier = Modifier.height(24.dp))
             Text("Другие настройки будут здесь.")
 
         }

@@ -33,7 +33,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.io.IOException
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
@@ -375,10 +377,6 @@ class MainViewModel @Inject constructor(
             return
         }
 
-        // --- Если длительность достаточная ---
-        // Добавляем плейсхолдер в чат (можно сделать и после успешной остановки)
-    //    addChatMessage("[Аудиозапись]", isUser = true) // <-- Плейсхолдер
-
         var audioFile: File? = null
         viewModelScope.launch {
             try {
@@ -469,8 +467,10 @@ class MainViewModel @Inject constructor(
     }
 
     // Отправка Текста (теперь использует multipart и вызывает executeProcessRequest)
-    private suspend fun sendTextToServer(text: String) { // Убрали idToken из аргументов
-        val freshToken = getFreshIdToken() // Пытаемся получить свежий токен ПЕРЕД запросом
+    private suspend fun sendTextToServer(text: String) {
+        val freshToken = getFreshIdToken()
+        val currentDateTime = LocalDateTime.now()
+        val timeZone = ZoneId.systemDefault()
 
         if (freshToken == null) {
             Log.w(TAG, "sendTextToServer failed: Could not get fresh token.")
@@ -485,6 +485,8 @@ class MainViewModel @Inject constructor(
             .setType(MultipartBody.FORM)
             .addFormDataPart("id_token_str", freshToken) // Используем свежий токен
             .addFormDataPart("text", text)
+            .addFormDataPart("time", currentDateTime.toString())
+            .addFormDataPart("timeZone", timeZone.toString())
             .build()
 
         val request = Request.Builder()
@@ -510,7 +512,8 @@ class MainViewModel @Inject constructor(
             }
             return // Прерываем отправку
         }
-
+        val currentDateTime = LocalDateTime.now()
+        val timeZone = ZoneId.systemDefault()
         Log.i(TAG, "Sending audio and FRESH ID token to /process")
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -519,6 +522,8 @@ class MainViewModel @Inject constructor(
                 audioFile.name,
                 audioFile.asRequestBody("audio/ogg".toMediaTypeOrNull())
             )
+            .addFormDataPart("time", currentDateTime.toString())
+            .addFormDataPart("timeZone", timeZone.toString())
             .addFormDataPart("id_token_str", freshToken) // Используем свежий токен
             .build()
 
