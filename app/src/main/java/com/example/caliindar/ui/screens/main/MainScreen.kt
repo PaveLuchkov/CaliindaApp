@@ -4,6 +4,7 @@ import android.Manifest
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +22,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.caliindar.ui.common.BackgroundShapes // <-- Импорт
 import com.example.caliindar.ui.screens.main.components.* // <-- Импорт компонентов
 import com.example.caliindar.ui.screens.main.components.AI.AiVisualizer
+import com.example.caliindar.ui.screens.main.components.calendarui.EventsList
 import kotlinx.coroutines.launch
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +46,8 @@ fun MainScreen(
     val isAiRotating by viewModel.isAiRotating.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
+    val eventsState by viewModel.eventsState.collectAsStateWithLifecycle() // Собираем состояние событий
+    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     // --- УБРАЛИ дублирующийся googleSignInLauncher отсюда ---
 
     // --- Side Effects (Snackbar) ---
@@ -119,8 +126,29 @@ fun MainScreen(
                 uriHandler = uriHandler,
                 onResultShownTimeout = { viewModel.resetAiStateAfterResult() }
             )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
+            // Заголовок секции событий (опционально)
+            Text(
+                text = "События на ${selectedDate.format(DateTimeFormatter.ofPattern("d MMMM", Locale("ru")))}",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
+            // Область для списка событий
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    //      .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)) // Полупрозрачный фон для списка
+            ) {
+                // Передаем состояние, форматтер времени и обработчик повтора
+                EventsList(
+                    eventsState = eventsState,
+                    timeFormatter = viewModel::formatEventListTime, // Передаем ссылку на функцию
+                    onRetry = { viewModel.fetchEventsForSelectedDate() }
+                )
+            }
         }
     }
 }

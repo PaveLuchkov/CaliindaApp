@@ -31,8 +31,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
+import org.json.JSONArray
+import org.json.JSONException
 import java.io.File
 import java.io.IOException
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -50,6 +53,7 @@ enum class AiVisualizerState {
     ERROR
 }
 
+
 // Переносим ViewModel сюда
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -59,7 +63,6 @@ class MainViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
-
 
     private val _aiState = MutableStateFlow(AiVisualizerState.IDLE)
     val aiState: StateFlow<AiVisualizerState> = _aiState.asStateFlow()
@@ -103,6 +106,23 @@ class MainViewModel @Inject constructor(
         checkInitialAuthState()
     }
 
+    // Состояние для списка событий
+    sealed interface EventsUiState {
+        object Loading : EventsUiState
+        data class Success(val events: List<CalendarEvent>) : EventsUiState
+        data class Error(val message: String) : EventsUiState
+        object Idle : EventsUiState // Начальное состояние или если не запрашивали
+    }
+
+    // StateFlow для управления состоянием событий
+    private val _eventsState = MutableStateFlow<EventsUiState>(EventsUiState.Idle)
+    val eventsState: StateFlow<EventsUiState> = _eventsState.asStateFlow()
+
+    // Дата, для которой отображаем события (по умолчанию - сегодня)
+    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
+
+
     fun getSignInIntent(): Intent = googleSignInClient.signInIntent
 
     // Вызывается после получения результата от Google Sign-In Activity
@@ -138,6 +158,7 @@ class MainViewModel @Inject constructor(
                                 isLoading = false
                             )
                         }
+                        fetchEventsForSelectedDate()
                     } else {
                         // Ошибка обмена, сбрасываем состояние
                         signOutInternally("Ошибка авторизации на сервере.")
@@ -210,7 +231,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-
     // Вызывается при нажатии кнопки выхода
     fun signOut() {
         viewModelScope.launch {
@@ -266,6 +286,7 @@ class MainViewModel @Inject constructor(
                             showAuthError = null
                         )
                     }
+                    fetchEventsForSelectedDate() // TODO Возможно, лучше сделать это в LaunchedEffect в Composable.
                     // НЕ НУЖНО снова вызывать sendAuthInfoToBackend, если пользователь уже был авторизован
                     // на бэкенде. Тихого входа достаточно для обновления idToken на клиенте.
                     // Если нужно проверить связь с бэкендом, можно сделать отдельный "ping" или "getUserInfo" запрос.
@@ -291,8 +312,136 @@ class MainViewModel @Inject constructor(
             Log.d(TAG, "Audio permission status updated to: $isGranted")
         }
     }
+// - ---- -- -  БЛОК КАЛЕНДАРЯ
+
+    // Функция для вызова при необходимости загрузить/обновить события
+    fun fetchEventsForSelectedDate() {
+        // Запускаем в корутине
+        viewModelScope.launch {
+            val date = _selectedDate.value // Берем текущую выбранную дату
+            fetchEvents(date)
+        }
+    }
+
+    private suspend fun fetchEvents(date: LocalDate) {
+        if (!_uiState.value.isSignedIn) {
+            Log.w(TAG, "Cannot fetch events: User not signed in.")
+            _eventsState.value = EventsUiState.Error("Требуется вход в аккаунт")
+            return
+        }
+
+        _eventsState.value = EventsUiState.Loading // Показываем загрузку
+        Log.d(TAG, "Fetching events for date: $date")
+
+        val freshToken = getFreshIdToken() // Получаем свежий ID токен для аутентификации на НАШЕМ бэкенде
+        if (freshToken == null) {
+            Log.w(TAG, "Cannot fetch events: Failed to get fresh ID token.")
+            // getFreshIdToken уже обновит uiState с ошибкой аутентификации
+            _eventsState.value = EventsUiState.Error("Ошибка аутентификации")
+            return
+        }
+
+        // Формируем URL для нового эндпоинта бэкенда
+        // Передаем дату как параметр запроса
+        val url = "$BACKEND_BASE_URL/calendar/events?date=${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
+
+        val request = Request.Builder()
+            .url(url)
+            .get() // GET запрос
+            .header("Authorization", "Bearer $freshToken") // Передаем ID токен для аутентификации на бэкенде
+            .build()
+
+        withContext(Dispatchers.IO) {
+            try {
+                okHttpClient.newCall(request).execute().use { response ->
+                    val responseBodyString = response.body?.string()
+                    if (response.isSuccessful && responseBodyString != null) {
+                        Log.i(TAG, "Events fetched successfully for $date. Response: $responseBodyString")
+                        try {
+                            // Парсим JSON ответ от нашего бэкенда
+                            val eventsList = parseEventsResponse(responseBodyString)
+                            _eventsState.value = EventsUiState.Success(eventsList)
+                        } catch (e: JSONException) {
+                            Log.e(TAG, "Error parsing events JSON", e)
+                            _eventsState.value = EventsUiState.Error("Ошибка парсинга ответа сервера")
+                        }
+                    } else {
+                        Log.e(TAG, "Error fetching events from backend: ${response.code} - $responseBodyString")
+                        val errorMsg = parseBackendError(responseBodyString, response.code)
+                        _eventsState.value = EventsUiState.Error(errorMsg)
+                    }
+                }
+            } catch (e: IOException) {
+                Log.e(TAG, "Network error fetching events", e)
+                _eventsState.value = EventsUiState.Error("Сетевая ошибка: ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error fetching events", e)
+                _eventsState.value = EventsUiState.Error("Неизвестная ошибка: ${e.message}")
+            }
+        }
+    }
+
+    // TODO Вам нужно будет адаптировать ее под реальную структуру вашего JSON
+    private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
+        val events = mutableListOf<CalendarEvent>()
+        val jsonArray = JSONArray(jsonString) // Предполагаем, что бэкенд возвращает массив
+        for (i in 0 until jsonArray.length()) {
+            val eventObject = jsonArray.getJSONObject(i)
+            events.add(
+                CalendarEvent(
+                    id = eventObject.getString("id"), // Убедитесь, что имена полей совпадают
+                    summary = eventObject.getString("summary"),
+                    startTime = eventObject.getString("startTime"),
+                    endTime = eventObject.getString("endTime"),
+                    description = eventObject.optString("description", null),
+                    location = eventObject.optString("location", null)
+                )
+            )
+        }
+        return events
+    }
+
+    private fun parseBackendError(responseBody: String?, code: Int): String {
+        return try {
+            val json = JSONObject(responseBody ?: "{}")
+            json.optString("detail", "Ошибка сервера ($code)")
+        } catch (e: JSONException) {
+            "Ошибка сервера ($code)"
+        }
+    }
+
+    // Функция для изменения выбранной даты (если захотите добавить выбор даты)
+    fun setSelectedDate(newDate: LocalDate) {
+        if (newDate != _selectedDate.value) {
+            _selectedDate.value = newDate
+            fetchEventsForSelectedDate() // Сразу загружаем события для новой даты
+        }
+    }
+
+    fun formatEventListTime(startTimeStr: String, endTimeStr: String): String {
+        return try {
+            val startTime = OffsetDateTime.parse(startTimeStr)
+            val endTime = OffsetDateTime.parse(endTimeStr)
+
+            //TODO Проверяем, событие на весь день? (Обычно такие события заканчиваются в полночь следующего дня)
+            // Google API может возвращать только дату для событий на весь день (e.g., "2023-10-28")
+            // Вам нужно будет обрабатывать это на бэкенде или здесь.
+            // Пока предполагаем, что всегда есть время.
+
+            val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale("ru"))
+
+            "${startTime.format(formatter)} - ${endTime.format(formatter)}"
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error formatting event list time: $startTimeStr, $endTimeStr", e)
+            "Ошибка времени"
+        }
+    }
 
 
+
+
+    // --------------- БЛОК АИ
     // --- Отправка Текстового Сообщения ---
     fun sendTextMessage(text: String) {
         if (text.isBlank()) {
@@ -477,13 +626,12 @@ class MainViewModel @Inject constructor(
             // UI уже должен быть обновлен в getFreshIdToken или signOutInternally
             _uiState.update { it.copy(isLoading = false) } // Убедимся, что isLoading сброшен
             _aiState.value = AiVisualizerState.IDLE // Сбросим состояние AI
-            return // Прерываем отправку
+            return
         }
 
         Log.i(TAG, "Sending text and FRESH ID token to /process")
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("id_token_str", freshToken) // Используем свежий токен
             .addFormDataPart("text", text)
             .addFormDataPart("time", currentDateTime.toString())
             .addFormDataPart("timeZone", timeZone.toString())
@@ -491,6 +639,7 @@ class MainViewModel @Inject constructor(
 
         val request = Request.Builder()
             .url("$BACKEND_BASE_URL/process")
+            .header("Authorization", "Bearer $freshToken")
             .post(requestBody)
             .build()
 
@@ -510,7 +659,7 @@ class MainViewModel @Inject constructor(
                 val deleted = audioFile.delete()
                 Log.d(TAG, "Temp audio file ${audioFile.name} deleted due to token error: $deleted")
             }
-            return // Прерываем отправку
+            return
         }
         val currentDateTime = LocalDateTime.now()
         val timeZone = ZoneId.systemDefault()
@@ -524,11 +673,11 @@ class MainViewModel @Inject constructor(
             )
             .addFormDataPart("time", currentDateTime.toString())
             .addFormDataPart("timeZone", timeZone.toString())
-            .addFormDataPart("id_token_str", freshToken) // Используем свежий токен
             .build()
 
         val request = Request.Builder()
             .url("$BACKEND_BASE_URL/process")
+            .header("Authorization", "Bearer $freshToken")
             .post(requestBody)
             .build()
 
@@ -660,6 +809,7 @@ class MainViewModel @Inject constructor(
                         messageForVisualizer = "Made it for you!\n$eventName\n$eventTime"
                         finalAiState = AiVisualizerState.RESULT
                         Log.i(TAG, "Event creation successful.")
+                        fetchEventsForSelectedDate()
                     }
                     "clarification_needed" -> {
                         statusMessage = "Требуется уточнение"
