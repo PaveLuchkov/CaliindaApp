@@ -95,8 +95,8 @@ class MainViewModel @Inject constructor(
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
         // Лучше вынести URL в BuildConfig или другой модуль
-        private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
-        //private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
+        //private const val BACKEND_BASE_URL = "http://172.23.35.150:8000"
+        private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
     }
 
     init {
@@ -917,43 +917,7 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-    fun formatEventTime(isoTimeString: String?): String {
-        if (isoTimeString.isNullOrBlank()) {
-            return "Время не указано" // Или просто пустую строку ""
-        }
-        return try {
-            // 1. Парсим строку в OffsetDateTime
-            val offsetDateTime = OffsetDateTime.parse(isoTimeString)
 
-            // 2. Создаем форматтер для вывода (русская локаль)
-            //    d      - день месяца (12)
-            //    LLLL   - полное название месяца в именительном падеже (апрель) - LLLL лучше MMMM для русского
-            //    'в'    - буква "в" как литерал (в кавычках)
-            //    HH     - час (00-23)
-            //    mm     - минуты (00-59)
-            val formatter = DateTimeFormatter.ofPattern("d LLLL", Locale("ru"))
-
-            // 3. Форматируем дату и время
-            offsetDateTime.format(formatter) // Вернет строку типа "12 апреля"
-
-            // ---- Вариант с учетом часового пояса устройства ----
-            // Если вы хотите показать время СО СДВИГОМ на локальный пояс пользователя:
-            // val localZoneId = ZoneId.systemDefault() // Получаем пояс устройства
-            // val localDateTime = offsetDateTime.atZoneSameInstant(localZoneId) // Конвертируем
-            // val formatter = DateTimeFormatter.ofPattern("d LLLL 'в' HH:mm", Locale("ru"))
-            // localDateTime.format(formatter)
-            // -----------------------------------------------------
-
-        } catch (e: DateTimeParseException) {
-            Log.e(TAG, "Error parsing date-time: $isoTimeString", e)
-            "Неверный формат времени" // Возвращаем сообщение об ошибке
-            // Или можно вернуть исходную строку: isoTimeString
-        } catch (e: Exception) {
-            // Ловим другие возможные ошибки
-            Log.e(TAG, "Error formatting date-time: $isoTimeString", e)
-            "Ошибка времени"
-        }
-    }
 
     // --- Новый Обработчик Ответов от /process ---
     // Эта функция должна вызываться в Main потоке, т.к. обновляет UI
@@ -975,14 +939,9 @@ class MainViewModel @Inject constructor(
 
                 when (status) {
                     "success" -> {
-                        val event = json.optJSONObject("event")
-                        val eventLink: String? = json.optString("event_link")
-                        val eventName = event?.optString("event_name", "Событие") ?: "Событие"
-                        val eventTimeISO: String? = event?.optString("start_time", null) ?: "Время"
-                        val eventTime = formatEventTime(eventTimeISO)
                         statusMessage = "Создал как вы и просили" // Shorter status
                         // Format message for visualizer
-                        messageForVisualizer = "Made it for you!\n$eventName\n$eventTime"
+                        messageForVisualizer = "Success!"
                         finalAiState = AiVisualizerState.RESULT
                         Log.i(TAG, "Event creation successful.")
                         fetchEventsForSelectedDate()
@@ -1045,6 +1004,15 @@ class MainViewModel @Inject constructor(
         // Проверяем, что текущее состояние все еще RESULT (или ASKING, если для него тоже нужен сброс)
         // чтобы не сбросить случайно другое состояние, если оно изменилось во время задержки
         if (_aiState.value == AiVisualizerState.RESULT) {
+            _aiState.value = AiVisualizerState.IDLE
+            _aiMessage.value = null // Очищаем сообщение при переходе в IDLE
+            Log.d("MainViewModel", "Resetting AI state to IDLE after result timeout.")
+        }
+    }
+    fun resetAiStateAfterAsking() {
+        // Проверяем, что текущее состояние все еще RESULT (или ASKING, если для него тоже нужен сброс)
+        // чтобы не сбросить случайно другое состояние, если оно изменилось во время задержки
+        if (_aiState.value == AiVisualizerState.ASKING) {
             _aiState.value = AiVisualizerState.IDLE
             _aiMessage.value = null // Очищаем сообщение при переходе в IDLE
             Log.d("MainViewModel", "Resetting AI state to IDLE after result timeout.")

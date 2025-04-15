@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,8 +32,8 @@ fun AiVisualizer(
     aiState: AiVisualizerState,
     aiMessage: String?,
     modifier: Modifier = Modifier,
-    uriHandler: UriHandler, // Pass if needed for links
-    onResultShownTimeout: () -> Unit // <-- Новый параметр: лямбда для вызова после таймаута
+    onResultShownTimeout: () -> Unit,
+    onAskingShownTimeout: () -> Unit
 ) {
     val targetState = aiState
 
@@ -44,6 +45,13 @@ fun AiVisualizer(
         if (targetState == AiVisualizerState.RESULT) {
             delay(5000L) // Ждем 5 секунд
             onResultShownTimeout() // Вызываем колбэк после задержки
+        }
+    }
+
+    LaunchedEffect(targetState) { // Запускается при смене targetState
+        if (targetState == AiVisualizerState.ASKING) {
+            delay(15000L) // Ждем 15 секунд
+            onAskingShownTimeout() // Вызываем колбэк после задержки
         }
     }
 
@@ -127,11 +135,11 @@ fun AiVisualizer(
         label = "color"
     ) { state ->
         when (state) {
-            AiVisualizerState.RECORDING -> MaterialTheme.colorScheme.primaryContainer
-            AiVisualizerState.THINKING -> MaterialTheme.colorScheme.secondary
-            AiVisualizerState.ASKING -> MaterialTheme.colorScheme.tertiary
-            AiVisualizerState.RESULT -> MaterialTheme.colorScheme.primary
-            else -> MaterialTheme.colorScheme.surface
+            AiVisualizerState.RECORDING -> colorScheme.primaryContainer
+            AiVisualizerState.THINKING -> colorScheme.secondary
+            AiVisualizerState.ASKING -> colorScheme.tertiary
+            AiVisualizerState.RESULT -> colorScheme.primary
+            else -> colorScheme.surface
         }
     }
 
@@ -215,7 +223,7 @@ fun AiVisualizer(
                 ) {
                     Text(
                         text = aiMessage ?: "",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         color = BubbleTextColor,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp) // Добавил padding для текста

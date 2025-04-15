@@ -165,8 +165,8 @@ fun MainScreen(
                 aiState = aiState,
                 aiMessage = aiMessage,
                 modifier = Modifier.fillMaxSize(), // Занимает всю область Box, но рисует где нужно
-                uriHandler = uriHandler,
-                onResultShownTimeout = { viewModel.resetAiStateAfterResult() }
+                onResultShownTimeout = { viewModel.resetAiStateAfterResult() },
+                onAskingShownTimeout = { viewModel.resetAiStateAfterAsking() }
             )
 
             // --- Слой 4: Индикатор SwipeRefresh (поверх всего остального) ---
