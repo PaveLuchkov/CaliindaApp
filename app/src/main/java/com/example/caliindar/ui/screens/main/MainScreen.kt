@@ -174,9 +174,6 @@ fun MainScreen(
                 refreshing = eventNetworkState is MainViewModel.EventNetworkState.Loading,
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter), // Выравниваем по верху Box
-                // Опционально: настроить цвета индикатора
-                // contentColor = MaterialTheme.colorScheme.primary,
-                // backgroundColor = MaterialTheme.colorScheme.surface
             )
 
         } // End основной Box

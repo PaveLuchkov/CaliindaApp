@@ -1,7 +1,5 @@
 package com.example.caliindar.ui.screens.main
 
-import com.example.caliindar.data.model.ChatMessage
-
 // Переносим MainUiState в свой файл
 data class MainUiState(
     val isSignedIn: Boolean = false,

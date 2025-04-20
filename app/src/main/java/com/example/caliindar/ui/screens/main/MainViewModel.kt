@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.caliindar.data.local.EventDao
 import com.example.caliindar.data.mapper.EventMapper
+import com.example.caliindar.data.repo.SettingsRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -26,7 +27,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import com.example.caliindar.data.model.ChatMessage
 import com.example.caliindar.util.AudioRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,7 +65,8 @@ enum class AiVisualizerState {
 class MainViewModel @Inject constructor(
     application: Application,
     private val okHttpClient: OkHttpClient,
-    private val eventDao: EventDao
+    private val eventDao: EventDao,
+    private val settingsRepository: SettingsRepository
 ): AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -76,6 +77,12 @@ class MainViewModel @Inject constructor(
 
     private val _aiMessage = MutableStateFlow<String?>(null) // Текст для ASKING/RESULT
     val aiMessage: StateFlow<String?> = _aiMessage.asStateFlow()
+    val botTemperState: StateFlow<String> = settingsRepository.botTemperFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "Friendly helper" // Начальное значение (пока DataStore не загрузится)
+        )
 
     val isAiRotating: StateFlow<Boolean> = aiState.map {
         it == AiVisualizerState.RECORDING || it == AiVisualizerState.THINKING
@@ -168,7 +175,13 @@ class MainViewModel @Inject constructor(
     )
 
 
-
+    fun updateBotTemperSetting(newTemper: String) {
+        viewModelScope.launch {
+            settingsRepository.saveBotTemper(newTemper)
+            // Опционально: показать сообщение об успехе
+            // _uiState.update { it.copy(message = "Настройка поведения сохранена") }
+        }
+    }
 
     fun getSignInIntent(): Intent = googleSignInClient.signInIntent
 
@@ -796,6 +809,7 @@ class MainViewModel @Inject constructor(
         val freshToken = getFreshIdToken()
         val currentDateTime = LocalDateTime.now()
         val timeZone = ZoneId.systemDefault()
+        val currentTemper = botTemperState.value
 
         if (freshToken == null) {
             Log.w(TAG, "sendTextToServer failed: Could not get fresh token.")
@@ -811,6 +825,7 @@ class MainViewModel @Inject constructor(
             .addFormDataPart("text", text)
             .addFormDataPart("time", currentDateTime.toString())
             .addFormDataPart("timeZone", timeZone.toString())
+            .addFormDataPart("temper", currentTemper)
             .build()
 
         val request = Request.Builder()
@@ -839,6 +854,7 @@ class MainViewModel @Inject constructor(
         }
         val currentDateTime = LocalDateTime.now()
         val timeZone = ZoneId.systemDefault()
+        val currentTemper = botTemperState.value
         Log.i(TAG, "Sending audio and FRESH ID token to /process")
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -847,6 +863,7 @@ class MainViewModel @Inject constructor(
                 audioFile.name,
                 audioFile.asRequestBody("audio/ogg".toMediaTypeOrNull())
             )
+            .addFormDataPart("temper", currentTemper)
             .addFormDataPart("time", currentDateTime.toString())
             .addFormDataPart("timeZone", timeZone.toString())
             .build()

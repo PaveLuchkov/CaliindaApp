@@ -37,8 +37,7 @@ fun AiVisualizer(
 ) {
     val targetState = aiState
 
-    val BubbleBackgroundColor = colorScheme.secondaryContainer
-    val BubbleTextColor = colorScheme.onSecondaryContainer
+
 
     // --- LaunchedEffect для задержки перед IDLE ---
     LaunchedEffect(targetState) { // Запускается при смене targetState
@@ -216,7 +215,7 @@ fun AiVisualizer(
             ) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = BubbleBackgroundColor,
+                    color = colorScheme.tertiaryContainer,
                     tonalElevation = 2.dp,
                     modifier = Modifier
                         .padding(horizontal = 1.dp, vertical = 2.dp)
@@ -225,10 +224,11 @@ fun AiVisualizer(
                         text = aiMessage ?: "",
                         style = typography.bodyMedium,
                         textAlign = TextAlign.Center,
-                        color = BubbleTextColor,
+                        color = colorScheme.onTertiaryContainer,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp) // Добавил padding для текста
                     )
                 }
+
             }
         }
     }

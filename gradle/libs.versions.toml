@@ -2,6 +2,7 @@
 accompanistSystemuicontroller = "0.34.0"
 agp = "8.9.1"
 credentialsPlayServicesAuth = "1.5.0"
+datastorePreferences = "1.1.4"
 googleApiClientAndroid = "2.2.0"
 googleApiServicesCalendar = "v3-rev20231123-2.0.0"
 googleid = "1.1.1"
@@ -34,6 +35,7 @@ accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-graphics-shapes = { module = "androidx.graphics:graphics-shapes", version.ref = "graphicsShapes" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-material = { module = "androidx.compose.material:material" }
