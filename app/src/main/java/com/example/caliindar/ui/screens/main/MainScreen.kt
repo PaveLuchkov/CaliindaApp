@@ -103,7 +103,7 @@ fun MainScreen(
             CalendarAppBar( // Передаем только нужные данные
                 isLoading = uiState.isLoading,
                 isBusy = uiState.isLoading || eventNetworkState is MainViewModel.EventNetworkState.Loading,
-                isRecording = uiState.isRecording,
+                isListening = uiState.isListening,
                 onNavigateToSettings = onNavigateToSettings
                 // TODO: Добавить кнопку/иконку для вызова DatePicker -> viewModel.setSelectedDate()
             )
@@ -117,8 +117,8 @@ fun MainScreen(
                     viewModel.sendTextMessage(textFieldState.text)
                     textFieldState = TextFieldValue("") // Очищаем поле после отправки
                 },
-                onRecordStart = { viewModel.startRecording() }, // Передаем лямбды для записи
-                onRecordStopAndSend = { viewModel.stopRecordingAndSend() },
+                onRecordStart = { viewModel.startListening() }, // Передаем лямбды для записи
+                onRecordStopAndSend = { viewModel.stopListening() },
                 onUpdatePermissionResult = { granted -> viewModel.updatePermissionStatus(granted) }, // Передаем лямбду для обновления разрешений
                 isTextInputVisible = isTextInputVisible,
                 onToggleTextInput = { isTextInputVisible = !isTextInputVisible }

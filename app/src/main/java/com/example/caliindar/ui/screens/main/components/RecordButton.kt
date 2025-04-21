@@ -43,7 +43,7 @@ fun RecordButton(
     var isPressed by remember { mutableStateOf(false) } // Для UI эффекта нажатия
 
     // --- Анимации и формы (без изменений) ---
-    val targetBackgroundColor = if (uiState.isRecording) {
+    val targetBackgroundColor = if (uiState.isListening) {
         MaterialTheme.colorScheme.error
     } else {
         MaterialTheme.colorScheme.primary
@@ -71,7 +71,7 @@ fun RecordButton(
         label = "animatedMorphRotation"
     )
     val animatedScale by animateFloatAsState(
-        targetValue = if (isPressed || uiState.isRecording) 1.45f else 1.0f,
+        targetValue = if (isPressed || uiState.isListening) 1.45f else 1.0f,
         animationSpec = tween(durationMillis = 300), label = "RecordButtonScale"
     )
 
@@ -89,12 +89,12 @@ fun RecordButton(
     }
 
     // Кнопка активна, если пользователь вошел и не идет загрузка/запись (для начала записи)
-    // Сама логика pointerInput будет обрабатывать uiState.isRecording для остановки
+    // Сама логика pointerInput будет обрабатывать uiState.isListening для остановки
     val isInteractionEnabled = uiState.isSignedIn && !uiState.isLoading
 
     Log.d(
         "RecordButton",
-        "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isRecording=${uiState.isRecording}"
+        "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${uiState.isListening}"
     )
 
     FloatingActionButton(
@@ -130,7 +130,7 @@ fun RecordButton(
 
                             if (hasPermission) {
                                 // Если уже идет запись, нажатие игнорируем (остановка по отпусканию)
-                                if (!uiState.isRecording) {
+                                if (!uiState.isListening) {
                                     Log.d("RecordButton", "Permission granted, starting recording.")
                                     down.consume() // Потребляем событие
                                     scope.launch { onStartRecording() } // Вызываем лямбду начала записи
@@ -176,7 +176,7 @@ fun RecordButton(
                 // Вращение применяется внутри CustomRotatingMorphShape
             }
             .clip(
-                if (isPressed || uiState.isRecording) {
+                if (isPressed || uiState.isListening) {
                     // Используем CustomRotatingMorphShape из папки common
                     CustomRotatingMorphShape(
                         morph = morph,
@@ -192,7 +192,7 @@ fun RecordButton(
     ) {
         Icon(
             imageVector = Icons.Filled.Mic,
-            contentDescription = if (uiState.isRecording) "Идет запись (Отпустите для остановки)" else "Начать запись (Нажмите и удерживайте)",
+            contentDescription = if (uiState.isListening) "Идет запись (Отпустите для остановки)" else "Начать запись (Нажмите и удерживайте)",
             tint = animatedContentColor
         )
     }

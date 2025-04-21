@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CalendarAppBar(
     isLoading: Boolean, // Принимаем конкретные состояния
-    isRecording: Boolean,
+    isListening: Boolean,
     onNavigateToSettings: () -> Unit,
     isBusy: Boolean
 ) {
@@ -40,7 +40,7 @@ fun CalendarAppBar(
         },
         actions = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isLoading && !isRecording) { // Показываем индикатор только если не идет запись
+                if (isLoading && !isListening) { // Показываем индикатор только если не идет запись
                     CircularProgressIndicator( // Material 3 Indicator
                         modifier = Modifier
                             .size(24.dp)

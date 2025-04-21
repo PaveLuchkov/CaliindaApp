@@ -2,6 +2,10 @@ package com.example.caliindar.ui.screens.main
 
 import android.app.Application
 import android.content.Intent
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,8 +27,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import com.example.caliindar.util.AudioRecorder
@@ -36,9 +38,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
-import org.json.JSONArray
 import org.json.JSONException
-import java.io.File
 import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -49,10 +49,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
 import javax.inject.Inject
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 enum class AiVisualizerState {
     IDLE,      // Начальное состояние / Ничего не происходит (кнопка видима)
-    RECORDING, // Пользователь записывает голос (фигура большая, крутится внизу)
+    LISTENING, // Пользователь записывает голос (фигура большая, крутится внизу)
     THINKING,  // ИИ обрабатывает запрос (фигура меньше, крутится в центре)
     ASKING,    // ИИ задает уточняющий вопрос (фигура внизу, показывает текст)
     RESULT,     // ИИ показывает результат/событие (фигура внизу, показывает текст/данные)
@@ -64,10 +67,11 @@ enum class AiVisualizerState {
 @HiltViewModel
 class MainViewModel @Inject constructor(
     application: Application,
+    @ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
     private val eventDao: EventDao,
-    private val settingsRepository: SettingsRepository
-): AndroidViewModel(application) {
+    private val settingsRepository: SettingsRepository,
+): ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -85,17 +89,23 @@ class MainViewModel @Inject constructor(
         )
 
     val isAiRotating: StateFlow<Boolean> = aiState.map {
-        it == AiVisualizerState.RECORDING || it == AiVisualizerState.THINKING
+        it == AiVisualizerState.LISTENING || it == AiVisualizerState.THINKING
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // Если AudioRecorder не внедряется, создаем его здесь
     private val audioRecorder = AudioRecorder(application.cacheDir)
     private var currentIdToken: String? = null
-    private var recordingStartTime: Long = 0L
+    private var LISTENINGStartTime: Long = 0L
 
     // Google Sign-In
     private val gso: GoogleSignInOptions
     val googleSignInClient: GoogleSignInClient
+
+    private var speechRecognizer: SpeechRecognizer? = null
+    private val speechRecognizerIntent: Intent
+
+    private var recognitionSuccessful = false
+
 
     companion object {
         private const val TAG = "MainViewModelAuth"
@@ -116,7 +126,25 @@ class MainViewModel @Inject constructor(
             .build()
         googleSignInClient = GoogleSignIn.getClient(application, gso)
 
+        // Проверяем доступность распознавания
+        if (!SpeechRecognizer.isRecognitionAvailable(context)) { // <-- Используем context
+            Log.e(TAG, "Speech recognition not available on this device.")
+            _uiState.update { it.copy(showGeneralError = "Распознавание речи недоступно на этом устройстве") }
+        } else {
+            initializeSpeechRecognizer()
+        }
 
+        // Инициализация Intent для распознавания
+        speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            // Укажи язык, если нужно (иначе будет язык системы)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ru-RU") // Например, русский
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите...") // Подсказка пользователю (может отображаться системным UI)
+            // partial results - получать промежуточные результаты
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        }
+
+        // Наблюдение за состоянием входа (остается)
         checkInitialAuthState()
     }
 
@@ -247,7 +275,7 @@ class MainViewModel @Inject constructor(
                 isLoading = false,
                 userEmail = null,
                 message = "Требуется вход.",
-                isRecording = false,
+                isListening = false,
                 showAuthError = authError // Показываем ошибку
             )
         }
@@ -654,106 +682,153 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun startRecording() {
-        if (_uiState.value.isRecording) { Log.w(TAG, "Already recording."); return }
-        if (currentIdToken == null) { Log.w(TAG, "Cannot record: Token missing."); return }
-        if (!_uiState.value.isPermissionGranted) { Log.w(TAG, "Cannot record: Permission not granted."); return }
-        // Добавим проверку на isLoading, чтобы не начать запись во время другого запроса
-        if (_uiState.value.isLoading) { Log.w(TAG, "Cannot record: App is busy (isLoading)."); return }
 
-
-        Log.d(TAG, "All checks passed. Launching recording coroutine...")
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                audioRecorder.startRecording()
-                recordingStartTime = System.currentTimeMillis()
-                withContext(Dispatchers.Main) {
-                    // Update UI state (isRecording for button logic if needed)
-                    _uiState.update { it.copy(isRecording = true, message = "Запись...") }
-                    // Set AI Visualizer State
-                    _aiState.value = AiVisualizerState.RECORDING
-                    _aiMessage.value = null // Clear any previous message
-                }
-                Log.i(TAG, "Recording started successfully at $recordingStartTime.")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error starting recording", e); recordingStartTime = 0L
-                withContext(Dispatchers.Main) {
-                    _uiState.update { it.copy(isRecording = false, showGeneralError = "Ошибка начала записи: ${e.message}") }
-                    _aiState.value = AiVisualizerState.IDLE // Revert state on error
-                }
-                audioRecorder.cancelRecording() // Ensure cleanup
-            }
+    private fun initializeSpeechRecognizer() {
+        viewModelScope.launch(Dispatchers.Main) {
+            // Используем context для создания
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+            speechRecognizer?.setRecognitionListener(recognitionListener)
+            Log.d(TAG, "SpeechRecognizer initialized.")
         }
     }
 
-    fun stopRecordingAndSend() {
-        if (!_uiState.value.isRecording) { Log.w(TAG, "Not recording, cannot stop."); return }
-
-        val duration = System.currentTimeMillis() - recordingStartTime
-        val MIN_RECORDING_DURATION_MS = 500
-
-        Log.d(TAG, "Attempting to stop recording. Duration: $duration ms")
-
-        viewModelScope.launch(Dispatchers.Main.immediate) {
-            _uiState.update { it.copy(isRecording = false, isLoading = true, message = "Обработка...") }
-            _aiState.value = AiVisualizerState.THINKING
-            _aiMessage.value = null
+    private val recognitionListener = object : RecognitionListener {
+        override fun onReadyForSpeech(params: Bundle?) {
+            Log.d(TAG, "SpeechRecognizer: onReadyForSpeech")
+            // Уже обновили UI в startListening
+            recognitionSuccessful = false // Сбрасываем флаг перед началом
+            _uiState.update { it.copy(message = "Слушаю...") } // Обновляем сообщение
         }
 
+        override fun onBeginningOfSpeech() {
+            Log.d(TAG, "SpeechRecognizer: onBeginningOfSpeech")
+            _uiState.update { it.copy(message = "Говорите...") } // Можно менять сообщение
+        }
 
-        if (duration < MIN_RECORDING_DURATION_MS) {
-            Log.w(TAG, "Recording too short ($duration ms). Cancelling without saving.")
-            viewModelScope.launch(Dispatchers.IO) {
-                audioRecorder.cancelRecording()
-                withContext(Dispatchers.Main) {
-                    // Reset isLoading, show message, revert AI state
-                    _uiState.update { it.copy(isLoading = false, message = "Удерживайте кнопку дольше") }
-                    _aiState.value = AiVisualizerState.IDLE
-                }
+        override fun onRmsChanged(rmsdB: Float) {
+            // Можно использовать для визуализации уровня громкости (например, анимировать иконку)
+            // Log.v(TAG, "SpeechRecognizer: onRmsChanged: $rmsdB")
+        }
+
+        override fun onBufferReceived(buffer: ByteArray?) {
+            Log.v(TAG, "SpeechRecognizer: onBufferReceived")
+        }
+
+        override fun onEndOfSpeech() {
+            Log.d(TAG, "SpeechRecognizer: onEndOfSpeech")
+            // Пользователь закончил говорить, ждем результатов
+            _uiState.update { it.copy(isListening = false, isLoading = true, message = "Обработка...") } // Переходим в isLoading
+            _aiState.value = AiVisualizerState.THINKING // Меняем состояние AI
+        }
+
+        override fun onError(error: Int) {
+            val errorMessage = when (error) {
+                SpeechRecognizer.ERROR_AUDIO -> "Ошибка аудио"
+                SpeechRecognizer.ERROR_CLIENT -> "Ошибка клиента"
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Нет разрешений"
+                SpeechRecognizer.ERROR_NETWORK -> "Ошибка сети"
+                SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Таймаут сети"
+                SpeechRecognizer.ERROR_NO_MATCH -> "Ничего не распознано"
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Распознаватель занят"
+                SpeechRecognizer.ERROR_SERVER -> "Ошибка сервера распознавания"
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Время вышло, попробуйте снова"
+                else -> "Неизвестная ошибка распознавания ($error)"
             }
-            recordingStartTime = 0L
+            Log.e(TAG, "SpeechRecognizer: onError: $errorMessage")
+
+            // Сбрасываем состояние UI и AI
+            _uiState.update { it.copy(isListening = false, isLoading = false, showGeneralError = errorMessage, message = null) }
+            _aiState.value = AiVisualizerState.IDLE
+
+            // Если была ошибка ERROR_NO_MATCH или ERROR_SPEECH_TIMEOUT, возможно, не нужно останавливать явно
+            // stopListeningInternal() // Можно вызвать для надежности
+        }
+
+        override fun onResults(results: Bundle?) {
+            Log.d(TAG, "SpeechRecognizer: onResults")
+            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            if (matches != null && matches.isNotEmpty()) {
+                val recognizedText = matches[0] // Берем самый вероятный результат
+                Log.i(TAG, "SpeechRecognizer: Recognized text: '$recognizedText'")
+                recognitionSuccessful = true // Успех
+
+                // --- Вот здесь отправляем текст на бэкенд ---
+                viewModelScope.launch {
+                    sendTextToServer(recognizedText) // Используем существующую функцию!
+                }
+            } else {
+                Log.w(TAG, "SpeechRecognizer: No recognition results.")
+                recognitionSuccessful = false
+                // По идее, если нет результатов, должен был сработать onError(NO_MATCH)
+                // Но на всякий случай сбросим состояние здесь тоже
+                _uiState.update { it.copy(isListening = false, isLoading = false, message = "Ничего не распознано") }
+                _aiState.value = AiVisualizerState.IDLE
+            }
+            // stopListeningInternal() // Вызов stopListening() здесь обычно не нужен, т.к. onResults - финальный колбек
+        }
+
+        override fun onPartialResults(partialResults: Bundle?) {
+            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            if (matches != null && matches.isNotEmpty()) {
+                val partialText = matches[0]
+                Log.d(TAG, "SpeechRecognizer: Partial result: '$partialText'")
+                // Можно обновить UI, чтобы показывать текст по мере распознавания
+                _uiState.update { it.copy(message = partialText) }
+            }
+        }
+
+        override fun onEvent(eventType: Int, params: Bundle?) {
+            Log.d(TAG, "SpeechRecognizer: onEvent $eventType")
+        }
+    }
+
+    fun startListening() {
+        if (_uiState.value.isListening) { Log.w(TAG, "Already listening."); return }
+        // Убрали проверку токена отсюда, она будет перед отправкой текста
+        if (!_uiState.value.isPermissionGranted) { Log.w(TAG, "Cannot listen: Permission not granted."); return }
+        if (_uiState.value.isLoading) { Log.w(TAG, "Cannot listen: App is busy (isLoading)."); return }
+
+        if (speechRecognizer == null) {
+            Log.e(TAG, "Cannot start listening: SpeechRecognizer is null.")
+            initializeSpeechRecognizer() // Попробуем инициализировать снова
+            _uiState.update { it.copy(showGeneralError = "Ошибка инициализации распознавания") }
             return
         }
 
-        var audioFile: File? = null
-        viewModelScope.launch {
+        Log.d(TAG, "Starting speech recognition listening...")
+        viewModelScope.launch(Dispatchers.Main) { // startListening нужно вызывать на Main
             try {
-                audioFile = withContext(Dispatchers.IO) {
-                    Log.i(TAG, "Stopping audio recorder...")
-                    audioRecorder.stopRecording()
-                }
-
-                if (audioFile != null && currentIdToken != null) {
-                    Log.d(TAG, "Audio file obtained: ${audioFile?.absolutePath}. Sending...")
-                    // AI state is already THINKING
-                    sendAudioToServer(audioFile!!)
-                } else {
-                    // Error getting file or token
-                    withContext(Dispatchers.Main) { // Ensure UI update on Main
-                        _uiState.update { it.copy( showGeneralError = "Не удалось получить аудиофайл или токен.", message = "Ошибка файла", isLoading = false) }
-                        _aiState.value = AiVisualizerState.IDLE // Revert state
-                    }
-                    audioFile?.let { file -> withContext(Dispatchers.IO) { file.delete() } }
-                }
+                _uiState.update { it.copy(isListening = true, message = "Инициализация...") }
+                _aiState.value = AiVisualizerState.LISTENING // Новое состояние для визуала
+                _aiMessage.value = null // Clear any previous message
+                speechRecognizer?.startListening(speechRecognizerIntent)
             } catch (e: Exception) {
-                Log.e(TAG, "Error stopping/sending recording", e)
-                withContext(Dispatchers.Main) { // Ensure UI update on Main
-                    _uiState.update {
-                        it.copy(
-                            showGeneralError = "Ошибка записи/отправки: ${e.message}",
-                            message = "Ошибка записи",
-                            isLoading = false // Reset loading on error
-                        )
-                    }
-                    _aiState.value = AiVisualizerState.IDLE // Revert state
-                }
-                audioFile?.let { file -> withContext(Dispatchers.IO) { file.delete() } }
-            } finally {
-                recordingStartTime = 0L
-                // isLoading and aiState are handled within the success/error paths of sendAudioToServer -> handleProcessResponse
+                Log.e(TAG, "Error starting listening", e)
+                _uiState.update { it.copy(isListening = false, showGeneralError = "Ошибка начала распознавания: ${e.message}") }
+                _aiState.value = AiVisualizerState.IDLE
             }
         }
     }
+
+    fun stopListening() {
+        if (!_uiState.value.isListening) { Log.w(TAG, "Not listening, cannot stop."); return }
+        Log.d(TAG, "Stopping speech recognition listening (user action)...")
+        stopListeningInternal()
+
+        // Важно: Мы вызываем stopListening(), но результат придет асинхронно в onResults или onError.
+        // UI частично обновится в onEndOfSpeech (isLoading=true), а финально - после ответа сервера или в onError.
+        // Не нужно здесь менять isLoading или aiState на IDLE, это сделают колбеки.
+    }
+
+    private fun stopListeningInternal() {
+        viewModelScope.launch(Dispatchers.Main) {
+            speechRecognizer?.stopListening()
+            Log.d(TAG, "Called speechRecognizer.stopListening()")
+            // Не меняем isListening здесь, пусть это делают колбеки (onEndOfSpeech/onError)
+            // _uiState.update { it.copy(isListening = false) } // <- Не здесь
+        }
+    }
+
 
 
     // Возвращает true при успехе, false при ошибке
@@ -837,53 +912,6 @@ class MainViewModel @Inject constructor(
         executeProcessRequest(request)
     }
 
-    // Отправка Аудио (теперь использует getFreshIdToken)
-    private suspend fun sendAudioToServer(audioFile: File) { // Убрали idToken из аргументов
-        val freshToken = getFreshIdToken() // Пытаемся получить свежий токен ПЕРЕД запросом
-
-        if (freshToken == null) {
-            Log.w(TAG, "sendAudioToServer failed: Could not get fresh token.")
-            _uiState.update { it.copy(isLoading = false) }
-            _aiState.value = AiVisualizerState.IDLE
-            // Удаляем файл, так как отправка не удалась из-за токена
-            withContext(Dispatchers.IO) {
-                val deleted = audioFile.delete()
-                Log.d(TAG, "Temp audio file ${audioFile.name} deleted due to token error: $deleted")
-            }
-            return
-        }
-        val currentDateTime = LocalDateTime.now()
-        val timeZone = ZoneId.systemDefault()
-        val currentTemper = botTemperState.value
-        Log.i(TAG, "Sending audio and FRESH ID token to /process")
-        val requestBody = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart(
-                "audio",
-                audioFile.name,
-                audioFile.asRequestBody("audio/ogg".toMediaTypeOrNull())
-            )
-            .addFormDataPart("temper", currentTemper)
-            .addFormDataPart("time", currentDateTime.toString())
-            .addFormDataPart("timeZone", timeZone.toString())
-            .build()
-
-        val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/process")
-            .header("Authorization", "Bearer $freshToken")
-            .post(requestBody)
-            .build()
-
-        // Выполняем запрос и удаляем файл после (в блоке finally)
-        try {
-            executeProcessRequest(request)
-        } finally {
-            withContext(Dispatchers.IO) {
-                val deleted = audioFile.delete()
-                Log.d(TAG, "Temp audio file ${audioFile.name} deleted after request attempt: $deleted")
-            }
-        }
-    }
 
     private suspend fun executeProcessRequest(request: Request) = withContext(Dispatchers.IO) {
         try {
@@ -1065,13 +1093,12 @@ class MainViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // Остановить запись и освободить ресурсы, если ViewModel уничтожается во время записи
-        if (_uiState.value.isRecording) {
-            viewModelScope.launch(Dispatchers.IO) {
-                audioRecorder.cancelRecording() // Используем новый метод отмены
-            }
+        viewModelScope.launch(Dispatchers.Main) { // И уничтожаться на Main
+            speechRecognizer?.destroy()
+            speechRecognizer = null
+            Log.d(TAG, "SpeechRecognizer destroyed.")
         }
-        Log.d(TAG, "MainViewModel cleared")
+        // okHttpClient.dispatcher.executorService.shutdown() // Закрытие клиента OkHttp
     }
 
 

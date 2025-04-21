@@ -1,12 +1,8 @@
-import android.R.attr.enabled
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -23,12 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Vertices
 import androidx.compose.ui.graphics.asComposePath
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
@@ -43,26 +35,19 @@ import kotlin.math.max
 import kotlin.random.Random
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.tooling.preview.Wallpapers.GREEN_DOMINATED_EXAMPLE
 import java.time.LocalDateTime
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.*
 import java.time.format.DateTimeFormatter
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.* // Используем Material3
 import androidx.compose.material3.Icon
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.FloatingActionButton
@@ -74,8 +59,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
-import java.time.YearMonth
 
 import android.util.Log
 import kotlin.math.abs
@@ -88,20 +71,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.lazy.LazyListState // Убедитесь, что импорт есть
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion
 import kotlinx.coroutines.launch // Для запуска корутины сброса скролла
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.awaitEachGesture // <<< Импорт
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.input.pointer.* // <<< Импорт для PointerEvent, PointerId и т.д.
-import com.google.android.material.bottomappbar.BottomAppBar
-import kotlin.math.abs // Для abs()
-import kotlin.math.sqrt
 
 import androidx.compose.runtime.rememberCoroutineScope // Добавить импорт
-import kotlinx.coroutines.launch // Добавить импорт
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId

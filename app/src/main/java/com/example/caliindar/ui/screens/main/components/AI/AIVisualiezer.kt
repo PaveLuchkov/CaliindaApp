@@ -37,8 +37,6 @@ fun AiVisualizer(
 ) {
     val targetState = aiState
 
-
-
     // --- LaunchedEffect для задержки перед IDLE ---
     LaunchedEffect(targetState) { // Запускается при смене targetState
         if (targetState == AiVisualizerState.RESULT) {
@@ -58,14 +56,14 @@ fun AiVisualizer(
     val rotationAngle = remember { Animatable(0f) }
     // LaunchedEffect для вращения остается без изменений...
     LaunchedEffect(targetState) {
-        val shouldRotate = targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.RECORDING
+        val shouldRotate = targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.LISTENING
         if (shouldRotate) {
             val duration = when (targetState) {
                 AiVisualizerState.THINKING -> 7000
-                AiVisualizerState.RECORDING -> 80000
+                AiVisualizerState.LISTENING -> 80000
                 else -> 5000 // На всякий случай
             }
-            if (!rotationAngle.isRunning && (targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.RECORDING)) {
+            if (!rotationAngle.isRunning && (targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.LISTENING)) {
                 launch {
                     rotationAngle.animateTo(
                         targetValue = rotationAngle.value + 360f,
@@ -105,7 +103,7 @@ fun AiVisualizer(
     ) { state ->
         when (state) {
             AiVisualizerState.IDLE -> 0f
-            AiVisualizerState.RECORDING -> 5f
+            AiVisualizerState.LISTENING -> 5f
             AiVisualizerState.THINKING -> 1f
             AiVisualizerState.ASKING -> 5f
             AiVisualizerState.RESULT -> 5f
@@ -122,7 +120,7 @@ fun AiVisualizer(
     ) { state ->
         when (state) {
             AiVisualizerState.IDLE -> 0.6f
-            AiVisualizerState.RECORDING -> 0.75f
+            AiVisualizerState.LISTENING -> 0.75f
             AiVisualizerState.THINKING -> 0.55f
             AiVisualizerState.ASKING, AiVisualizerState.RESULT -> 0.55f
             AiVisualizerState.ERROR -> 0.6f
@@ -134,7 +132,7 @@ fun AiVisualizer(
         label = "color"
     ) { state ->
         when (state) {
-            AiVisualizerState.RECORDING -> colorScheme.primaryContainer
+            AiVisualizerState.LISTENING -> colorScheme.primaryContainer
             AiVisualizerState.THINKING -> colorScheme.secondary
             AiVisualizerState.ASKING -> colorScheme.tertiary
             AiVisualizerState.RESULT -> colorScheme.primary

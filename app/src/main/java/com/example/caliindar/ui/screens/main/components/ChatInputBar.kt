@@ -32,8 +32,8 @@ fun ChatInputBar(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val isSendEnabled = textFieldValue.text.isNotBlank() && uiState.isSignedIn && !uiState.isLoading && !uiState.isRecording
-    val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isLoading && !uiState.isRecording // Disable toggle during recording/loading
+    val isSendEnabled = textFieldValue.text.isNotBlank() && uiState.isSignedIn && !uiState.isLoading && !uiState.isListening
+    val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isLoading && !uiState.isListening // Disable toggle during recording/loading
 
     // Request focus when text input becomes visible
     LaunchedEffect(isTextInputVisible) {
@@ -73,7 +73,7 @@ fun ChatInputBar(
                             .focusRequester(focusRequester), // Apply focus requester
                         shape = RoundedCornerShape(24.dp), // More rounded
                         placeholder = { Text("Сообщение...") },
-                        enabled = uiState.isSignedIn && !uiState.isLoading && !uiState.isRecording,
+                        enabled = uiState.isSignedIn && !uiState.isLoading && !uiState.isListening,
                         maxLines = 5,
                         colors = OutlinedTextFieldDefaults.colors( // Optional: Customize colors
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
