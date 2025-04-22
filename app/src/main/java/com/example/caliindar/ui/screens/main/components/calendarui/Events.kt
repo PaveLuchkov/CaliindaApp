@@ -27,6 +27,12 @@ import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.CalendarEvent
 import com.example.caliindar.ui.screens.main.MainViewModel
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun EventListItem(
@@ -104,4 +110,44 @@ fun EventsList(
             }
         }
     }
+}
+
+
+@Composable
+fun DayEventsPage(
+    date: LocalDate,
+    viewModel: MainViewModel,
+) {
+    val eventsFlow = remember(date) { viewModel.getEventsFlowForDate(date) }
+    val eventsState = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList()) //Returns State<List<CalendarEvent>>
+    val events = eventsState.value
+
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Заголовок Дня (можно вынести в отдельный Composable)
+            Text(
+                text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))),
+                style = typography.titleLarge, // Сделаем крупнее для страницы
+                fontWeight = FontWeight.Bold,
+                color = colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(colorScheme.surface.copy(alpha = 0.1f)) // Легкий фон для заголовка
+                    .padding(horizontal = 16.dp, vertical = 16.dp) // Больше отступы
+            )
+
+            // Список Событий для этого дня
+            EventsList(
+                events = events,
+                timeFormatter = viewModel::formatEventListTime,
+                modifier = Modifier
+                    .weight(1f) // Занимает оставшееся место
+                    .fillMaxWidth()
+            )
+        } // End Column
+    } // End Box
 }

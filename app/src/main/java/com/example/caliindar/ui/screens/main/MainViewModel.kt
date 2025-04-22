@@ -52,6 +52,7 @@ import javax.inject.Inject
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 
 enum class AiVisualizerState {
     IDLE,      // Начальное состояние / Ничего не происходит (кнопка видима)
@@ -108,6 +109,10 @@ class MainViewModel @Inject constructor(
 
 
     companion object {
+        const val PREFETCH_DAYS_FORWARD = 5
+        const val PREFETCH_DAYS_BACKWARD = 3
+        const val TRIGGER_PREFETCH_THRESHOLD_FORWARD = 2 // За сколько дней до конца загруженного диапазона начать новую загрузку
+        const val TRIGGER_PREFETCH_THRESHOLD_BACKWARD = 1 // За сколько
         private const val TAG = "MainViewModelAuth"
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
@@ -143,7 +148,7 @@ class MainViewModel @Inject constructor(
             // partial results - получать промежуточные результаты
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         }
-
+    //    ensureDateRangeLoadedAround(LocalDate.now())
         // Наблюдение за состоянием входа (остается)
         checkInitialAuthState()
     }
@@ -168,269 +173,84 @@ class MainViewModel @Inject constructor(
     private val _eventsState = MutableStateFlow<EventsUiState>(EventsUiState.Idle)
     val eventsState: StateFlow<EventsUiState> = _eventsState.asStateFlow()
 
-    // Дата, для которой отображаем события (по умолчанию - сегодня)
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
-    val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
 
-    @OptIn(ExperimentalCoroutinesApi::class) // Для flatMapLatest
-    val calendarEventsState: StateFlow<List<CalendarEvent>> = selectedDate.flatMapLatest { date ->
-        // Вычисляем начало и конец дня в UTC миллисекундах
-        val startOfDayUTC = date.atStartOfDay(ZoneOffset.UTC)
-        val startMillis = startOfDayUTC.toInstant().toEpochMilli()
-        // Конец дня - это начало следующего дня
-        val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
-
-        Log.d(TAG, "Observing DB for date: $date (Range UTC millis: $startMillis..<$endMillis)")
-
-        // Получаем Flow из DAO
-        eventDao.getEventsForDateRangeFlow(startMillis, endMillis)
-            .map { entityList ->
-                // Маппим Entity в Domain/UI модель
-                entityList.map { EventMapper.mapToDomain(it) }
-            }
-            .catch { e ->
-                // Обработка ошибок чтения из БД (маловероятно, но возможно)
-                Log.e(TAG, "Error reading events from DB for date $date", e)
-                emit(emptyList<CalendarEvent>()) // Возвращаем пустой список при ошибке
-                // Можно также обновить _eventNetworkState для отображения ошибки БД
-                _eventNetworkState.value = EventNetworkState.Error("Ошибка чтения локальных событий")
-            }
-    }.stateIn( // Преобразуем Flow в StateFlow для UI
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Начинаем сбор, когда есть подписчики
-        initialValue = emptyList() // Начальное значение - пустой список
-    )
+    private val _currentVisibleDate = MutableStateFlow(LocalDate.now()) // Дата, видимая в Pager
+    val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
 
 
-    fun updateBotTemperSetting(newTemper: String) {
-        viewModelScope.launch {
-            settingsRepository.saveBotTemper(newTemper)
-            // Опционально: показать сообщение об успехе
-            // _uiState.update { it.copy(message = "Настройка поведения сохранена") }
-        }
-    }
+    // Отслеживаем диапазон дат, которые УЖЕ были ЗАПРОШЕНЫ с бэкенда
+    private val _loadedDateRange = MutableStateFlow<ClosedRange<LocalDate>?>(null)
+    val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = _loadedDateRange.asStateFlow()
 
-    fun getSignInIntent(): Intent = googleSignInClient.signInIntent
 
-    // Вызывается после получения результата от Google Sign-In Activity
-    fun handleSignInResult(completedTask: com.google.android.gms.tasks.Task<GoogleSignInAccount>) {
-        viewModelScope.launch {
-            try {
-                val account = completedTask.getResult(ApiException::class.java)
-                val idToken = account?.idToken
-                val serverAuthCode = account?.serverAuthCode
-                val userEmail = account?.email
+    // Состояние сетевой загрузки ДИАПАЗОНА (можно сделать сложнее, но начнем с простого)
+    // TODO: А что усложнять
+    private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
+    val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
 
-                Log.i(TAG, "Sign-In Success! Email: $userEmail")
-                Log.d(TAG, "ID Token received: ${idToken != null}")
-                Log.d(TAG, "Server Auth Code received: ${serverAuthCode != null}")
 
-                if (idToken != null && serverAuthCode != null) {
-                    currentIdToken = idToken // Сохраняем токен
-                    _uiState.update {
-                        it.copy(
-                            isLoading = true,
-                            message = "Вход выполнен: $userEmail. Авторизация календаря...",
-                            showAuthError = null
-                        )
-                    }
-                    // Отправляем данные на бэкенд
-                    val exchangeSuccess = sendAuthInfoToBackend(idToken, serverAuthCode)
-                    if (exchangeSuccess) {
-                        _uiState.update {
-                            it.copy(
-                                isSignedIn = true,
-                                userEmail = userEmail,
-                                message = "Авторизация успешна! Готово к записи.",
-                                isLoading = false
-                            )
-                        }
-                        fetchEventsForSelectedDate()
-                    } else {
-                        // Ошибка обмена, сбрасываем состояние
-                        signOutInternally("Ошибка авторизации на сервере.")
-                    }
-                } else {
-                    Log.w(TAG, "ID Token or Server Auth Code is null after sign-in.")
-                    signOutInternally("Не удалось получить токен/код от Google.")
-                }
-
-            } catch (e: ApiException) {
-                Log.w(TAG, "signInResult:failed code=" + e.statusCode, e)
-                signOutInternally("Ошибка входа Google: ${e.statusCode}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error handling sign in result", e)
-                signOutInternally("Неизвестная ошибка при входе: ${e.message}")
-            }
-        }
-    }
-
-    // Обработка ошибок аутентификации (внутренняя)
-    private fun signOutInternally(authError: String) {
-        currentIdToken = null
-        _uiState.update {
-            it.copy(
-                isSignedIn = false,
-                isLoading = false,
-                userEmail = null,
-                message = "Требуется вход.",
-                isListening = false,
-                showAuthError = authError // Показываем ошибку
-            )
-        }
-    }
-
-    private suspend fun getFreshIdToken(): String? {
-        Log.d(TAG, "Attempting to get fresh ID token via silent sign-in...")
-        return try {
-            val account = googleSignInClient.silentSignIn().await() // await() вместо addOnCompleteListener
-            val freshToken = account?.idToken
-            if (freshToken != null) {
-                Log.i(TAG, "Silent sign-in successful, got fresh token for: ${account.email}")
-                currentIdToken = freshToken // Обновляем сохраненный токен
-                // Убедимся, что UI тоже в актуальном состоянии (на случай, если silentSignIn сработал после ошибки)
-                _uiState.update {
-                    it.copy(
-                        isSignedIn = true,
-                        userEmail = account.email,
-                        message = "Аккаунт: ${account.email} (Авторизован)",
-                        isLoading = it.isLoading, // Не меняем isLoading здесь
-                        showAuthError = null
-                    )
-                }
-                freshToken
-            } else {
-                Log.w(TAG, "Silent sign-in successful but ID token is null.")
-                signOutInternally("Ошибка: Не удалось получить токен после тихого входа.")
-                null
-            }
-        } catch (e: ApiException) {
-            Log.w(TAG, "Silent sign-in failed: ${e.statusCode}", e)
-            // Частые коды: SIGN_IN_REQUIRED (нужен явный вход), RESOLUTION_REQUIRED
-            signOutInternally("Сессия истекла или отозвана. Требуется вход.") // Важно сбросить состояние
-            null // Возвращаем null, сигнализируя о неудаче
-        } catch (e: Exception) {
-            Log.e(TAG, "Silent sign-in failed with generic exception", e)
-            // Оставляем пользователя "залогиненным" в UI, но токен получить не можем
-            // Возможно, временная сетевая проблема. Не делаем signOutInternally сразу.
-            _uiState.update { it.copy(showGeneralError = "Не удалось обновить сессию: ${e.message}") }
-            null // Возвращаем null
-        }
-    }
-
-    // Вызывается при нажатии кнопки выхода
-    fun signOut() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, message = "Выход...") }
-            try {
-                googleSignInClient.signOut().addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.i(TAG, "User signed out successfully from Google.")
-                        signOutInternally("Вы успешно вышли.") // Используем общий метод сброса
-                        // Опционально: уведомить бэкенд об выходе
-                    } else {
-                        Log.w(TAG, "Google Sign out failed.", task.exception)
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                showGeneralError = "Не удалось выйти из Google аккаунта."
-                            )
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error during sign out", e)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        showGeneralError = "Ошибка при выходе: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    private fun checkInitialAuthState() {
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "Checking initial auth state via silent sign-in...")
-                // Пытаемся войти тихо и получить СВЕЖИЙ токен
-                val account = googleSignInClient.silentSignIn().await()
-                val idToken = account?.idToken
-                val serverAuthCode = account?.serverAuthCode // Получаем auth code снова, если нужен
-                val userEmail = account?.email
-
-                if (idToken != null && userEmail != null /* && serverAuthCode != null - возможно, он не нужен здесь? */) {
-                    Log.i(TAG, "Silent sign-in success, processing result for: $userEmail")
-                    currentIdToken = idToken // Сохраняем свежий токен
-                    // Обновляем UI, показывая, что вход выполнен
-                    _uiState.update {
-                        it.copy(
-                            isSignedIn = true,
-                            userEmail = userEmail,
-                            message = "Аккаунт: $userEmail (Авторизован)",
-                            isLoading = false,
-                            showAuthError = null
-                        )
-                    }
-                    fetchEventsForSelectedDate() // TODO Возможно, лучше сделать это в LaunchedEffect в Composable.
-                    // НЕ НУЖНО снова вызывать sendAuthInfoToBackend, если пользователь уже был авторизован
-                    // на бэкенде. Тихого входа достаточно для обновления idToken на клиенте.
-                    // Если нужно проверить связь с бэкендом, можно сделать отдельный "ping" или "getUserInfo" запрос.
-
-                } else {
-                    // Silent sign-in не вернул аккаунт или токен
-                    Log.i(TAG, "Silent sign-in did not return a valid account/token.")
-                    signOutInternally("Требуется вход или обновление сессии.") // Считаем не вошедшим
-                }
-
-            } catch (e: ApiException) {
-                Log.w(TAG, "Silent sign-in failed: ${e.statusCode}", e)
-                signOutInternally("Требуется вход (ошибка ${e.statusCode})") // Считаем не вошедшим
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking initial auth state", e)
-                signOutInternally("Ошибка проверки аккаунта: ${e.message}") // Считаем не вошедшим
-            }
-        }
-    }
-    fun updatePermissionStatus(isGranted: Boolean) {
-        if (_uiState.value.isPermissionGranted != isGranted) { // Обновляем только если изменилось
-            _uiState.update { it.copy(isPermissionGranted = isGranted) }
-            Log.d(TAG, "Audio permission status updated to: $isGranted")
-        }
-    }
 // - ---- -- -  БЛОК КАЛЕНДАРЯ
+    // --- ЛОГИКА ЗАГРУЗКИ ДИАПАЗОНА ---
+    fun onVisibleDateChanged(newDate: LocalDate) {
+        if (newDate != _currentVisibleDate.value) {
+            Log.d(TAG, "Visible date changed to: $newDate")
+            _currentVisibleDate.value = newDate
+            // Запускаем проверку и возможную предзагрузку
+            ensureDateRangeLoadedAround(newDate)
+        }
+    }
+    internal fun ensureDateRangeLoadedAround(centerDate: LocalDate) {
+        viewModelScope.launch {
+            val requiredRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
+            val currentlyLoaded = _loadedDateRange.value
 
-    // Функция для вызова при необходимости загрузить/обновить события
-    internal fun fetchEventsForSelectedDate() {
-        // Используем Job, чтобы избежать запуска нескольких одновременных запросов
-        // (Хотя проверка _eventNetworkState уже частично решает это)
-        if (_eventNetworkState.value is EventNetworkState.Loading) return
+            if (currentlyLoaded == null || !currentlyLoaded.containsRange(requiredRange)) {
+                Log.i(TAG, "Need to load or expand range. Required: $requiredRange, Current: $currentlyLoaded")
+                // Рассчитываем НОВЫЙ общий диапазон для загрузки (объединяем или берем новый)
+                val rangeToLoad = currentlyLoaded?.union(requiredRange) ?: requiredRange
+                // Запускаем фоновую загрузку этого ДИАПАЗОНА
+                fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive)
+            } else {
+                Log.d(TAG, "Current range $currentlyLoaded already covers required $requiredRange")
+            }
+        }
+    }
+
+
+
+
+    // --- ИЗМЕНЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ---
+    // Загружает данные для ДИАПАЗОНА дат с нового эндпоинта
+    private fun fetchAndStoreDateRange(startDate: LocalDate, endDate: LocalDate) {
+        // Предотвращаем множественные одновременные загрузки диапазона
+        if (_rangeNetworkState.value is EventNetworkState.Loading) {
+            Log.d(TAG, "Range fetch request ignored, already loading.")
+            return
+        }
+        // Проверка входа и токена остается важной
+        if (!_uiState.value.isSignedIn) {
+            Log.w(TAG, "Cannot fetch range: User not signed in.")
+            return
+        }
 
         viewModelScope.launch {
-            val dateToFetch = _selectedDate.value // Берем текущую выбранную дату
-            Log.i(TAG, "Starting background fetch for events on date: $dateToFetch")
-
-            if (!_uiState.value.isSignedIn) {
-                Log.w(TAG, "Cannot fetch events: User not signed in.")
-                // Не меняем eventNetworkState, т.к. это не ошибка сети
-                return@launch
-            }
-
-            // Устанавливаем состояние загрузки для UI (например, индикатора в AppBar)
-            _eventNetworkState.value = EventNetworkState.Loading
+            Log.i(TAG, "Starting background fetch for date range: $startDate to $endDate")
+            _rangeNetworkState.value = EventNetworkState.Loading
 
             val freshToken = getFreshIdToken() // Получаем свежий ID токен
             if (freshToken == null) {
-                Log.w(TAG, "Cannot fetch events: Failed to get fresh ID token.")
-                _eventNetworkState.value = EventNetworkState.Error("Ошибка аутентификации для обновления")
-                // signOutInternally уже был вызван внутри getFreshIdToken, если токен получить не удалось
+                Log.w(TAG, "Cannot fetch range: Failed to get fresh ID token.")
+                _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации для обновления")
+                // signOutInternally уже был вызван внутри getFreshIdToken
                 return@launch
             }
 
-            // Формируем URL для эндпоинта бэкенда
-            val url = "$BACKEND_BASE_URL/calendar/events?date=${dateToFetch.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
+            // --- ИСПОЛЬЗУЕМ НОВЫЙ ЭНДПОИНТ ---
+            val url = "$BACKEND_BASE_URL/calendar/events/range" + // Новый путь
+                    "?startDate=${startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}" + // Параметр startDate
+                    "&endDate=${endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}"       // Параметр endDate
+
             val request = Request.Builder()
                 .url(url)
                 .get()
@@ -443,45 +263,76 @@ class MainViewModel @Inject constructor(
                         val responseBodyString = response.body?.string()
                         if (!response.isSuccessful) {
                             val errorMsg = parseBackendError(responseBodyString, response.code)
-                            Log.e(TAG, "Error fetching events from backend: ${response.code} - $errorMsg")
-                            throw IOException("Backend error: ${response.code} - $errorMsg") // Бросаем исключение
+                            Log.e(TAG, "Error fetching range from backend: ${response.code} - $errorMsg")
+                            throw IOException("Backend error: ${response.code} - $errorMsg")
                         }
                         if (responseBodyString.isNullOrBlank()) {
-                            Log.w(TAG, "Empty response body received for events on $dateToFetch.")
-                            emptyList() // Пустой ответ - значит нет событий
+                            Log.w(TAG, "Empty response body received for range $startDate to $endDate.")
+                            emptyList()
                         } else {
-                            Log.i(TAG, "Events fetched successfully from network for $dateToFetch.")
-                            parseEventsResponse(responseBodyString) // Парсим ответ
+                            Log.i(TAG, "Range fetched successfully from network for $startDate to $endDate.")
+                            parseEventsResponse(responseBodyString) // Парсим ответ (остается тем же)
                         }
                     }
                 } // End Dispatchers.IO
 
                 // --- Успешный ответ сети ---
-                // Маппим сетевые события в Entity
                 val eventEntities = networkEvents.mapNotNull { EventMapper.mapToEntity(it) }
 
-                // Определяем диапазон для очистки/вставки в БД (начало и конец дня в UTC)
-                val startOfDayUTC = dateToFetch.atStartOfDay(ZoneOffset.UTC)
-                val startMillis = startOfDayUTC.toInstant().toEpochMilli()
-                val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
+                // --- ВАЖНО: Обновляем БД для ВСЕГО ЗАГРУЖЕННОГО ДИАПАЗОНА ---
+                // Рассчитываем границы диапазона в миллисекундах UTC
+                val startRangeMillis = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                // Конец диапазона - НАЧАЛО следующего дня после endDate
+                val endRangeMillis = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
-                // Сохраняем в БД (атомарно удаляем старые для этого дня и вставляем новые)
-                Log.d(TAG, "Updating DB for $dateToFetch. Deleting range $startMillis..<$endMillis, Inserting ${eventEntities.size} events.")
-                eventDao.clearAndInsertEventsForRange(startMillis, endMillis, eventEntities)
-                Log.i(TAG, "Successfully updated DB with events for $dateToFetch.")
+                Log.d(TAG, "Updating DB for range $startDate to $endDate. Deleting range $startRangeMillis..< $endRangeMillis, Inserting ${eventEntities.size} events.")
+                // Используем существующий метод DAO, он подходит
+                eventDao.clearAndInsertEventsForRange(startRangeMillis, endRangeMillis, eventEntities)
+                Log.i(TAG, "Successfully updated DB with events for range $startDate to $endDate.")
 
-                // Сбрасываем состояние ошибки/загрузки
-                _eventNetworkState.value = EventNetworkState.Idle
+                // Обновляем состояние ЗАГРУЖЕННОГО диапазона
+                _loadedDateRange.update { current -> current?.union(startDate..endDate) ?: (startDate..endDate) }
+                _rangeNetworkState.value = EventNetworkState.Idle // Успех
 
-            } catch (e: IOException) { // Ловим сетевые ошибки и ошибки ответа сервера
-                Log.e(TAG, "Network error fetching events for $dateToFetch", e)
-                _eventNetworkState.value = EventNetworkState.Error("Ошибка сети: ${e.message}")
-            } catch (e: Exception) { // Ловим ошибки парсинга JSON или другие неожиданные
-                Log.e(TAG, "Error processing events response for $dateToFetch", e)
-                _eventNetworkState.value = EventNetworkState.Error("Ошибка обработки данных: ${e.message}")
+            } catch (e: IOException) {
+                Log.e(TAG, "Network error fetching range $startDate to $endDate", e)
+                _rangeNetworkState.value = EventNetworkState.Error("Ошибка сети: ${e.message}")
+            } catch (e: Exception) { // Ловим ошибки парсинга JSON или другие
+                Log.e(TAG, "Error processing range response for $startDate to $endDate", e)
+                _rangeNetworkState.value = EventNetworkState.Error("Ошибка обработки данных: ${e.message}")
             }
-            // 'finally' не нужен, т.к. состояние сбрасывается в Idle или Error внутри try/catch
         }
+    }
+
+    // --- НОВАЯ ФУНКЦИЯ ДЛЯ UI (ДЛЯ СТРАНИЦЫ PAGER) ---
+    /**
+     * Предоставляет Flow списка событий ТОЛЬКО для указанной даты.
+     * Данные берутся из локальной БД (Room).
+     */
+    fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
+        val startOfDayUTC = date.atStartOfDay(ZoneOffset.UTC)
+        val startMillis = startOfDayUTC.toInstant().toEpochMilli()
+        val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli() // Конец дня - начало следующего
+
+        Log.d(TAG, "Requesting event Flow from DB for date: $date (Range UTC millis: $startMillis..<$endMillis)")
+
+        return eventDao.getEventsForDateRangeFlow(startMillis, endMillis)
+            .map { entityList -> // Маппим Entity в Domain/UI модель
+                entityList.map { EventMapper.mapToDomain(it) }
+            }
+            .catch { e ->
+                Log.e(TAG, "Error reading events from DB for date $date", e)
+                emit(emptyList<CalendarEvent>()) // Отдаем пустой список при ошибке чтения
+                // Можно дополнительно сигнализировать об ошибке БД, если нужно
+            }
+        // Не используем stateIn здесь, пусть собирается в Composable с помощью collectAsStateWithLifecycle
+    }
+
+    fun refreshCurrentVisibleDate() {
+        val currentDate = _currentVisibleDate.value
+        Log.d(TAG, "Manual refresh triggered for date: $currentDate")
+        // Перезагружаем только один день
+        fetchAndStoreDateRange(currentDate, currentDate)
     }
 
     private suspend fun fetchEvents(date: LocalDate) {
@@ -490,6 +341,7 @@ class MainViewModel @Inject constructor(
             _eventsState.value = EventsUiState.Error("Требуется вход в аккаунт")
             return
         }
+
 
         _eventsState.value = EventsUiState.Loading // Показываем загрузку
         Log.d(TAG, "Fetching events for date: $date")
@@ -580,6 +432,7 @@ class MainViewModel @Inject constructor(
     }
 
     // Функция для изменения выбранной даты (если захотите добавить выбор даты)
+    /*
     fun setSelectedDate(newDate: LocalDate) {
         if (newDate != _selectedDate.value) {
             Log.d(TAG, "Selected date changed to: $newDate")
@@ -588,14 +441,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun refreshEvents() {
-        if (_eventNetworkState.value is EventNetworkState.Loading) {
-            Log.d(TAG, "Refresh request ignored, already loading events.")
-            return // Не запускаем, если уже идет загрузка
-        }
-        Log.d(TAG, "Manual refresh triggered for date: ${_selectedDate.value}")
-        fetchEventsForSelectedDate()
-    }
+     */
+
 
     fun formatEventTimeForDisplay(timeString: String?, pattern: String = "HH:mm"): String {
         if (timeString.isNullOrBlank()) return "--:--" // Или другой плейсхолдер
@@ -653,6 +500,21 @@ class MainViewModel @Inject constructor(
         return "$startTimeFormatted - $endTimeFormatted"
     }
 
+
+    private fun ClosedRange<LocalDate>.containsRange(other: ClosedRange<LocalDate>): Boolean {
+        return this.start <= other.start && this.endInclusive >= other.endInclusive
+    }
+
+    // Объединяет два диапазона, создавая минимальный охватывающий диапазон
+    private fun ClosedRange<LocalDate>.union(other: ClosedRange<LocalDate>): ClosedRange<LocalDate> {
+        val newStart = minOf(this.start, other.start)
+        val newEnd = maxOf(this.endInclusive, other.endInclusive)
+        return newStart..newEnd
+    }
+
+    // --- Очистка ошибок для нового состояния ---
+    fun clearRangeNetworkError() { _rangeNetworkState.update { EventNetworkState.Idle } }
+
     // Используем новую функцию и в методе для AI Visualizer (если нужно время)
 
 
@@ -682,6 +544,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun updateBotTemperSetting(newTemper: String) {
+        viewModelScope.launch {
+            settingsRepository.saveBotTemper(newTemper)
+            // Опционально: показать сообщение об успехе
+            // _uiState.update { it.copy(message = "Настройка поведения сохранена") }
+        }
+    }
 
     private fun initializeSpeechRecognizer() {
         viewModelScope.launch(Dispatchers.Main) {
@@ -989,7 +858,11 @@ class MainViewModel @Inject constructor(
                         messageForVisualizer = "Success!"
                         finalAiState = AiVisualizerState.RESULT
                         Log.i(TAG, "Event creation successful.")
-                        fetchEventsForSelectedDate()
+                        ensureDateRangeLoadedAround(_currentVisibleDate.value)
+                        viewModelScope.launch { // Запускаем в корутине, чтобы не блокировать
+                            refreshCurrentVisibleDate() // Вызываем функцию обновления текущего дня
+                            Log.d(TAG, "Calendar refresh triggered after successful LLM processing.")
+                        }
                     }
                     "clarification_needed" -> {
                         statusMessage = "Требуется уточнение"
@@ -1099,6 +972,199 @@ class MainViewModel @Inject constructor(
             Log.d(TAG, "SpeechRecognizer destroyed.")
         }
         // okHttpClient.dispatcher.executorService.shutdown() // Закрытие клиента OkHttp
+    }
+
+
+    /// GOOGLE ВХОД И ТОКЕНЫ
+
+    fun getSignInIntent(): Intent = googleSignInClient.signInIntent
+
+    // Вызывается после получения результата от Google Sign-In Activity
+    fun handleSignInResult(completedTask: com.google.android.gms.tasks.Task<GoogleSignInAccount>) {
+        viewModelScope.launch {
+            try {
+                val account = completedTask.getResult(ApiException::class.java)
+                val idToken = account?.idToken
+                val serverAuthCode = account?.serverAuthCode
+                val userEmail = account?.email
+
+                Log.i(TAG, "Sign-In Success! Email: $userEmail")
+                Log.d(TAG, "ID Token received: ${idToken != null}")
+                Log.d(TAG, "Server Auth Code received: ${serverAuthCode != null}")
+
+                if (idToken != null && serverAuthCode != null) {
+                    currentIdToken = idToken // Сохраняем токен
+                    _uiState.update {
+                        it.copy(
+                            isLoading = true,
+                            message = "Вход выполнен: $userEmail. Авторизация календаря...",
+                            showAuthError = null
+                        )
+                    }
+                    // Отправляем данные на бэкенд
+                    val exchangeSuccess = sendAuthInfoToBackend(idToken, serverAuthCode)
+                    if (exchangeSuccess) {
+                        _uiState.update {
+                            it.copy(
+                                isSignedIn = true,
+                                userEmail = userEmail,
+                                message = "Авторизация успешна! Готово к записи.",
+                                isLoading = false
+                            )
+                        }
+                        ensureDateRangeLoadedAround(_currentVisibleDate.value)
+                    } else {
+                        // Ошибка обмена, сбрасываем состояние
+                        signOutInternally("Ошибка авторизации на сервере.")
+                    }
+                } else {
+                    Log.w(TAG, "ID Token or Server Auth Code is null after sign-in.")
+                    signOutInternally("Не удалось получить токен/код от Google.")
+                }
+
+            } catch (e: ApiException) {
+                Log.w(TAG, "signInResult:failed code=" + e.statusCode, e)
+                signOutInternally("Ошибка входа Google: ${e.statusCode}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling sign in result", e)
+                signOutInternally("Неизвестная ошибка при входе: ${e.message}")
+            }
+        }
+    }
+
+    // Обработка ошибок аутентификации (внутренняя)
+    private fun signOutInternally(authError: String) {
+        currentIdToken = null
+        _uiState.update {
+            it.copy(
+                isSignedIn = false,
+                isLoading = false,
+                userEmail = null,
+                message = "Требуется вход.",
+                isListening = false,
+                showAuthError = authError // Показываем ошибку
+            )
+        }
+    }
+
+    private suspend fun getFreshIdToken(): String? {
+        Log.d(TAG, "Attempting to get fresh ID token via silent sign-in...")
+        return try {
+            val account = googleSignInClient.silentSignIn().await() // await() вместо addOnCompleteListener
+            val freshToken = account?.idToken
+            if (freshToken != null) {
+                Log.i(TAG, "Silent sign-in successful, got fresh token for: ${account.email}")
+                currentIdToken = freshToken // Обновляем сохраненный токен
+                // Убедимся, что UI тоже в актуальном состоянии (на случай, если silentSignIn сработал после ошибки)
+                _uiState.update {
+                    it.copy(
+                        isSignedIn = true,
+                        userEmail = account.email,
+                        message = "Аккаунт: ${account.email} (Авторизован)",
+                        isLoading = it.isLoading, // Не меняем isLoading здесь
+                        showAuthError = null
+                    )
+                }
+                freshToken
+            } else {
+                Log.w(TAG, "Silent sign-in successful but ID token is null.")
+                signOutInternally("Ошибка: Не удалось получить токен после тихого входа.")
+                null
+            }
+        } catch (e: ApiException) {
+            Log.w(TAG, "Silent sign-in failed: ${e.statusCode}", e)
+            // Частые коды: SIGN_IN_REQUIRED (нужен явный вход), RESOLUTION_REQUIRED
+            signOutInternally("Сессия истекла или отозвана. Требуется вход.") // Важно сбросить состояние
+            null // Возвращаем null, сигнализируя о неудаче
+        } catch (e: Exception) {
+            Log.e(TAG, "Silent sign-in failed with generic exception", e)
+            // Оставляем пользователя "залогиненным" в UI, но токен получить не можем
+            // Возможно, временная сетевая проблема. Не делаем signOutInternally сразу.
+            _uiState.update { it.copy(showGeneralError = "Не удалось обновить сессию: ${e.message}") }
+            null // Возвращаем null
+        }
+    }
+
+    // Вызывается при нажатии кнопки выхода
+    fun signOut() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, message = "Выход...") }
+            try {
+                googleSignInClient.signOut().addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.i(TAG, "User signed out successfully from Google.")
+                        signOutInternally("Вы успешно вышли.") // Используем общий метод сброса
+                        // Опционально: уведомить бэкенд об выходе
+                    } else {
+                        Log.w(TAG, "Google Sign out failed.", task.exception)
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                showGeneralError = "Не удалось выйти из Google аккаунта."
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error during sign out", e)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        showGeneralError = "Ошибка при выходе: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun checkInitialAuthState() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Checking initial auth state via silent sign-in...")
+                // Пытаемся войти тихо и получить СВЕЖИЙ токен
+                val account = googleSignInClient.silentSignIn().await()
+                val idToken = account?.idToken
+                val serverAuthCode = account?.serverAuthCode // Получаем auth code снова, если нужен
+                val userEmail = account?.email
+
+                if (idToken != null && userEmail != null /* && serverAuthCode != null - возможно, он не нужен здесь? */) {
+                    Log.i(TAG, "Silent sign-in success, processing result for: $userEmail")
+                    currentIdToken = idToken // Сохраняем свежий токен
+                    // Обновляем UI, показывая, что вход выполнен
+                    _uiState.update {
+                        it.copy(
+                            isSignedIn = true,
+                            userEmail = userEmail,
+                            message = "Аккаунт: $userEmail (Авторизован)",
+                            isLoading = false,
+                            showAuthError = null
+                        )
+                    }
+                    ensureDateRangeLoadedAround(_currentVisibleDate.value)
+                    // НЕ НУЖНО снова вызывать sendAuthInfoToBackend, если пользователь уже был авторизован
+                    // на бэкенде. Тихого входа достаточно для обновления idToken на клиенте.
+                    // Если нужно проверить связь с бэкендом, можно сделать отдельный "ping" или "getUserInfo" запрос.
+
+                } else {
+                    // Silent sign-in не вернул аккаунт или токен
+                    Log.i(TAG, "Silent sign-in did not return a valid account/token.")
+                    signOutInternally("Требуется вход или обновление сессии.") // Считаем не вошедшим
+                }
+
+            } catch (e: ApiException) {
+                Log.w(TAG, "Silent sign-in failed: ${e.statusCode}", e)
+                signOutInternally("Требуется вход (ошибка ${e.statusCode})") // Считаем не вошедшим
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking initial auth state", e)
+                signOutInternally("Ошибка проверки аккаунта: ${e.message}") // Считаем не вошедшим
+            }
+        }
+    }
+    fun updatePermissionStatus(isGranted: Boolean) {
+        if (_uiState.value.isPermissionGranted != isGranted) { // Обновляем только если изменилось
+            _uiState.update { it.copy(isPermissionGranted = isGranted) }
+            Log.d(TAG, "Audio permission status updated to: $isGranted")
+        }
     }
 
 

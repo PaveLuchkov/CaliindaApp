@@ -1,5 +1,6 @@
 package com.example.caliindar.ui.screens.main.components
 
+import android.R.attr.onClick
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,7 +21,8 @@ fun CalendarAppBar(
     isLoading: Boolean, // Принимаем конкретные состояния
     isListening: Boolean,
     onNavigateToSettings: () -> Unit,
-    isBusy: Boolean
+    isBusy: Boolean,
+    onGoToTodayClick: () -> Unit
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -31,10 +33,10 @@ fun CalendarAppBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = { /* TODO: Calendar View Action */ }) { // Material IconButton
+            IconButton(onClick = onGoToTodayClick) { // Material IconButton
                 Icon( // Material Icon
                     Icons.Filled.Today,
-                    contentDescription = "Calendar View",
+                    contentDescription = "Move to today",
                 )
             }
         },
