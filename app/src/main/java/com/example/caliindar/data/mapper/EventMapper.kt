@@ -114,6 +114,22 @@ object EventMapper {
         }
     }
 
+
+    fun parseIsoToLocalDate(isoString: String?): LocalDate? {
+        if (isoString.isNullOrBlank()) return null
+        return try {
+            OffsetDateTime.parse(isoString).toLocalDate()
+        } catch (e: DateTimeParseException) {
+            try {
+                LocalDate.parse(isoString) // Для формата YYYY-MM-DD
+            } catch (e2: DateTimeParseException) {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun formatMillisToIsoString(millis: Long): String {
         // Форматируем обратно в ISO 8601 строку со смещением системного пояса
         // или в UTC (Z) - выбери, что нужно твоему UI/ViewModel
