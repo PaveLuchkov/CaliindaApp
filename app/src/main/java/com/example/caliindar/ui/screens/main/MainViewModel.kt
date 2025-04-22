@@ -444,56 +444,74 @@ class MainViewModel @Inject constructor(
      */
 
 
-    fun formatEventTimeForDisplay(timeString: String?, pattern: String = "HH:mm"): String {
-        if (timeString.isNullOrBlank()) return "--:--" // Или другой плейсхолдер
+    fun formatEventTimeForDisplay(isoString: String?, isAllDayEvent: Boolean, pattern: String = "HH:mm"): String {
+        if (isAllDayEvent) return "Весь день" // Главное изменение - проверяем флаг
+        if (isoString.isNullOrBlank()) return "--:--"
+
         return try {
-            // 1. Парсим строку (она должна быть ISO 8601, скорее всего UTC из маппера)
-            val offsetDateTime = OffsetDateTime.parse(timeString)
-
-            // 2. Получаем системный часовой пояс устройства
+            val offsetDateTime = OffsetDateTime.parse(isoString)
             val localZoneId = ZoneId.systemDefault()
-
-            // 3. Конвертируем время В ЛОКАЛЬНЫЙ часовой пояс
             val localDateTime = offsetDateTime.atZoneSameInstant(localZoneId)
-
-            // 4. Создаем форматтер для вывода
             val formatter = DateTimeFormatter.ofPattern(pattern, Locale("ru"))
-
-            // 5. Форматируем ЛОКАЛЬНОЕ время
             localDateTime.format(formatter)
-
         } catch (e: DateTimeParseException) {
-            // Пробуем распарсить как дату (для событий "весь день")
-            try {
-                // Если парсится как LocalDate, это событие на весь день
-                java.time.LocalDate.parse(timeString)
-                "Весь день" // Возвращаем специальную строку
-            } catch (e2: DateTimeParseException) {
-                Log.e(TAG, "Error parsing date/time string for display: $timeString", e)
-                "Ошибка времени"
-            }
+            Log.e(TAG, "Error parsing non-all-day time string: $isoString", e)
+            "Ошибка времени" // Ошибки парсинга для НЕ all-day событий - это проблема
         } catch (e: Exception) {
-            Log.e(TAG, "Error formatting date/time for display: $timeString", e)
+            Log.e(TAG, "Error formatting time for display: $isoString", e)
             "Ошибка времени"
         }
     }
 
-    // Используем новую функцию в методе для списка
-    fun formatEventListTime(startTimeStr: String, endTimeStr: String): String {
-        val startTimeFormatted = formatEventTimeForDisplay(startTimeStr)
-        val endTimeFormatted = formatEventTimeForDisplay(endTimeStr)
+    fun formatDisplayDate(isoTimeString: String?): String { // Переименуем для ясности
+        if (isoTimeString.isNullOrBlank()) return "Дата не указана"
 
-        // Если оба "Весь день", возвращаем просто "Весь день"
-        if (startTimeFormatted == "Весь день" && endTimeFormatted == "Весь день") {
+        return try {
+            // Пытаемся распарсить строку. Нам подойдет любой из форматов,
+            // содержащих дату (OffsetDateTime или LocalDate).
+            val temporalAccessor: java.time.temporal.TemporalAccessor = try {
+                OffsetDateTime.parse(isoTimeString)
+            } catch (e: DateTimeParseException) {
+                // Если не парсится как OffsetDateTime, пробуем как LocalDate
+                LocalDate.parse(isoTimeString)
+            }
+
+            // Получаем системный часовой пояс для корректного отображения даты
+            // (хотя для формата "d MMMM" это может быть не критично, но лучше сделать правильно)
+            val localZoneId = ZoneId.systemDefault()
+            // Создаем форматтер ТОЛЬКО для даты
+            val formatter = DateTimeFormatter.ofPattern("d MMMM", Locale("ru"))
+
+            // Преобразуем к ZonedDateTime, если это OffsetDateTime, чтобы учесть пояс
+            // Или просто форматируем LocalDate
+            when (temporalAccessor) {
+                is OffsetDateTime -> temporalAccessor.atZoneSameInstant(localZoneId).format(formatter)
+                is LocalDate -> temporalAccessor.format(formatter)
+                // Добавим LocalDateTime на всякий случай, если вдруг такой формат придет
+                is LocalDateTime -> temporalAccessor.atZone(localZoneId).format(formatter)
+                else -> {
+                    Log.w(TAG, "Unsupported TemporalAccessor type in formatDisplayDate: ${temporalAccessor::class.java}")
+                    "Неверный формат даты"
+                }
+            }
+
+        } catch (e: DateTimeParseException) {
+            Log.e(TAG, "Error parsing date string for display date: $isoTimeString", e)
+            "Ошибка даты"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error formatting display date: $isoTimeString", e)
+            "Ошибка даты"
+        }
+    }
+
+    // Используем новую функцию в методе для списка
+    fun formatEventListTime(event: CalendarEvent): String { // Принимаем весь Event
+        val startTimeFormatted = formatEventTimeForDisplay(event.startTime, event.isAllDay)
+        val endTimeFormatted = formatEventTimeForDisplay(event.endTime, event.isAllDay)
+
+        // Если оба "Весь день" (т.е. isAllDay = true), возвращаем просто "Весь день"
+        if (event.isAllDay) { // Достаточно проверить флаг
             return "Весь день"
-        }
-        // Если только начало "Весь день" (маловероятно, но все же)
-        if (startTimeFormatted == "Весь день") {
-            return "до $endTimeFormatted"
-        }
-        // Если только конец "Весь день" (тоже маловероятно)
-        if (endTimeFormatted == "Весь день") {
-            return "$startTimeFormatted весь день"
         }
 
         // Обычный случай с временем
@@ -936,18 +954,7 @@ class MainViewModel @Inject constructor(
             Log.d("MainViewModel", "Resetting AI state to IDLE after result timeout.")
         }
     }
-    fun formatDisplayTime(isoTimeString: String?): String {
-        if (isoTimeString.isNullOrBlank()) return "Время не указано"
-        // Используем ту же логику форматирования с учетом пояса, но другой паттерн
-        val localTimeStr =
-            formatEventTimeForDisplay(isoTimeString, "d MMMM") // Получаем дату в лок. поясе
-        // Если вернулась ошибка или "Весь день", используем это
-        if (localTimeStr == "Ошибка времени" || localTimeStr == "Весь день") {
-            return localTimeStr
-        }
-        // Иначе возвращаем отформатированную дату
-        return localTimeStr
-    }
+
 
     fun clearNetworkError() { _eventNetworkState.update { EventNetworkState.Idle } }
 

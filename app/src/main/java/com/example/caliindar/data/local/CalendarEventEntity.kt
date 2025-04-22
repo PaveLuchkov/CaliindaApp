@@ -11,6 +11,7 @@ data class CalendarEventEntity(
     val endTimeMillis: Long,   // Время конца в миллисекундах UTC
     val description: String?,
     val location: String?,
+    val isAllDay: Boolean = false,
     // Опционально: Можно добавить userGoogleId, если планируешь мультиюзерность в одной БД
     // val userGoogleId: String,
     // Опционально: Можно добавить время последнего обновления из сети

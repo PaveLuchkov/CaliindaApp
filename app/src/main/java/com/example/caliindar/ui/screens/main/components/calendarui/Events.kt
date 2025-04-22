@@ -39,27 +39,15 @@ import java.util.Locale
 @Composable
 fun EventListItem(
     event: CalendarEvent,
-    timeFormatter: (String, String) -> String // Передаем функцию форматирования
+    timeFormatter: (CalendarEvent) -> String
 ) {
-    //TODO Можно улучшить: если startTime/endTime это только дата (YYYY-MM-DD), писать "Весь день"
-    val timeText = try {
-        // Простая проверка: если строка содержит 'T', считаем, что есть время
-        if (event.startTime.contains("T") && event.endTime.contains("T")) {
-            timeFormatter(event.startTime, event.endTime)
-        } else {
-            "Весь день"
-        }
-    } catch (e: Exception) {
-        Log.w("EventListItem", "Could not format time: ${e.message}")
-        "Время?" // Запасной вариант
-    }
-
+    val timeText = timeFormatter(event)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .background(colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .padding(12.dp) // Внутренний отступ
+            .padding(horizontal = 16.dp, vertical = 8.dp) // Отступы элемента списка
+            .background(colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp)) // Увеличим скругление
+            .padding(16.dp) // Внутренний отступ контента карточки
     ) {
         Text(
             text = event.summary,
@@ -69,15 +57,10 @@ fun EventListItem(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = timeFormatter(event.startTime, event.endTime), // Используем переданный форматтер
+            text = timeText, // Используем результат нового форматтера
             style = typography.bodyMedium,
             color = colorScheme.onSurfaceVariant
         )
-
-        if (!event.description.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(4.dp))
-
-        }
     }
 }
 
@@ -85,21 +68,18 @@ fun EventListItem(
 @Composable
 fun EventsList(
     events: List<CalendarEvent>,
-    timeFormatter: (String, String) -> String,
+    timeFormatter: (CalendarEvent) -> String,
     modifier: Modifier = Modifier
 ) {
-    if (events.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.TopCenter) {
-            Text("На эту дату событий нет", style = typography.bodyLarge)
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(items = events, key = { it.id }) { event ->
-                EventListItem(event = event, timeFormatter = timeFormatter)
-            }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(items = events, key = { it.id }) { event ->
+            EventListItem(
+                event = event,
+                timeFormatter = timeFormatter
+            )
         }
     }
 }
@@ -114,6 +94,9 @@ fun DayEventsPage(
     val eventsState = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList()) //Returns State<List<CalendarEvent>>
     val events = eventsState.value
 
+    val (allDayEvents, timedEvents) = remember(events) { // Запоминаем результат разделения
+        events.partition { it.isAllDay }
+    }
 
     Box(
         modifier = Modifier
@@ -125,7 +108,7 @@ fun DayEventsPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(color = colorScheme.primary)
             ){
                 Text(
@@ -134,23 +117,78 @@ fun DayEventsPage(
                     fontWeight = FontWeight.Medium,
                     color = colorScheme.onPrimary,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(colorScheme.surface.copy(alpha = 0.1f)) // Легкий фон для заголовка
-                        .padding(horizontal = 16.dp, vertical = 6.dp), // Больше отступы
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .fillMaxWidth(),// Больше отступы
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
                 )
             }
+            if (allDayEvents.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp)) // Отступ после заголовка даты
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp) // Общий горизонтальный отступ
+                ) {
+                    allDayEvents.forEach { event ->
+                        AllDayEventItem(event = event) // Используем новый Composable
+                        Spacer(modifier = Modifier.height(6.dp)) // Отступ между элементами "весь день"
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
 
             // Список Событий для этого дня
-            EventsList(
-                events = events,
-                timeFormatter = viewModel::formatEventListTime,
-                modifier = Modifier
-                    .weight(1f) // Занимает оставшееся место
-                    .fillMaxWidth()
-            )
+            if (timedEvents.isNotEmpty()) {
+                EventsList(
+                    events = timedEvents, // Передаем только события со временем
+                    timeFormatter = viewModel::formatEventListTime,
+                    modifier = Modifier
+                        .weight(1f) // Занимает оставшееся место
+                        .fillMaxWidth()
+                )
+            } else if (allDayEvents.isEmpty()) {
+                // Показываем сообщение "нет событий", только если НЕТ НИКАКИХ событий
+                Box(
+                    modifier = Modifier
+                        .weight(1f) // Занимает место списка
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center // Центрируем сообщение
+                ) {
+                    Text("На эту дату событий нет", style = typography.bodyLarge)
+                }
+            } else {
+                // Если есть события "весь день", но нет событий со временем,
+                // просто оставляем пустое место или можно добавить маленький Spacer
+                Spacer(modifier = Modifier.weight(1f))
+            }
         } // End Column
     } // End Box
+}
+
+
+@Composable
+fun AllDayEventItem(event: CalendarEvent) {
+    val colorScheme = colorScheme
+    val typography = typography
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(colorScheme.tertiary)
+            .padding(horizontal = 16.dp, vertical = 6.dp) // Вертикальный отступ чуть больше
+    ) {
+        Text(
+            text = event.summary,
+            style = typography.bodyLarge, // Стиль можно подобрать
+            fontWeight = FontWeight.Medium,
+            color = colorScheme.onTertiary,
+            textAlign = TextAlign.Center, // Или TextAlign.Start
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 3.dp),
+        )
+    }
 }

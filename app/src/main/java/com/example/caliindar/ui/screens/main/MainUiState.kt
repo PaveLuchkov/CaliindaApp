@@ -18,6 +18,7 @@ data class CalendarEvent(
     val startTime: String, // ISO 8601 строка (e.g., "2023-10-27T10:00:00+03:00")
     val endTime: String, // ISO 8601 строка
     val description: String? = null,
-    val location: String? = null
+    val location: String? = null,
+    val isAllDay: Boolean = false
     // Добавьте другие поля при необходимости (например, link)
 )

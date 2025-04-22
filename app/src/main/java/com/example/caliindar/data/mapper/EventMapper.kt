@@ -4,10 +4,12 @@ import android.util.Log
 import com.example.caliindar.data.local.CalendarEventEntity
 import com.example.caliindar.ui.screens.main.CalendarEvent // Твоя модель для UI/сети
 import java.time.Instant
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.time.temporal.ChronoUnit
 
 object EventMapper {
 
@@ -16,23 +18,55 @@ object EventMapper {
     // Преобразует сетевую/UI модель в Entity для БД
     fun mapToEntity(event: CalendarEvent): CalendarEventEntity? {
         try {
-            val startTimeMillis = parseIsoToUtcMillis(event.startTime)
+            var isAllDayEvent = false
+            val startTimeInstant: Instant? = parseToInstant(event.startTime) { isAllDay ->
+                isAllDayEvent = isAllDay // Устанавливаем флаг на основе парсинга startTime
+            }
             // Если startTime не парсится, событие некорректно, пропускаем
-            if (startTimeMillis == null) {
+            if (startTimeInstant == null) {
                 Log.w(TAG, "Failed to parse start time for event '${event.summary}', skipping.")
                 return null
             }
-            // endTime может отсутствовать или быть такой же как startTime (для событий на весь день с 'date')
-            // Если не парсится или отсутствует, используем startTime
-            val endTimeMillis = parseIsoToUtcMillis(event.endTime) ?: startTimeMillis
+            val startTimeMillis = startTimeInstant.toEpochMilli()
+
+
+            val endTimeMillis: Long = run { // Используем run для ясности
+                val endTimeInstant: Instant? = parseToInstant(event.endTime) { /* lambda игнорируется */ }
+
+                when {
+                    // 1. Есть явное время конца и оно парсится
+                    endTimeInstant != null -> {
+                        val parsedEndTimeMillis = endTimeInstant.toEpochMilli()
+                        // Если событие "весь день", но время конца некорректно (<= startTime),
+                        // исправляем на startTime + 24 часа. Иначе используем распарсенное.
+                        if (isAllDayEvent && parsedEndTimeMillis <= startTimeMillis) {
+                            startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
+                        } else {
+                            parsedEndTimeMillis
+                        }
+                    }
+                    // 2. Нет явного времени конца, НО это событие "весь день"
+                    isAllDayEvent -> {
+                        // Для "весь день" конец должен быть +24 часа от начала
+                        startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
+                    }
+                    // 3. Нет явного времени конца И это НЕ событие "весь день"
+                    else -> {
+                        // В этом случае (например, событие без длительности),
+                        // разумно использовать время начала как время конца.
+                        startTimeMillis
+                    }
+                }
+            }
 
             return CalendarEventEntity(
                 id = event.id,
                 summary = event.summary,
                 startTimeMillis = startTimeMillis,
-                endTimeMillis = endTimeMillis,
+                endTimeMillis = endTimeMillis, // Используем скорректированное время
                 description = event.description,
-                location = event.location
+                location = event.location,
+                isAllDay = isAllDayEvent // <-- Сохраняем флаг
             )
         } catch (e: Exception) { // Ловим любые ошибки при маппинге
             Log.e(TAG, "Error mapping CalendarEvent to Entity: ${event.id}", e)
@@ -45,33 +79,34 @@ object EventMapper {
         return CalendarEvent(
             id = entity.id,
             summary = entity.summary,
-            // Форматируем миллисекунды обратно в ISO строку для совместимости с остальным кодом
-            // Важно: используем UTC или системную зону? Для UI лучше системную.
             startTime = formatMillisToIsoString(entity.startTimeMillis),
             endTime = formatMillisToIsoString(entity.endTimeMillis),
             description = entity.description,
-            location = entity.location
+            location = entity.location,
+            isAllDay = entity.isAllDay
         )
     }
 
     // --- Вспомогательные функции для времени ---
 
-    private fun parseIsoToUtcMillis(isoString: String?): Long? {
+    private fun parseToInstant(isoString: String?, onParseType: (isAllDay: Boolean) -> Unit): Instant? {
         if (isoString.isNullOrBlank()) return null
         return try {
-            // Пытаемся распарсить как OffsetDateTime (есть смещение или Z)
-            OffsetDateTime.parse(isoString).toInstant().toEpochMilli()
+            // Пытаемся как OffsetDateTime (есть время)
+            val instant = OffsetDateTime.parse(isoString).toInstant()
+            onParseType(false) // Не весь день
+            instant
         } catch (e: DateTimeParseException) {
             try {
-                // Если не вышло, пытаемся как LocalDate (для событий 'all-day', YYYY-MM-DD)
-                // Считаем, что такое событие начинается в 00:00 UTC этого дня
-                java.time.LocalDate.parse(isoString)
-                    .atStartOfDay(ZoneOffset.UTC) // Начало дня в UTC
+                // Пытаемся как LocalDate (весь день)
+                val instant = LocalDate.parse(isoString)
+                    .atStartOfDay(ZoneOffset.UTC) // 00:00 UTC
                     .toInstant()
-                    .toEpochMilli()
+                onParseType(true) // Весь день
+                instant
             } catch (e2: DateTimeParseException) {
                 Log.e(TAG, "Failed to parse date/time string: $isoString", e2)
-                null // Не удалось распознать формат
+                null
             }
         } catch (e: Exception) {
             Log.e(TAG, "Generic error parsing date/time string: $isoString", e)
