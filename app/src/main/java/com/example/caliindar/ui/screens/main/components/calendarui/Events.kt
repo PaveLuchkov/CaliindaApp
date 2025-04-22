@@ -29,6 +29,8 @@ import com.example.caliindar.ui.screens.main.MainViewModel
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -74,18 +76,8 @@ fun EventListItem(
 
         if (!event.description.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(4.dp))
-            /*
-            Text(
-                text = event.description,
-                style = typography.bodySmall,
-                color = colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                maxLines = 2, // Ограничим описание
-                overflow = TextOverflow.Ellipsis
-            )
 
-             */
         }
-        // Можно добавить местоположение и т.д.
     }
 }
 
@@ -129,16 +121,27 @@ fun DayEventsPage(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Заголовок Дня (можно вынести в отдельный Composable)
-            Text(
-                text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))),
-                style = typography.titleLarge, // Сделаем крупнее для страницы
-                fontWeight = FontWeight.Bold,
-                color = colorScheme.onSurface,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colorScheme.surface.copy(alpha = 0.1f)) // Легкий фон для заголовка
-                    .padding(horizontal = 16.dp, vertical = 16.dp) // Больше отступы
-            )
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(color = colorScheme.primary)
+            ){
+                Text(
+                    text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))),
+                    style = typography.titleLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = colorScheme.onPrimary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colorScheme.surface.copy(alpha = 0.1f)) // Легкий фон для заголовка
+                        .padding(horizontal = 16.dp, vertical = 6.dp), // Больше отступы
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Список Событий для этого дня
             EventsList(
