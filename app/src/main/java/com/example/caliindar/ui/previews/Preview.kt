@@ -1,3 +1,4 @@
+import android.R.attr.shadowColor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,7 +17,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -75,9 +75,16 @@ import kotlinx.coroutines.launch // Для запуска корутины сб�
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.ui.input.pointer.* // <<< Импорт для PointerEvent, PointerId и т.д.
 
 import androidx.compose.runtime.rememberCoroutineScope // Добавить импорт
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import com.example.caliindar.ui.screens.main.CalendarEvent
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -120,8 +127,172 @@ data class TimelineKey(val date: LocalDate, val scale: TimeScale)
 
 // --- Оптимизированный Composable Экран ---
 
+
+
+@Preview
+@Composable
+fun EventListItem2(
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
+
+    val numberOfVerticies: Int = 6
+
+
+    val starShape = remember {
+        RoundedPolygon.star(6, rounding = CornerRounding(0.95f), radius = 3f)
+    }
+    val clipStar = remember(starShape) {
+        RoundedPolygonShape(polygon = starShape)
+    }
+    val star2Shape = remember {
+        RoundedPolygon.star(6, rounding = CornerRounding(0.95f), radius = 2f)
+    }
+    val clip2Star = remember(star2Shape) {
+        RoundedPolygonShape(polygon = starShape)
+    }
+
+    val starContainerSize = 120.dp
+    val starOffsetY = starContainerSize * 0.3f
+    val starOffsetX = starContainerSize * 0.2f
+    val rotationAngle = 15f
+
+    // Параметры тени
+    val shadowColor = Color.Black.copy(alpha = 0.3f) // Цвет тени
+    val shadowOffsetX = 2.dp // Смещение тени по X
+    val shadowOffsetY = (-4).dp // Смещение тени по Y
+    val density = LocalDensity.current
+    // 1. Внешний Box: отвечает за фон, форму карточки и служит контейнером для выравнивания
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 3.dp) // Отступы вокруг карточки
+            .clip(RoundedCornerShape(20.dp))
+            .background(colorScheme.primaryContainer)
+            .height(65.dp)
+        // Не устанавливаем padding или heightIn здесь напрямую,
+        // размер будет определяться внутренним Box + декорацией
+    ) {
+        // 2. Внутренний Box: содержит основной контент (Column) и определяет его размер
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd) // То же базовое выравнивание
+                .graphicsLayer(
+                    // Смещение = базовое смещение + смещение тени
+                    translationX = with(density) { (starOffsetX + shadowOffsetX).toPx() },
+                    translationY = with(density) { (starOffsetY + shadowOffsetY).toPx() },
+                    rotationZ = rotationAngle
+                    // --- Опциональное размытие (требует API 31+) ---
+                    // renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    //     BlurEffect(radiusX = 3f, radiusY = 3f, edgeTreatment = Shader.TileMode.DECAL)
+                    // } else null
+                )
+                .requiredSize(starContainerSize) // Тот же размер
+                .clip(clip2Star) // Та же форма
+                .background(shadowColor) // Цвет тени
+        )
+        // --- 4. ОСНОВНАЯ ДЕКОРАТИВНАЯ ФИГУРА (рисуется поверх тени) ---
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd) // Базовое выравнивание
+                .graphicsLayer( // Исходное смещение
+                    translationX = with(density) { starOffsetX.toPx() },
+                    translationY = with(density) { starOffsetY.toPx() },
+                    rotationZ = rotationAngle
+                )
+                .requiredSize(starContainerSize) // Исходный размер
+                .clip(clipStar) // Исходная форма
+                .background(colorScheme.primaryContainer.copy(alpha = 1f)) // Исходный цвет
+        ) // Конец декоративного Box
+        Box(
+            modifier = Modifier
+                // Этот Box занимает столько места, сколько нужно Column + его padding
+                .padding(horizontal = 16.dp, vertical = 3.dp) // Внутренние отступы для текста
+                .heightIn(min = (65 - 8*2).dp) // Минимальная высота для *содержимого* (65dp минус верт. отступы)
+            // .wrapContentSize() // Можно использовать, чтобы он не растягивался без нужды
+        ) {
+            Column {
+                Text(
+                    text = "Занятия в тренажерном зале",
+                    color = colorScheme.onPrimaryContainer,
+                    style = typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Normal
+                    ),
+                    maxLines = 1,
+                )
+
+                Text(
+                    text = "18:00-19:00", // Use your formatter when ready
+                    color = colorScheme.onPrimaryContainer, // Match title color
+                    style = typography.labelSmall.copy( // Adjust style for time
+                        fontWeight = FontWeight.Normal
+                    ),
+                )
+            }
+        } // Конец внутреннего Box для контента
+
+
+    } // Конец внешнего Box
+}
+//@Preview
+@Composable
+fun EventListItem(
+) {
+    val starShape = remember {
+        RoundedPolygon.star(6, rounding = CornerRounding(0.95f), radius = 2f)
+    }
+    val clipStar = remember(starShape) {
+        RoundedPolygonShape(polygon = starShape)
+    }
+    val starContainerSize = 90.dp
+
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 3.dp) // Padding around the card
+            .clip(RoundedCornerShape(20.dp))
+            .background(colorScheme.primaryContainer)
+            .padding(horizontal = 16.dp, vertical = 3.dp) // Inner padding for content
+            .heightIn(65.dp) //  height
+    ) {
+        // --- Decorative Shape Layer (Behind Text) ---
+        Box(
+            modifier = Modifier
+                .size(starContainerSize)
+                .align(Alignment.BottomCenter) // Align the shape to the center
+                .offset(
+                    x = starContainerSize * 0.2f,
+                    y = starContainerSize * 0.4f
+                ) // Offset slightly to the right (adjust as needed)
+                .clip(clipStar) // Clip the background to the shape
+                .background(colorScheme.onPrimaryContainer.copy(alpha = 0.12f))
+        )
+
+        Column(
+        ) {
+            Text(
+                text = "Плавание",
+                color = colorScheme.onPrimaryContainer,
+                style = typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Normal
+                ),
+            )
+
+            Text(
+                text = "18:00-19:00", // Use your formatter when ready
+                color = colorScheme.onPrimaryContainer, // Match title color
+                style = typography.labelSmall.copy( // Adjust style for time
+                    fontWeight = FontWeight.Normal
+                ),
+            )
+        }
+
+    }
+}
+
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, device = "id:pixel_6a", wallpaper = GREEN_DOMINATED_EXAMPLE)
+//@Preview(showBackground = true, device = "id:pixel_6a", wallpaper = GREEN_DOMINATED_EXAMPLE)
 @Composable
 fun CalendarTimelineScreen() {
 
