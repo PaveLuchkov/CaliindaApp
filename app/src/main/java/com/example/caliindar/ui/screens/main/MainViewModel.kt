@@ -117,7 +117,7 @@ class MainViewModel @Inject constructor(
         private const val BACKEND_WEB_CLIENT_ID =
             "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
         // Лучше вынести URL в BuildConfig или другой модуль
-        private const val BACKEND_BASE_URL = "http://172.23.34.165:8000"
+        private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
     // private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
     }
 

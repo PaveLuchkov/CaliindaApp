@@ -33,7 +33,7 @@ fun CalendarAppBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onGoToTodayClick) { // Material IconButton
+            IconButton(onClick = onGoToTodayClick) {
                 Icon( // Material Icon
                     Icons.Filled.Today,
                     contentDescription = "Move to today",
@@ -42,15 +42,15 @@ fun CalendarAppBar(
         },
         actions = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isLoading && !isListening) { // Показываем индикатор только если не идет запись
-                    CircularProgressIndicator( // Material 3 Indicator
+                if (isLoading && !isListening) {
+                    CircularProgressIndicator(
                         modifier = Modifier
                             .size(24.dp)
                             .padding(end = 8.dp),
-                        strokeWidth = 2.dp // Делаем тоньше
+                        strokeWidth = 2.dp
                     )
                 }
-                // Используем M3 IconButton для стандартных действий
+
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(
                         imageVector = Icons.Filled.Settings,

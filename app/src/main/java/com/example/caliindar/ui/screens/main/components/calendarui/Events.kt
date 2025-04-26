@@ -5,8 +5,10 @@ import androidx.compose.ui.graphics.TileMode
 import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -53,9 +56,13 @@ import java.util.Locale
 import kotlin.math.abs
 import androidx.compose.runtime.*
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.caliindar.ui.theme.LocalFixedAccentColors
+import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
+import kotlin.math.exp
 
 data class GeneratedShapeParams(
     val numVertices: Int,
@@ -66,12 +73,83 @@ data class GeneratedShapeParams(
     val offestParam: Float,
     // Добавь сюда другие параметры, если нужно
 )
+// --- ДЛЯ ГРУПП
+sealed interface EventLayoutGroup {
+    val id: String // Уникальный ID для группы (можно использовать ID первого события)
+}
+
+data class SingleEventGroup(
+    val event: CalendarEvent
+) : EventLayoutGroup {
+    override val id: String get() = event.id
+}
+
+data class StackedEventGroup(
+    val events: List<CalendarEvent>, // Отсортированы: самый долгий сверху (или первый по времени начала)
+    val isLongEventStack: Boolean // Флаг для различения стеков <120 и >120 мин
+) : EventLayoutGroup {
+    override val id: String get() = events.firstOrNull()?.id ?: "stacked_${events.hashCode()}"
+}
+
+data class OverlayEventGroup(
+    val largeEvent: CalendarEvent, // > 120 мин
+    val smallEvents: List<CalendarEvent> // < 120 мин, которые накладываются
+) : EventLayoutGroup {
+    override val id: String get() = largeEvent.id
+}
+
+
+
+
+
+
+
 
 @Composable
 fun EventListItem(
     event: CalendarEvent,
     timeFormatter: (CalendarEvent) -> String
 ) {
+
+    val eventDurationMinutes = remember(event.startTime, event.endTime) {
+        val start = parseToInstant(event.startTime)
+        val end = parseToInstant(event.endTime)
+        if (start != null && end != null && end.isAfter(start)) {
+            Duration.between(start, end).toMinutes()
+        } else {
+            0L // Если время невалидно или конец раньше начала, считаем длительность 0
+        }
+    }
+    val isMicroEvent = remember(eventDurationMinutes) {
+        eventDurationMinutes <= 30L && eventDurationMinutes >= 0 // <= 30 минут и не отрицательная
+    }
+
+    val targetHeight = remember(isMicroEvent, eventDurationMinutes) {
+        val minHeight = 65.dp
+        val maxHeight = 200.dp
+
+        if (isMicroEvent) {
+            30.dp // Фиксированная высота для микро-событий
+        } else {
+            // Динамическая высота для НЕ-микро событий
+            val durationDouble = eventDurationMinutes.toDouble()
+            val heightRange = maxHeight - minHeight // Диапазон для масштабирования (135.dp)
+
+            // Масштабированный ввод для сигмоиды (экспериментальные параметры)
+            // Центрируем вокруг 90 минут, диапазон ~30-180 минут отображаем на ~[-2, 3]
+            val x = (durationDouble - 120.0) / 30.0
+            val k = 1.0 // Коэффициент крутизны (можно подбирать)
+            val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
+
+            // Масштабируем выход сигмоиды (0..1) к диапазону высот [minHeight, maxHeight]
+            val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
+
+            // Зажимаем результат в пределах min/max на всякий случай
+            calculatedHeight.coerceIn(minHeight, maxHeight)
+        }
+    }
+
+
 
     val shapeParams = remember(event.id) { // Используем event.id как стабильный ключ
         val hashCode = event.summary.hashCode()
@@ -150,9 +228,11 @@ fun EventListItem(
             delay(60000L) // Пауза на 1 минуту (60 * 1000 мс)
         }
     }
+    val fixedColors = LocalFixedAccentColors.current
+
     val cardElevation = if (isCurrentEvent) 8.dp else 0.dp
-    val cardActive = if (isCurrentEvent) colorScheme.onSurfaceVariant else colorScheme.primaryContainer
-    val cardTextActive = if (isCurrentEvent) colorScheme.surfaceContainer else colorScheme.primaryContainer
+    val cardActive = if (isCurrentEvent) fixedColors.primaryFixed  else colorScheme.primaryContainer
+    val cardTextActive = if (isCurrentEvent) fixedColors.onPrimaryFixed else colorScheme.onPrimaryContainer
 
     // 1. Внешний Box: отвечает за фон, форму карточки и служит контейнером для выравнивания
     Box(
@@ -168,69 +248,100 @@ fun EventListItem(
             )
             .clip(RoundedCornerShape(20.dp))
             .background(cardActive)
-            .height(65.dp)
+            .height(targetHeight)
     ) {
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd) // То же базовое выравнивание
-                .graphicsLayer(
-                    // Смещение = базовое смещение + смещение тени
-                    translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
-                    translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
-                    rotationZ = rotationAngle,
-                    // --- Опциональное размытие (требует API 31+) ---
-                     renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                         BlurEffect(radiusX = 3f, radiusY = 3f, edgeTreatment = TileMode.Decal)
-                     } else null
-                )
-                .requiredSize(starContainerSize) // Тот же размер
-                .clip(clip2Star) // Та же форма
-                .background(shadowColor) // Цвет тени
-        )
-        // --- 4. ОСНОВНАЯ ДЕКОРАТИВНАЯ ФИГУРА (рисуется поверх тени) ---
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd) // Базовое выравнивание
-                .graphicsLayer( // Исходное смещение
-                    translationX = with(density) { starOffsetX.toPx() },
-                    translationY = with(density) { starOffsetY.toPx() },
-                    rotationZ = rotationAngle
-                )
-                .requiredSize(starContainerSize) // Исходный размер
-                .clip(clipStar) // Исходная форма
-                .background(cardActive.copy(alpha = 0.95f)) // Исходный цвет
-        ) // Конец декоративного Box
+        if (!isMicroEvent) { // Показываем декор только для НЕ-микро
+            // Тень
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .graphicsLayer(
+                        translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
+                        translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
+                        rotationZ = rotationAngle,
+                        renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            BlurEffect(radiusX = 3f, radiusY = 3f, edgeTreatment = TileMode.Decal)
+                        } else null
+                    )
+                    .requiredSize(starContainerSize)
+                    .clip(clip2Star)
+                    .background(shadowColor)
+            )
+            // Основная фигура
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .graphicsLayer(
+                        translationX = with(density) { starOffsetX.toPx() },
+                        translationY = with(density) { starOffsetY.toPx() },
+                        rotationZ = rotationAngle
+                    )
+                    .requiredSize(starContainerSize)
+                    .clip(clipStar)
+                    .background(cardActive.copy(alpha = 0.95f)) // Можно использовать cardBaseColor, если введен
+            )
+        } // Конец условия if (!isMicroEvent)
 
+        // --- ТЕКСТОВЫЙ КОНТЕНТ ---
         Box(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 3.dp) // Внутренние отступы для текста
-                .heightIn(min = (65 - 8*2).dp) // Минимальная высота для *содержимого* (65dp минус верт. отступы)
-            // .wrapContentSize() // Можно использовать, чтобы он не растягивался без нужды
+                .fillMaxSize() // Занимаем всю доступную высоту карточки
+                .padding(horizontal = 16.dp, vertical = if(isMicroEvent) 2.dp else 8.dp) // Разные верт. отступы
+            ,
+            contentAlignment = Alignment.TopStart // Выравниваем содержимое внутри этого Box
         ) {
-            Column(
-            ) {
-                Text(
-                    text = event.summary,
-                    color = colorScheme.onPrimaryContainer,
-                    style = typography.headlineSmall.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                )
-
-                Text(
-                    text = timeFormatter(event),
-                    color = colorScheme.onPrimaryContainer,
-                    style = typography.labelSmall.copy(
-                        fontWeight = FontWeight.Normal
-                    ),
-                )
-            }
-        } // Конец внутреннего Box для контента
-
+            if (isMicroEvent) {
+                // --- МИКРО-СОБЫТИЕ: Row ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically // Выравниваем текст по центру строки
+                ) {
+                    Text(
+                        text = event.summary,
+                        color = cardTextActive,
+                        // Используем более компактный стиль для микро-событий
+                        style = typography.titleLarge.copy(fontWeight = FontWeight.Medium), // или bodyMedium
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        // Даем тексту заголовка занять место, но не выталкивать время
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp)) // Отступ между текстами
+                    Text(
+                        text = timeFormatter(event), // Время события
+                        color = cardTextActive,
+                        // Тот же или похожий компактный стиль
+                        style = typography.labelMedium, // или bodySmall
+                        maxLines = 1
+                    )
+                }
+            } else {
+                // --- НЕ-МИКРО-СОБЫТИЕ: Column (как было) ---
+                Column(
+                    verticalArrangement = Arrangement.Center // Центрируем колонку по вертикали
+                ) {
+                    Text(
+                        text = event.summary,
+                        color = cardTextActive,
+                        style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 2, // Оставляем 2 строки для длинных названий
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = timeFormatter(event),
+                        color = cardTextActive,
+                        style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                        maxLines = 1
+                    )
+                }
+            } // Конец внутреннего Box для контента
+        }
 
     } // Конец внешнего Box
 }
+
 private fun parseToInstant(isoString: String?): Instant? {
     if (isoString.isNullOrBlank()) return null
     return try {
@@ -382,3 +493,8 @@ fun AllDayEventItem(event: CalendarEvent) {
         )
     }
 }
+
+
+
+
+
