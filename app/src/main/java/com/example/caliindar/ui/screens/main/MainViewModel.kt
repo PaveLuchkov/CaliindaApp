@@ -51,12 +51,15 @@ import java.util.Locale
 import javax.inject.Inject
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import com.example.caliindar.BuildConfig.BACKEND_BASE_URL
 import com.example.caliindar.di.ITimeTicker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import com.example.caliindar.di.BackendUrl // Импорт квалификатора
 import com.example.caliindar.di.WebClientId // Импорт квалификатора
+import kotlinx.coroutines.flow.flowOn
+import java.util.concurrent.TimeUnit
 
 enum class AiVisualizerState {
     IDLE,      // Начальное состояние / Ничего не происходит (кнопка видима)
@@ -122,6 +125,7 @@ class MainViewModel @Inject constructor(
         const val PREFETCH_DAYS_BACKWARD = 3
         const val TRIGGER_PREFETCH_THRESHOLD_FORWARD = 2 // За сколько дней до конца загруженного диапазона начать новую загрузку
         const val TRIGGER_PREFETCH_THRESHOLD_BACKWARD = 1 // За сколько
+        const val JUMP_DETECTION_BUFFER_DAYS = 10
         private const val TAG = "MainViewModelAuth"
     }
 
@@ -183,53 +187,62 @@ class MainViewModel @Inject constructor(
 // - ---- -- -  БЛОК КАЛЕНДАРЯ
     // --- ЛОГИКА ЗАГРУЗКИ ДИАПАЗОНА ---
     fun onVisibleDateChanged(newDate: LocalDate) {
-        if (newDate != _currentVisibleDate.value) {
-            Log.d(TAG, "Visible date changed to: $newDate")
-            _currentVisibleDate.value = newDate
-            // Запускаем проверку и возможную предзагрузку
-            ensureDateRangeLoadedAround(newDate)
+        // Оптимизация: не обновляем, если дата та же
+        if (newDate == _currentVisibleDate.value) {
+            Log.d(TAG, "Visible date $newDate is already set. Ignoring.")
+            return
         }
+        Log.d(TAG, "Visible date changed requested for: $newDate")
+        _currentVisibleDate.value = newDate
+        // Используем обновленную логику загрузки
+        ensureDateRangeLoadedAround(newDate)
     }
+    /**
+     * Проверяет, нужно ли загружать/расширять диапазон дат вокруг centerDate.
+     * Различает prefetching при близком скролле и загрузку нового диапазона при "прыжке".
+     */
     internal fun ensureDateRangeLoadedAround(centerDate: LocalDate) {
         viewModelScope.launch {
             val currentlyLoaded = _loadedDateRange.value
-            val isLoading = _rangeNetworkState.value is EventNetworkState.Loading // Check if already loading
+            val isLoading = _rangeNetworkState.value is EventNetworkState.Loading
 
             if (isLoading) {
-                Log.d(TAG, "Prefetch check skipped, range fetch already in progress.")
+                Log.d(TAG, "Load check skipped for $centerDate, range fetch already in progress.")
                 return@launch
             }
 
+            // Рассчитываем *идеальный* диапазон, который мы *хотели бы* иметь вокруг centerDate
+            val idealTargetRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
+
             if (currentlyLoaded == null) {
                 // --- Initial Load ---
-                Log.i(TAG, "No range loaded yet. Initial load around $centerDate")
-                val initialRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
-                fetchAndStoreDateRange(initialRange.start, initialRange.endInclusive)
+                Log.i(TAG, "No range loaded yet. Initial load: $idealTargetRange")
+                fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true) // Заменяем null
             } else {
-                // --- Check Thresholds for Expanding ---
-                val needsForwardPrefetch = centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD_FORWARD.toLong())
-                val needsBackwardPrefetch = centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD_BACKWARD.toLong())
+                // --- Проверяем, нужно ли действие ---
 
-                if (needsForwardPrefetch || needsBackwardPrefetch) {
-                    Log.i(TAG, "Prefetch triggered. Center: $centerDate, Loaded: $currentlyLoaded. ForwardNeed: $needsForwardPrefetch, BackwardNeed: $needsBackwardPrefetch")
+                // Определяем, является ли это "прыжком" (новая дата далеко от текущего диапазона)
+                // Проверяем, что ЦЕНТР нового идеального диапазона находится далеко
+                val isJump = centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS.toLong()) ||
+                        centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS.toLong())
 
-                    // Calculate the *new* range to load based on the center date and prefetch distances
-                    val newlyRequiredRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
+                // Проверяем, покрывает ли текущий диапазон идеальный НОВЫЙ диапазон
+                val coversIdealRange = currentlyLoaded.containsRange(idealTargetRange)
 
-                    // Calculate the final range to fetch by combining current and newly required
-                    val rangeToLoad = currentlyLoaded.union(newlyRequiredRange)
-
-                    // Avoid fetching the exact same range again if something went wrong previously
-                    // Optional: You might want more sophisticated logic here if fetches fail often
-                    // if (rangeToLoad == currentlyLoaded) {
-                    //     Log.w(TAG, "Calculated range to load is same as current, skipping fetch.")
-                    //     return@launch
-                    // }
-
-                    fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive)
-
+                if (coversIdealRange) {
+                    // Случай 1: Идеальный диапазон уже полностью покрыт. Ничего не делаем.
+                    Log.d(TAG, "No load needed. Ideal range $idealTargetRange is already within loaded $currentlyLoaded.")
+                } else if (isJump) {
+                    // Случай 2: Это "прыжок" далеко от текущего диапазона. Загружаем ТОЛЬКО новый идеальный диапазон.
+                    Log.i(TAG, "Jump detected! Center: $centerDate is far from loaded $currentlyLoaded.")
+                    Log.i(TAG, "Loading new focused range: $idealTargetRange. Discarding old range.")
+                    fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true) // Заменяем старый диапазон
                 } else {
-                    Log.d(TAG, "No prefetch needed. Center: $centerDate is within loaded range $currentlyLoaded thresholds.")
+                    // Случай 3: Не "прыжок", но идеальный диапазон не покрыт (значит, мы близко к краю). Расширяем текущий.
+                    Log.i(TAG, "Prefetch/Expansion needed. Center: $centerDate, Ideal: $idealTargetRange, Current: $currentlyLoaded.")
+                    val rangeToLoad = currentlyLoaded.union(idealTargetRange) // Расширяем с помощью union
+                    Log.d(TAG, "Expanding range to: $rangeToLoad")
+                    fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive, false) // Не заменяем, а объединяем
                 }
             }
         }
@@ -240,30 +253,40 @@ class MainViewModel @Inject constructor(
 
     // --- ИЗМЕНЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ---
     // Загружает данные для ДИАПАЗОНА дат с нового эндпоинта
-    private fun fetchAndStoreDateRange(startDate: LocalDate, endDate: LocalDate) {
+    /**
+     * Загружает данные для ДИАПАЗОНА дат с бэкенда и сохраняет в БД.
+     * @param startDate Начальная дата диапазона.
+     * @param endDate Конечная дата диапазона.
+     * @param replaceLoadedRange Если true, то `_loadedDateRange` будет ЗАМЕНЕН новым диапазоном.
+     *                          Если false, то новый диапазон будет ОБЪЕДИНЕН с текущим `_loadedDateRange`.
+     */
+    private fun fetchAndStoreDateRange(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        replaceLoadedRange: Boolean // <-- Новый параметр
+    ) {
+        // Предотвращаем множественные одновременные загрузки (можно улучшить, разрешая непересекающиеся)
         if (_rangeNetworkState.value is EventNetworkState.Loading) {
-            Log.d(TAG, "Range fetch request ignored for $startDate..$endDate, already loading.")
+            Log.d(TAG, "Range fetch request ignored for $startDate..$endDate (replace=$replaceLoadedRange), already loading.")
             return
         }
         if (!_uiState.value.isSignedIn) {
             Log.w(TAG, "Cannot fetch range: User not signed in.")
-            // _rangeNetworkState.value = EventNetworkState.Error("Требуется вход") // Можно установить ошибку диапазона
             return
         }
 
         viewModelScope.launch {
-            Log.i(TAG, "Starting background fetch for date range: $startDate to $endDate")
-            _rangeNetworkState.value = EventNetworkState.Loading // <-- Используем _rangeNetworkState
+            Log.i(TAG, "Starting background fetch for date range: $startDate to $endDate (replace=$replaceLoadedRange)")
+            _rangeNetworkState.value = EventNetworkState.Loading
 
             val freshToken = getFreshIdToken()
             if (freshToken == null) {
                 Log.w(TAG, "Cannot fetch range: Failed to get fresh ID token.")
                 _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации")
-                // signOutInternally уже был вызван
                 return@launch
             }
 
-            val url = "$backendBaseUrl/calendar/events/range" +
+            val url = "$BACKEND_BASE_URL/calendar/events/range" +
                     "?startDate=${startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}" +
                     "&endDate=${endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
 
@@ -274,8 +297,8 @@ class MainViewModel @Inject constructor(
                 .build()
 
             try {
-                // ... (внутренняя логика запроса, парсинга и сохранения в БД остается той же) ...
                 val networkEvents: List<CalendarEvent> = withContext(Dispatchers.IO) {
+                    // ... (логика выполнения запроса okHttpClient) ...
                     okHttpClient.newCall(request).execute().use { response ->
                         val responseBodyString = response.body?.string()
                         if (!response.isSuccessful) {
@@ -287,27 +310,50 @@ class MainViewModel @Inject constructor(
                             Log.w(TAG, "Empty response body received for range $startDate to $endDate.")
                             emptyList()
                         } else {
-                            Log.i(TAG, "Range fetched successfully from network for $startDate to $endDate.")
+                            // Логируем УСПЕШНЫЙ ответ перед парсингом
+                            Log.i(TAG, "Range fetched successfully from network for $startDate to $endDate. Response size: ${responseBodyString.length}")
+                            // Опционально: логировать сам ответ, если он небольшой, для отладки
+                            // Log.v(TAG, "Response body: $responseBodyString")
                             parseEventsResponse(responseBodyString) // Парсим ответ
                         }
                     }
                 } // End Dispatchers.IO
 
+                // --- Успешное получение и парсинг ---
                 val eventEntities = networkEvents.mapNotNull { EventMapper.mapToEntity(it) }
+
+                // --- Сохранение в БД ---
                 val startRangeMillis = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                // Конец диапазона - НАЧАЛО следующего дня после endDate
                 val endRangeMillis = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
                 Log.d(TAG, "Updating DB for range $startDate to $endDate. Deleting range $startRangeMillis..< $endRangeMillis, Inserting ${eventEntities.size} events.")
+                // Важно: Используем транзакцию в DAO для атомарности clear + insert
                 eventDao.clearAndInsertEventsForRange(startRangeMillis, endRangeMillis, eventEntities)
                 Log.i(TAG, "Successfully updated DB with events for range $startDate to $endDate.")
 
-                _loadedDateRange.update { current -> current?.union(startDate..endDate) ?: (startDate..endDate) }
+                // --- Обновление _loadedDateRange в зависимости от флага ---
+                val fetchedRange = startDate..endDate
+                if (replaceLoadedRange) {
+                    _loadedDateRange.value = fetchedRange // Просто заменяем
+                    Log.d(TAG, "Replaced loaded range with: $fetchedRange")
+                } else {
+                    _loadedDateRange.update { current ->
+                        val updatedRange = current?.union(fetchedRange) ?: fetchedRange // Объединяем
+                        Log.d(TAG, "Merged fetched range $fetchedRange with current ${current}. New loaded range: $updatedRange")
+                        updatedRange
+                    }
+                }
+                // --- Сброс состояния сети ---
                 _rangeNetworkState.value = EventNetworkState.Idle // Успех
 
             } catch (e: IOException) {
                 Log.e(TAG, "Network error fetching range $startDate to $endDate", e)
                 _rangeNetworkState.value = EventNetworkState.Error("Ошибка сети: ${e.message}")
-            } catch (e: Exception) {
+            } catch (e: JSONException) { // Ловим конкретно ошибку парсинга JSON
+                Log.e(TAG, "JSON parsing error for range $startDate to $endDate", e)
+                _rangeNetworkState.value = EventNetworkState.Error("Ошибка чтения ответа сервера.")
+            } catch (e: Exception) { // Ловим остальные ошибки (маппинг, БД и т.д.)
                 Log.e(TAG, "Error processing range response for $startDate to $endDate", e)
                 _rangeNetworkState.value = EventNetworkState.Error("Ошибка обработки данных: ${e.message}")
             }
@@ -322,57 +368,101 @@ class MainViewModel @Inject constructor(
     fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
         val startOfDayUTC = date.atStartOfDay(ZoneOffset.UTC)
         val startMillis = startOfDayUTC.toInstant().toEpochMilli()
-        val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli() // Конец дня - начало следующего
+        // endMillis - это НАЧАЛО следующего дня (00:00)
+        val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
 
-        Log.d(TAG, "Requesting event Flow from DB for date: $date (Range UTC millis: $startMillis..<$endMillis)")
+        // Log.d(TAG, "Requesting event Flow from DB for date: $date (Range UTC millis: $startMillis <= t < $endMillis)")
 
         return eventDao.getEventsForDateRangeFlow(startMillis, endMillis)
-            .map { entityList -> // Маппим Entity в Domain/UI модель
-                entityList.map { EventMapper.mapToDomain(it) }
-            }
+            // Эта лямбда получает список ВСЕХ событий, НАЧИНАЮЩИХСЯ в этот день из БД
+            .map { entityList ->
+                // Фильтруем этот список перед маппингом в Domain модель
+                entityList.filter { entity ->
+                    if (!entity.isAllDay) {
+                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                        // Правило для НЕ all-day:
+                        // Событие должно не только НАЧИНАТЬСЯ в этот день (это гарантирует DAO),
+                        // но и ЗАВЕРШАТЬСЯ ДО начала следующего дня.
+                        // Проверяем наличие startTime и endTime
+                        if (entity.startTimeMillis != null && entity.endTimeMillis != null) {
+                            // startTime >= startMillis И startTime < endMillis (из DAO)
+                            // Добавляем проверку endTime:
+                            entity.endTimeMillis <= endMillis // Время конца должно быть МЕНЬШЕ ИЛИ РАВНО началу следующего дня
+                        } else {
+                            // Если нет времени начала или конца, не отображаем (или реши как обрабатывать)
+                            false
+                        }
+                    } else {
+                        // Правило для all-day:
+                        // Отображаем только если длительность ~ 1 день.
+                        if (entity.startTimeMillis != null && entity.endTimeMillis != null) {
+                            val durationMillis = entity.endTimeMillis - entity.startTimeMillis
+                            val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
+                            // Допускаем небольшую погрешность (напр. из-за летнего времени, если хранишь в локальной зоне)
+                            // Если хранишь строго в UTC, погрешность может быть меньше.
+                            val toleranceMillis = TimeUnit.MINUTES.toMillis(5) // Например, 5 минут
+                            (durationMillis >= twentyFourHoursMillis - toleranceMillis) && (durationMillis <= twentyFourHoursMillis + toleranceMillis)
+                        } else {
+                            false // Не можем рассчитать длительность
+                        }
+                    }
+                } // Конец filter
+                    .mapNotNull { filteredEntity ->
+                        // Маппим только те entity, которые прошли фильтр
+                        EventMapper.mapToDomain(filteredEntity)
+                    } // Конец mapNotNull
+            } // Конец map
             .catch { e ->
-                Log.e(TAG, "Error reading events from DB for date $date", e)
-                emit(emptyList<CalendarEvent>()) // Отдаем пустой список при ошибке чтения
-                // Можно дополнительно сигнализировать об ошибке БД, если нужно
+                Log.e(TAG, "Error processing events Flow for date $date", e)
+                emit(emptyList<CalendarEvent>())
             }
-        // Не используем stateIn здесь, пусть собирается в Composable с помощью collectAsStateWithLifecycle
-    }
-
-    fun refreshCurrentVisibleDate() {
-        val currentDate = _currentVisibleDate.value
-        Log.d(TAG, "Manual refresh triggered for date: $currentDate")
-        // Перезагружаем только один день
-        fetchAndStoreDateRange(currentDate, currentDate)
+            .flowOn(Dispatchers.IO) // Операции с БД, фильтрация и маппинг в IO потоке
     }
 
 
     private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
+        // ... (твой код парсинга JSON) ...
+        // Убедись, что поля startTime, endTime и isAllDay парсятся правильно
+        // и соответствуют структуре CalendarEvent
         val events = mutableListOf<CalendarEvent>()
         try {
             val jsonArray = org.json.JSONArray(jsonString)
             for (i in 0 until jsonArray.length()) {
                 val eventObject = jsonArray.getJSONObject(i)
+                val isAllDay = eventObject.optBoolean("isAllDay", false)
+                // Определяем, какое поле использовать для времени/даты
+                val startTimeStr = if (isAllDay) eventObject.optString("startDate", null) else eventObject.optString("startTime", null)
+                val endTimeStr = if (isAllDay) eventObject.optString("endDate", null) else eventObject.optString("endTime", null)
+
                 events.add(
                     CalendarEvent(
                         id = eventObject.getString("id"),
-                        summary = eventObject.getString("summary"),
-                        startTime = eventObject.getString("startTime"), // Строка ISO
-                        endTime = eventObject.getString("endTime"),     // Строка ISO
+                        summary = eventObject.optString("summary", null), // Используй optString для необязательных полей
+                        startTime = startTimeStr,
+                        endTime = endTimeStr,
                         description = eventObject.optString("description", null),
-                        location = eventObject.optString("location", null)
+                        location = eventObject.optString("location", null),
+                        isAllDay = isAllDay
                     )
                 )
             }
         } catch (e: org.json.JSONException) {
             Log.e(TAG, "Failed to parse events JSON array", e)
-            // Можно бросить исключение, чтобы оно было поймано в fetchEventsForSelectedDate
-            throw e
+            throw e // Пробрасываем, чтобы поймать в fetchAndStoreDateRange
         }
         return events
     }
 
 
-
+    fun refreshCurrentVisibleDate() {
+        val currentDate = _currentVisibleDate.value
+        Log.d(TAG, "Manual refresh triggered for date: $currentDate")
+        // Перезагружаем только один день, но используем флаг replace=false,
+        // чтобы не сломать большой загруженный диапазон, если он есть.
+        // Хотя, возможно, лучше использовать replace=true для гарантии свежести? Зависит от требований.
+        // Пока оставим replace=false.
+        fetchAndStoreDateRange(currentDate, currentDate, false)
+    }
 
     private fun parseBackendError(responseBody: String?, code: Int): String {
         return try {
@@ -383,17 +473,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Функция для изменения выбранной даты (если захотите добавить выбор даты)
-    /*
-    fun setSelectedDate(newDate: LocalDate) {
-        if (newDate != _selectedDate.value) {
-            Log.d(TAG, "Selected date changed to: $newDate")
-            _selectedDate.value = newDate
-            fetchEventsForSelectedDate()
-        }
-    }
-
-     */
 
 
     fun formatEventTimeForDisplay(isoString: String?, isAllDayEvent: Boolean, pattern: String = "HH:mm"): String {

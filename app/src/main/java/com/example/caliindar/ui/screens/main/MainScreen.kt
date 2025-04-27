@@ -33,7 +33,10 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.ui.Alignment
 import com.example.caliindar.ui.screens.main.components.calendarui.DayEventsPage
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
@@ -43,13 +46,10 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
-    val listState = rememberLazyListState()
-    val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
     var isTextInputVisible by remember { mutableStateOf(false) }
     val aiState by viewModel.aiState.collectAsState()
     val aiMessage by viewModel.aiMessage.collectAsState()
-    val isAiRotating by viewModel.isAiRotating.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
@@ -61,6 +61,17 @@ fun MainScreen(
     val currentVisibleDate by viewModel.currentVisibleDate.collectAsStateWithLifecycle()
     val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
 
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        // Инициализируем текущей видимой датой из ViewModel
+        initialSelectedDateMillis = currentVisibleDate
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    )
+
+    val titleFormatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")) }
+    val appBarTitle = currentVisibleDate.format(titleFormatter)
 
     // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
     LaunchedEffect(pagerState.settledPage) { // Реагируем, когда страница "устаканилась"
@@ -82,6 +93,7 @@ fun MainScreen(
             viewModel.clearAuthError()
         }
     }
+    // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
     val isSignedIn = uiState.isSignedIn // Получаем статус входа
     LaunchedEffect(isSignedIn) { // Ключ = isSignedIn
@@ -117,22 +129,30 @@ fun MainScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CalendarAppBar( // Передаем только нужные данные
-                isLoading = uiState.isLoading || rangeNetworkState is MainViewModel.EventNetworkState.Loading,
                 isBusy = uiState.isLoading || rangeNetworkState is MainViewModel.EventNetworkState.Loading,
                 isListening = uiState.isListening,
                 onNavigateToSettings = onNavigateToSettings,
                 onGoToTodayClick = {
                     scope.launch {
-                        // Анимированная прокрутка к странице "сегодня"
-                        pagerState.animateScrollToPage(initialPageIndex)
-                        // Опционально: можно сразу обновить видимую дату в ViewModel,
-                        // чтобы заголовок обновился мгновенно, не дожидаясь settledPage
-                        if (viewModel.currentVisibleDate.value != today) {
+                        if (pagerState.currentPage != initialPageIndex) {
+                            // 1. Обновляем ViewModel *до* скролла
                             viewModel.onVisibleDateChanged(today)
+                            // 2. Анимируем скролл
+                            pagerState.animateScrollToPage(initialPageIndex)
+                        } else {
+                            // Если уже на сегодня, просто обновляем данные
+                            viewModel.refreshCurrentVisibleDate()
                         }
                     }
-                }
-            )
+                },
+                onTitleClick = {
+                    // Обновляем состояние DatePicker текущей датой перед показом
+                    datePickerState.selectableDates
+
+                    showDatePicker = true // Показываем диалог
+                },
+                currentDateTitle = appBarTitle
+                )
         },
         bottomBar = {
             ChatInputBar(
@@ -194,4 +214,57 @@ fun MainScreen(
 
         } // End основной Box
     } // End Scaffold
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDatePicker = false // Скрываем диалог
+                        val selectedMillis = datePickerState.selectedDateMillis
+                        if (selectedMillis != null) {
+                            val selectedDate = Instant.ofEpochMilli(selectedMillis)
+                                .atZone(ZoneId.systemDefault()) // Используй корректную ZoneId
+                                .toLocalDate()
+
+                            // Проверяем, изменилась ли дата
+                            if (selectedDate != currentVisibleDate) {
+                                // 1. Сообщаем ViewModel о новой дате *до* скролла
+                                Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
+                                viewModel.onVisibleDateChanged(selectedDate)
+
+                                // 2. Рассчитываем целевую страницу
+                                val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
+                                val targetPageIndex = (initialPageIndex + daysDifference)
+                                    // Ограничиваем индекс на всякий случай
+                                    .coerceIn(0L, Int.MAX_VALUE.toLong() -1L).toInt()
+
+                                // 3. Запускаем скролл к странице (используем scrollToPage для мгновенного перехода)
+                                scope.launch {
+                                    Log.d("DatePicker", "Scrolling Pager to page index: $targetPageIndex")
+                                    pagerState.scrollToPage(targetPageIndex)
+                                }
+                            } else {
+                                Log.d("DatePicker", "Selected date $selectedDate is the same as current $currentVisibleDate. No action.")
+                            }
+                        } else {
+                            Log.w("DatePicker", "Confirm clicked but selectedDateMillis is null.")
+                        }
+                    },
+                    // Кнопка активна, только если дата выбрана
+                    enabled = datePickerState.selectedDateMillis != null
+                ) {
+                    Text("OK") // Используем Text из M3
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Отмена") // Используем Text из M3
+                }
+            }
+        ) {
+            // Сам DatePicker
+            DatePicker(state = datePickerState)
+        }
+    }
 } // End MainScreen

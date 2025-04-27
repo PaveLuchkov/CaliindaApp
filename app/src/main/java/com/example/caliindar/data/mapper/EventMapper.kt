@@ -30,30 +30,26 @@ object EventMapper {
             val startTimeMillis = startTimeInstant.toEpochMilli()
 
 
-            val endTimeMillis: Long = run { // Используем run для ясности
+            val endTimeMillis: Long = run {
                 val endTimeInstant: Instant? = parseToInstant(event.endTime) { /* lambda игнорируется */ }
 
                 when {
-                    // 1. Есть явное время конца и оно парсится
-                    endTimeInstant != null -> {
-                        val parsedEndTimeMillis = endTimeInstant.toEpochMilli()
-                        // Если событие "весь день", но время конца некорректно (<= startTime),
-                        // исправляем на startTime + 24 часа. Иначе используем распарсенное.
-                        if (isAllDayEvent && parsedEndTimeMillis <= startTimeMillis) {
-                            startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
-                        } else {
-                            parsedEndTimeMillis
-                        }
+                    // 1. Есть явное время конца и оно парсится И оно ПОСЛЕ начала
+                    endTimeInstant != null && endTimeInstant.toEpochMilli() > startTimeMillis -> {
+                        // Используем распарсенное время конца
+                        endTimeInstant.toEpochMilli()
                     }
-                    // 2. Нет явного времени конца, НО это событие "весь день"
+                    // 2. Это событие "весь день" (независимо от endTime)
+                    //    ИЛИ явного времени конца нет ИЛИ оно некорректно (<= startTime)
                     isAllDayEvent -> {
-                        // Для "весь день" конец должен быть +24 часа от начала
+                        // Для "весь день" конец ВСЕГДА +24 часа от начала (00:00 UTC следующего дня)
                         startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
                     }
                     // 3. Нет явного времени конца И это НЕ событие "весь день"
+                    //    ИЛИ endTime парсится <= startTime
                     else -> {
-                        // В этом случае (например, событие без длительности),
-                        // разумно использовать время начала как время конца.
+                        // Событие без длительности или с некорректным концом - используем время начала
+                        Log.w(TAG, "Event '${event.summary}' (not all-day) has missing or invalid end time. Setting end time = start time.")
                         startTimeMillis
                     }
                 }
@@ -114,21 +110,6 @@ object EventMapper {
         }
     }
 
-
-    fun parseIsoToLocalDate(isoString: String?): LocalDate? {
-        if (isoString.isNullOrBlank()) return null
-        return try {
-            OffsetDateTime.parse(isoString).toLocalDate()
-        } catch (e: DateTimeParseException) {
-            try {
-                LocalDate.parse(isoString) // Для формата YYYY-MM-DD
-            } catch (e2: DateTimeParseException) {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
 
     private fun formatMillisToIsoString(millis: Long): String {
         // Форматируем обратно в ISO 8601 строку со смещением системного пояса

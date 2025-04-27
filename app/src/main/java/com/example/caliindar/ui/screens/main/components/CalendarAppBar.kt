@@ -1,6 +1,7 @@
 package com.example.caliindar.ui.screens.main.components
 
 import android.R.attr.onClick
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,34 +16,44 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class) // Для CenterAlignedTopAppBar
 @Composable
 fun CalendarAppBar(
-    isLoading: Boolean, // Принимаем конкретные состояния
+
     isListening: Boolean,
     onNavigateToSettings: () -> Unit,
-    isBusy: Boolean,
-    onGoToTodayClick: () -> Unit
+    isBusy: Boolean, // Используем isBusy (включает загрузку и другие состояния занятости)
+    onGoToTodayClick: () -> Unit,
+    onTitleClick: () -> Unit, // <-- Новый колбэк для клика по заголовку
+    currentDateTitle: String // <-- Новый параметр для отображения текущей даты
 ) {
     CenterAlignedTopAppBar(
         title = {
-            Text( // Material Text
-                "Caliinda",
-                fontWeight = FontWeight.Black,
+            // Оборачиваем текст в Modifier.clickable
+            Text(
+                text = "Caliinda", // Используем переданную строку даты
+                fontWeight = FontWeight.Bold, // Немного изменим стиль для ясности
                 fontSize = 20.sp,
+                modifier = Modifier.clickable(
+                    enabled = !isBusy, // Блокируем клик во время загрузки/занятости
+                    onClick = onTitleClick // Вызываем колбэк
+                )
             )
         },
         navigationIcon = {
-            IconButton(onClick = onGoToTodayClick) {
-                Icon( // Material Icon
+            IconButton(
+                onClick = onGoToTodayClick,
+            ) {
+                Icon(
                     Icons.Filled.Today,
-                    contentDescription = "Move to today",
+                    contentDescription = "Перейти к сегодня",
                 )
             }
         },
         actions = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isLoading && !isListening) {
+                // Показываем индикатор только если isBusy И НЕ isListening
+                if (isBusy && !isListening) {
                     CircularProgressIndicator(
                         modifier = Modifier
                             .size(24.dp)
@@ -51,7 +62,9 @@ fun CalendarAppBar(
                     )
                 }
 
-                IconButton(onClick = onNavigateToSettings) {
+                IconButton(
+                    onClick = onNavigateToSettings,
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = "Настройки",
@@ -59,6 +72,6 @@ fun CalendarAppBar(
                 }
             }
         },
-        // colors = TopAppBarDefaults.centerAlignedTopAppBarColors( containerColor = Color.Transparent) // Можно задать цвета, если нужно
+        // colors = TopAppBarDefaults.centerAlignedTopAppBarColors( containerColor = Color.Transparent)
     )
 }
