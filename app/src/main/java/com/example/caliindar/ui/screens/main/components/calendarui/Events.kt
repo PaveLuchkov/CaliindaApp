@@ -1,5 +1,6 @@
 package com.example.caliindar.ui.screens.main.components.calendarui
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -22,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.CalendarEvent
 import com.example.caliindar.ui.screens.main.MainViewModel
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,6 +38,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.example.caliindar.ui.theme.LocalFixedAccentColors
+import kotlinx.coroutines.launch
 import java.time.Duration
 
 data class GeneratedShapeParams(
@@ -52,6 +57,7 @@ fun EventsList(
     timeFormatter: (CalendarEvent) -> String,
     currentTime: Instant,
     isToday: Boolean,
+    listState: LazyListState,
     nextStartTime: Instant?,
     modifier: Modifier = Modifier
 ) {
@@ -61,6 +67,7 @@ fun EventsList(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
     ) {
 
         items(items = events, key = { it.id }) { event ->
@@ -158,6 +165,52 @@ fun DayEventsPage(
         }
     }
 
+    // --- ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ ---
+    val targetScrollIndex = remember(timedEvents, currentTime, nextStartTime, isToday) {
+        if (!isToday || timedEvents.isEmpty()) {
+            -1 // Не скроллим, если не сегодня или нет событий
+        } else {
+            // 1. Ищем индекс первого текущего события
+            val currentEventIndex = timedEvents.indexOfFirst { event ->
+                val start = parseToInstant(event.startTime)
+                val end = parseToInstant(event.endTime)
+                start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
+            }
+
+            if (currentEventIndex != -1) {
+                currentEventIndex // Нашли текущее - скроллим к нему
+            } else {
+                // 2. Если текущего нет, ищем индекс первого следующего
+                if (nextStartTime != null) {
+                    timedEvents.indexOfFirst { event ->
+                        val start = parseToInstant(event.startTime)
+                        start != null && start == nextStartTime
+                    }
+                } else {
+                    -1 // Нет ни текущего, ни следующего - не скроллим
+                }
+            }
+        }
+    }
+
+    // --- СОЗДАЕМ И ЗАПОМИНАЕМ СОСТОЯНИЕ СПИСКА ---
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(targetScrollIndex, isToday) { // Запускаем, если изменился индекс или флаг isToday
+        if (isToday && targetScrollIndex != -1) {
+            // Запускаем корутину для вызова suspend-функции animateScrollToItem
+            launch {
+                // Небольшая задержка может помочь, если список еще не успел отрисоваться
+                // delay(100) // Раскомментируй, если нужно
+                try { // Добавим try-catch на всякий случай
+                    listState.animateScrollToItem(index = targetScrollIndex)
+                } catch (e: Exception) {
+                    Log.e("DayEventsPageScroll", "Error scrolling to index $targetScrollIndex", e)
+                }
+            }
+        }
+    }
+
     val fixedColors = LocalFixedAccentColors.current
 
     val headerBackgroundColor = if (isToday) {
@@ -224,6 +277,7 @@ fun DayEventsPage(
                     isToday = isToday,
                     nextStartTime = nextStartTime,
                     currentTime = currentTime,
+                    listState = listState,
                     modifier = Modifier
                         .weight(1f) // Занимает оставшееся место
                         .fillMaxWidth()
