@@ -47,6 +47,7 @@ object CalendarUiDefaults {
     const val HeightSigmoidMidpointMinutes = 180.0
     const val HeightSigmoidScaleFactor = 30.0
     const val HeightSigmoidSteepness = 7.0
+    const val EVENT_TRANSITION_WINDOW_MINUTES = 60L
 
     const val ShapeMinVertices = 3
     const val ShapeMaxVerticesDelta = 5 // Vertices = Min + (hash % Delta) -> Range [3, 7] now

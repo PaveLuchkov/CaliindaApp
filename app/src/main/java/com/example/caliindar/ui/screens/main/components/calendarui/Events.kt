@@ -34,6 +34,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.example.caliindar.ui.theme.LocalFixedAccentColors
+import java.time.Duration
 
 data class GeneratedShapeParams(
     val numVertices: Int,
@@ -50,8 +51,14 @@ fun EventsList(
     events: List<CalendarEvent>,
     timeFormatter: (CalendarEvent) -> String,
     currentTime: Instant,
+    isToday: Boolean,
+    nextStartTime: Instant?,
     modifier: Modifier = Modifier
 ) {
+    val transitionWindowDurationMillis = remember { // Запоминаем длительность окна в мс
+        Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -62,11 +69,48 @@ fun EventsList(
                 val end = parseToInstant(event.endTime)
                 start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
             }
+
+
+
+            val isNext = remember(event.startTime, nextStartTime) {
+                // isNext вычисляется ТОЛЬКО если nextStartTime не null (т.е. мы на сегодня и следующее событие есть)
+                if (nextStartTime == null) false
+                else {
+                    val currentEventStart = parseToInstant(event.startTime)
+                    currentEventStart != null && currentEventStart == nextStartTime
+                }
+            }
+
+            val proximityRatio = remember(currentTime, event.startTime, isToday) {
+                // Коэффициент рассчитывается только для СЕГОДНЯ и для БУДУЩИХ событий
+                if (!isToday) {
+                    0f // Не сегодня - нет перехода
+                } else {
+                    val start = parseToInstant(event.startTime)
+                    if (start == null || currentTime.isAfter(start)) {
+                        // Событие в прошлом или не парсится - максимальный переход (или без перехода?)
+                        // Если хотим переход только для будущих, то 0f. Если для текущих/прошлых тоже, то 1f.
+                        // Сделаем 0f для простоты - переход только для будущих.
+                        0f
+                    } else {
+                        val timeUntilStartMillis = Duration.between(currentTime, start).toMillis()
+                        if (timeUntilStartMillis > transitionWindowDurationMillis || transitionWindowDurationMillis <= 0) {
+                            0f // Слишком далеко или некорректное окно - нет перехода
+                        } else {
+                            // Рассчитываем коэффициент: 1.0 (близко) -> 0.0 (далеко в пределах окна)
+                            (1.0f - (timeUntilStartMillis.toFloat() / transitionWindowDurationMillis.toFloat())).coerceIn(0f, 1f)
+                        }
+                    }
+                }
+            }
+
         //    Spacer(modifier = Modifier.height(2.dp))
             EventListItem(
                 event = event,
                 timeFormatter = timeFormatter,
                 isCurrentEvent = isCurrent,
+                isNextEvent = isNext,
+                proximityRatio = proximityRatio,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = CalendarUiDefaults.ItemHorizontalPadding, vertical = CalendarUiDefaults.ItemVerticalPadding )
@@ -91,9 +135,29 @@ fun DayEventsPage(
 
     val isToday = date == LocalDate.now()
 
-    val (allDayEvents, timedEvents) = remember(events) { // Запоминаем результат разделения
-        events.partition { it.isAllDay }
+    val (allDayEvents, timedEvents) = remember(events) {
+        val (allDay, timed) = events.partition { it.isAllDay }
+        val sortedTimed = timed.sortedBy { event ->
+            parseToInstant(event.startTime) ?: Instant.MAX
+        }
+        allDay to sortedTimed
     }
+
+    val nextStartTime: Instant? = remember(timedEvents, currentTime, isToday) {
+        if (!isToday) { // Если не сегодня, следующего события нет
+            null
+        } else {
+            timedEvents.firstNotNullOfOrNull { event ->
+                val start = parseToInstant(event.startTime)
+                if (start != null && start.isAfter(currentTime)) {
+                    start
+                } else {
+                    null
+                }
+            }
+        }
+    }
+
     val fixedColors = LocalFixedAccentColors.current
 
     val headerBackgroundColor = if (isToday) {
@@ -108,13 +172,15 @@ fun DayEventsPage(
         fixedColors.onSecondaryFixed// Other dates' text color
     }
 
+
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
         Column(modifier = Modifier.
         fillMaxSize()
-            .padding(vertical = 16.dp)) {
+            .padding()) {
+            Spacer(modifier = Modifier.height(3.dp))
             // Заголовок Дня (можно вынести в отдельный Composable)
             Box(
                 modifier = Modifier
@@ -155,6 +221,8 @@ fun DayEventsPage(
                 EventsList(
                     events = timedEvents, // Передаем только события со временем
                     timeFormatter = viewModel::formatEventListTime,
+                    isToday = isToday,
+                    nextStartTime = nextStartTime,
                     currentTime = currentTime,
                     modifier = Modifier
                         .weight(1f) // Занимает оставшееся место
@@ -181,7 +249,7 @@ fun DayEventsPage(
 
 @Composable
 fun AllDayEventItem(event: CalendarEvent) {
-    val fixedColors = LocalFixedAccentColors.current
+
     Box(
         modifier = Modifier
             .fillMaxWidth()

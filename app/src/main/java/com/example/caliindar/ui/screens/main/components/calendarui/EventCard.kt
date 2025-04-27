@@ -26,16 +26,19 @@ import androidx.compose.ui.draw.shadow
 // import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.example.caliindar.ui.screens.main.CalendarEvent
 import java.time.Duration
+import java.time.Instant
 import kotlin.math.abs
 import kotlin.math.exp
 
@@ -46,6 +49,8 @@ fun EventListItem(
     event: CalendarEvent,
     timeFormatter: (CalendarEvent) -> String,
     isCurrentEvent: Boolean, // Получаем снаружи
+    isNextEvent: Boolean,
+    proximityRatio: Float,
     modifier: Modifier = Modifier // Позволяем контейнеру управлять внешними отступами/размером
 ) {
     // --- Расчет высоты  ---
@@ -58,6 +63,7 @@ fun EventListItem(
             0L
         }
     }
+
     val isMicroEvent = remember(eventDurationMinutes) {
         eventDurationMinutes in 1..cuid.MicroEventMaxDurationMinutes
     }
@@ -86,6 +92,11 @@ fun EventListItem(
         calculateShapeContainerSize(eventDurationMinutes)
     }
 
+
+    // Compute the transitionColor
+    val transitionColorCard = colorScheme.primaryContainer.transitionTo(colorScheme.tertiaryContainer, proximityRatio)
+    val transitionColorText = colorScheme.onPrimaryContainer.transitionTo(colorScheme.onTertiaryContainer, proximityRatio)
+
     val starOffsetY = starContainerSize * shapeParams.offestParam
     val starOffsetX = starContainerSize * -shapeParams.offestParam
     val rotationAngle = shapeParams.rotationAngle
@@ -97,9 +108,17 @@ fun EventListItem(
  //   val fixedColors = LocalFixedAccentColors.current
 
     val cardElevation = if (isCurrentEvent) cuid.CurrentEventElevation else 0.dp
-    val cardBackground = if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer
-    val cardTextColor = if (isCurrentEvent) colorScheme.onTertiaryContainer else colorScheme.onPrimaryContainer
+    val cardBackground = when {
+        isCurrentEvent -> colorScheme.tertiaryContainer // Выделяем текущее
+        isNextEvent -> transitionColorCard// Слегка выделяем следующее (пример)
+        else -> colorScheme.primaryContainer // Обычный фон
+    }
 
+    val cardTextColor = when {
+        isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
+        isNextEvent -> transitionColorText// Слегка выделяем следующее (пример)
+        else -> colorScheme.onPrimaryContainer // Обычный фон
+    }
     // --- Композиция UI ---
     Box(
         modifier = modifier // Применяем модификатор от родителя
@@ -270,3 +289,14 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
     )
 }
 
+fun Color.transitionTo(target: Color, factor: Float): Color {
+    val startHsl = FloatArray(3)
+    val targetHsl = FloatArray(3)
+    ColorUtils.colorToHSL(this.toArgb(), startHsl)
+    ColorUtils.colorToHSL(target.toArgb(), targetHsl)
+    val h = startHsl[0] + (targetHsl[0] - startHsl[0]) * factor
+    val s = startHsl[1] + (targetHsl[1] - startHsl[1]) * factor
+    val l = startHsl[2] + (targetHsl[2] - startHsl[2]) * factor
+    val newHsl = floatArrayOf(h,s,l)
+    return Color(ColorUtils.HSLToColor(newHsl))
+}
