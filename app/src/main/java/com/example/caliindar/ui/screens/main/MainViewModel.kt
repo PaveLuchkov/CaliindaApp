@@ -379,14 +379,8 @@ class MainViewModel @Inject constructor(
                 // Фильтруем этот список перед маппингом в Domain модель
                 entityList.filter { entity ->
                     if (!entity.isAllDay) {
-                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                        // Правило для НЕ all-day:
-                        // Событие должно не только НАЧИНАТЬСЯ в этот день (это гарантирует DAO),
-                        // но и ЗАВЕРШАТЬСЯ ДО начала следующего дня.
-                        // Проверяем наличие startTime и endTime
                         if (entity.startTimeMillis != null && entity.endTimeMillis != null) {
-                            // startTime >= startMillis И startTime < endMillis (из DAO)
-                            // Добавляем проверку endTime:
+
                             entity.endTimeMillis <= endMillis // Время конца должно быть МЕНЬШЕ ИЛИ РАВНО началу следующего дня
                         } else {
                             // Если нет времени начала или конца, не отображаем (или реши как обрабатывать)

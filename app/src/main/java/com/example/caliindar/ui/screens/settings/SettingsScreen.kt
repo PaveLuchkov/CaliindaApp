@@ -46,7 +46,7 @@ fun SettingsScreen(
             viewModel.clearAuthError()
         }
     }
-
+// TODO: ПОЛНОСТЬЮ ПЕРЕДЕЛАТЬ ЭКРАН НАСТРОЕК, КАК В FIGMA
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -131,7 +131,7 @@ fun SettingsScreen(
                 Text("Сохранить поведение")
             }
 
-
+// TODO: ДОЛЖНО БЫТЬ: ФОРМАТ ОТОБРАЖЕНИЯ, ТАЙМЗОНА
             Spacer(modifier = Modifier.height(24.dp))
             Text("Часовой пояс: ${ZoneId.systemDefault().id} (Как на устройстве)") // Показываем текущий
 

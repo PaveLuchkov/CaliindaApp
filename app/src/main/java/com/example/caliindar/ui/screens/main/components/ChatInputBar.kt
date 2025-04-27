@@ -105,6 +105,7 @@ fun ChatInputBar(
         BottomAppBar(
             // containerColor = MaterialTheme.colorScheme.surface, // Можно задать цвет фона
             // contentColor = MaterialTheme.colorScheme.onSurface, // Цвет контента по умолчанию
+            // TODO: ACTION кнопка создания события
             actions = {
                 // Keyboard Toggle Button
                 IconButton(
