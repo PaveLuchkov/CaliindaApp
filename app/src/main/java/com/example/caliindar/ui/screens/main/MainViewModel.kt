@@ -51,8 +51,10 @@ import java.util.Locale
 import javax.inject.Inject
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import com.example.caliindar.di.ITimeTicker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 enum class AiVisualizerState {
     IDLE,      // Начальное состояние / Ничего не происходит (кнопка видима)
@@ -72,7 +74,10 @@ class MainViewModel @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val eventDao: EventDao,
     private val settingsRepository: SettingsRepository,
+    timeTicker: ITimeTicker
 ): ViewModel() {
+
+    val currentTime: StateFlow<Instant> = timeTicker.currentTime
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
