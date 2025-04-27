@@ -1,7 +1,6 @@
 package com.example.caliindar.ui.screens.main.components.calendarui
 
 import RoundedPolygonShape
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,9 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.BlurEffect
+// import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -37,10 +35,11 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.example.caliindar.ui.screens.main.CalendarEvent
-import com.example.caliindar.ui.theme.LocalFixedAccentColors
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
+
+val cuid =  CalendarUiDefaults
 
 @Composable
 fun EventListItem(
@@ -60,7 +59,7 @@ fun EventListItem(
         }
     }
     val isMicroEvent = remember(eventDurationMinutes) {
-        eventDurationMinutes in 1..CalendarUiDefaults.MicroEventMaxDurationMinutes
+        eventDurationMinutes in 1..cuid.MicroEventMaxDurationMinutes
     }
 
     val targetHeight = remember(isMicroEvent, eventDurationMinutes) {
@@ -76,8 +75,8 @@ fun EventListItem(
         RoundedPolygon.star(
             numVerticesPerRadius = shapeParams.numVertices,
             radius = shapeParams.radiusSeed,
-            innerRadius = CalendarUiDefaults.SHAPEINNERRADIUS,
-            rounding = CornerRounding(CalendarUiDefaults.ShapeCornerRounding)
+            innerRadius = cuid.SHAPEINNERRADIUS,
+            rounding = CornerRounding(cuid.ShapeCornerRounding)
         )
     }
     val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
@@ -97,7 +96,7 @@ fun EventListItem(
     // --- Параметры текущего события (получаем isCurrentEvent) ---
  //   val fixedColors = LocalFixedAccentColors.current
 
-    val cardElevation = if (isCurrentEvent) CalendarUiDefaults.CurrentEventElevation else 0.dp
+    val cardElevation = if (isCurrentEvent) cuid.CurrentEventElevation else 0.dp
     val cardBackground = if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer
     val cardTextColor = if (isCurrentEvent) colorScheme.onTertiaryContainer else colorScheme.onPrimaryContainer
 
@@ -107,12 +106,12 @@ fun EventListItem(
             // Убрали внешний padding отсюда
             .shadow(
                 elevation = cardElevation,
-                shape = RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius),
+                shape = RoundedCornerShape(cuid.EventItemCornerRadius),
                 clip = false,
                 ambientColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent,
                 spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent
             )
-            .clip(RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius))
+            .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
             .background(cardBackground)
             .height(targetHeight) // Высота применяется здесь
     ) {
@@ -128,7 +127,7 @@ fun EventListItem(
                         rotationZ = rotationAngle,
                         /*
                         renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            BlurEffect(radiusX = CalendarUiDefaults.StarShadowBlurRadius, radiusY = CalendarUiDefaults.StarShadowBlurRadius, edgeTreatment = TileMode.Decal)
+                            BlurEffect(radiusX = cuid.StarShadowBlurRadius, radiusY = cuid.StarShadowBlurRadius, edgeTreatment = TileMode.Decal)
                         } else null
 
                          */
@@ -148,7 +147,7 @@ fun EventListItem(
                     )
                     .requiredSize(starContainerSize)
                     .clip(clipStar)
-                    .background(cardBackground.copy(alpha = 0.95f)) // Используем фон карточки
+                    .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha)) // Используем фон карточки
             )
         }
 
@@ -158,8 +157,8 @@ fun EventListItem(
                 .fillMaxSize()
                 // Используем константы для внутренних отступов
                 .padding(
-                    horizontal = CalendarUiDefaults.ItemHorizontalPadding, // Внутренний горизонтальный
-                    vertical = if (isMicroEvent) CalendarUiDefaults.MicroItemContentVerticalPadding else CalendarUiDefaults.StandardItemContentVerticalPadding
+                    horizontal = cuid.ItemHorizontalPadding, // Внутренний горизонтальный
+                    vertical = if (isMicroEvent) cuid.MicroItemContentVerticalPadding else cuid.StandardItemContentVerticalPadding
                 ),
             contentAlignment = Alignment.TopStart
         ) {
@@ -176,7 +175,7 @@ fun EventListItem(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
-                    Spacer(modifier = Modifier.width(CalendarUiDefaults.HeaderBottomSpacing))
+                    Spacer(modifier = Modifier.width(cuid.HeaderBottomSpacing))
                     Text(
                         text = timeFormatter(event),
                         color = cardTextColor,
@@ -210,16 +209,16 @@ fun EventListItem(
 
 fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
     return if (isMicroEvent) {
-        CalendarUiDefaults.MicroEventHeight
+        cuid.MicroEventHeight
     } else {
-        val minHeight = CalendarUiDefaults.MinEventHeight
-        val maxHeight = CalendarUiDefaults.MaxEventHeight
+        val minHeight = cuid.MinEventHeight
+        val maxHeight = cuid.MaxEventHeight
         val durationDouble = durationMinutes.toDouble()
         val heightRange = maxHeight - minHeight
 
         // Sigmoid calculation
-        val x = (durationDouble - CalendarUiDefaults.HeightSigmoidMidpointMinutes) / CalendarUiDefaults.HeightSigmoidScaleFactor
-        val k = CalendarUiDefaults.HeightSigmoidSteepness
+        val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
+        val k = cuid.HeightSigmoidSteepness
         val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
 
         val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
@@ -228,13 +227,13 @@ fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
 }
 
 fun calculateShapeContainerSize(durationMinutes: Long): Dp {
-    val minStarContainerSize = CalendarUiDefaults.MinStarContainerSize
-    val maxStarContainerSize = CalendarUiDefaults.MaxStarContainerSize
+    val minStarContainerSize = cuid.MinStarContainerSize
+    val maxStarContainerSize = cuid.MaxStarContainerSize
     val durationDouble = durationMinutes.toDouble()
     val heightRange = maxStarContainerSize - minStarContainerSize
 
-    val x = (durationDouble - CalendarUiDefaults.HeightSigmoidMidpointMinutes) / CalendarUiDefaults.HeightSigmoidScaleFactor
-    val k = CalendarUiDefaults.HeightSigmoidSteepness
+    val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
+    val k = cuid.HeightSigmoidSteepness
     val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
 
     val calculatedHeight = minStarContainerSize + (heightRange * sigmoidOutput.toFloat())
@@ -246,20 +245,20 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
     val hashCode = eventId.hashCode()
     val absHashCode = abs(hashCode)
 
-    val numVertices = (absHashCode % CalendarUiDefaults.ShapeMaxVerticesDelta) + CalendarUiDefaults.ShapeMinVertices
+    val numVertices = (absHashCode % cuid.ShapeMaxVerticesDelta) + cuid.ShapeMinVertices
 
     // Use different simple transformations of the hash for variety
-    val shadowOffsetXSeed = absHashCode % CalendarUiDefaults.ShapeShadowOffsetXMaxModulo
-    val shadowOffsetYSeed = absHashCode % CalendarUiDefaults.ShapeShadowOffsetYMaxModulo + CalendarUiDefaults.ShapeShadowOffsetYMin
+    val shadowOffsetXSeed = absHashCode % cuid.ShapeShadowOffsetXMaxModulo
+    val shadowOffsetYSeed = absHashCode % cuid.ShapeShadowOffsetYMaxModulo + cuid.ShapeShadowOffsetYMin
 
-    val offsetParam = (absHashCode % 4 + 1) * CalendarUiDefaults.ShapeOffsetParamMultiplier
+    val offsetParam = (absHashCode % 4 + 1) * cuid.ShapeOffsetParamMultiplier
 
     val radiusBaseHash = absHashCode / 3 + 42
-    val radiusSeed = ((radiusBaseHash % CalendarUiDefaults.ShapeRadiusSeedRangeModulo) * CalendarUiDefaults.ShapeRadiusSeedRange) + CalendarUiDefaults.ShapeRadiusSeedMin
-    val coercedRadiusSeed = radiusSeed.coerceIn(CalendarUiDefaults.ShapeRadiusSeedMin, CalendarUiDefaults.ShapeMaxRadius)
+    val radiusSeed = ((radiusBaseHash % cuid.ShapeRadiusSeedRangeModulo) * cuid.ShapeRadiusSeedRange) + cuid.ShapeRadiusSeedMin
+    val coercedRadiusSeed = radiusSeed.coerceIn(cuid.ShapeRadiusSeedMin, cuid.ShapeMaxRadius)
 
-    val angleSeed = (abs(hashCode) / 5 - 99).mod(CalendarUiDefaults.ShapeRotationMaxDegrees)
-    val rotationAngle = (angleSeed + CalendarUiDefaults.ShapeRotationOffsetDegrees).toFloat()
+    val angleSeed = (abs(hashCode) / 5 - 99).mod(cuid.ShapeRotationMaxDegrees)
+    val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees).toFloat()
 
     return GeneratedShapeParams(
         numVertices = numVertices,

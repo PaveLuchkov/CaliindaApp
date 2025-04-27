@@ -53,8 +53,6 @@ object CalendarUiDefaults {
     const val ShapeShadowOffsetXMaxModulo = 11 // Range [0, 10]
     const val ShapeShadowOffsetYMin = 3
     const val ShapeShadowOffsetYMaxModulo = 6 // Range [3, 8]
-    const val ShapeOffsetParamMinFactor = 1 // Range [1, 4] -> [0.1f, 0.4f]
-    const val ShapeOffsetParamMaxFactor = 4
     const val ShapeOffsetParamMultiplier = 0.1f
     const val ShapeRadiusSeedMin = 0.4f
     const val ShapeRadiusSeedRange = 0.4f // Range [0.4f, 0.8f]
