@@ -16,8 +16,8 @@ object CalendarUiDefaults {
     // Размеры и отступы
     val ItemHorizontalPadding = 16.dp
     val ItemVerticalPadding = 3.dp // Базовый вертикальный отступ между элементами
-    val MicroItemContentVerticalPadding = 2.dp
-    val StandardItemContentVerticalPadding = 8.dp
+    val MicroItemContentVerticalPadding = 1.dp
+    val StandardItemContentVerticalPadding = 3.dp
     val AllDayItemPadding = 16.dp
     val AllDayItemVerticalContentPadding = 6.dp
     val AllDayItemCornerRadius = 25.dp
@@ -28,10 +28,10 @@ object CalendarUiDefaults {
     val AllDayGroupBottomSpacing = 8.dp
     val LazyColumnBottomPadding = 16.dp
     val EventItemCornerRadius = 20.dp
-    val MinEventHeight = 50.dp
+    val MinEventHeight = 65.dp
     val MaxEventHeight = 200.dp
     val MicroEventHeight = 30.dp
-    const val MicroEventMaxDurationMinutes = 30L
+    const val MicroEventMaxDurationMinutes = 25L
     val MinStarContainerSize = 120.dp // Размер контейнера для декоративной звезды
     val MaxStarContainerSize = 360.dp // Размер контейнера для декоративной звезды
 
@@ -44,9 +44,9 @@ object CalendarUiDefaults {
     val StarShadowBlurRadius = 3f
 
 
-    const val HeightSigmoidMidpointMinutes = 120.0
+    const val HeightSigmoidMidpointMinutes = 180.0
     const val HeightSigmoidScaleFactor = 30.0
-    const val HeightSigmoidSteepness = 1.0
+    const val HeightSigmoidSteepness = 7.0
 
     const val ShapeMinVertices = 3
     const val ShapeMaxVerticesDelta = 5 // Vertices = Min + (hash % Delta) -> Range [3, 7] now

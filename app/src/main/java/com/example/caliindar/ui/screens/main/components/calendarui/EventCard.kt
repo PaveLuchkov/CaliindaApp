@@ -270,35 +270,4 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
         offestParam = offsetParam
     )
 }
-/*
-val shapeParams = remember(event.id) {
-    val hashCode = event.id.hashCode()
-
-    // Модуль 7 дает 0-6. Добавляем 3, получаем диапазон [3, 9].
-    val numVertices = (abs(hashCode) % 5) + 3
-    val shadowOffsetXSeed = ((abs(hashCode) % 11))
-    val shadowOffsetYSeed = (abs(hashCode) % 6 + 3)
-    val offestParam = ((abs(hashCode) % 4 + 1) * 0.1f)
-
-    // 2. Соотношение внутреннего радиуса (например, от 0.4f до 0.8f)
-    // Используем другую операцию с хэшем, чтобы немного отвязать от кол-ва вершин
-    // Модуль 11 дает 0-10. Умножаем на 0.04f -> 0.0f - 0.4f. Добавляем 0.4f -> [0.4f, 0.8f]
-    val ratioSeed = abs(hashCode / 3 + 42) // Просто другая арифметика над хэшем
-    val radiusSeed = ((ratioSeed % 11) * 0.4f + 0.4f)
-        .coerceIn(0.4f, 3f) // Ограничиваем на всякий случай
-
-    val angleSeed = abs(hashCode / 5 - 99) % 91 // 0-90
-    val rotationAngle = (angleSeed - 45).toFloat()
-
-    GeneratedShapeParams(
-        numVertices = numVertices,
-        radiusSeed = radiusSeed,
-        rotationAngle = rotationAngle,
-        shadowOffsetXSeed = shadowOffsetXSeed.dp,
-        shadowOffsetYSeed = shadowOffsetYSeed.dp,
-        offestParam = offestParam
-    )
-}
-
- */
 

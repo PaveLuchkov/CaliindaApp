@@ -18,6 +18,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val backendUrl: String = findProperty("BACKEND_BASE_URL") as? String ?: ""
+        val webClientId: String = findProperty("BACKEND_WEB_CLIENT_ID") as? String ?: ""
+
+        buildConfigField("String", "BACKEND_BASE_URL", "\"$backendUrl\"")
+        buildConfigField("String", "BACKEND_WEB_CLIENT_ID", "\"$webClientId\"")
     }
     packaging {
         resources.excludes.add("META-INF/DEPENDENCIES")
@@ -41,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

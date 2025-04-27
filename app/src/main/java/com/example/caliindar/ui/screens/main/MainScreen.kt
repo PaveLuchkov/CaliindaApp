@@ -60,8 +60,6 @@ fun MainScreen(
     )
     val currentVisibleDate by viewModel.currentVisibleDate.collectAsStateWithLifecycle()
     val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
-    val eventsState by viewModel.eventsState.collectAsStateWithLifecycle() // Собираем состояние событий
-    val eventNetworkState by viewModel.eventNetworkState.collectAsStateWithLifecycle()
 
 
     // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---

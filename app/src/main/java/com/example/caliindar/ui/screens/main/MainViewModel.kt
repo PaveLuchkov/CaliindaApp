@@ -55,6 +55,8 @@ import com.example.caliindar.di.ITimeTicker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import com.example.caliindar.di.BackendUrl // Импорт квалификатора
+import com.example.caliindar.di.WebClientId // Импорт квалификатора
 
 enum class AiVisualizerState {
     IDLE,      // Начальное состояние / Ничего не происходит (кнопка видима)
@@ -74,7 +76,9 @@ class MainViewModel @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val eventDao: EventDao,
     private val settingsRepository: SettingsRepository,
-    timeTicker: ITimeTicker
+    timeTicker: ITimeTicker,
+    @BackendUrl private val backendBaseUrl: String, // Внедряем URL
+    @WebClientId private val webClientId: String    // Внедряем Client ID
 ): ViewModel() {
 
     val currentTime: StateFlow<Instant> = timeTicker.currentTime
@@ -119,19 +123,14 @@ class MainViewModel @Inject constructor(
         const val TRIGGER_PREFETCH_THRESHOLD_FORWARD = 2 // За сколько дней до конца загруженного диапазона начать новую загрузку
         const val TRIGGER_PREFETCH_THRESHOLD_BACKWARD = 1 // За сколько
         private const val TAG = "MainViewModelAuth"
-        private const val BACKEND_WEB_CLIENT_ID =
-            "835523232919-o0ilepmg8ev25bu3ve78kdg0smuqp9i8.apps.googleusercontent.com"
-        // Лучше вынести URL в BuildConfig или другой модуль
-        private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
-    // private const val BACKEND_BASE_URL = "http://172.29.96.1:8000"
     }
 
     init {
         // Инициализация Google Sign-In Client
         gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestScopes(Scope("https://www.googleapis.com/auth/calendar.events"))
-            .requestServerAuthCode(BACKEND_WEB_CLIENT_ID)
-            .requestIdToken(BACKEND_WEB_CLIENT_ID)
+            .requestServerAuthCode(webClientId)
+            .requestIdToken(webClientId)
             .requestEmail()
             .build()
         googleSignInClient = GoogleSignIn.getClient(application, gso)
@@ -159,26 +158,12 @@ class MainViewModel @Inject constructor(
     }
 
     // Состояние для списка событий
-    sealed interface EventsUiState {
-        object Loading : EventsUiState
-        data class Success(val events: List<CalendarEvent>) : EventsUiState
-        data class Error(val message: String) : EventsUiState
-        object Idle : EventsUiState // Начальное состояние или если не запрашивали
-    }
 
     sealed interface EventNetworkState {
         object Idle : EventNetworkState
         object Loading : EventNetworkState
         data class Error(val message: String) : EventNetworkState
     }
-    private val _eventNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
-    val eventNetworkState: StateFlow<EventNetworkState> = _eventNetworkState.asStateFlow()
-
-    // StateFlow для управления состоянием событий
-    private val _eventsState = MutableStateFlow<EventsUiState>(EventsUiState.Idle)
-    val eventsState: StateFlow<EventsUiState> = _eventsState.asStateFlow()
-
-
 
     private val _currentVisibleDate = MutableStateFlow(LocalDate.now()) // Дата, видимая в Pager
     val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
@@ -207,17 +192,45 @@ class MainViewModel @Inject constructor(
     }
     internal fun ensureDateRangeLoadedAround(centerDate: LocalDate) {
         viewModelScope.launch {
-            val requiredRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
             val currentlyLoaded = _loadedDateRange.value
+            val isLoading = _rangeNetworkState.value is EventNetworkState.Loading // Check if already loading
 
-            if (currentlyLoaded == null || !currentlyLoaded.containsRange(requiredRange)) {
-                Log.i(TAG, "Need to load or expand range. Required: $requiredRange, Current: $currentlyLoaded")
-                // Рассчитываем НОВЫЙ общий диапазон для загрузки (объединяем или берем новый)
-                val rangeToLoad = currentlyLoaded?.union(requiredRange) ?: requiredRange
-                // Запускаем фоновую загрузку этого ДИАПАЗОНА
-                fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive)
+            if (isLoading) {
+                Log.d(TAG, "Prefetch check skipped, range fetch already in progress.")
+                return@launch
+            }
+
+            if (currentlyLoaded == null) {
+                // --- Initial Load ---
+                Log.i(TAG, "No range loaded yet. Initial load around $centerDate")
+                val initialRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
+                fetchAndStoreDateRange(initialRange.start, initialRange.endInclusive)
             } else {
-                Log.d(TAG, "Current range $currentlyLoaded already covers required $requiredRange")
+                // --- Check Thresholds for Expanding ---
+                val needsForwardPrefetch = centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD_FORWARD.toLong())
+                val needsBackwardPrefetch = centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD_BACKWARD.toLong())
+
+                if (needsForwardPrefetch || needsBackwardPrefetch) {
+                    Log.i(TAG, "Prefetch triggered. Center: $centerDate, Loaded: $currentlyLoaded. ForwardNeed: $needsForwardPrefetch, BackwardNeed: $needsBackwardPrefetch")
+
+                    // Calculate the *new* range to load based on the center date and prefetch distances
+                    val newlyRequiredRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
+
+                    // Calculate the final range to fetch by combining current and newly required
+                    val rangeToLoad = currentlyLoaded.union(newlyRequiredRange)
+
+                    // Avoid fetching the exact same range again if something went wrong previously
+                    // Optional: You might want more sophisticated logic here if fetches fail often
+                    // if (rangeToLoad == currentlyLoaded) {
+                    //     Log.w(TAG, "Calculated range to load is same as current, skipping fetch.")
+                    //     return@launch
+                    // }
+
+                    fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive)
+
+                } else {
+                    Log.d(TAG, "No prefetch needed. Center: $centerDate is within loaded range $currentlyLoaded thresholds.")
+                }
             }
         }
     }
@@ -228,33 +241,31 @@ class MainViewModel @Inject constructor(
     // --- ИЗМЕНЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ---
     // Загружает данные для ДИАПАЗОНА дат с нового эндпоинта
     private fun fetchAndStoreDateRange(startDate: LocalDate, endDate: LocalDate) {
-        // Предотвращаем множественные одновременные загрузки диапазона
         if (_rangeNetworkState.value is EventNetworkState.Loading) {
-            Log.d(TAG, "Range fetch request ignored, already loading.")
+            Log.d(TAG, "Range fetch request ignored for $startDate..$endDate, already loading.")
             return
         }
-        // Проверка входа и токена остается важной
         if (!_uiState.value.isSignedIn) {
             Log.w(TAG, "Cannot fetch range: User not signed in.")
+            // _rangeNetworkState.value = EventNetworkState.Error("Требуется вход") // Можно установить ошибку диапазона
             return
         }
 
         viewModelScope.launch {
             Log.i(TAG, "Starting background fetch for date range: $startDate to $endDate")
-            _rangeNetworkState.value = EventNetworkState.Loading
+            _rangeNetworkState.value = EventNetworkState.Loading // <-- Используем _rangeNetworkState
 
-            val freshToken = getFreshIdToken() // Получаем свежий ID токен
+            val freshToken = getFreshIdToken()
             if (freshToken == null) {
                 Log.w(TAG, "Cannot fetch range: Failed to get fresh ID token.")
-                _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации для обновления")
-                // signOutInternally уже был вызван внутри getFreshIdToken
+                _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации")
+                // signOutInternally уже был вызван
                 return@launch
             }
 
-            // --- ИСПОЛЬЗУЕМ НОВЫЙ ЭНДПОИНТ ---
-            val url = "$BACKEND_BASE_URL/calendar/events/range" + // Новый путь
-                    "?startDate=${startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}" + // Параметр startDate
-                    "&endDate=${endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}"       // Параметр endDate
+            val url = "$backendBaseUrl/calendar/events/range" +
+                    "?startDate=${startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}" +
+                    "&endDate=${endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
 
             val request = Request.Builder()
                 .url(url)
@@ -263,6 +274,7 @@ class MainViewModel @Inject constructor(
                 .build()
 
             try {
+                // ... (внутренняя логика запроса, парсинга и сохранения в БД остается той же) ...
                 val networkEvents: List<CalendarEvent> = withContext(Dispatchers.IO) {
                     okHttpClient.newCall(request).execute().use { response ->
                         val responseBodyString = response.body?.string()
@@ -276,33 +288,26 @@ class MainViewModel @Inject constructor(
                             emptyList()
                         } else {
                             Log.i(TAG, "Range fetched successfully from network for $startDate to $endDate.")
-                            parseEventsResponse(responseBodyString) // Парсим ответ (остается тем же)
+                            parseEventsResponse(responseBodyString) // Парсим ответ
                         }
                     }
                 } // End Dispatchers.IO
 
-                // --- Успешный ответ сети ---
                 val eventEntities = networkEvents.mapNotNull { EventMapper.mapToEntity(it) }
-
-                // --- ВАЖНО: Обновляем БД для ВСЕГО ЗАГРУЖЕННОГО ДИАПАЗОНА ---
-                // Рассчитываем границы диапазона в миллисекундах UTC
                 val startRangeMillis = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-                // Конец диапазона - НАЧАЛО следующего дня после endDate
                 val endRangeMillis = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
                 Log.d(TAG, "Updating DB for range $startDate to $endDate. Deleting range $startRangeMillis..< $endRangeMillis, Inserting ${eventEntities.size} events.")
-                // Используем существующий метод DAO, он подходит
                 eventDao.clearAndInsertEventsForRange(startRangeMillis, endRangeMillis, eventEntities)
                 Log.i(TAG, "Successfully updated DB with events for range $startDate to $endDate.")
 
-                // Обновляем состояние ЗАГРУЖЕННОГО диапазона
                 _loadedDateRange.update { current -> current?.union(startDate..endDate) ?: (startDate..endDate) }
                 _rangeNetworkState.value = EventNetworkState.Idle // Успех
 
             } catch (e: IOException) {
                 Log.e(TAG, "Network error fetching range $startDate to $endDate", e)
                 _rangeNetworkState.value = EventNetworkState.Error("Ошибка сети: ${e.message}")
-            } catch (e: Exception) { // Ловим ошибки парсинга JSON или другие
+            } catch (e: Exception) {
                 Log.e(TAG, "Error processing range response for $startDate to $endDate", e)
                 _rangeNetworkState.value = EventNetworkState.Error("Ошибка обработки данных: ${e.message}")
             }
@@ -340,64 +345,6 @@ class MainViewModel @Inject constructor(
         fetchAndStoreDateRange(currentDate, currentDate)
     }
 
-    private suspend fun fetchEvents(date: LocalDate) {
-        if (!_uiState.value.isSignedIn) {
-            Log.w(TAG, "Cannot fetch events: User not signed in.")
-            _eventsState.value = EventsUiState.Error("Требуется вход в аккаунт")
-            return
-        }
-
-
-        _eventsState.value = EventsUiState.Loading // Показываем загрузку
-        Log.d(TAG, "Fetching events for date: $date")
-
-        val freshToken = getFreshIdToken() // Получаем свежий ID токен для аутентификации на НАШЕМ бэкенде
-        if (freshToken == null) {
-            Log.w(TAG, "Cannot fetch events: Failed to get fresh ID token.")
-            // getFreshIdToken уже обновит uiState с ошибкой аутентификации
-            _eventsState.value = EventsUiState.Error("Ошибка аутентификации")
-            return
-        }
-
-        // Формируем URL для нового эндпоинта бэкенда
-        // Передаем дату как параметр запроса
-        val url = "$BACKEND_BASE_URL/calendar/events?date=${date.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
-
-        val request = Request.Builder()
-            .url(url)
-            .get() // GET запрос
-            .header("Authorization", "Bearer $freshToken") // Передаем ID токен для аутентификации на бэкенде
-            .build()
-
-        withContext(Dispatchers.IO) {
-            try {
-                okHttpClient.newCall(request).execute().use { response ->
-                    val responseBodyString = response.body?.string()
-                    if (response.isSuccessful && responseBodyString != null) {
-                        Log.i(TAG, "Events fetched successfully for $date. Response: $responseBodyString")
-                        try {
-                            // Парсим JSON ответ от нашего бэкенда
-                            val eventsList = parseEventsResponse(responseBodyString)
-                            _eventsState.value = EventsUiState.Success(eventsList)
-                        } catch (e: JSONException) {
-                            Log.e(TAG, "Error parsing events JSON", e)
-                            _eventsState.value = EventsUiState.Error("Ошибка парсинга ответа сервера")
-                        }
-                    } else {
-                        Log.e(TAG, "Error fetching events from backend: ${response.code} - $responseBodyString")
-                        val errorMsg = parseBackendError(responseBodyString, response.code)
-                        _eventsState.value = EventsUiState.Error(errorMsg)
-                    }
-                }
-            } catch (e: IOException) {
-                Log.e(TAG, "Network error fetching events", e)
-                _eventsState.value = EventsUiState.Error("Сетевая ошибка: ${e.message}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error fetching events", e)
-                _eventsState.value = EventsUiState.Error("Неизвестная ошибка: ${e.message}")
-            }
-        }
-    }
 
     private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
         val events = mutableListOf<CalendarEvent>()
@@ -734,7 +681,7 @@ class MainViewModel @Inject constructor(
         }
         val requestBody = jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
         val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/auth/google/exchange")
+            .url("$backendBaseUrl/auth/google/exchange")
             .post(requestBody)
             .build()
 
@@ -798,7 +745,7 @@ class MainViewModel @Inject constructor(
             .build()
 
         val request = Request.Builder()
-            .url("$BACKEND_BASE_URL/process")
+            .url("$backendBaseUrl/process")
             .header("Authorization", "Bearer $freshToken")
             .post(requestBody)
             .build()
@@ -963,8 +910,6 @@ class MainViewModel @Inject constructor(
     }
 
 
-    fun clearNetworkError() { _eventNetworkState.update { EventNetworkState.Idle } }
-
     fun clearGeneralError() {
         _uiState.update { it.copy(showGeneralError = null) }
     }
@@ -985,7 +930,6 @@ class MainViewModel @Inject constructor(
             speechRecognizer = null
             Log.d(TAG, "SpeechRecognizer destroyed.")
         }
-        // okHttpClient.dispatcher.executorService.shutdown() // Закрытие клиента OkHttp
     }
 
 

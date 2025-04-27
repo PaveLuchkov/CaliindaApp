@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 // Объявляем DataStore как расширение Context
@@ -24,3 +25,11 @@ object DataStoreModule {
         return appContext.settingsDataStore
     }
 }
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class BackendUrl
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class WebClientId
