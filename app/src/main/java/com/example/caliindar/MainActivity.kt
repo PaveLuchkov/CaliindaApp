@@ -33,7 +33,7 @@ import com.google.android.gms.tasks.Tasks
 import com.example.caliindar.navigation.AppNavHost
 
 // Project-Specific Imports
-import com.example.caliindar.ui.theme.CaliindarTheme
+import com.example.caliindar.ui.theme.CaliindaTheme
 import com.example.caliindar.ui.screens.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.Composable // Для @Composable AppNavHost
@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            CaliindarTheme {
+            CaliindaTheme {
                 // 3. Передаем Activity-scoped ViewModel и лямбду в NavHost
                 AppNavHost(
                     viewModel = mainViewModel, // <--- Передаем экземпляр из Activity

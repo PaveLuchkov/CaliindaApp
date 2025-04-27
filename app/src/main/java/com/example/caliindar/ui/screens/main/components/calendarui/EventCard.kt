@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
@@ -59,78 +60,46 @@ fun EventListItem(
         }
     }
     val isMicroEvent = remember(eventDurationMinutes) {
-        eventDurationMinutes <= CalendarUiDefaults.MicroEventMaxDurationMinutes && eventDurationMinutes >= 0
+        eventDurationMinutes in 1..CalendarUiDefaults.MicroEventMaxDurationMinutes
     }
+
     val targetHeight = remember(isMicroEvent, eventDurationMinutes) {
-        val minHeight = CalendarUiDefaults.MinEventHeight
-        val maxHeight = CalendarUiDefaults.MaxEventHeight
-
-        if (isMicroEvent) {
-            CalendarUiDefaults.MicroEventHeight
-        } else {
-            val durationDouble = eventDurationMinutes.toDouble()
-            val heightRange = maxHeight - minHeight
-            val x = (durationDouble - 120.0) / 30.0 // Параметры сигмоиды можно вынести в константы, если нужно
-            val k = 1.0
-            val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
-            val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
-            calculatedHeight.coerceIn(minHeight, maxHeight)
-        }
+        calculateEventHeight(eventDurationMinutes, isMicroEvent)
     }
 
-    // --- Генерация формы (используем id, константы) (оставлена без изменений по запросу) ---
-    val shapeParams = remember(event.id) { // Используем event.id как стабильный ключ
-        val hashCode = event.id.hashCode() // <--- Используем ID вместо summary
-
-        // Модуль 7 дает 0-6. Добавляем 3, получаем диапазон [3, 9].
-        val numVertices = (abs(hashCode) % 5) + 3
-        val shadowOffsetXSeed = ((abs(hashCode) % 11))
-        val shadowOffsetYSeed = (abs(hashCode) % 6 + 3)
-        val offestParam = ((abs(hashCode) % 4 + 1) * 0.1f)
-
-        // 2. Соотношение внутреннего радиуса (например, от 0.4f до 0.8f)
-        // Используем другую операцию с хэшем, чтобы немного отвязать от кол-ва вершин
-        // Модуль 11 дает 0-10. Умножаем на 0.04f -> 0.0f - 0.4f. Добавляем 0.4f -> [0.4f, 0.8f]
-        val ratioSeed = abs(hashCode / 3 + 42) // Просто другая арифметика над хэшем
-        val radiusSeed = ((ratioSeed % 11) * 0.4f + 0.4f)
-            .coerceIn(0.4f, 3f) // Ограничиваем на всякий случай
-
-        val angleSeed = abs(hashCode / 5 - 99) % 91 // 0-90
-        val rotationAngle = (angleSeed - 45).toFloat()
-
-        GeneratedShapeParams(
-            numVertices = numVertices,
-            radiusSeed = radiusSeed,
-            rotationAngle = rotationAngle,
-            shadowOffsetXSeed = shadowOffsetXSeed.dp,
-            shadowOffsetYSeed = shadowOffsetYSeed.dp,
-            offestParam = offestParam
-        )
+    // --- Генерация формы ---
+    val shapeParams = remember(event.id) {
+        generateShapeParams(event.id) // Use helper
     }
 
     val starShape = remember(shapeParams.numVertices, shapeParams.radiusSeed) {
         RoundedPolygon.star(
             numVerticesPerRadius = shapeParams.numVertices,
             radius = shapeParams.radiusSeed,
-            rounding = CornerRounding(0.95f)
+            innerRadius = CalendarUiDefaults.SHAPEINNERRADIUS,
+            rounding = CornerRounding(CalendarUiDefaults.ShapeCornerRounding)
         )
     }
     val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
     val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
 
-    val starContainerSize = CalendarUiDefaults.StarContainerSize
+    val starContainerSize = remember(eventDurationMinutes) {
+        calculateShapeContainerSize(eventDurationMinutes)
+    }
+
     val starOffsetY = starContainerSize * shapeParams.offestParam
     val starOffsetX = starContainerSize * -shapeParams.offestParam
-    val rotationAngle = remember(event.id) { (event.id.hashCode() % 45).toFloat() } // Используем ID
+    val rotationAngle = shapeParams.rotationAngle
     val shadowColor = Color.Black.copy(alpha = 0.3f)
     val density = LocalDensity.current
     val darkerShadowColor = Color.Black
 
     // --- Параметры текущего события (получаем isCurrentEvent) ---
-    val fixedColors = LocalFixedAccentColors.current
+ //   val fixedColors = LocalFixedAccentColors.current
+
     val cardElevation = if (isCurrentEvent) CalendarUiDefaults.CurrentEventElevation else 0.dp
-    val cardBackground = if (isCurrentEvent) fixedColors.primaryFixed else colorScheme.primaryContainer
-    val cardTextColor = if (isCurrentEvent) fixedColors.onPrimaryFixed else colorScheme.onPrimaryContainer
+    val cardBackground = if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer
+    val cardTextColor = if (isCurrentEvent) colorScheme.onTertiaryContainer else colorScheme.onPrimaryContainer
 
     // --- Композиция UI ---
     Box(
@@ -157,9 +126,12 @@ fun EventListItem(
                         translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
                         translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
                         rotationZ = rotationAngle,
+                        /*
                         renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             BlurEffect(radiusX = CalendarUiDefaults.StarShadowBlurRadius, radiusY = CalendarUiDefaults.StarShadowBlurRadius, edgeTreatment = TileMode.Decal)
                         } else null
+
+                         */
                     )
                     .requiredSize(starContainerSize)
                     .clip(clip2Star)
@@ -235,4 +207,98 @@ fun EventListItem(
         }
     }
 }
+
+fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
+    return if (isMicroEvent) {
+        CalendarUiDefaults.MicroEventHeight
+    } else {
+        val minHeight = CalendarUiDefaults.MinEventHeight
+        val maxHeight = CalendarUiDefaults.MaxEventHeight
+        val durationDouble = durationMinutes.toDouble()
+        val heightRange = maxHeight - minHeight
+
+        // Sigmoid calculation
+        val x = (durationDouble - CalendarUiDefaults.HeightSigmoidMidpointMinutes) / CalendarUiDefaults.HeightSigmoidScaleFactor
+        val k = CalendarUiDefaults.HeightSigmoidSteepness
+        val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
+
+        val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
+        calculatedHeight.coerceIn(minHeight, maxHeight)
+    }
+}
+
+fun calculateShapeContainerSize(durationMinutes: Long): Dp {
+    val minStarContainerSize = CalendarUiDefaults.MinStarContainerSize
+    val maxStarContainerSize = CalendarUiDefaults.MaxStarContainerSize
+    val durationDouble = durationMinutes.toDouble()
+    val heightRange = maxStarContainerSize - minStarContainerSize
+
+    val x = (durationDouble - CalendarUiDefaults.HeightSigmoidMidpointMinutes) / CalendarUiDefaults.HeightSigmoidScaleFactor
+    val k = CalendarUiDefaults.HeightSigmoidSteepness
+    val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
+
+    val calculatedHeight = minStarContainerSize + (heightRange * sigmoidOutput.toFloat())
+    return calculatedHeight.coerceIn(minStarContainerSize, maxStarContainerSize)
+
+}
+
+fun generateShapeParams(eventId: String): GeneratedShapeParams {
+    val hashCode = eventId.hashCode()
+    val absHashCode = abs(hashCode)
+
+    val numVertices = (absHashCode % CalendarUiDefaults.ShapeMaxVerticesDelta) + CalendarUiDefaults.ShapeMinVertices
+
+    // Use different simple transformations of the hash for variety
+    val shadowOffsetXSeed = absHashCode % CalendarUiDefaults.ShapeShadowOffsetXMaxModulo
+    val shadowOffsetYSeed = absHashCode % CalendarUiDefaults.ShapeShadowOffsetYMaxModulo + CalendarUiDefaults.ShapeShadowOffsetYMin
+
+    val offsetParam = (absHashCode % 4 + 1) * CalendarUiDefaults.ShapeOffsetParamMultiplier
+
+    val radiusBaseHash = absHashCode / 3 + 42
+    val radiusSeed = ((radiusBaseHash % CalendarUiDefaults.ShapeRadiusSeedRangeModulo) * CalendarUiDefaults.ShapeRadiusSeedRange) + CalendarUiDefaults.ShapeRadiusSeedMin
+    val coercedRadiusSeed = radiusSeed.coerceIn(CalendarUiDefaults.ShapeRadiusSeedMin, CalendarUiDefaults.ShapeMaxRadius)
+
+    val angleSeed = (abs(hashCode) / 5 - 99).mod(CalendarUiDefaults.ShapeRotationMaxDegrees)
+    val rotationAngle = (angleSeed + CalendarUiDefaults.ShapeRotationOffsetDegrees).toFloat()
+
+    return GeneratedShapeParams(
+        numVertices = numVertices,
+        radiusSeed = coercedRadiusSeed,
+        rotationAngle = rotationAngle,
+        shadowOffsetXSeed = shadowOffsetXSeed.dp, // Convert to Dp here
+        shadowOffsetYSeed = shadowOffsetYSeed.dp, // Convert to Dp here
+        offestParam = offsetParam
+    )
+}
+/*
+val shapeParams = remember(event.id) {
+    val hashCode = event.id.hashCode()
+
+    // Модуль 7 дает 0-6. Добавляем 3, получаем диапазон [3, 9].
+    val numVertices = (abs(hashCode) % 5) + 3
+    val shadowOffsetXSeed = ((abs(hashCode) % 11))
+    val shadowOffsetYSeed = (abs(hashCode) % 6 + 3)
+    val offestParam = ((abs(hashCode) % 4 + 1) * 0.1f)
+
+    // 2. Соотношение внутреннего радиуса (например, от 0.4f до 0.8f)
+    // Используем другую операцию с хэшем, чтобы немного отвязать от кол-ва вершин
+    // Модуль 11 дает 0-10. Умножаем на 0.04f -> 0.0f - 0.4f. Добавляем 0.4f -> [0.4f, 0.8f]
+    val ratioSeed = abs(hashCode / 3 + 42) // Просто другая арифметика над хэшем
+    val radiusSeed = ((ratioSeed % 11) * 0.4f + 0.4f)
+        .coerceIn(0.4f, 3f) // Ограничиваем на всякий случай
+
+    val angleSeed = abs(hashCode / 5 - 99) % 91 // 0-90
+    val rotationAngle = (angleSeed - 45).toFloat()
+
+    GeneratedShapeParams(
+        numVertices = numVertices,
+        radiusSeed = radiusSeed,
+        rotationAngle = rotationAngle,
+        shadowOffsetXSeed = shadowOffsetXSeed.dp,
+        shadowOffsetYSeed = shadowOffsetYSeed.dp,
+        offestParam = offestParam
+    )
+}
+
+ */
 

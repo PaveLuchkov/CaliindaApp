@@ -28,11 +28,12 @@ object CalendarUiDefaults {
     val AllDayGroupBottomSpacing = 8.dp
     val LazyColumnBottomPadding = 16.dp
     val EventItemCornerRadius = 20.dp
-    val MinEventHeight = 65.dp
+    val MinEventHeight = 50.dp
     val MaxEventHeight = 200.dp
     val MicroEventHeight = 30.dp
     const val MicroEventMaxDurationMinutes = 30L
-    val StarContainerSize = 120.dp // Размер контейнера для декоративной звезды
+    val MinStarContainerSize = 120.dp // Размер контейнера для декоративной звезды
+    val MaxStarContainerSize = 360.dp // Размер контейнера для декоративной звезды
 
     // Шрифты
     val HeaderFontSize = 16.sp
@@ -42,13 +43,28 @@ object CalendarUiDefaults {
     val StackedItemZIndexStep = 0.1f
     val StarShadowBlurRadius = 3f
 
-    // Логика группировки
-    const val LongEventThresholdMinutes = 120L
-    const val SignificantOverlapMinutes = 15L
-    const val SimilarDurationPercentThreshold = 0.15 // 15% разницы для "похожей" длительности
 
+    const val HeightSigmoidMidpointMinutes = 120.0
+    const val HeightSigmoidScaleFactor = 30.0
+    const val HeightSigmoidSteepness = 1.0
 
-
+    const val ShapeMinVertices = 3
+    const val ShapeMaxVerticesDelta = 5 // Vertices = Min + (hash % Delta) -> Range [3, 7] now
+    const val ShapeShadowOffsetXMaxModulo = 11 // Range [0, 10]
+    const val ShapeShadowOffsetYMin = 3
+    const val ShapeShadowOffsetYMaxModulo = 6 // Range [3, 8]
+    const val ShapeOffsetParamMinFactor = 1 // Range [1, 4] -> [0.1f, 0.4f]
+    const val ShapeOffsetParamMaxFactor = 4
+    const val ShapeOffsetParamMultiplier = 0.1f
+    const val ShapeRadiusSeedMin = 0.4f
+    const val ShapeRadiusSeedRange = 0.4f // Range [0.4f, 0.8f]
+    const val ShapeRadiusSeedRangeModulo = 11
+    const val ShapeMaxRadius = 3f // Coerce limit
+    const val ShapeRotationMaxDegrees = 91 // Range [0, 90]
+    const val ShapeRotationOffsetDegrees = -45f // Center range around 0
+    const val ShapeCornerRounding = 0.95f
+    const val ShapeMainAlpha = 0.95f // Alpha for the main star shape
+    const val SHAPEINNERRADIUS = 0.3f // Alpha for the main star shape
 
 }
 
