@@ -141,6 +141,7 @@ fun DayEventsPage(
     val eventsFlow = remember(date) { viewModel.getEventsFlowForDate(date) }
     val eventsState = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList()) //Returns State<List<CalendarEvent>>
     val events = eventsState.value
+    Log.d("DayEventsPage", "Events received from flow: ${events.joinToString { it.summary + " (allDay=" + it.isAllDay + ")" }}")
 
     val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
 
@@ -148,49 +149,41 @@ fun DayEventsPage(
 
     val isToday = date == LocalDate.now()
 
-    val (allDayEvents, timedEvents) = remember(events) {
-        val (allDay, timed) = events.partition { it.isAllDay }
+    val (allDayEvents, timedEvents) = remember(events, currentTimeZoneId) { // Добавим зависимость от пояса
+        val (allDay, timed) = events.partition { it.isAllDay } // Используем флаг isAllDay
         val sortedTimed = timed.sortedBy { event ->
             parseToInstant(event.startTime, currentTimeZoneId) ?: Instant.MAX
         }
         allDay to sortedTimed
     }
+    Log.d("DayEventsPage", "Partitioned: AllDay=${allDayEvents.size}, Timed=${timedEvents.size}")
 
-    val nextStartTime: Instant? = remember(timedEvents, currentTime, isToday, currentTimeZoneId) { // Добавляем зависимость от пояса
+    val nextStartTime: Instant? = remember(timedEvents, currentTime, isToday, currentTimeZoneId) {
         if (!isToday) null
         else {
             timedEvents.firstNotNullOfOrNull { event ->
-                val start = parseToInstant(event.startTime, currentTimeZoneId) // Используем пояс
+                val start = parseToInstant(event.startTime, currentTimeZoneId)
                 if (start != null && start.isAfter(currentTime)) start else null
             }
         }
     }
 
     // --- ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ ---
-    val targetScrollIndex = remember(timedEvents, currentTime, nextStartTime, isToday) {
-        if (!isToday || timedEvents.isEmpty()) {
-            -1 // Не скроллим, если не сегодня или нет событий
-        } else {
-            // 1. Ищем индекс первого текущего события
+    val targetScrollIndex = remember(timedEvents, currentTime, nextStartTime, isToday, currentTimeZoneId) {
+        if (!isToday || timedEvents.isEmpty()) -1
+        else {
             val currentEventIndex = timedEvents.indexOfFirst { event ->
                 val start = parseToInstant(event.startTime, currentTimeZoneId)
                 val end = parseToInstant(event.endTime, currentTimeZoneId)
                 start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
             }
-
-            if (currentEventIndex != -1) {
-                currentEventIndex // Нашли текущее - скроллим к нему
-            } else {
-                // 2. Если текущего нет, ищем индекс первого следующего
-                if (nextStartTime != null) {
-                    timedEvents.indexOfFirst { event ->
-                        val start = parseToInstant(event.startTime, currentTimeZoneId)
-                        start != null && start == nextStartTime
-                    }
-                } else {
-                    -1 // Нет ни текущего, ни следующего - не скроллим
+            if (currentEventIndex != -1) currentEventIndex
+            else if (nextStartTime != null) {
+                timedEvents.indexOfFirst { event ->
+                    val start = DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
+                    start != null && start == nextStartTime
                 }
-            }
+            } else -1
         }
     }
 
@@ -231,9 +224,9 @@ fun DayEventsPage(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Column(modifier = Modifier.
-        fillMaxSize()
-            .padding()) {
+        Column(modifier = Modifier
+            .fillMaxSize())
+        {
             Spacer(modifier = Modifier.height(3.dp))
             // Заголовок Дня (можно вынести в отдельный Composable)
             Box(

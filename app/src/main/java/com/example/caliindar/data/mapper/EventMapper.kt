@@ -34,7 +34,6 @@ object EventMapper {
             // 3. Парсим endTime с учетом часового пояса
             val endTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.endTime, zoneIdString)
 
-            // 4. Рассчитываем endTimeMillis
             val endTimeMillis: Long = when {
                 // Есть валидный endTimeInstant И он строго после startTime
                 endTimeInstant != null && endTimeInstant.toEpochMilli() > startTimeMillis -> {
@@ -52,10 +51,9 @@ object EventMapper {
                 }
             }
 
-            // 5. Создаем Entity
             return CalendarEventEntity(
                 id = event.id,
-                summary = event.summary ?: "Без названия",
+                summary = event.summary,
                 startTimeMillis = startTimeMillis,
                 endTimeMillis = endTimeMillis,
                 description = event.description,

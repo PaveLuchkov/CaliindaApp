@@ -15,8 +15,8 @@ data class MainUiState(
 data class CalendarEvent(
     val id: String,
     val summary: String, // Название события
-    val startTime: String, // ISO 8601 строка (e.g., "2023-10-27T10:00:00+03:00")
-    val endTime: String, // ISO 8601 строка
+    val startTime: String?, // ISO 8601 строка (e.g., "2023-10-27T10:00:00+03:00")
+    val endTime: String?, // ISO 8601 строка
     val description: String? = null,
     val location: String? = null,
     val isAllDay: Boolean = false

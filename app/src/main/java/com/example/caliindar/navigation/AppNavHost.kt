@@ -1,5 +1,7 @@
 package com.example.caliindar.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -23,7 +25,9 @@ fun AppNavHost(
     NavHost(
         navController = navController,
         startDestination = NavRoutes.Main.route, // Используем объект роута
-        modifier = modifier // Применяем Modifier
+        modifier = modifier, // Применяем Modifier
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None }
     ) {
         composable(NavRoutes.Main.route) {
             MainScreen(
@@ -32,6 +36,7 @@ fun AppNavHost(
                     navController.navigate(NavRoutes.Settings.route)
                 }
             )
+
         }
         composable(NavRoutes.Settings.route) {
             SettingsScreen(

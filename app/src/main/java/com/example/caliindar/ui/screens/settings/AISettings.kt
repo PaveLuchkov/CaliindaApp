@@ -58,6 +58,7 @@ fun AISettingsScreen(
     val currentTemper by viewModel.botTemperState.collectAsStateWithLifecycle()
     var temperInputState by remember(currentTemper) { mutableStateOf(currentTemper) }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -113,18 +114,25 @@ fun AISettingsScreen(
                             shape = RoundedCornerShape(cuid.SettingsItemCornerRadius)
                         )
                         Button(
-                            onClick = { /* ... */ },
-                            enabled = temperInputState != currentTemper,
-                            shape = CircleShape,
-                            modifier = Modifier.size(48.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Check,
-                                contentDescription = "Save",
-                                modifier = Modifier.size(24.dp) // размер иконки внутри
-                            )
-                        }
+                            onClick = {
+                                if (temperInputState != currentTemper) {
+                                    viewModel.updateBotTemperSetting(temperInputState)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Настройка поведения сохранена")
+                                    }
+                                }
+                            },
+                                    enabled = temperInputState != currentTemper,
+                                    shape = CircleShape,
+                                    modifier = Modifier.size(48.dp),
+                                    contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Check,
+                                            contentDescription = "Save",
+                                            modifier = Modifier.size(24.dp) // размер иконки внутри
+                                        )
+                                        }
                     }
                 }
             }

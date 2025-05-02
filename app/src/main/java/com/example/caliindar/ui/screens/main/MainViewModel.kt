@@ -50,8 +50,10 @@ import java.time.format.DateTimeParseException
 import java.util.Locale
 import javax.inject.Inject
 import android.content.Context
+import android.text.TextUtils.replace
 import androidx.lifecycle.ViewModel
 import com.example.caliindar.BuildConfig.BACKEND_BASE_URL
+import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.di.ITimeTicker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +61,8 @@ import java.time.Instant
 import com.example.caliindar.di.BackendUrl // Импорт квалификатора
 import com.example.caliindar.di.WebClientId // Импорт квалификатора
 import kotlinx.coroutines.flow.flowOn
+import org.json.JSONArray
+import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 
 enum class AiVisualizerState {
@@ -229,42 +233,57 @@ class MainViewModel @Inject constructor(
                 return@launch
             }
 
-            // Рассчитываем *идеальный* диапазон, который мы *хотели бы* иметь вокруг centerDate
+            // Рассчитываем идеальный диапазон (как и раньше)
             val idealTargetRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong()) .. centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
+
+            // Логируем начальные данные
+            Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, ideal=$idealTargetRange, isLoading=$isLoading")
 
             if (currentlyLoaded == null) {
                 // --- Initial Load ---
                 Log.i(TAG, "No range loaded yet. Initial load: $idealTargetRange")
-                fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true) // Заменяем null
+                fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true) // replace=true
             } else {
                 // --- Проверяем, нужно ли действие ---
 
-                // Определяем, является ли это "прыжком" (новая дата далеко от текущего диапазона)
-                // Проверяем, что ЦЕНТР нового идеального диапазона находится далеко
+                // 1. Проверка на "прыжок" (остается)
                 val isJump = centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS.toLong()) ||
                         centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS.toLong())
 
-                // Проверяем, покрывает ли текущий диапазон идеальный НОВЫЙ диапазон
-                val coversIdealRange = currentlyLoaded.containsRange(idealTargetRange)
-
-                if (coversIdealRange) {
-                    // Случай 1: Идеальный диапазон уже полностью покрыт. Ничего не делаем.
-                    Log.d(TAG, "No load needed. Ideal range $idealTargetRange is already within loaded $currentlyLoaded.")
-                } else if (isJump) {
-                    // Случай 2: Это "прыжок" далеко от текущего диапазона. Загружаем ТОЛЬКО новый идеальный диапазон.
+                if (isJump) {
+                    // --- Случай 1: Прыжок ---
                     Log.i(TAG, "Jump detected! Center: $centerDate is far from loaded $currentlyLoaded.")
                     Log.i(TAG, "Loading new focused range: $idealTargetRange. Discarding old range.")
-                    fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true) // Заменяем старый диапазон
+                    fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true) // replace=true
                 } else {
-                    // Случай 3: Не "прыжок", но идеальный диапазон не покрыт (значит, мы близко к краю). Расширяем текущий.
-                    Log.i(TAG, "Prefetch/Expansion needed. Center: $centerDate, Ideal: $idealTargetRange, Current: $currentlyLoaded.")
-                    val rangeToLoad = currentlyLoaded.union(idealTargetRange) // Расширяем с помощью union
-                    Log.d(TAG, "Expanding range to: $rangeToLoad")
-                    fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive, false) // Не заменяем, а объединяем
+                    // --- Не прыжок. Проверяем, нужна ли предзагрузка/расширение ---
+
+                    // 2. Проверка, нужно ли грузить ВПЕРЕД (Forward)
+                    // Условие: centerDate находится близко к КОНЦУ загруженного диапазона
+                    val needsForwardPrefetch = centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD_FORWARD.toLong())
+
+                    // 3. Проверка, нужно ли грузить НАЗАД (Backward)
+                    // Условие: centerDate находится близко к НАЧАЛУ загруженного диапазона
+                    val needsBackwardPrefetch = centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD_BACKWARD.toLong())
+
+                    if (needsForwardPrefetch || needsBackwardPrefetch) {
+                        // --- Случай 2: Предзагрузка/Расширение необходимо ---
+                        Log.i(TAG, "Prefetch needed. Forward=$needsForwardPrefetch, Backward=$needsBackwardPrefetch. Center: $centerDate, Current: $currentlyLoaded.")
+                        // Объединяем текущий диапазон с идеальным вокруг НОВОЙ centerDate, чтобы расширить в нужную сторону
+                        val rangeToLoad = currentlyLoaded.union(idealTargetRange)
+                        Log.d(TAG, "Expanding range to: $rangeToLoad")
+                        fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive, false) // replace=false
+                    } else {
+                        // --- Случай 3: Не прыжок и предзагрузка не нужна ---
+                        // centerDate находится достаточно далеко от краев currentlyLoaded.
+                        Log.d(TAG, "No load needed. Center $centerDate is comfortably within loaded range $currentlyLoaded and thresholds.")
+                        // Ничего не делаем
+                    }
                 }
             }
         }
     }
+
 
 
 
@@ -397,7 +416,7 @@ class MainViewModel @Inject constructor(
                 // Фильтруем этот список перед маппингом в Domain модель
                 entityList.filter { entity ->
                     if (!entity.isAllDay) {
-                        if (entity.startTimeMillis != null && entity.endTimeMillis != null) {
+                        if (true) {
 
                             entity.endTimeMillis <= endMillis // Время конца должно быть МЕНЬШЕ ИЛИ РАВНО началу следующего дня
                         } else {
@@ -407,7 +426,7 @@ class MainViewModel @Inject constructor(
                     } else {
                         // Правило для all-day:
                         // Отображаем только если длительность ~ 1 день.
-                        if (entity.startTimeMillis != null && entity.endTimeMillis != null) {
+                        if (true) {
                             val durationMillis = entity.endTimeMillis - entity.startTimeMillis
                             val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
                             // Допускаем небольшую погрешность (напр. из-за летнего времени, если хранишь в локальной зоне)
@@ -433,34 +452,54 @@ class MainViewModel @Inject constructor(
 
 
     private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
-        // ... (твой код парсинга JSON) ...
-        // Убедись, что поля startTime, endTime и isAllDay парсятся правильно
-        // и соответствуют структуре CalendarEvent
         val events = mutableListOf<CalendarEvent>()
         try {
-            val jsonArray = org.json.JSONArray(jsonString)
+            val jsonArray = JSONArray(jsonString) // Используем org.json.JSONArray
             for (i in 0 until jsonArray.length()) {
-                val eventObject = jsonArray.getJSONObject(i)
-                val isAllDay = eventObject.optBoolean("isAllDay", false)
-                // Определяем, какое поле использовать для времени/даты
-                val startTimeStr = if (isAllDay) eventObject.optString("startDate", null) else eventObject.optString("startTime", null)
-                val endTimeStr = if (isAllDay) eventObject.optString("endDate", null) else eventObject.optString("endTime", null)
+                try { // Добавляем try-catch для каждого объекта
+                    val eventObject = jsonArray.getJSONObject(i)
 
-                events.add(
-                    CalendarEvent(
-                        id = eventObject.getString("id"),
-                        summary = eventObject.optString("summary", null), // Используй optString для необязательных полей
-                        startTime = startTimeStr,
-                        endTime = endTimeStr,
-                        description = eventObject.optString("description", null),
-                        location = eventObject.optString("location", null),
-                        isAllDay = isAllDay
+                    // Читаем isAllDay (он теперь приходит от бэкенда)
+                    val isAllDay = eventObject.optBoolean("isAllDay", false)
+
+                    // --- ВСЕГДА читаем startTime и endTime ---
+                    val startTimeStr = eventObject.optString("startTime")
+                    val endTimeStr = eventObject.optString("endTime")
+                    // ------------------------------------------
+
+                    val id = eventObject.optString("id") // Лучше optString и проверить на null/empty
+                    val summary = eventObject.optString("summary", "Без названия")
+                    val description = eventObject.optString("description")
+                    val location = eventObject.optString("location")
+
+                    // Проверяем наличие обязательных полей
+                    if (id.isNullOrEmpty() || startTimeStr.isNullOrEmpty()) {
+                        Log.w(TAG, "Skipping event due to missing id or startTime in JSON object: ${eventObject.optString("summary")}")
+                        continue // Пропускаем невалидное событие
+                    }
+
+                    events.add(
+                        CalendarEvent(
+                            id = id, // id точно не будет null после проверки выше
+                            summary = summary,
+                            startTime = startTimeStr, // Передаем строку как есть (может быть дата или дата+время)
+                            // Если endTime отсутствует, используем startTime (особенно важно для all-day)
+                            endTime = endTimeStr ?: startTimeStr,
+                            description = description,
+                            location = location,
+                            isAllDay = isAllDay // Используем флаг из JSON
+                        )
                     )
-                )
+                } catch (e: JSONException) {
+                    Log.e(TAG, "Error parsing individual event object at index $i: ${e.localizedMessage}")
+                    // Продолжаем со следующим объектом
+                }
             }
-        } catch (e: org.json.JSONException) {
+        } catch (e: JSONException) {
             Log.e(TAG, "Failed to parse events JSON array", e)
-            throw e // Пробрасываем, чтобы поймать в fetchAndStoreDateRange
+            // Можно вернуть пустой список или пробросить ошибку, если это критично
+            // return emptyList()
+            throw e // Пробрасываем, чтобы поймать выше
         }
         return events
     }
@@ -547,18 +586,28 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Используем новую функцию в методе для списка
-    fun formatEventListTime(event: CalendarEvent): String { // Принимаем весь Event
-        val startTimeFormatted = formatEventTimeForDisplay(event.startTime, event.isAllDay)
-        val endTimeFormatted = formatEventTimeForDisplay(event.endTime, event.isAllDay)
+    private val timeOnlyFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
-        // Если оба "Весь день" (т.е. isAllDay = true), возвращаем просто "Весь день"
-        if (event.isAllDay) { // Достаточно проверить флаг
-            return "Весь день"
+    fun formatEventListTime(event: CalendarEvent): String {
+        // Получаем текущий сохраненный пояс
+        val currentZoneIdString = timeZone.value.ifEmpty { ZoneId.systemDefault().id }
+        val currentZoneId = ZoneId.of(currentZoneIdString) // Преобразуем в ZoneId
+
+        val startInstant = DateTimeUtils.parseToInstant(event.startTime, currentZoneIdString)
+        val endInstant = DateTimeUtils.parseToInstant(event.endTime, currentZoneIdString)
+
+        // Создаем форматтер, ЛОКАЛИЗОВАННЫЙ для НУЖНОГО пояса
+        val localTimeFormatter = timeOnlyFormatter.withLocale(Locale("ru")).withZone(currentZoneId)
+
+        return when {
+            event.isAllDay -> "Весь день"
+            startInstant != null && endInstant != null -> {
+                // Форматируем Instant с помощью локализованного форматтера
+                "${localTimeFormatter.format(startInstant)} - ${localTimeFormatter.format(endInstant)}"
+            }
+            startInstant != null -> localTimeFormatter.format(startInstant)
+            else -> "" // Ошибка парсинга или нет времени
         }
-
-        // Обычный случай с временем
-        return "$startTimeFormatted - $endTimeFormatted"
     }
 
 
