@@ -62,7 +62,6 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.accompanist.navigation.animation)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.googleid)

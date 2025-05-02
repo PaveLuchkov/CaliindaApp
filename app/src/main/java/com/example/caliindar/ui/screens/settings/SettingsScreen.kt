@@ -50,12 +50,11 @@ fun SettingsScreen(
             viewModel.clearAuthError()
         }
     }
-// TODO: ПОЛНОСТЬЮ ПЕРЕДЕЛАТЬ ЭКРАН НАСТРОЕК, КАК В FIGMA
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Настройки") },
+                title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")

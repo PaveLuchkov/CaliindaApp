@@ -1,5 +1,4 @@
 [versions]
-accompanistNavigationAnimation = "<последняя-версия>"
 accompanistSystemuicontroller = "0.34.0"
 agp = "8.9.1"
 credentialsPlayServicesAuth = "1.5.0"
@@ -33,7 +32,6 @@ playServicesAuth = "21.3.0"
 roomver = "2.7.0"
 
 [libraries]
-accompanist-navigation-animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanistNavigationAnimation" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }
