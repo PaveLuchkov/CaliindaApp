@@ -17,6 +17,7 @@ class SettingsRepository @Inject constructor(
 
     private object PreferencesKeys {
         val BOT_TEMPER = stringPreferencesKey("bot_temper")
+        val TIME_ZONE = stringPreferencesKey("time_zone")
     }
 
     val botTemperFlow: Flow<String> = dataStore.data
@@ -43,6 +44,28 @@ class SettingsRepository @Inject constructor(
             Log.e(TAG, "Error writing preferences.", exception)
         } catch (exception: Exception) {
             Log.e(TAG, "Unexpected error writing preferences.", exception)
+        }
+    }
+
+    val timeZoneFlow: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                Log.e(TAG, "Error reading preferences.", exception)
+                emit(emptyPreferences())
+            } else throw exception
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.TIME_ZONE] ?: ""
+        }
+
+    suspend fun saveTimeZone(timeZone: String) {
+        try {
+            dataStore.edit { preferences ->
+                preferences[PreferencesKeys.TIME_ZONE] = timeZone
+            }
+            Log.i(TAG, "Saved time zone setting.")
+        } catch (e: IOException) {
+            Log.e(TAG, "Error saving time zone.", e)
         }
     }
 }

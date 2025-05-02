@@ -98,8 +98,25 @@ class MainViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "Friendly helper" // Начальное значение (пока DataStore не загрузится)
+            initialValue = ZoneId.systemDefault().id // Начальное значение (пока DataStore не загрузится)
         )
+
+    val timeZone: StateFlow<String> = settingsRepository.timeZoneFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ZoneId.systemDefault().id // Начальное значение (пока DataStore не загрузится)
+        )
+    fun updateTimeZoneSetting(zoneId: String) {
+        if (ZoneId.getAvailableZoneIds().contains(zoneId)) {
+            viewModelScope.launch {
+                settingsRepository.saveTimeZone(zoneId)
+            }
+        } else {
+            Log.e(TAG, "Attempted to save invalid time zone ID: $zoneId")
+            // Можно показать ошибку пользователю, если нужно
+        }
+    }
 
     val isAiRotating: StateFlow<Boolean> = aiState.map {
         it == AiVisualizerState.LISTENING || it == AiVisualizerState.THINKING
@@ -183,6 +200,7 @@ class MainViewModel @Inject constructor(
     private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
     val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
 
+    val currentZoneId = timeZone.value
 
 // - ---- -- -  БЛОК КАЛЕНДАРЯ
     // --- ЛОГИКА ЗАГРУЗКИ ДИАПАЗОНА ---
@@ -320,7 +338,7 @@ class MainViewModel @Inject constructor(
                 } // End Dispatchers.IO
 
                 // --- Успешное получение и парсинг ---
-                val eventEntities = networkEvents.mapNotNull { EventMapper.mapToEntity(it) }
+                val eventEntities = networkEvents.mapNotNull { EventMapper.mapToEntity(it, currentZoneId) }
 
                 // --- Сохранение в БД ---
                 val startRangeMillis = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
@@ -403,7 +421,7 @@ class MainViewModel @Inject constructor(
                 } // Конец filter
                     .mapNotNull { filteredEntity ->
                         // Маппим только те entity, которые прошли фильтр
-                        EventMapper.mapToDomain(filteredEntity)
+                        EventMapper.mapToDomain(filteredEntity, currentZoneId)
                     } // Конец mapNotNull
             } // Конец map
             .catch { e ->

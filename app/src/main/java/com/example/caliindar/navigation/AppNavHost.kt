@@ -9,6 +9,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.caliindar.ui.screens.settings.SettingsScreen
 import com.example.caliindar.ui.screens.main.MainScreen
 import com.example.caliindar.ui.screens.main.MainViewModel
+import com.example.caliindar.ui.screens.settings.AISettingsScreen
+import com.example.caliindar.ui.screens.settings.TermsOfUseScreen
+import com.example.caliindar.ui.screens.settings.TimeSettingsScreen
 
 @Composable
 fun AppNavHost(
@@ -23,7 +26,6 @@ fun AppNavHost(
         modifier = modifier // Применяем Modifier
     ) {
         composable(NavRoutes.Main.route) {
-            // 2. Передаем полученный viewModel в MainScreen
             MainScreen(
                 viewModel = viewModel,
                 onNavigateToSettings = {
@@ -32,11 +34,39 @@ fun AppNavHost(
             )
         }
         composable(NavRoutes.Settings.route) {
-            // 3. Передаем полученный viewModel в SettingsScreen
             SettingsScreen(
                 viewModel = viewModel,
                 onSignInClick = onSignInClick, // Передаем лямбду для кнопки
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAISettings = {
+                    navController.navigate(NavRoutes.AISettings.route)
+                },
+                onNavigateToTimeSettings = {
+                    navController.navigate(NavRoutes.TimeSettings.route)
+                },
+                onNavigateToTermsOfuse = {
+                    navController.navigate(NavRoutes.Terms.route)
+                }
+            )
+        }
+        composable(NavRoutes.AISettings.route) {
+            AISettingsScreen(
+                viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(NavRoutes.TimeSettings.route) {
+            TimeSettingsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                title = "Time & Format"
+            )
+        }
+        composable(NavRoutes.Terms.route) {
+            TermsOfUseScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                title = "Terms of Use"
             )
         }
     }
@@ -46,4 +76,7 @@ fun AppNavHost(
 sealed class NavRoutes(val route: String) {
     object Main : NavRoutes("main")
     object Settings : NavRoutes("settings")
+    object AISettings : NavRoutes("aisettings")
+    object TimeSettings : NavRoutes("timesettings")
+    object Terms : NavRoutes("termsofuse")
 }

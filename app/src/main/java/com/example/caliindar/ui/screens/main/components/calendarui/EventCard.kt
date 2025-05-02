@@ -36,6 +36,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import com.example.caliindar.data.local.DateTimeUtils.parseToInstant
 import com.example.caliindar.ui.screens.main.CalendarEvent
 import java.time.Duration
 import java.time.Instant
@@ -51,12 +52,13 @@ fun EventListItem(
     isCurrentEvent: Boolean, // Получаем снаружи
     isNextEvent: Boolean,
     proximityRatio: Float,
-    modifier: Modifier = Modifier // Позволяем контейнеру управлять внешними отступами/размером
+    modifier: Modifier = Modifier, // Позволяем контейнеру управлять внешними отступами/размером
+    currentTimeZoneId: String
 ) {
     // --- Расчет высоты  ---
     val eventDurationMinutes = remember(event.startTime, event.endTime) {
-        val start = parseToInstant(event.startTime)
-        val end = parseToInstant(event.endTime)
+        val start = parseToInstant(event.startTime, currentTimeZoneId)
+        val end = parseToInstant(event.endTime, currentTimeZoneId)
         if (start != null && end != null && end.isAfter(start)) {
             Duration.between(start, end).toMinutes()
         } else {

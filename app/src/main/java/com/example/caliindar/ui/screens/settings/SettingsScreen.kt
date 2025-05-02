@@ -17,12 +17,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.rounded.AccessTimeFilled
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-
+import androidx.compose.ui.res.painterResource
+import com.example.caliindar.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,14 +33,15 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 fun SettingsScreen(
     viewModel: MainViewModel,
     onSignInClick: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToAISettings: () -> Unit,
+    onNavigateToTimeSettings: () -> Unit,
+    onNavigateToTermsOfuse: () -> Unit
 ) {
     // Используем переданный viewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val currentTemper by viewModel.botTemperState.collectAsStateWithLifecycle()
-    var temperInputState by remember(currentTemper) { mutableStateOf(currentTemper) }
     val keyboardController = LocalSoftwareKeyboardController.current
     // Показываем ошибки аутентификации
     LaunchedEffect(uiState.showAuthError) {
@@ -71,73 +75,52 @@ fun SettingsScreen(
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
-            if (!uiState.isSignedIn) {
-                Button(
-                    onClick = onSignInClick, // Вызываем лямбду
-                    enabled = !uiState.isLoading // Блокируем кнопку во время входа
-                ) {
-                    Text("Войти через Google")
-                }
-            } else {
-                Text("Вы вошли как: ${uiState.userEmail ?: "..."}")
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = { viewModel.signOut() },
-                    enabled = !uiState.isLoading
-                ) {
-                    Text("Выйти")
-                }
-            }
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                "Настройки Поведения AI",
-                style = typography.titleMedium
+            GoogleAccountSection(
+                viewModel = viewModel,
+                onSignInClick = onSignInClick,
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = temperInputState,
-                onValueChange = { temperInputState = it },
-                label = { Text("Задайте поведение") },
-                placeholder = { Text("Например: 'Отвечай кратко и по делу'") },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 5, // Позволим вводить несколько строк
-                // Опционально: обработка клавиатуры (например, убрать фокус при Done)
-                keyboardOptions = KeyboardOptions( imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        keyboardController?.hide()
-                    }
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Button(
-                onClick = {
-                    // Сохраняем только если значение изменилось
-                    if (temperInputState != currentTemper) {
-                        viewModel.updateBotTemperSetting(temperInputState)
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Настройка поведения сохранена")
-                        }
-                        // Можно добавить скрытие клавиатуры здесь
-                    }
+            SettingsItem(
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ar_sticker),
+                        tint = colorScheme.onPrimaryContainer,
+                        contentDescription = "AI"
+                    )
                 },
-                // Кнопка активна, если текст в поле не совпадает с сохраненным
-                enabled = temperInputState != currentTemper
-            ) {
-                Text("Сохранить поведение")
-            }
+                title = "AI Settings",
+                onClick = onNavigateToAISettings
+            )
 
-// TODO: ДОЛЖНО БЫТЬ: ФОРМАТ ОТОБРАЖЕНИЯ, ТАЙМЗОНА
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Часовой пояс: ${ZoneId.systemDefault().id} (Как на устройстве)") // Показываем текущий
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Другие настройки будут здесь.")
+            SettingsItem(
+                icon = {
+                    Icon(
+                        Icons.Rounded.AccessTimeFilled,
+                        tint = colorScheme.onPrimaryContainer,
+                        contentDescription = "Time"
+                    )
+                },
+                title = "Time & Format",
+                onClick = onNavigateToTimeSettings
+            )
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            SettingsItem(
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.doc),
+                        tint = colorScheme.onPrimaryContainer,
+                        contentDescription = "Terms"
+                    )
+                },
+                title = "Terms of Use",
+                onClick = onNavigateToTermsOfuse
+            )
         }
     }
 }

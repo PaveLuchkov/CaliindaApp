@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.caliindar.data.local.DateTimeUtils
+import com.example.caliindar.data.local.DateTimeUtils.parseToInstant
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -57,6 +59,7 @@ fun EventsList(
     timeFormatter: (CalendarEvent) -> String,
     currentTime: Instant,
     isToday: Boolean,
+    currentTimeZoneId: String,
     listState: LazyListState,
     nextStartTime: Instant?,
     modifier: Modifier = Modifier
@@ -72,8 +75,8 @@ fun EventsList(
 
         items(items = events, key = { it.id }) { event ->
             val isCurrent = remember(currentTime, event.startTime, event.endTime) {
-                val start = parseToInstant(event.startTime)
-                val end = parseToInstant(event.endTime)
+                val start = parseToInstant(event.startTime, currentTimeZoneId)
+                val end = parseToInstant(event.endTime, currentTimeZoneId)
                 start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
             }
 
@@ -83,7 +86,7 @@ fun EventsList(
                 // isNext вычисляется ТОЛЬКО если nextStartTime не null (т.е. мы на сегодня и следующее событие есть)
                 if (nextStartTime == null) false
                 else {
-                    val currentEventStart = parseToInstant(event.startTime)
+                    val currentEventStart = parseToInstant(event.startTime, currentTimeZoneId)
                     currentEventStart != null && currentEventStart == nextStartTime
                 }
             }
@@ -93,7 +96,7 @@ fun EventsList(
                 if (!isToday) {
                     0f // Не сегодня - нет перехода
                 } else {
-                    val start = parseToInstant(event.startTime)
+                    val start = parseToInstant(event.startTime, currentTimeZoneId)
                     if (start == null || currentTime.isAfter(start)) {
                         // Событие в прошлом или не парсится - максимальный переход (или без перехода?)
                         // Если хотим переход только для будущих, то 0f. Если для текущих/прошлых тоже, то 1f.
@@ -120,8 +123,9 @@ fun EventsList(
                 proximityRatio = proximityRatio,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CalendarUiDefaults.ItemHorizontalPadding, vertical = CalendarUiDefaults.ItemVerticalPadding )
-                    // .animateItemPlacement()
+                    .padding(horizontal = CalendarUiDefaults.ItemHorizontalPadding, vertical = CalendarUiDefaults.ItemVerticalPadding ),
+                    // .animateItemPlacement(),
+                currentTimeZoneId = currentTimeZoneId
             )
         //    Spacer(modifier = Modifier.height(2.dp))
         }
@@ -138,6 +142,8 @@ fun DayEventsPage(
     val eventsState = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList()) //Returns State<List<CalendarEvent>>
     val events = eventsState.value
 
+    val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
+
     val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
 
     val isToday = date == LocalDate.now()
@@ -145,22 +151,17 @@ fun DayEventsPage(
     val (allDayEvents, timedEvents) = remember(events) {
         val (allDay, timed) = events.partition { it.isAllDay }
         val sortedTimed = timed.sortedBy { event ->
-            parseToInstant(event.startTime) ?: Instant.MAX
+            parseToInstant(event.startTime, currentTimeZoneId) ?: Instant.MAX
         }
         allDay to sortedTimed
     }
 
-    val nextStartTime: Instant? = remember(timedEvents, currentTime, isToday) {
-        if (!isToday) { // Если не сегодня, следующего события нет
-            null
-        } else {
+    val nextStartTime: Instant? = remember(timedEvents, currentTime, isToday, currentTimeZoneId) { // Добавляем зависимость от пояса
+        if (!isToday) null
+        else {
             timedEvents.firstNotNullOfOrNull { event ->
-                val start = parseToInstant(event.startTime)
-                if (start != null && start.isAfter(currentTime)) {
-                    start
-                } else {
-                    null
-                }
+                val start = parseToInstant(event.startTime, currentTimeZoneId) // Используем пояс
+                if (start != null && start.isAfter(currentTime)) start else null
             }
         }
     }
@@ -172,8 +173,8 @@ fun DayEventsPage(
         } else {
             // 1. Ищем индекс первого текущего события
             val currentEventIndex = timedEvents.indexOfFirst { event ->
-                val start = parseToInstant(event.startTime)
-                val end = parseToInstant(event.endTime)
+                val start = parseToInstant(event.startTime, currentTimeZoneId)
+                val end = parseToInstant(event.endTime, currentTimeZoneId)
                 start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
             }
 
@@ -183,7 +184,7 @@ fun DayEventsPage(
                 // 2. Если текущего нет, ищем индекс первого следующего
                 if (nextStartTime != null) {
                     timedEvents.indexOfFirst { event ->
-                        val start = parseToInstant(event.startTime)
+                        val start = parseToInstant(event.startTime, currentTimeZoneId)
                         start != null && start == nextStartTime
                     }
                 } else {
@@ -280,7 +281,8 @@ fun DayEventsPage(
                     listState = listState,
                     modifier = Modifier
                         .weight(1f) // Занимает оставшееся место
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    currentTimeZoneId = currentTimeZoneId
                 )
             } else if (allDayEvents.isEmpty()) {
                 // Показываем сообщение "нет событий", только если НЕТ НИКАКИХ событий

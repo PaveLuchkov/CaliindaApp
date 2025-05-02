@@ -6,7 +6,9 @@ import androidx.compose.ui.unit.sp
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -20,13 +22,7 @@ object CalendarUiDefaults {
     val StandardItemContentVerticalPadding = 3.dp
     val AllDayItemPadding = 16.dp
     val AllDayItemVerticalContentPadding = 6.dp
-    val AllDayItemCornerRadius = 25.dp
-    val HeaderPadding = 16.dp
-    val HeaderVerticalInternalPadding = 8.dp
-    val HeaderCornerRadius = 24.dp
     val HeaderBottomSpacing = 8.dp
-    val AllDayGroupBottomSpacing = 8.dp
-    val LazyColumnBottomPadding = 16.dp
     val EventItemCornerRadius = 20.dp
     val MinEventHeight = 65.dp
     val MaxEventHeight = 200.dp
@@ -35,14 +31,14 @@ object CalendarUiDefaults {
     val MinStarContainerSize = 120.dp // Размер контейнера для декоративной звезды
     val MaxStarContainerSize = 360.dp // Размер контейнера для декоративной звезды
 
+    //Для настроек
+    val SettingsItemCornerRadius = 25.dp
+
     // Шрифты
     val HeaderFontSize = 16.sp
 
     // Тени и Z-index
     val CurrentEventElevation = 8.dp
-    val StackedItemZIndexStep = 0.1f
-    val StarShadowBlurRadius = 3f
-
 
     const val HeightSigmoidMidpointMinutes = 180.0
     const val HeightSigmoidScaleFactor = 30.0
@@ -74,24 +70,3 @@ object CalendarUiDefaults {
 private val isoOffsetDateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 private val isoLocalDateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-fun parseToInstant(isoString: String?): Instant? {
-    if (isoString.isNullOrBlank()) return null
-    return try {
-        // 1. Пытаемся как OffsetDateTime (наиболее полный формат)
-        OffsetDateTime.parse(isoString, isoOffsetDateTimeFormatter).toInstant()
-    } catch (e1: DateTimeParseException) {
-        try {
-            // 2. Пытаемся как LocalDate (если это формат YYYY-MM-DD)
-            LocalDate.parse(isoString, isoLocalDateFormatter)
-                .atStartOfDay(ZoneOffset.UTC) // Предполагаем UTC для дат без времени
-                .toInstant()
-        } catch (e2: DateTimeParseException) {
-            Log.w("DateTimeParser", "Failed to parse date/time string '$isoString' with known formats.", e2)
-            null // Не удалось распознать формат
-        }
-    } catch (e: Exception) {
-        // Общая ошибка, если парсинг не удался по другим причинам
-        Log.e("DateTimeParser", "Generic error parsing date/time string: '$isoString'", e)
-        null
-    }
-}

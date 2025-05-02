@@ -2,6 +2,7 @@ package com.example.caliindar.data.mapper
 
 import android.util.Log
 import com.example.caliindar.data.local.CalendarEventEntity
+import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.ui.screens.main.CalendarEvent // Твоя модель для UI/сети
 import java.time.Instant
 import java.time.LocalDate
@@ -15,115 +16,74 @@ object EventMapper {
 
     private const val TAG = "EventMapper"
 
-    // Преобразует сетевую/UI модель в Entity для БД
-    fun mapToEntity(event: CalendarEvent): CalendarEventEntity? {
+    // Принимает ID часового пояса как параметр
+    fun mapToEntity(event: CalendarEvent, zoneIdString: String): CalendarEventEntity? {
         try {
-            var isAllDayEvent = false
-            val startTimeInstant: Instant? = parseToInstant(event.startTime) { isAllDay ->
-                isAllDayEvent = isAllDay // Устанавливаем флаг на основе парсинга startTime
-            }
-            // Если startTime не парсится, событие некорректно, пропускаем
+            // 1. Используем поле isAllDay из CalendarEvent (самый надежный способ)
+            val isAllDayEvent = event.isAllDay // <--- Читаем поле
+
+            // 2. Парсим startTime с учетом часового пояса
+            val startTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)
+
             if (startTimeInstant == null) {
-                Log.w(TAG, "Failed to parse start time for event '${event.summary}', skipping.")
+                Log.w(TAG, "Failed to parse start time for event '${event.summary}' ('${event.startTime}'), skipping.")
                 return null
             }
             val startTimeMillis = startTimeInstant.toEpochMilli()
 
+            // 3. Парсим endTime с учетом часового пояса
+            val endTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.endTime, zoneIdString)
 
-            val endTimeMillis: Long = run {
-                val endTimeInstant: Instant? = parseToInstant(event.endTime) { /* lambda игнорируется */ }
-
-                when {
-                    // 1. Есть явное время конца и оно парсится И оно ПОСЛЕ начала
-                    endTimeInstant != null && endTimeInstant.toEpochMilli() > startTimeMillis -> {
-                        // Используем распарсенное время конца
-                        endTimeInstant.toEpochMilli()
-                    }
-                    // 2. Это событие "весь день" (независимо от endTime)
-                    //    ИЛИ явного времени конца нет ИЛИ оно некорректно (<= startTime)
-                    isAllDayEvent -> {
-                        // Для "весь день" конец ВСЕГДА +24 часа от начала (00:00 UTC следующего дня)
-                        startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
-                    }
-                    // 3. Нет явного времени конца И это НЕ событие "весь день"
-                    //    ИЛИ endTime парсится <= startTime
-                    else -> {
-                        // Событие без длительности или с некорректным концом - используем время начала
-                        Log.w(TAG, "Event '${event.summary}' (not all-day) has missing or invalid end time. Setting end time = start time.")
-                        startTimeMillis
-                    }
+            // 4. Рассчитываем endTimeMillis
+            val endTimeMillis: Long = when {
+                // Есть валидный endTimeInstant И он строго после startTime
+                endTimeInstant != null && endTimeInstant.toEpochMilli() > startTimeMillis -> {
+                    endTimeInstant.toEpochMilli()
+                }
+                // Это событие "весь день" (определено по полю isAllDay)
+                isAllDayEvent -> {
+                    // Конец = начало + 24 часа (начало следующего дня UTC)
+                    startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
+                }
+                // Иначе (нет валидного endTime ИЛИ это не "весь день")
+                else -> {
+                    Log.w(TAG, "Event '${event.summary}' (not all-day or no end time) using start time as end time.")
+                    startTimeMillis
                 }
             }
 
+            // 5. Создаем Entity
             return CalendarEventEntity(
                 id = event.id,
-                summary = event.summary,
+                summary = event.summary ?: "Без названия",
                 startTimeMillis = startTimeMillis,
-                endTimeMillis = endTimeMillis, // Используем скорректированное время
+                endTimeMillis = endTimeMillis,
                 description = event.description,
                 location = event.location,
-                isAllDay = isAllDayEvent // <-- Сохраняем флаг
+                isAllDay = isAllDayEvent // Сохраняем флаг из CalendarEvent
             )
-        } catch (e: Exception) { // Ловим любые ошибки при маппинге
+        } catch (e: Exception) {
             Log.e(TAG, "Error mapping CalendarEvent to Entity: ${event.id}", e)
-            return null // Возвращаем null, чтобы не сломать всю вставку
+            return null
         }
     }
 
     // Преобразует Entity из БД в модель для UI/ViewModel
-    fun mapToDomain(entity: CalendarEventEntity): CalendarEvent {
+    // Принимает ID часового пояса для корректного форматирования
+    fun mapToDomain(entity: CalendarEventEntity, zoneIdString: String): CalendarEvent {
+        // Форматируем время из UTC millis в строки ISO с учетом НУЖНОГО пояса
+        // Обычно для UI нужен пояс пользователя (zoneIdString)
+        val startTimeStr = DateTimeUtils.formatMillisToIsoString(entity.startTimeMillis, zoneIdString)
+        val endTimeStr = DateTimeUtils.formatMillisToIsoString(entity.endTimeMillis, zoneIdString)
+
         return CalendarEvent(
             id = entity.id,
             summary = entity.summary,
-            startTime = formatMillisToIsoString(entity.startTimeMillis),
-            endTime = formatMillisToIsoString(entity.endTimeMillis),
+            startTime = startTimeStr ?: "", // Передаем отформатированную строку
+            endTime = endTimeStr ?: "",   // Передаем отформатированную строку
             description = entity.description,
             location = entity.location,
-            isAllDay = entity.isAllDay
+            isAllDay = entity.isAllDay // Берем флаг из БД
         )
-    }
-
-    // --- Вспомогательные функции для времени ---
-
-    private fun parseToInstant(isoString: String?, onParseType: (isAllDay: Boolean) -> Unit): Instant? {
-        if (isoString.isNullOrBlank()) return null
-        return try {
-            // Пытаемся как OffsetDateTime (есть время)
-            val instant = OffsetDateTime.parse(isoString).toInstant()
-            onParseType(false) // Не весь день
-            instant
-        } catch (e: DateTimeParseException) {
-            try {
-                // Пытаемся как LocalDate (весь день)
-                val instant = LocalDate.parse(isoString)
-                    .atStartOfDay(ZoneOffset.UTC) // 00:00 UTC
-                    .toInstant()
-                onParseType(true) // Весь день
-                instant
-            } catch (e2: DateTimeParseException) {
-                Log.e(TAG, "Failed to parse date/time string: $isoString", e2)
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Generic error parsing date/time string: $isoString", e)
-            null
-        }
-    }
-
-
-    private fun formatMillisToIsoString(millis: Long): String {
-        // Форматируем обратно в ISO 8601 строку со смещением системного пояса
-        // или в UTC (Z) - выбери, что нужно твоему UI/ViewModel
-        return try {
-            Instant.ofEpochMilli(millis)
-                .atOffset(ZoneOffset.UTC) // Форматируем в UTC (добавляет Z)
-                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) // Стандартный ISO формат
-            // Если нужно в системной зоне:
-            // .atZone(ZoneId.systemDefault())
-            // .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error formatting millis to ISO string: $millis", e)
-            "1970-01-01T00:00:00Z" // Заглушка при ошибке
-        }
     }
 }
