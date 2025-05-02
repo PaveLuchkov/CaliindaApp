@@ -7,9 +7,12 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -29,6 +32,7 @@ fun AppNavHost(
     viewModel: MainViewModel,
     onSignInClick: () -> Unit
 ) {
+    val slideDuration = 300
     NavHost(
         navController = navController,
         startDestination = NavRoutes.Main.route, // Используем объект роута
@@ -36,7 +40,35 @@ fun AppNavHost(
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None }
     ) {
-        composable(NavRoutes.Main.route) {
+        composable(
+            NavRoutes.Main.route,
+            enterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
+                    animationSpec = tween(slideDuration, easing = EaseOut)
+                ) // Можно добавить + fadeIn() для плавности
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+                ) // Можно добавить + fadeOut()
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Возвращается справа
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+                ) // Можно добавить + fadeIn()
+            },
+            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Уезжает вправо при жесте "назад"
+                    animationSpec = tween(slideDuration, easing = EaseIn)
+                ) // Можно добавить + fadeOut()
+            }
+        ) {
             MainScreen(
                 viewModel = viewModel,
                 onNavigateToSettings = {
@@ -47,24 +79,30 @@ fun AppNavHost(
         }
         composable(NavRoutes.Settings.route,
             enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
+                    animationSpec = tween(slideDuration, easing = EaseOut)
+                ) // Можно добавить + fadeIn() для плавности
             },
             exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+                ) // Можно добавить + fadeOut()
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Возвращается справа
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+                ) // Можно добавить + fadeIn()
+            },
+            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Уезжает вправо при жесте "назад"
+                    animationSpec = tween(slideDuration, easing = EaseIn)
+                ) // Можно добавить + fadeOut()
             }
         ) {
             SettingsScreen(
@@ -85,24 +123,30 @@ fun AppNavHost(
         composable(
             NavRoutes.AISettings.route,
             enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
+                    animationSpec = tween(slideDuration, easing = EaseOut)
+                ) // Можно добавить + fadeIn() для плавности
             },
             exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+                ) // Можно добавить + fadeOut()
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Возвращается справа
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+                ) // Можно добавить + fadeIn()
+            },
+            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Уезжает вправо при жесте "назад"
+                    animationSpec = tween(slideDuration, easing = EaseIn)
+                ) // Можно добавить + fadeOut()
             }
         ) {
             AISettingsScreen(
@@ -113,24 +157,30 @@ fun AppNavHost(
         composable(
             NavRoutes.TimeSettings.route,
             enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
+                    animationSpec = tween(slideDuration, easing = EaseOut)
+                ) // Можно добавить + fadeIn() для плавности
             },
             exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+                ) // Можно добавить + fadeOut()
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Возвращается справа
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+                ) // Можно добавить + fadeIn()
+            },
+            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Уезжает вправо при жесте "назад"
+                    animationSpec = tween(slideDuration, easing = EaseIn)
+                ) // Можно добавить + fadeOut()
             }
         ) {
             TimeSettingsScreen(
@@ -142,24 +192,30 @@ fun AppNavHost(
         composable(
             NavRoutes.Terms.route,
             enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
+                    animationSpec = tween(slideDuration, easing = EaseOut)
+                ) // Можно добавить + fadeIn() для плавности
             },
             exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+                ) // Можно добавить + fadeOut()
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Возвращается справа
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+                ) // Можно добавить + fadeIn()
+            },
+            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Уезжает вправо при жесте "назад"
+                    animationSpec = tween(slideDuration, easing = EaseIn)
+                ) // Можно добавить + fadeOut()
             }
         ) {
             TermsOfUseScreen(
