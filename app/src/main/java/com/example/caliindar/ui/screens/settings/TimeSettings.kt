@@ -2,6 +2,7 @@ package com.example.caliindar.ui.screens.settings
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +33,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -70,7 +73,7 @@ fun TimeSettingsScreen(
     val currentTimeZone by viewModel.timeZone.collectAsStateWithLifecycle()
     var expanded by remember { mutableStateOf(false) }
     val allTimeZones = remember { ZoneId.getAvailableZoneIds().sorted() }
-
+    val use12Hour by viewModel.use12HourFormat.collectAsStateWithLifecycle()
 
 
     Scaffold(
@@ -110,7 +113,7 @@ fun TimeSettingsScreen(
                         label = { Text("Часовой пояс") }, // Используй Text() для label
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier
-                            .menuAnchor(type= PrimaryEditable, enabled=true) // Исправлено
+                            .menuAnchor(type = PrimaryEditable, enabled = true) // Исправлено
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(cuid.SettingsItemCornerRadius)
                     )
@@ -123,7 +126,8 @@ fun TimeSettingsScreen(
                             DropdownMenuItem(
                                 text = { Text(timeZoneId) },
                                 onClick = {
-                                    selectedTimeZoneId = timeZoneId // Обновляем локальное состояние UI
+                                    selectedTimeZoneId =
+                                        timeZoneId // Обновляем локальное состояние UI
                                     expanded = false // Закрываем меню
                                     scope.launch {
                                         viewModel.updateTimeZoneSetting(timeZoneId) // Сохраняем выбор
@@ -133,6 +137,40 @@ fun TimeSettingsScreen(
                             )
                         }
                     }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp)) // Используй константу
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius))
+                    .background(color = colorScheme.surfaceContainer)
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween // Разносим текст и свитч
+                ) {
+                    Text(
+                        text = "12-часовой формат (AM/PM)",
+                        style = typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                            .padding(end = 8.dp) // Занимает место и добавляет отступ
+                    )
+                    Switch(
+                        checked = use12Hour, // Текущее состояние
+                        onCheckedChange = { newValue ->
+                            viewModel.updateUse12HourFormat(newValue) // Сохраняем новое значение
+                            // Можно показать Snackbar об успехе, если нужно
+                            // scope.launch { snackbarHostState.showSnackbar("Формат времени изменен") }
+                        },
+                        colors = SwitchDefaults.colors( // Опционально: настройка цветов
+                            // checkedThumbColor = ...,
+                            // checkedTrackColor = ...,
+                        )
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(10.dp)) // Используй константу

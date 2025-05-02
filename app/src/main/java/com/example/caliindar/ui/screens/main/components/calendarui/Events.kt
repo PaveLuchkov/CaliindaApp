@@ -167,6 +167,7 @@ fun DayEventsPage(
             }
         }
     }
+    val use12Hour by viewModel.use12HourFormat.collectAsStateWithLifecycle()
 
     // --- ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ ---
     val targetScrollIndex = remember(timedEvents, currentTime, nextStartTime, isToday, currentTimeZoneId) {
@@ -265,9 +266,12 @@ fun DayEventsPage(
 
             // Список Событий для этого дня
             if (timedEvents.isNotEmpty()) {
+                val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId, use12Hour) {
+                    { event -> viewModel.formatEventListTime(event, currentTimeZoneId, use12Hour) } // Передаем оба параметра
+                }
                 EventsList(
                     events = timedEvents, // Передаем только события со временем
-                    timeFormatter = viewModel::formatEventListTime,
+                    timeFormatter = timeFormatterLambda,
                     isToday = isToday,
                     nextStartTime = nextStartTime,
                     currentTime = currentTime,

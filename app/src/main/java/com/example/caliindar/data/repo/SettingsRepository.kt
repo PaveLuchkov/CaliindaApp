@@ -18,6 +18,7 @@ class SettingsRepository @Inject constructor(
     private object PreferencesKeys {
         val BOT_TEMPER = stringPreferencesKey("bot_temper")
         val TIME_ZONE = stringPreferencesKey("time_zone")
+        val USE_12_HOUR_FORMAT = booleanPreferencesKey("use_12_hour_format")
     }
 
     val botTemperFlow: Flow<String> = dataStore.data
@@ -66,6 +67,27 @@ class SettingsRepository @Inject constructor(
             Log.i(TAG, "Saved time zone setting.")
         } catch (e: IOException) {
             Log.e(TAG, "Error saving time zone.", e)
+        }
+    }
+
+    val use12HourFormatFlow: Flow<Boolean> = dataStore.data
+        .catch { exception ->
+            // ... обработка ошибок ...
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            // false (24-часа) по умолчанию, если ключ не найден
+            preferences[PreferencesKeys.USE_12_HOUR_FORMAT] ?: false
+        }
+
+    suspend fun saveUse12HourFormat(use12Hour: Boolean) {
+        try {
+            dataStore.edit { preferences ->
+                preferences[PreferencesKeys.USE_12_HOUR_FORMAT] = use12Hour
+            }
+            Log.i(TAG, "Saved 12-hour format setting: $use12Hour")
+        } catch (e: IOException) {
+            Log.e(TAG, "Error saving 12-hour format setting.", e)
         }
     }
 }

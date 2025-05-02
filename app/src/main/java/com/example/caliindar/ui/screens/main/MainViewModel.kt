@@ -122,6 +122,20 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    val use12HourFormat: StateFlow<Boolean> = settingsRepository.use12HourFormatFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false // По умолчанию 24-часовой формат
+        )
+
+    fun updateUse12HourFormat(use12Hour: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveUse12HourFormat(use12Hour)
+        }
+    }
+
+
     val isAiRotating: StateFlow<Boolean> = aiState.map {
         it == AiVisualizerState.LISTENING || it == AiVisualizerState.THINKING
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -588,25 +602,42 @@ class MainViewModel @Inject constructor(
 
     private val timeOnlyFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
-    fun formatEventListTime(event: CalendarEvent): String {
-        // Получаем текущий сохраненный пояс
-        val currentZoneIdString = timeZone.value.ifEmpty { ZoneId.systemDefault().id }
-        val currentZoneId = ZoneId.of(currentZoneIdString) // Преобразуем в ZoneId
+    fun formatEventListTime(event: CalendarEvent, zoneIdString: String, use12Hour: Boolean): String {
+        if (event.isAllDay) return "Весь день"
 
-        val startInstant = DateTimeUtils.parseToInstant(event.startTime, currentZoneIdString)
-        val endInstant = DateTimeUtils.parseToInstant(event.endTime, currentZoneIdString)
+        val zoneId = try { ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id }) }
+        catch (e: Exception) { ZoneId.systemDefault() }
 
-        // Создаем форматтер, ЛОКАЛИЗОВАННЫЙ для НУЖНОГО пояса
-        val localTimeFormatter = timeOnlyFormatter.withLocale(Locale("ru")).withZone(currentZoneId)
+        val startInstant = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)
+        val endInstant = DateTimeUtils.parseToInstant(event.endTime, zoneIdString)
+
+        fun formatTime(instant: Instant?): String {
+            if (instant == null) return ""
+            val localTime = instant.atZone(zoneId).toLocalTime()
+            val hour = localTime.hour
+            val minute = localTime.minute
+
+            return if (use12Hour) {
+                val amPm = if (hour < 12) "AM" else "PM"
+                val hour12 = if (hour % 12 == 0) 12 else hour % 12
+                if (minute == 0)
+                    "$hour12 $amPm"
+                else
+                    String.format("%d:%02d %s", hour12, minute, amPm)
+            } else {
+                if (minute == 0)
+                    String.format("%02d", hour)
+                else
+                    String.format("%02d:%02d", hour, minute)
+            }
+        }
 
         return when {
-            event.isAllDay -> "Весь день"
             startInstant != null && endInstant != null -> {
-                // Форматируем Instant с помощью локализованного форматтера
-                "${localTimeFormatter.format(startInstant)} - ${localTimeFormatter.format(endInstant)}"
+                "${formatTime(startInstant)} - ${formatTime(endInstant)}"
             }
-            startInstant != null -> localTimeFormatter.format(startInstant)
-            else -> "" // Ошибка парсинга или нет времени
+            startInstant != null -> formatTime(startInstant)
+            else -> ""
         }
     }
 
