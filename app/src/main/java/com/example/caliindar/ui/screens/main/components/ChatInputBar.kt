@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +17,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.caliindar.ui.screens.main.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -28,7 +32,9 @@ fun ChatInputBar(
     onRecordStopAndSend: () -> Unit, // Лямбда для остановки/отправки
     onUpdatePermissionResult: (Boolean) -> Unit, // Лямбда для обновления разрешения
     isTextInputVisible: Boolean,
-    onToggleTextInput: () -> Unit
+    onToggleTextInput: () -> Unit,
+    viewModel: MainViewModel,
+    navController: NavHostController
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -105,7 +111,7 @@ fun ChatInputBar(
         BottomAppBar(
             // containerColor = MaterialTheme.colorScheme.surface, // Можно задать цвет фона
             // contentColor = MaterialTheme.colorScheme.onSurface, // Цвет контента по умолчанию
-            // TODO: ACTION кнопка создания события
+
             actions = {
                 // Keyboard Toggle Button
                 IconButton(
@@ -115,6 +121,18 @@ fun ChatInputBar(
                     Icon(
                         imageVector = Icons.Filled.Keyboard,
                         contentDescription = if (isTextInputVisible) "Скрыть клавиатуру" else "Показать клавиатуру"
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        val selectedDate = viewModel.currentVisibleDate.value // Берем видимую дату
+                        navController.navigate("create_event/${selectedDate.toEpochDay()}")
+                    },// TODO: ACTION кнопка создания события
+                    enabled = isKeyboardToggleEnabled
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AddCircle,
+                        contentDescription = "Create event"
                     )
                 }
                 // You could add other actions here if needed

@@ -4,6 +4,7 @@ import android.util.Log
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -63,4 +64,32 @@ object DateTimeUtils {
             null // Возвращаем null при ошибке
         }
     }
+
+    fun formatDateTimeToIso(date: LocalDate?, time: LocalTime?, isAllDay: Boolean, zoneIdString: String): String? {
+        if (date == null) return null
+
+        return if (isAllDay) {
+            // Для all-day отправляем только дату
+            date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        } else if (time != null) {
+            // Для timed отправляем дату и время в нужном поясе -> Instant -> ISO строка UTC (Z)
+            // или ISO строка со смещением. Зависит от того, что ожидает бэкенд.
+            // Вариант 1: Отправка в UTC (Z)
+            try {
+                val zoneId = ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
+                date.atTime(time).atZone(zoneId).toInstant().toString() // Преобразуем в Instant (UTC), затем в строку
+            } catch (e: Exception) { null }
+
+            // Вариант 2: Отправка со смещением (если бэкенд это правильно парсит)
+            /*
+            try {
+                val zoneId = ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
+                date.atTime(time).atZone(zoneId).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            } catch (e: Exception) { null }
+            */
+        } else {
+            null // Не all-day, но время не выбрано
+        }
+    }
 }
+

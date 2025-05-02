@@ -32,6 +32,7 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.ui.Alignment
+import androidx.navigation.NavHostController
 import com.example.caliindar.ui.screens.main.components.calendarui.DayEventsPage
 import java.time.Instant
 import java.time.LocalDate
@@ -42,7 +43,8 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    navController: NavHostController
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
@@ -167,7 +169,9 @@ fun MainScreen(
                 onRecordStopAndSend = { viewModel.stopListening() },
                 onUpdatePermissionResult = { granted -> viewModel.updatePermissionStatus(granted) }, // Передаем лямбду для обновления разрешений
                 isTextInputVisible = isTextInputVisible,
-                onToggleTextInput = { isTextInputVisible = !isTextInputVisible }
+                onToggleTextInput = { isTextInputVisible = !isTextInputVisible },
+                viewModel,
+                navController = navController
             )
         }
     ) { paddingValues ->

@@ -100,7 +100,7 @@ fun AISettingsScreen(
                         OutlinedTextField(
                             value = temperInputState,
                             onValueChange = { temperInputState = it },
-                            placeholder = { Text("Example: be sweet and humble") },
+                            placeholder = { Text("e.g.: be sweet and humble") },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp),

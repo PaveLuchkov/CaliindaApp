@@ -62,6 +62,7 @@ import com.example.caliindar.di.BackendUrl // Импорт квалификат�
 import com.example.caliindar.di.WebClientId // Импорт квалификатора
 import kotlinx.coroutines.flow.flowOn
 import org.json.JSONArray
+import java.time.LocalTime
 import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 
@@ -204,6 +205,13 @@ class MainViewModel @Inject constructor(
         data class Error(val message: String) : EventNetworkState
     }
 
+    sealed interface CreateEventResult {
+        object Idle : CreateEventResult
+        object Loading : CreateEventResult
+        object Success : CreateEventResult
+        data class Error(val message: String) : CreateEventResult
+    }
+
     private val _currentVisibleDate = MutableStateFlow(LocalDate.now()) // Дата, видимая в Pager
     val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
 
@@ -212,6 +220,8 @@ class MainViewModel @Inject constructor(
     private val _loadedDateRange = MutableStateFlow<ClosedRange<LocalDate>?>(null)
     val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = _loadedDateRange.asStateFlow()
 
+    private val _createEventResult = MutableStateFlow<CreateEventResult>(CreateEventResult.Idle)
+    val createEventResult: StateFlow<CreateEventResult> = _createEventResult.asStateFlow()
 
     // Состояние сетевой загрузки ДИАПАЗОНА (можно сделать сложнее, но начнем с простого)
     // TODO: А что усложнять
@@ -298,8 +308,85 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun createEvent(
+        summary: String,
+        startTimeString: String, // Ожидаем ISO строку (дата или дата+время)
+        endTimeString: String,   // Ожидаем ISO строку
+        isAllDay: Boolean,
+        description: String?,
+        location: String?
+    ) {
+        if (summary.isBlank()) {
+            _createEventResult.value = CreateEventResult.Error("Название не может быть пустым")
+            return
+        }
+        if (startTimeString.isBlank() || endTimeString.isBlank()) {
+            _createEventResult.value = CreateEventResult.Error("Время начала и конца должны быть указаны")
+            return
+        }
+
+        viewModelScope.launch {
+            _createEventResult.value = CreateEventResult.Loading
+            val freshToken = getFreshIdToken()
+            if (freshToken == null) {
+                _createEventResult.value = CreateEventResult.Error("Ошибка аутентификации")
+                return@launch
+            }
+
+            val requestBody = try {
+                JSONObject().apply {
+                    put("summary", summary)
+                    put("startTime", startTimeString)
+                    put("endTime", endTimeString)
+                    put("isAllDay", isAllDay)
+                    put("description", description?.takeIf { it.isNotBlank() }) // Отправляем null, если пусто
+                    put("location", location?.takeIf { it.isNotBlank() })
+                }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+            } catch (e: JSONException) {
+                Log.e(TAG, "Error creating JSON for new event", e)
+                _createEventResult.value = CreateEventResult.Error("Ошибка подготовки данных")
+                return@launch
+            }
 
 
+            val request = Request.Builder()
+                .url("$backendBaseUrl/calendar/events") // Эндпоинт создания
+                .header("Authorization", "Bearer $freshToken")
+                .post(requestBody)
+                .build()
+
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    okHttpClient.newCall(request).execute()
+                }
+                if (response.isSuccessful) {
+                    Log.i(TAG, "Event created successfully via backend.")
+                    _createEventResult.value = CreateEventResult.Success
+                    // Обновляем данные для текущего дня (или диапазона)
+                    refreshCurrentVisibleDate() // Вызываем существующую функцию обновления
+                } else {
+                    val errorMsg = parseBackendError(response.body?.string(), response.code)
+                    Log.e(TAG, "Error creating event via backend: ${response.code} - $errorMsg")
+                    _createEventResult.value = CreateEventResult.Error(errorMsg)
+                }
+            } catch (e: IOException) {
+                Log.e(TAG, "Network error creating event", e)
+                _createEventResult.value = CreateEventResult.Error("Сетевая ошибка: ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating event", e)
+                _createEventResult.value = CreateEventResult.Error("Неизвестная ошибка: ${e.message}")
+            } finally {
+                // Сбросить состояние Loading, если Success/Error не установились
+                if (_createEventResult.value is CreateEventResult.Loading) {
+                    _createEventResult.value = CreateEventResult.Idle // Или Error?
+                }
+            }
+        }
+    }
+
+    fun consumeCreateEventResult() {
+        _createEventResult.value = CreateEventResult.Idle
+    }
 
 
     // --- ИЗМЕНЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ ---

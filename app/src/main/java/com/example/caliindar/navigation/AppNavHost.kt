@@ -14,16 +14,21 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.caliindar.ui.screens.settings.SettingsScreen
 import com.example.caliindar.ui.screens.main.MainScreen
 import com.example.caliindar.ui.screens.main.MainViewModel
+import com.example.caliindar.ui.screens.main.components.CreateEventScreen
 import com.example.caliindar.ui.screens.settings.AISettingsScreen
 import com.example.caliindar.ui.screens.settings.TermsOfUseScreen
 import com.example.caliindar.ui.screens.settings.TimeSettingsScreen
+import java.time.LocalDate
 
 @Composable
 fun AppNavHost(
@@ -73,7 +78,8 @@ fun AppNavHost(
                 viewModel = viewModel,
                 onNavigateToSettings = {
                     navController.navigate(NavRoutes.Settings.route)
-                }
+                },
+                navController = navController
             )
 
         }
@@ -222,6 +228,19 @@ fun AppNavHost(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 title = "Terms of Use"
+            )
+        }
+        composable(
+            route = "create_event/{initialDateEpochDay}",
+            arguments = listOf(navArgument("initialDateEpochDay") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val initialDateEpochDay = backStackEntry.arguments?.getLong("initialDateEpochDay") ?: LocalDate.now().toEpochDay()
+            val initialDate = LocalDate.ofEpochDay(initialDateEpochDay)
+            // Можно создать отдельную ViewModel или использовать общую MainViewModel
+            CreateEventScreen(
+                viewModel = hiltViewModel<MainViewModel>(), // Или CreateEventViewModel
+                initialDate = initialDate,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
