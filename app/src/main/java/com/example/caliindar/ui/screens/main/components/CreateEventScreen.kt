@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -215,7 +216,8 @@ fun CreateEventScreen(
                 singleLine = true,
                 isError = summaryError != null,
                 supportingText = { if (summaryError != null) Text(summaryError!!) },
-                enabled = !isLoading
+                enabled = !isLoading,
+                shape = RoundedCornerShape(25.dp)
             )
 
             // --- Блок All Day ---
@@ -272,8 +274,9 @@ fun CreateEventScreen(
                         modifier = Modifier.fillMaxWidth(),
                         isError = dateTimeError != null,
                         enabled = !isLoading,
-                        interactionSource = interactionSource // Можно оставить или убрать для теста
-                    )
+                        interactionSource = interactionSource, // Можно оставить или убрать для теста
+                        shape = RoundedCornerShape(25.dp)
+                        )
                     // Прозрачный Оверлей для клика
                     Box(
                         modifier = Modifier
@@ -300,7 +303,8 @@ fun CreateEventScreen(
                             modifier = Modifier.fillMaxWidth(),
                             isError = dateTimeError != null && startTime == null,
                             enabled = !isLoading,
-                            interactionSource = interactionSource // Можно оставить или убрать для теста
+                            interactionSource = interactionSource, // Можно оставить или убрать для теста
+                            shape = RoundedCornerShape(25.dp)
                         )
                         // Прозрачный Оверлей для клика
                         Box(
@@ -337,7 +341,8 @@ fun CreateEventScreen(
                         modifier = Modifier.fillMaxWidth(),
                         isError = dateTimeError != null,
                         enabled = !isLoading,
-                        interactionSource = interactionSource
+                        interactionSource = interactionSource,
+                        shape = RoundedCornerShape(25.dp)
                     )
                     // Прозрачный Оверлей для клика
                     Box(
@@ -365,7 +370,8 @@ fun CreateEventScreen(
                             modifier = Modifier.fillMaxWidth(),
                             isError = dateTimeError != null && endTime == null,
                             enabled = !isLoading,
-                            interactionSource = interactionSource
+                            interactionSource = interactionSource,
+                            shape = RoundedCornerShape(25.dp)
                         )
                         // Прозрачный Оверлей для клика
                         Box(
@@ -390,7 +396,8 @@ fun CreateEventScreen(
                 label = { Text("Описание") },
                 modifier = Modifier.fillMaxWidth().height(100.dp),
                 maxLines = 4,
-                enabled = !isLoading
+                enabled = !isLoading,
+                shape = RoundedCornerShape(25.dp)
             )
 
             // Местоположение
@@ -400,7 +407,8 @@ fun CreateEventScreen(
                 label = { Text("Местоположение") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                enabled = !isLoading
+                enabled = !isLoading,
+                shape = RoundedCornerShape(25.dp)
             )
 
             // Сообщение об ошибке от бэкенда
