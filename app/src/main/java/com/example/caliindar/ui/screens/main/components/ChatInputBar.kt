@@ -39,7 +39,7 @@ fun ChatInputBar(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val isSendEnabled = textFieldValue.text.isNotBlank() && uiState.isSignedIn && !uiState.isLoading && !uiState.isListening
-    val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isLoading && !uiState.isListening // Disable toggle during recording/loading
+    val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isListening // Disable toggle during recording/loading
 
     // Request focus when text input becomes visible
     LaunchedEffect(isTextInputVisible) {
@@ -127,7 +127,7 @@ fun ChatInputBar(
                     onClick = {
                         val selectedDate = viewModel.currentVisibleDate.value // Берем видимую дату
                         navController.navigate("create_event/${selectedDate.toEpochDay()}")
-                    },// TODO: ACTION кнопка создания события
+                    },
                     enabled = isKeyboardToggleEnabled
                 ) {
                     Icon(
@@ -135,7 +135,6 @@ fun ChatInputBar(
                         contentDescription = "Create event"
                     )
                 }
-                // You could add other actions here if needed
             },
             floatingActionButton = {
                 // Используем отдельный компонент RecordButton
@@ -147,7 +146,6 @@ fun ChatInputBar(
                     modifier = Modifier.size(56.dp) // Standard FAB size
                 )
             },
-            // floatingActionButtonPosition = FabPosition.Center // Позиционирование FAB
         )
     }
 }

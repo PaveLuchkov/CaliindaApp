@@ -14,6 +14,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,50 +39,51 @@ import com.example.caliindar.ui.screens.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.Composable // Для @Composable AppNavHost
 
-
-// Math (you might want to put these inside a utility class/file)
-
-enum class AiVisualizerState {
-    IDLE, RECORDING, THINKING, ASKING, RESULT, ERROR // Добавил состояние ERROR
-}
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     // 1. Получаем ViewModel с помощью делегата, привязанного к Activity
     private val mainViewModel: MainViewModel by viewModels()
 
-    // 2. Лаунчер регистрируем как поле Activity
-    private val googleSignInLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // Используем mainViewModel, который теперь является свойством Activity
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        mainViewModel.handleSignInResult(task) // Обновляем ЕДИНСТВЕННЫЙ экземпляр
-
-        // Более детальная обработка ошибок, если нужно
-        if (result.resultCode != RESULT_OK) {
-            Log.w("MainActivity", "Google Sign-In failed or cancelled. ResultCode: ${result.resultCode}")
-            // Можно передать фиктивный Task с ошибкой, если handleSignInResult это ожидает
-            // или вызвать отдельный метод viewModel.handleSignInError(result.resultCode)
-        }
-    }
+    // 2. Регистрация ActivityResultLauncher для Google Sign-In
+    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // Инициализация лаунчера ДО setContent (или в классе)
+        googleSignInLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            // Результат приходит сюда
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                // Передаем результат в ViewModel для обработки
+                mainViewModel.handleSignInResult(task)
+            } catch (e: ApiException) {
+                // Обработка ошибки на уровне ViewModel
+                mainViewModel.handleSignInResult(task) // Передаем даже если ошибка, ViewModel разберется
+                Log.w("MainActivity", "Google sign in failed in launcher", e)
+                // Можно показать Snackbar или Toast с общей ошибкой, если нужно
+            } catch (e: Exception) {
+                mainViewModel.handleSignInResult(task) // Передаем на всякий случай
+                Log.e("MainActivity", "Error handling sign in result in launcher", e)
+            }
+        }
+
         setContent {
             CaliindaTheme {
                 // 3. Передаем Activity-scoped ViewModel и лямбду в NavHost
                 AppNavHost(
-                    viewModel = mainViewModel, // <--- Передаем экземпляр из Activity
-                    onSignInClick = { // Лямбда захватывает свойство Activity 'googleSignInLauncher' и 'mainViewModel'
+                    // --- УБЕДИСЬ, что AppNavHost принимает MainViewModel ---
+                    viewModel = mainViewModel,
+                    onSignInClick = {
+                        // Получаем Intent от ViewModel
                         val signInIntent = mainViewModel.getSignInIntent()
-                        // Добавим проверку на null для надежности
-                        signInIntent.let {
-                            googleSignInLauncher.launch(it)
-                        }
+                        // Запускаем процесс входа через лаунчер
+                        // .let не обязателен, т.к. getSignInIntent должен всегда возвращать Intent
+                        googleSignInLauncher.launch(signInIntent)
                     }
                 )
             }

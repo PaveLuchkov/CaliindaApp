@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class) // Для CenterAlignedTopAppBar
 @Composable
 fun CalendarAppBar(
-
     isListening: Boolean,
     onNavigateToSettings: () -> Unit,
     isBusy: Boolean, // Используем isBusy (включает загрузку и другие состояния занятости)

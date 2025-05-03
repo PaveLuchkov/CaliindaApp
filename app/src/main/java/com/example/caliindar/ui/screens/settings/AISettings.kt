@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AISettingsScreen(
     viewModel: MainViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val currentTemper by viewModel.botTemperState.collectAsStateWithLifecycle()
@@ -100,7 +100,7 @@ fun AISettingsScreen(
                         OutlinedTextField(
                             value = temperInputState,
                             onValueChange = { temperInputState = it },
-                            placeholder = { Text("e.g.: be sweet and humble") },
+                            placeholder = { "e.g.: be sweet and humble" },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp),

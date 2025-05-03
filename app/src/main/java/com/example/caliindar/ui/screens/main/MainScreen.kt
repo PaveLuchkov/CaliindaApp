@@ -33,6 +33,8 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavHostController
+import com.example.caliindar.data.calendar.CalendarDataManager
+import com.example.caliindar.data.calendar.EventNetworkState
 import com.example.caliindar.ui.screens.main.components.calendarui.DayEventsPage
 import java.time.Instant
 import java.time.LocalDate
@@ -98,13 +100,6 @@ fun MainScreen(
     // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
     val isSignedIn = uiState.isSignedIn // Получаем статус входа
-    LaunchedEffect(isSignedIn) { // Ключ = isSignedIn
-        if (isSignedIn) { // Выполняем ТОЛЬКО если пользователь вошел
-            Log.d("MainScreen", "User signed in, triggering initial load.")
-            viewModel.ensureDateRangeLoadedAround(viewModel.currentVisibleDate.value)
-            // или viewModel.ensureDateRangeLoadedAround(today) - выберите, что логичнее
-        }
-    }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -131,7 +126,7 @@ fun MainScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CalendarAppBar( // Передаем только нужные данные
-                isBusy = uiState.isLoading || rangeNetworkState is MainViewModel.EventNetworkState.Loading,
+                isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading,
                 isListening = uiState.isListening,
                 onNavigateToSettings = onNavigateToSettings,
                 onGoToTodayClick = {

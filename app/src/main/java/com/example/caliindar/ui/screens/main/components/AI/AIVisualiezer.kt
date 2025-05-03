@@ -20,9 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
+import com.example.caliindar.data.ai.model.AiVisualizerState
 import com.example.caliindar.ui.screens.main.components.AI.AiStarShape // Import your shape
 import com.example.caliindar.ui.common.ClickableLinkText // Keep if needed for result text
-import com.example.caliindar.ui.screens.main.AiVisualizerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

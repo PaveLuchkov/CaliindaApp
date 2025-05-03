@@ -40,6 +40,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.example.caliindar.ui.theme.LocalFixedAccentColors
+import com.example.caliindar.util.DateTimeFormatterUtil
 import kotlinx.coroutines.launch
 import java.time.Duration
 
@@ -267,7 +268,7 @@ fun DayEventsPage(
             // Список Событий для этого дня
             if (timedEvents.isNotEmpty()) {
                 val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId, use12Hour) {
-                    { event -> viewModel.formatEventListTime(event, currentTimeZoneId, use12Hour) } // Передаем оба параметра
+                    { event -> DateTimeFormatterUtil.formatEventListTime(event, currentTimeZoneId, use12Hour) } // Передаем оба параметра
                 }
                 EventsList(
                     events = timedEvents, // Передаем только события со временем

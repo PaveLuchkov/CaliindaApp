@@ -23,29 +23,21 @@ interface ITimeTicker {
     val currentTime: StateFlow<Instant>
 }
 
-@Singleton // Этот класс будет синглтоном в пределах всего приложения
+@Singleton
 class TimeTicker @Inject constructor() : ITimeTicker { // @Inject constructor для Hilt
 
-    // Создаем scope, который будет жить вместе с синглтоном
-    // Используем SupervisorJob, чтобы ошибка в одной корутине не отменила весь scope
-    // Dispatchers.Default подходит для фоновых задач типа delay
     private val tickerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // Используем StateFlow, чтобы хранить последнее значение и предоставлять его подписчикам
     override val currentTime: StateFlow<Instant> = flow {
-        while (true) { // Бесконечный цикл для тикера
-            emit(Instant.now()) // Отправляем текущее время
-            delay(60000L) // Пауза на 1 минуту (можно вынести в константу)
+        while (true) {
+            emit(Instant.now())
+            delay(60000L)
         }
-    }.stateIn( // Преобразуем холодный Flow в горячий StateFlow
-        scope = tickerScope, // Запускаем Flow в нашем scope
-        started = SharingStarted.WhileSubscribed(5000), // Начинаем эмитить, когда есть подписчики, останавливаемся через 5 сек после последнего
-        initialValue = Instant.now() // Начальное значение
+    }.stateIn(
+        scope = tickerScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = Instant.now()
     )
-
-    // Важно: Hilt управляет жизненным циклом @Singleton,
-    // поэтому нам не нужно явно отменять tickerScope вручную,
-    // Hilt сделает это при уничтожении ApplicationComponent.
 }
 
 
