@@ -232,14 +232,13 @@ fun AppNavHost(
             )
         }
         composable(
-            route = "create_event/{initialDateEpochDay}",
+            route = "create_event/{initialDateEpochDay}", // Оставьте ваш шаблон роута как есть
             arguments = listOf(navArgument("initialDateEpochDay") { type = NavType.LongType })
         ) { backStackEntry ->
             val initialDateEpochDay = backStackEntry.arguments?.getLong("initialDateEpochDay") ?: LocalDate.now().toEpochDay()
             val initialDate = LocalDate.ofEpochDay(initialDateEpochDay)
-            // Можно создать отдельную ViewModel или использовать общую MainViewModel
             CreateEventScreen(
-                viewModel = hiltViewModel<MainViewModel>(), // Или CreateEventViewModel
+                viewModel = viewModel, // ПРАВИЛЬНО: Используем экземпляр, переданный в AppNavHost
                 initialDate = initialDate,
                 onNavigateBack = { navController.popBackStack() }
             )

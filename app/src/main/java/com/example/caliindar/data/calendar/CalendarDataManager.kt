@@ -11,6 +11,7 @@ import com.example.caliindar.di.IoDispatcher
 import com.example.caliindar.ui.screens.main.CalendarEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -31,6 +32,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
 
 
 @Singleton
@@ -66,24 +68,50 @@ class CalendarDataManager @Inject constructor(
     val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
     val createEventResult: StateFlow<CreateEventResult> = _createEventResult.asStateFlow()
 
+    private var activeFetchJob: Job? = null
+
     // --- Публичные методы для ViewModel ---
 
     /** Устанавливает текущую видимую дату и запускает проверку/загрузку диапазона */
     fun setCurrentVisibleDate(newDate: LocalDate) {
-        Log.d(TAG, "setCurrentVisibleDate: CALLED with $newDate. Current value: ${_currentVisibleDate.value}") // <-- ЛОГ В САМОМ НАЧАЛЕ
+        Log.d(TAG, "setCurrentVisibleDate: CALLED with $newDate. Current value: ${_currentVisibleDate.value}")
 
-        // Условие выхода: выходим, только если дата ТА ЖЕ САМАЯ И диапазон УЖЕ загружен (не null)
-        if (newDate == _currentVisibleDate.value && _loadedDateRange.value != null) {
+        // Only proceed if date is different OR range is not loaded yet
+        val needsUpdate = newDate != _currentVisibleDate.value || _loadedDateRange.value == null
+        if (!needsUpdate) {
             Log.d(TAG, "setCurrentVisibleDate: Date $newDate is same as current AND range is loaded. Skipping.")
-            return // Выход, так как дата та же и что-то уже загружено
+            return
         }
 
-        Log.i(TAG, "setCurrentVisibleDate: Proceeding to set date and check range for $newDate") // <-- ЛОГ ПЕРЕД ДЕЙСТВИЕМ
-        _currentVisibleDate.value = newDate
-        managerScope.launch {
-            Log.d(TAG, "setCurrentVisibleDate: Coroutine launched for ensureDateRangeLoadedAround($newDate)") // <-- ЛОГ ЗАПУСКА КОРУТИНЫ
-            ensureDateRangeLoadedAround(newDate)
+        Log.i(TAG, "setCurrentVisibleDate: Proceeding to set date and check range for $newDate")
+
+        // --- Explicit Cancellation ---
+        activeFetchJob?.cancel(CancellationException("New date set: $newDate")) // Cancel previous job with a reason
+        Log.d(TAG, "setCurrentVisibleDate: Previous activeFetchJob cancelled (if existed).")
+        // --------------------------
+
+        _currentVisibleDate.value = newDate // Update the state
+
+        activeFetchJob = managerScope.launch { // Store the reference to the NEW job
+            Log.d(TAG, "setCurrentVisibleDate: New coroutine launched for ensureDateRangeLoadedAround($newDate). Job: ${coroutineContext[Job]}")
+            try {
+                ensureDateRangeLoadedAround(newDate)
+            } catch (ce: CancellationException) {
+                Log.d(TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} cancelled while ensuring range for $newDate: ${ce.message}")
+                throw ce
+            } catch (e: Exception) {
+                Log.e(TAG, "setCurrentVisibleDate: Error in ensureDateRangeLoadedAround for $newDate", e)
+                // Decide if you need to handle errors here, e.g., update network state
+            } finally {
+                // Optional: Clear the reference only if this *specific* job instance completes naturally or with error (not cancellation from outside)
+                // It might be safer *not* to clear it here, relying on the next call to cancel it.
+                // if (activeFetchJob == coroutineContext[Job] && coroutineContext.isActive) {
+                //     activeFetchJob = null
+                // }
+                Log.d(TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} finished for $newDate")
+            }
         }
+        Log.d(TAG, "setCurrentVisibleDate: Assigned new activeFetchJob: ${activeFetchJob}")
     }
 
     /** Предоставляет Flow событий из БД для указанной даты */
@@ -218,11 +246,36 @@ class CalendarDataManager @Inject constructor(
     }
 
     /** Принудительно обновляет данные для указанной даты */
-    suspend fun refreshDate(date: LocalDate) { // suspend остается
+    suspend fun refreshDate(date: LocalDate) {
         Log.d(TAG, "Manual refresh triggered for date: $date")
-        withContext(ioDispatcher) {
-            fetchAndStoreDateRange(date, date, false)
+
+        // --- Explicit Cancellation ---
+        activeFetchJob?.cancel(CancellationException("Manual refresh triggered for $date"))
+        Log.d(TAG, "refreshDate: Previous activeFetchJob cancelled (if existed).")
+        // --------------------------
+
+        // Launching within the existing suspend fun's context might be okay,
+        // or launch a new job and store it. Let's launch and store for consistency.
+        val refreshJob = managerScope.launch { // Launch separately
+            Log.d(TAG, "refreshDate: New coroutine launched for fetchAndStoreDateRange($date). Job: ${coroutineContext[Job]}")
+            try {
+                // Note: Using replace=true for manual refresh might be more robust
+                // to clear out any potentially inconsistent state for that specific day.
+                fetchAndStoreDateRange(date, date, true) // Consider replace=true
+            } catch (ce: CancellationException) {
+                Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} cancelled during refresh for $date: ${ce.message}")
+                throw ce
+            } catch (e: Exception) {
+                Log.e(TAG, "refreshDate: Error during fetchAndStoreDateRange for $date", e)
+                // Update network state?
+            } finally {
+                Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} finished for $date")
+            }
         }
+        activeFetchJob = refreshJob // Assign the new job as the active one
+        Log.d(TAG, "refreshDate: Assigned new activeFetchJob: ${activeFetchJob}")
+        refreshJob.join() // Wait for the refresh job to complete if refreshDate needs to be blocking? Or remove join() if not.
+        // If you remove join(), refreshDate returns immediately, and the refresh happens in the background.
     }
 
     /** Сбрасывает состояние ошибки сети */
