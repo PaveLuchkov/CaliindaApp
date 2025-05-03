@@ -65,30 +65,38 @@ object DateTimeUtils {
         }
     }
 
-    fun formatDateTimeToIso(date: LocalDate?, time: LocalTime?, isAllDay: Boolean, zoneIdString: String): String? {
+    fun formatDateTimeToIsoWithOffset(
+        date: LocalDate?,
+        time: LocalTime?,
+        isAllDay: Boolean,
+        zoneIdString: String
+    ): String? {
         if (date == null) return null
 
-        return if (isAllDay) {
-            // Для all-day отправляем только дату
-            date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        } else if (time != null) {
-            // Для timed отправляем дату и время в нужном поясе -> Instant -> ISO строка UTC (Z)
-            // или ISO строка со смещением. Зависит от того, что ожидает бэкенд.
-            // Вариант 1: Отправка в UTC (Z)
-            try {
-                val zoneId = ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
-                date.atTime(time).atZone(zoneId).toInstant().toString() // Преобразуем в Instant (UTC), затем в строку
-            } catch (e: Exception) { null }
+        val zoneId = try {
+            ZoneId.of(zoneIdString.takeIf { it.isNotEmpty() } ?: ZoneId.systemDefault().id)
+        } catch (e: Exception) {
+            Log.w("DateTimeUtils", "Invalid zoneId '$zoneIdString', using system default.", e)
+            ZoneId.systemDefault()
+        }
 
-            // Вариант 2: Отправка со смещением (если бэкенд это правильно парсит)
-            /*
-            try {
-                val zoneId = ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
-                date.atTime(time).atZone(zoneId).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-            } catch (e: Exception) { null }
-            */
-        } else {
-            null // Не all-day, но время не выбрано
+        // Определяем время: полночь для all-day или указанное время
+        val effectiveTime = if (isAllDay) LocalTime.MIDNIGHT else time
+
+        // Если время не указано для события НЕ "весь день", это ошибка
+        if (effectiveTime == null) {
+            Log.w("DateTimeUtils", "Time is required for non-all-day event formatting.")
+            return null
+        }
+
+        return try {
+            // Собираем LocalDateTime и применяем часовой пояс для получения ZonedDateTime
+            val zonedDateTime = date.atTime(effectiveTime).atZone(zoneId)
+            // Форматируем в ISO 8601 со смещением
+            zonedDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        } catch (e: Exception) {
+            Log.e("DateTimeUtils", "Error formatting date/time to ISO offset string", e)
+            null // Возвращаем null при ошибке
         }
     }
 }

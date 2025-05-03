@@ -45,7 +45,8 @@ fun GoogleAccountSection(
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val email = uiState.userEmail ?: "Google account"
-    val displayName = email.substringBefore("@")
+    val displayName = uiState.displayName ?: email.substringBefore("@")
+    val name = displayName
     val cornerRadius = cuid.SettingsItemCornerRadius
     Box(
         modifier = Modifier
@@ -74,7 +75,7 @@ fun GoogleAccountSection(
                     contentDescription = "Account")
             }
            Spacer(modifier = Modifier.width(16.dp))
-           Text(text = displayName, style = Typography.bodyMedium)
+           Text(text = name, style = Typography.bodyMedium)
            Spacer(Modifier.weight(1f))
            Box(
                modifier = Modifier

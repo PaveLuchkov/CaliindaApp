@@ -456,8 +456,6 @@ class CalendarDataManager @Inject constructor(
         }
     }
 
-
-
     // --- Утилиты для диапазонов дат ---
     private fun ClosedRange<LocalDate>.containsRange(other: ClosedRange<LocalDate>): Boolean {
         return this.start <= other.start && this.endInclusive >= other.endInclusive

@@ -287,5 +287,4 @@ class AuthManager @Inject constructor(
         }
         // Результат (true/false) будет использован в handleSignInResult
     }
-
 }

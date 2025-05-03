@@ -132,6 +132,7 @@ class MainViewModel @Inject constructor(
                     currentUiState.copy(
                         isSignedIn = auth.isSignedIn,
                         userEmail = auth.userEmail,
+                        displayName = auth.displayName,
                         showAuthError = auth.authError,
                         isLoading = calculateIsLoading(authLoading = auth.isLoading), // Обновляем только этот источник
                         message = if (auth.isSignedIn != previousState.isSignedIn || auth.authError != null) null else currentUiState.message
