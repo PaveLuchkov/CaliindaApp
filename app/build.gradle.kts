@@ -93,4 +93,24 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Core testing libraries
+    testImplementation(libs.junit)
+    testImplementation(libs.androidx.core.testing) // Для InstantTaskExecutorRule (хотя тут не критично)
+    testImplementation(libs.kotlinx.coroutines.test) // Используй актуальную версию
+    testImplementation(kotlin("test"))
+
+// Mockito for mocking
+    testImplementation(libs.kotlin.mockito.kotlin) // Используй актуальную версию
+    testImplementation(libs.mockito.inline) // Для мокания final классов/методов, если нужно
+
+// Turbine for Flow testing
+    testImplementation(libs.turbine) // Используй актуальную версию
+
+// Truth for assertions (optional but recommended)
+    testImplementation(libs.truth)
+
+// Tasks API for mocking Google Play Services Tasks
+    testImplementation(libs.play.services.tasks) // Используй версию, совместимую с твоей основной
+
 }
