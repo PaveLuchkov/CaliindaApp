@@ -26,12 +26,12 @@ object DateTimeUtils {
         return try {
             // Попытка 1: Как OffsetDateTime (строка содержит время и смещение/зону)
             OffsetDateTime.parse(dateTimeString).toInstant()
-        } catch (e: DateTimeParseException) {
+        } catch (_: DateTimeParseException) {
             try {
                 // Попытка 2: Как LocalDateTime (строка содержит дату и время, но без смещения/зоны)
                 // Применяем выбранный пользователем часовой пояс для получения Instant (UTC)
                 LocalDateTime.parse(dateTimeString).atZone(zoneId).toInstant()
-            } catch (e2: DateTimeParseException) {
+            } catch (_: DateTimeParseException) {
                 try {
                     // Попытка 3: Как LocalDate (строка содержит только дату - событие "весь день")
                     // Представляем начало дня (00:00) в UTC.
@@ -39,7 +39,7 @@ object DateTimeUtils {
                     LocalDate.parse(dateTimeString)
                         .atStartOfDay(ZoneOffset.UTC) // Используем UTC для консистентности хранения
                         .toInstant()
-                } catch (e3: DateTimeParseException) {
+                } catch (_: DateTimeParseException) {
                     // Если ни один из форматов не подошел
                     Log.w("DateTimeUtils", "Could not parse '$dateTimeString' as OffsetDateTime, LocalDateTime, or LocalDate.")
                     null // Все попытки парсинга не удались

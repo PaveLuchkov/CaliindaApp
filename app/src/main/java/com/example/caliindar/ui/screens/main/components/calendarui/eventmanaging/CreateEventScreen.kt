@@ -1,6 +1,7 @@
 package com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging
 
 
+import android.text.format.DateFormat
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
@@ -28,6 +30,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.ui.screens.main.MainViewModel
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimePicker
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventNameSection
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.AdaptiveContainer
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.ChipsRow
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.CustomOutlinedTextField
@@ -54,20 +59,12 @@ fun CreateEventScreen(
     onNavigateBack: () -> Unit
 ) {
     var summary by remember { mutableStateOf("") }
-    var startDate by remember { mutableStateOf<LocalDate>(initialDate) }
-    var startTime by remember {
-        mutableStateOf<LocalTime?>(
-            LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0) // Убираем наносекунды
-        )
-    }
-    var endDate by remember { mutableStateOf<LocalDate>(initialDate) }
-    var endTime by remember { mutableStateOf<LocalTime?>(startTime?.plusHours(1)?.withNano(0)) } // Убираем наносекунды
-    var isAllDay by remember { mutableStateOf(false) }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
 
     var summaryError by remember { mutableStateOf<String?>(null) }
     var dateTimeError by remember { mutableStateOf<String?>(null) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     val createEventState by viewModel.createEventResult.collectAsState()
     val userTimeZoneId by viewModel.timeZone.collectAsState()
@@ -97,45 +94,75 @@ fun CreateEventScreen(
             .ofLocalizedTime(FormatStyle.SHORT) // SHORT обычно "HH:mm" или "h:mm a"
             .withLocale(currentLocale)
     }
-    val systemZoneId = remember { ZoneId.systemDefault() } // Запоминаем системную зону
+    val systemZoneId = remember { ZoneId.systemDefault() }
 
-    // Чипы автозаполнения
-    val chips = listOf("Work", "Dinner", "Sport", "Chip1", "Chip2", "Chip3")
-    // TODO: СДЕЛАТЬ ИИ ЧИПЫ
+    var eventDateTimeState by remember {
+        mutableStateOf(
+            EventDateTimeState(
+                startDate = initialDate,
+                startTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0),
+                endDate = initialDate,
+                endTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0),
+                isAllDay = false,
+                isRecurring = false, // Добавлено, если нужно управлять этим
+                recurrenceRule = null // Добавлено
+            )
+        )
+    }
+    fun formatEventTimesForSaving(
+        state: EventDateTimeState,
+        timeZoneId: String
+    ): Pair<String?, String?> {
+        val startTimeIso: String?
+        val endTimeIso: String?
+
+        if (state.isAllDay) {
+            val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+            startTimeIso = try { state.startDate.format(formatter) } catch (_: Exception) { null }
+            val effectiveEndDate = state.endDate.plusDays(1)
+            // Вариант 2: Конец = Фактический конец (если событие на неск. дней)
+            // val effectiveEndDate = state.endDate // Требует проверки API
+            endTimeIso = try { effectiveEndDate.format(formatter) } catch (_: Exception) { null }
+            Log.d("CreateEvent", "Formatting All-Day: Start=${startTimeIso}, End=${endTimeIso} (Derived from ${state.endDate})")
+        } else {
+            // validateInput уже проверил, что startTime и endTime не null
+            startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.startDate, state.startTime!!, false, timeZoneId)
+            endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.endDate, state.endTime!!, false, timeZoneId)
+            Log.d("CreateEvent", "Formatting Timed: Start=$startTimeIso, End=$endTimeIso")
+        }
+        return Pair(startTimeIso, endTimeIso)
+    }
+
     // --- Логика валидации (без изменений) ---
     fun validateInput(): Boolean {
         summaryError = if (summary.isBlank()) "Название не может быть пустым" else null
-        dateTimeError = null // Сбрасываем
+        validationError = null // Сбрасываем ошибку валидации перед отправкой
 
-        if (endDate.isBefore(startDate)) {
-            dateTimeError = "Дата конца не может быть раньше даты начала"
+        // Используем eventDateTimeState для проверок
+        val state = eventDateTimeState
+
+        // Проверка DateTimeComponent уже делает базовые проверки (конец >= начало)
+        // Но можно добавить дополнительные проверки здесь, если нужно
+
+        // Проверка на null времени, если не AllDay (уже проверяется в компоненте?)
+        // Проверим еще раз на всякий случай перед отправкой
+        if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
+            validationError = "Укажите время начала и конца"
             return false
         }
 
-        if (!isAllDay) {
-            if (startTime == null || endTime == null) {
-                dateTimeError = "Укажите время начала и конца"
-                return false
-            }
-            val startDateTime = LocalDateTime.of(startDate, startTime)
-            val endDateTime = LocalDateTime.of(endDate, endTime)
-            if (endDateTime.isBefore(startDateTime)) {
-                dateTimeError = "Время/дата конца не может быть раньше времени/даты начала"
-                return false
-            }
-        }
-        // Проверка форматирования (остается полезной)
-        val testStartTimeStr = DateTimeUtils.formatDateTimeToIsoWithOffset(startDate, startTime, isAllDay, userTimeZoneId)
-        val effectiveEndDateForTest = if (isAllDay) endDate.plusDays(1) else endDate
-        val testEndTimeStr = DateTimeUtils.formatDateTimeToIsoWithOffset(effectiveEndDateForTest, endTime, isAllDay, userTimeZoneId)
+        // Проверка возможности форматирования (остается полезной)
+        val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZoneId)
 
         if (testStartTimeStr == null || testEndTimeStr == null) {
-            dateTimeError = "Не удалось сформировать дату/время для отправки"
+            validationError = "Не удалось сформировать дату/время для отправки"
             return false
         }
 
-        return summaryError == null && dateTimeError == null
+        return summaryError == null && validationError == null
     }
+
+
 
     // --- Обработка состояния ViewModel (без изменений) ---
     LaunchedEffect(createEventState) {
@@ -157,26 +184,13 @@ fun CreateEventScreen(
 
     // Функция сохранения (логика форматирования без изменений)
     val onSaveClick: () -> Unit = saveLambda@{
-        generalError = null
+        generalError = null // Сброс ошибки от VM
         if (validateInput()) {
-            val startTimeIso: String?
-            val endTimeIso: String?
-
-            if (isAllDay) {
-                val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-                startTimeIso = try { startDate.format(formatter) } catch (_: Exception) { null }
-                val effectiveEndDate = endDate.plusDays(1)
-                endTimeIso = try { effectiveEndDate.format(formatter) } catch (_: Exception) { null }
-                Log.d("CreateEvent", "Formatting All-Day: Start=$startTimeIso, End=$endTimeIso")
-            } else {
-                // Используем startTime и endTime, которые точно не null после validateInput()
-                startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(startDate, startTime!!, false, userTimeZoneId)
-                endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(endDate, endTime!!, false, userTimeZoneId)
-            }
+            val (startTimeIso, endTimeIso) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
 
             if (startTimeIso == null || endTimeIso == null) {
-                generalError = "Ошибка форматирования даты/времени."
-                Log.e("CreateEvent", "Failed to format ISO strings: start=$startTimeIso, end=$endTimeIso, isAllDay=$isAllDay")
+                validationError = "Ошибка форматирования даты/времени." // Ошибка форматирования
+                Log.e("CreateEvent", "Failed to format ISO strings based on state: $eventDateTimeState")
                 return@saveLambda
             }
 
@@ -184,9 +198,10 @@ fun CreateEventScreen(
                 summary = summary.trim(),
                 startTimeString = startTimeIso,
                 endTimeString = endTimeIso,
-                isAllDay = isAllDay,
+                isAllDay = eventDateTimeState.isAllDay,
                 description = description.trim().takeIf { it.isNotEmpty() },
-                location = location.trim().takeIf { it.isNotEmpty() }
+                location = location.trim().takeIf { it.isNotEmpty() },
+                recurrenceRule = eventDateTimeState.recurrenceRule // Передаем правило повторения
             )
         } else {
             Toast.makeText(context, "Проверьте введенные данные", Toast.LENGTH_SHORT).show()
@@ -214,189 +229,41 @@ fun CreateEventScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             AdaptiveContainer{
-                CustomOutlinedTextField(
-                    value = summary,
-                    onValueChange = {
-                        summary = it
-                        summaryError = null
-                    },
-                    label = "Event Name",
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = summaryError != null,
-                    supportingText = { if (summaryError != null) Text(summaryError!!) },
-                    enabled = !isLoading,
-                )
-                ChipsRow(chips = chips, onChipClick = { clickedChip ->
-                    summary = clickedChip // Update the text field value
-                })
-            }
-            // --- Блок All Day ---
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Весь день", modifier = Modifier.weight(1f))
-                Switch(
-                    checked = isAllDay,
-                    onCheckedChange = { checked ->
-                        isAllDay = checked
-                        dateTimeError = null
-                        if (checked) {
-                            startTime = null
-                            endTime = null
-                        } else {
-                            val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-                            startTime = defaultStartTime
-                            // Устанавливаем время конца на час позже, если даты совпадают
-                            // или используем то же время на другую дату
-                            val defaultEndTime = if (startDate == endDate) defaultStartTime.plusHours(1) else defaultStartTime
-                            endTime = defaultEndTime.withNano(0)
-                        }
-                    },
-                    enabled = !isLoading,
-
+                EventNameSection(
+                    summary = summary,
+                    summaryError = summaryError,
+                    onSummaryChange = { summary = it },
+                    onSummaryErrorChange = { summaryError = it },
+                    isLoading = isLoading
                 )
             }
-
             // --- Общая ошибка даты/времени ---
-            dateTimeError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp)) // Небольшой отступ
+
+            // --- НОВОЕ: Используем EventDateTimePicker ---
+            EventDateTimePicker(
+                initialState = eventDateTimeState,
+                onStateChange = { newState ->
+                    eventDateTimeState = newState
+                    validationError = null // Сброс ошибки валидации при любом изменении
+                },
+                isLoading = isLoading,
+                onRequestShowStartDatePicker = { showStartDatePicker = true },
+                onRequestShowStartTimePicker = { showStartTimePicker = true },
+                onRequestShowEndDatePicker = { showEndDatePicker = true },
+                onRequestShowEndTimePicker = { showEndTimePicker = true },
+                modifier = Modifier.fillMaxWidth() // Занимает всю ширину
+            )
+
+            validationError?.let {
+                Text(
+                    it,
+                    color = colorScheme.error,
+                    style = typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp) // Немного отступа сверху
+                )
             }
 
-            // --- Блок Начала ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                // --- Поле Даты Начала с Оверлеем ---
-                Box( // Родительский Box - НЕ кликабельный
-                    modifier = Modifier.weight(1f)
-                ) {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    OutlinedTextField(
-                        value = startDate.format(deviceDateFormatter),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Дата начала*") },
-                        trailingIcon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = dateTimeError != null,
-                        enabled = !isLoading,
-                        interactionSource = interactionSource, // Можно оставить или убрать для теста
-                        shape = RoundedCornerShape(25.dp)
-                        )
-                    // Прозрачный Оверлей для клика
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize() // Занимает все место родителя
-                            .clickable(enabled = !isLoading) { // Клик на оверлее
-                                Log.d("ClickDebug", "Start Date Overlay Clicked")
-                                showStartDatePicker = true
-                            }
-                    )
-                } // --- Конец Поля Даты Начала ---
-
-                // --- Поле Времени Начала с Оверлеем (если не all day) ---
-                if (!isAllDay) {
-                    Box( // Родительский Box - НЕ кликабельный
-                        modifier = Modifier.weight(0.7f)
-                    ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        OutlinedTextField(
-                            value = startTime?.format(deviceTimeFormatter) ?: "--:--",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Время*") },
-                            trailingIcon = { Icon(Icons.Filled.Schedule, contentDescription = null) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = dateTimeError != null && startTime == null,
-                            enabled = !isLoading,
-                            interactionSource = interactionSource, // Можно оставить или убрать для теста
-                            shape = RoundedCornerShape(25.dp)
-                        )
-                        // Прозрачный Оверлей для клика
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clickable(enabled = !isLoading && startTime != null) { // Клик на оверлее
-                                    Log.d("ClickDebug", "Start Time Overlay Clicked")
-                                    showStartTimePicker = true
-                                }
-                        )
-                    }
-                } else {
-                    Spacer(Modifier.weight(0.7f))
-                } // --- Конец Поля Времени Начала ---
-            } // --- Конец Row Начала ---
-
-            // --- Блок Конца ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                // --- Поле Даты Конца с Оверлеем ---
-                Box( // Родительский Box - НЕ кликабельный
-                    modifier = Modifier.weight(1f)
-                ) {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    OutlinedTextField(
-                        value = endDate.format(deviceDateFormatter),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Дата конца*") },
-                        trailingIcon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = dateTimeError != null,
-                        enabled = !isLoading,
-                        interactionSource = interactionSource,
-                        shape = RoundedCornerShape(25.dp)
-                    )
-                    // Прозрачный Оверлей для клика
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable(enabled = !isLoading) { // Клик на оверлее
-                                Log.d("ClickDebug", "End Date Overlay Clicked")
-                                showEndDatePicker = true
-                            }
-                    )
-                } // --- Конец Поля Даты Конца ---
-
-                // --- Поле Времени Конца с Оверлеем (если не all day) ---
-                if (!isAllDay) {
-                    Box( // Родительский Box - НЕ кликабельный
-                        modifier = Modifier.weight(0.7f)
-                    ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        OutlinedTextField(
-                            value = endTime?.format(deviceTimeFormatter) ?: "--:--",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Время*") },
-                            trailingIcon = { Icon(Icons.Filled.Schedule, contentDescription = null) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = dateTimeError != null && endTime == null,
-                            enabled = !isLoading,
-                            interactionSource = interactionSource,
-                            shape = RoundedCornerShape(25.dp)
-                        )
-                        // Прозрачный Оверлей для клика
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clickable(enabled = !isLoading && endTime != null) { // Клик на оверлее
-                                    Log.d("ClickDebug", "End Time Overlay Clicked")
-                                    showEndTimePicker = true
-                                }
-                        )
-                    }
-                } else {
-                    Spacer(Modifier.weight(0.7f))
-                } // --- Конец Поля Времени Конца ---
-            } // --- Конец Row Конца ---
 
 
             // Описание
@@ -423,7 +290,7 @@ fun CreateEventScreen(
 
             // Сообщение об ошибке от бэкенда
             generalError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                Text(it, color = colorScheme.error, style = typography.bodyMedium)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -437,7 +304,7 @@ fun CreateEventScreen(
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
@@ -446,12 +313,13 @@ fun CreateEventScreen(
             }
         } // End Column
 
-        // --- Диалоги Material 3 ---
+        val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
 
         // Диалог выбора Даты Начала
         if (showStartDatePicker) {
             val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
+                initialSelectedDateMillis = currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
+                // Добавьте selectableDates, если нужно ограничить выбор
             )
             DatePickerDialog(
                 onDismissRequest = { showStartDatePicker = false },
@@ -460,20 +328,19 @@ fun CreateEventScreen(
                         onClick = {
                             datePickerState.selectedDateMillis?.let { millis ->
                                 val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                                startDate = selectedDate
-                                dateTimeError = null // Сброс ошибки
-                                // Если дата конца стала раньше начала, подтягиваем дату конца
-                                if (endDate.isBefore(selectedDate)) {
-                                    endDate = selectedDate
-                                }
-                                // (Опционально) Проверка/коррекция времени конца, если даты совпали и время некорректно
-                                if (!isAllDay && startDate == endDate && startTime != null && endTime != null && !startTime!!.isBefore(endTime!!)) {
-                                    endTime = startTime!!.plusHours(1).withNano(0)
-                                }
+                                // Обновляем состояние через copy
+                                eventDateTimeState = currentDateTimeState.copy(
+                                    startDate = selectedDate,
+                                    // Если дата конца стала раньше начала, подтягиваем ее
+                                    // Или если режим "Один день", дата конца = дате начала
+                                    endDate = if (selectedDate.isAfter(currentDateTimeState.endDate) || currentDateTimeState.startTime == null)
+                                        selectedDate
+                                    else currentDateTimeState.endDate
+                                )
                             }
                             showStartDatePicker = false
                         },
-                        enabled = datePickerState.selectedDateMillis != null // Кнопка активна только если дата выбрана
+                        enabled = datePickerState.selectedDateMillis != null
                     ) { Text("OK") }
                 },
                 dismissButton = {
@@ -485,24 +352,32 @@ fun CreateEventScreen(
         }
 
         // Диалог выбора Времени Начала
-        if (showStartTimePicker && startTime != null) { // Показываем, только если startTime не null
+        if (showStartTimePicker) { // Компонент не запросит, если не нужно
+            val initialTime = currentDateTimeState.startTime ?: LocalTime.now() // Безопасное значение по умолчанию
             val timePickerState = rememberTimePickerState(
-                initialHour = startTime?.hour ?: 0,
-                initialMinute = startTime?.minute ?: 0,
-                is24Hour = true // Или false, если нужен AM/PM
+                initialHour = initialTime.hour,
+                initialMinute = initialTime.minute,
+                is24Hour = DateFormat.is24HourFormat(context) // Учитываем настройку системы
             )
-            TimePickerDialog( // Используем обертку для лучшей компоновки диалога
+            TimePickerDialog( // Используем кастомную обертку
                 onDismissRequest = { showStartTimePicker = false },
                 confirmButton = {
                     TextButton(onClick = {
                         val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                        startTime = selectedTime
-                        dateTimeError = null // Сброс ошибки
-                        // Если даты совпадают и время конца стало раньше или равно времени начала,
+                        // Обновляем состояние через copy
+                        var newEndTime = currentDateTimeState.endTime
+                        // Если дата конца совпадает с датой начала и новое время начала >= времени конца,
                         // сдвигаем время конца на час вперед
-                        if (startDate == endDate && endTime != null && !selectedTime.isBefore(endTime!!)) {
-                            endTime = selectedTime.plusHours(1).withNano(0)
+                        if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
+                            currentDateTimeState.endTime != null &&
+                            !selectedTime.isBefore(currentDateTimeState.endTime)
+                        ) {
+                            newEndTime = selectedTime.plusHours(1).withNano(0)
                         }
+                        eventDateTimeState = currentDateTimeState.copy(
+                            startTime = selectedTime,
+                            endTime = newEndTime
+                        )
                         showStartTimePicker = false
                     }) { Text("OK") }
                 },
@@ -510,20 +385,21 @@ fun CreateEventScreen(
                     TextButton(onClick = { showStartTimePicker = false }) { Text("Отмена") }
                 }
             ) {
-                TimePicker(state = timePickerState)
+                TimePicker(state = timePickerState) // Вставляем сам пикер
             }
         }
 
         // Диалог выбора Даты Конца
-        if (showEndDatePicker) {
+        if (showEndDatePicker) { // Компонент не запросит, если не нужно
             val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
-                // Устанавливаем минимальную дату = дате начала
-                selectableDates = object : SelectableDates {
+                initialSelectedDateMillis = currentDateTimeState.endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
+                selectableDates = object : SelectableDates { // Ограничение выбора
+                    val startMillis = currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
                     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        val selectedInstant = Instant.ofEpochMilli(utcTimeMillis)
-                        val selectedLocalDate = selectedInstant.atZone(systemZoneId).toLocalDate()
-                        return !selectedLocalDate.isBefore(startDate) // Нельзя выбрать дату раньше даты начала
+                        return utcTimeMillis >= startMillis // Нельзя выбрать дату раньше даты начала
+                    }
+                    override fun isSelectableYear(year: Int): Boolean {
+                        return year >= currentDateTimeState.startDate.year // Оптимизация для годов
                     }
                 }
             )
@@ -534,12 +410,9 @@ fun CreateEventScreen(
                         onClick = {
                             datePickerState.selectedDateMillis?.let { millis ->
                                 val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                                endDate = selectedDate
-                                dateTimeError = null // Сброс ошибки
-                                // (Опционально) Проверка/коррекция времени конца, если даты совпали и время некорректно
-                                if (!isAllDay && startDate == endDate && startTime != null && endTime != null && !startTime!!.isBefore(endTime!!)) {
-                                    endTime = startTime!!.plusHours(1).withNano(0)
-                                }
+                                // Обновляем состояние через copy
+                                eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
+                                // Дополнительно можно проверить и скорректировать endTime, если нужно
                             }
                             showEndDatePicker = false
                         },
@@ -555,23 +428,28 @@ fun CreateEventScreen(
         }
 
         // Диалог выбора Времени Конца
-        if (showEndTimePicker && endTime != null) { // Показываем, только если endTime не null
+        if (showEndTimePicker) { // Компонент не запросит, если не нужно
+            val initialTime = currentDateTimeState.endTime ?: currentDateTimeState.startTime?.plusHours(1) ?: LocalTime.now()
             val timePickerState = rememberTimePickerState(
-                initialHour = endTime?.hour ?: 0,
-                initialMinute = endTime?.minute ?: 0,
-                is24Hour = true
+                initialHour = initialTime.hour,
+                initialMinute = initialTime.minute,
+                is24Hour = DateFormat.is24HourFormat(context)
             )
             TimePickerDialog(
                 onDismissRequest = { showEndTimePicker = false },
                 confirmButton = {
                     TextButton(onClick = {
                         val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                        // Простая проверка: если даты одинаковые, время конца не может быть раньше времени начала
-                        if (startDate == endDate && startTime != null && selectedTime.isBefore(startTime!!)) {
-                            Toast.makeText(context, "Время конца не может быть раньше времени начала", Toast.LENGTH_SHORT).show()
+                        // Проверка: если даты одинаковые, время конца не может быть раньше или равно времени начала
+                        if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
+                            currentDateTimeState.startTime != null &&
+                            !currentDateTimeState.startTime.isBefore(selectedTime) // Если startTime НЕ раньше selectedTime (т.е. >=)
+                        )
+                        {
+                            Toast.makeText(context, "Время конца должно быть после времени начала", Toast.LENGTH_SHORT).show()
                         } else {
-                            endTime = selectedTime
-                            dateTimeError = null // Сброс ошибки
+                            // Обновляем состояние через copy
+                            eventDateTimeState = currentDateTimeState.copy(endTime = selectedTime)
                             showEndTimePicker = false
                         }
                     }) { Text("OK") }

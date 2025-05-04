@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.SugNameChips
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +65,7 @@ fun CustomOutlinedTextField(
 
 @Composable
 fun ChipsRow(
-    chips: List<String>,
+    chips: List<SugNameChips>,
     onChipClick: (String) -> Unit
 ) {
     LazyRow(
@@ -74,10 +75,10 @@ fun ChipsRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 10.dp)
     ) {
-        items(chips, key = { it }) { chip ->
+        items(chips, key = { it.name }) { chip ->
             SuggestionChip(
-                onClick = { onChipClick(chip) },
-                label = { Text(chip) },
+                onClick = { onChipClick(chip.fullText) },
+                label = { Text(chip.name) },
                 modifier = Modifier.height(35.dp)
             )
         }
