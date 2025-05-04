@@ -1,12 +1,9 @@
-package com.example.caliindar.ui.screens.main.components
+package com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging
 
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.Context
 import android.util.Log
-import android.widget.DatePicker
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
@@ -15,41 +12,38 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Schedule // Иконка для времени
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.ui.screens.main.MainViewModel
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.AdaptiveContainer
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.ChipsRow
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.CustomOutlinedTextField
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar // Используем Calendar для Date/Time Picker Dialog
-import java.util.Locale
+import java.time.format.FormatStyle
 
-data class CreateEventState(
-    val summary: String = "",
-    val startDate: LocalDate? = null,
-    val startTime: LocalTime? = null,
-    val endDate: LocalDate? = null,
-    val endTime: LocalTime? = null,
+data class EventTimeSettings(
     val isAllDay: Boolean = false,
-    val description: String = "",
-    val location: String = "",
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val navigateBack: Boolean = false // Флаг для навигации назад
+    val isOneDay: Boolean = true,
+    val isRecurrence: Boolean = false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class) // Необходимо для M3 Dialogs и Pickers
@@ -90,10 +84,24 @@ fun CreateEventScreen(
     var showEndTimePicker by remember { mutableStateOf(false) }
 
     // Форматеры
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")) }
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    val currentLocale = LocalConfiguration.current.locales[0]
+    val deviceDateFormatter = remember(currentLocale) {
+        DateTimeFormatter
+            .ofLocalizedDate(FormatStyle.MEDIUM) // MEDIUM обычно хороший баланс (напр., "18 мая 2023")
+            // Можно использовать LONG для "18 мая 2023 г."
+            .withLocale(currentLocale)
+    }
+    // Форматтер для времени, соответствующий настройкам устройства (учитывает 12/24ч)
+    val deviceTimeFormatter = remember(currentLocale) {
+        DateTimeFormatter
+            .ofLocalizedTime(FormatStyle.SHORT) // SHORT обычно "HH:mm" или "h:mm a"
+            .withLocale(currentLocale)
+    }
     val systemZoneId = remember { ZoneId.systemDefault() } // Запоминаем системную зону
 
+    // Чипы автозаполнения
+    val chips = listOf("Work", "Dinner", "Sport", "Chip1", "Chip2", "Chip3")
+    // TODO: СДЕЛАТЬ ИИ ЧИПЫ
     // --- Логика валидации (без изменений) ---
     fun validateInput(): Boolean {
         summaryError = if (summary.isBlank()) "Название не может быть пустым" else null
@@ -156,9 +164,9 @@ fun CreateEventScreen(
 
             if (isAllDay) {
                 val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-                startTimeIso = try { startDate.format(formatter) } catch (e: Exception) { null }
+                startTimeIso = try { startDate.format(formatter) } catch (_: Exception) { null }
                 val effectiveEndDate = endDate.plusDays(1)
-                endTimeIso = try { effectiveEndDate.format(formatter) } catch (e: Exception) { null }
+                endTimeIso = try { effectiveEndDate.format(formatter) } catch (_: Exception) { null }
                 Log.d("CreateEvent", "Formatting All-Day: Start=$startTimeIso, End=$endTimeIso")
             } else {
                 // Используем startTime и endTime, которые точно не null после validateInput()
@@ -188,7 +196,7 @@ fun CreateEventScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Новое событие") },
+                title = { Text("New Event") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack, enabled = !isLoading) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
@@ -205,21 +213,23 @@ fun CreateEventScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedTextField(
-                value = summary,
-                onValueChange = {
-                    summary = it
-                    summaryError = null
-                },
-                label = { Text("Название события*") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = summaryError != null,
-                supportingText = { if (summaryError != null) Text(summaryError!!) },
-                enabled = !isLoading,
-                shape = RoundedCornerShape(25.dp)
-            )
-
+            AdaptiveContainer{
+                CustomOutlinedTextField(
+                    value = summary,
+                    onValueChange = {
+                        summary = it
+                        summaryError = null
+                    },
+                    label = "Event Name",
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = summaryError != null,
+                    supportingText = { if (summaryError != null) Text(summaryError!!) },
+                    enabled = !isLoading,
+                )
+                ChipsRow(chips = chips, onChipClick = { clickedChip ->
+                    summary = clickedChip // Update the text field value
+                })
+            }
             // --- Блок All Day ---
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -266,7 +276,7 @@ fun CreateEventScreen(
                 ) {
                     val interactionSource = remember { MutableInteractionSource() }
                     OutlinedTextField(
-                        value = startDate.format(dateFormatter),
+                        value = startDate.format(deviceDateFormatter),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Дата начала*") },
@@ -295,7 +305,7 @@ fun CreateEventScreen(
                     ) {
                         val interactionSource = remember { MutableInteractionSource() }
                         OutlinedTextField(
-                            value = startTime?.format(timeFormatter) ?: "--:--",
+                            value = startTime?.format(deviceTimeFormatter) ?: "--:--",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Время*") },
@@ -333,7 +343,7 @@ fun CreateEventScreen(
                 ) {
                     val interactionSource = remember { MutableInteractionSource() }
                     OutlinedTextField(
-                        value = endDate.format(dateFormatter),
+                        value = endDate.format(deviceDateFormatter),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Дата конца*") },
@@ -362,7 +372,7 @@ fun CreateEventScreen(
                     ) {
                         val interactionSource = remember { MutableInteractionSource() }
                         OutlinedTextField(
-                            value = endTime?.format(timeFormatter) ?: "--:--",
+                            value = endTime?.format(deviceTimeFormatter) ?: "--:--",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Время*") },
@@ -577,26 +587,4 @@ fun CreateEventScreen(
     } // End Scaffold
 }
 
-// --- Вспомогательный Composable для TimePickerDialog (опционально, для единообразия с DatePickerDialog) ---
-@Composable
-fun TimePickerDialog(
-    title: String = "Выберите время",
-    onDismissRequest: () -> Unit,
-    confirmButton: @Composable (() -> Unit),
-    dismissButton: @Composable (() -> Unit)? = null,
-    content: @Composable () -> Unit,
-) {
-    // Используем стандартный AlertDialog из M3 как контейнер
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(title) },
-        text = {
-            // Обертка для центрирования TimePicker, если нужно
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                content() // Сюда передается TimePicker(state = ...)
-            }
-        },
-        confirmButton = confirmButton,
-        dismissButton = dismissButton
-    )
-}
+

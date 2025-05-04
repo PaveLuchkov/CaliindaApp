@@ -110,8 +110,6 @@ class MainViewModel @Inject constructor(
     // Состояния Настроек
     val timeZone: StateFlow<String> = settingsRepository.timeZoneFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
-    val use12HourFormat: StateFlow<Boolean> = settingsRepository.use12HourFormatFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val botTemperState: StateFlow<String> = settingsRepository.botTemperFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "") // Пустая строка или осмысленный дефолт
 
@@ -273,9 +271,6 @@ class MainViewModel @Inject constructor(
         } else {
             Log.e(TAG, "Attempted to save invalid time zone ID: $zoneId")
         }
-    }
-    fun updateUse12HourFormat(use12Hour: Boolean) {
-        viewModelScope.launch { settingsRepository.saveUse12HourFormat(use12Hour) }
     }
     fun updateBotTemperSetting(newTemper: String) {
         viewModelScope.launch { settingsRepository.saveBotTemper(newTemper) }

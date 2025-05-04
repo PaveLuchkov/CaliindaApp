@@ -38,12 +38,11 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.example.caliindar.data.local.DateTimeUtils.parseToInstant
 import com.example.caliindar.ui.screens.main.CalendarEvent
+import com.example.caliindar.ui.screens.main.components.UIDefaults.CalendarUiDefaults
+import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import java.time.Duration
-import java.time.Instant
 import kotlin.math.abs
 import kotlin.math.exp
-
-val cuid =  CalendarUiDefaults
 
 @Composable
 fun EventListItem(

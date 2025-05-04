@@ -51,7 +51,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.caliindar.ui.screens.main.MainViewModel
-import com.example.caliindar.ui.screens.main.components.calendarui.cuid
+import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 
@@ -63,17 +63,15 @@ fun TimeSettingsScreen(
     title: String
 ) {
     // Используем переданный viewModel
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val currentSavedTimeZone by viewModel.timeZone.collectAsStateWithLifecycle()
     var selectedTimeZoneId by remember(currentSavedTimeZone) {
         mutableStateOf(currentSavedTimeZone.takeIf { it.isNotEmpty() } ?: ZoneId.systemDefault().id)
     }
-    val currentTimeZone by viewModel.timeZone.collectAsStateWithLifecycle()
     var expanded by remember { mutableStateOf(false) }
     val allTimeZones = remember { ZoneId.getAvailableZoneIds().sorted() }
-    val use12Hour by viewModel.use12HourFormat.collectAsStateWithLifecycle()
 
 
     Scaffold(
@@ -102,6 +100,7 @@ fun TimeSettingsScreen(
                     .background(color = colorScheme.surfaceContainer)
                     .padding(16.dp)
             ) {
+                // TODO: Сделать настройку системного или нет таймзоны
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -137,40 +136,6 @@ fun TimeSettingsScreen(
                             )
                         }
                     }
-                }
-            }
-            Spacer(modifier = Modifier.height(10.dp)) // Используй константу
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius))
-                    .background(color = colorScheme.surfaceContainer)
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween // Разносим текст и свитч
-                ) {
-                    Text(
-                        text = "12-часовой формат (AM/PM)",
-                        style = typography.bodyLarge,
-                        modifier = Modifier.weight(1f)
-                            .padding(end = 8.dp) // Занимает место и добавляет отступ
-                    )
-                    Switch(
-                        checked = use12Hour, // Текущее состояние
-                        onCheckedChange = { newValue ->
-                            viewModel.updateUse12HourFormat(newValue) // Сохраняем новое значение
-                            // Можно показать Snackbar об успехе, если нужно
-                            // scope.launch { snackbarHostState.showSnackbar("Формат времени изменен") }
-                        },
-                        colors = SwitchDefaults.colors( // Опционально: настройка цветов
-                            // checkedThumbColor = ...,
-                            // checkedTrackColor = ...,
-                        )
-                    )
                 }
             }
             Spacer(modifier = Modifier.height(10.dp)) // Используй константу

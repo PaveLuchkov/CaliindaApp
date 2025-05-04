@@ -1,5 +1,6 @@
 package com.example.caliindar.util
 
+import android.content.Context
 import android.util.Log
 import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.ui.screens.main.CalendarEvent
@@ -12,6 +13,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
+import android.text.format.DateFormat // <-- Импорт для проверки системной настройки
 
 object  DateTimeFormatterUtil {
     private val TAG = "CalendarDataManager"
@@ -65,37 +67,55 @@ object  DateTimeFormatterUtil {
         }
     }
 
-    private val timeOnlyFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-
-    fun formatEventListTime(event: CalendarEvent, zoneIdString: String, use12Hour: Boolean): String {
+    fun formatEventListTime(
+        context: Context, // <-- Контекст для проверки системной настройки
+        event: CalendarEvent,
+        zoneIdString: String
+    ): String {
         if (event.isAllDay) return "Весь день"
 
         val zoneId = try { ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id }) }
-        catch (e: Exception) { ZoneId.systemDefault() }
+        catch (_: Exception) { ZoneId.systemDefault() }
 
         val startInstant = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)
         val endInstant = DateTimeUtils.parseToInstant(event.endTime, zoneIdString)
 
+        // Определяем системную настройку ОДИН РАЗ
+        val useSystem24HourFormat = DateFormat.is24HourFormat(context)
+
+        // --- ТВОЯ ФУНКЦИЯ formatTime С НЕБОЛЬШИМ ИЗМЕНЕНИЕМ ---
         fun formatTime(instant: Instant?): String {
             if (instant == null) return ""
-            val localTime = instant.atZone(zoneId).toLocalTime()
-            val hour = localTime.hour
-            val minute = localTime.minute
+            return try { // Добавим try-catch на всякий случай
+                val localTime = instant.atZone(zoneId).toLocalTime()
+                val hour = localTime.hour
+                val minute = localTime.minute
 
-            return if (use12Hour) {
-                val amPm = if (hour < 12) "AM" else "PM"
-                val hour12 = if (hour % 12 == 0) 12 else hour % 12
-                if (minute == 0)
-                    "$hour12 $amPm"
-                else
-                    String.format("%d:%02d %s", hour12, minute, amPm)
-            } else {
-                if (minute == 0)
-                    String.format("%02d", hour)
-                else
-                    String.format("%02d:%02d", hour, minute)
+                // Используем системную настройку вместо параметра use12Hour
+                if (!useSystem24HourFormat) { // Если НЕ 24-часовой формат (т.е. 12-часовой AM/PM)
+                    val amPm = if (hour < 12 || hour == 24) "AM" else "PM" // Скорректировал AM/PM для полуночи/полудня
+                    val hour12 = when(hour) {
+                        0, 12 -> 12 // 00:xx -> 12 AM, 12:xx -> 12 PM
+                        else -> hour % 12
+                    }
+                    if (minute == 0) {
+                        "$hour12 $amPm" // Формат без минут
+                    } else {
+                        String.format("%d:%02d %s", hour12, minute, amPm) // Формат с минутами
+                    }
+                } else { // Если 24-часовой формат
+                    if (minute == 0) {
+                        String.format("%02d", hour) // Формат без минут
+                    } else {
+                        String.format("%02d:%02d", hour, minute) // Формат с минутами
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FormatTime", "Error formatting instant manually: $instant", e)
+                ""
             }
         }
+        // --- КОНЕЦ ТВОЕЙ ФУНКЦИИ formatTime ---
 
         return when {
             startInstant != null && endInstant != null -> {

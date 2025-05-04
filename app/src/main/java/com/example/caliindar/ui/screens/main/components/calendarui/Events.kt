@@ -30,11 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.data.local.DateTimeUtils.parseToInstant
+import com.example.caliindar.ui.screens.main.components.UIDefaults.CalendarUiDefaults
+import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -168,7 +171,7 @@ fun DayEventsPage(
             }
         }
     }
-    val use12Hour by viewModel.use12HourFormat.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // --- ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ ---
     val targetScrollIndex = remember(timedEvents, currentTime, nextStartTime, isToday, currentTimeZoneId) {
@@ -239,6 +242,7 @@ fun DayEventsPage(
                     .background(color = headerBackgroundColor)
             ){
                 Text(
+                    // TODO: ЗАМЕНИТЬ ОТОБРАЖЕНИЕ ВРЕМЕНИ НА ЛОКАЛЬ
                     text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))),
                     style = typography.titleLarge,
                     fontWeight = FontWeight.Medium,
@@ -267,8 +271,8 @@ fun DayEventsPage(
 
             // Список Событий для этого дня
             if (timedEvents.isNotEmpty()) {
-                val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId, use12Hour) {
-                    { event -> DateTimeFormatterUtil.formatEventListTime(event, currentTimeZoneId, use12Hour) } // Передаем оба параметра
+                val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId) {
+                    { event -> DateTimeFormatterUtil.formatEventListTime(context, event, currentTimeZoneId) } // Передаем оба параметра
                 }
                 EventsList(
                     events = timedEvents, // Передаем только события со временем

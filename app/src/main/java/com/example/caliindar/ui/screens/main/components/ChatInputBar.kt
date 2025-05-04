@@ -128,7 +128,7 @@ fun ChatInputBar(
                         val selectedDate = viewModel.currentVisibleDate.value // Берем видимую дату
                         navController.navigate("create_event/${selectedDate.toEpochDay()}")
                     },
-                    enabled = isKeyboardToggleEnabled
+                    // enabled = isKeyboardToggleEnabled TODO : enable after done
                 ) {
                     Icon(
                         imageVector = Icons.Filled.AddCircle,

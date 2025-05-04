@@ -1,17 +1,7 @@
-package com.example.caliindar.ui.screens.main.components.calendarui
+package com.example.caliindar.ui.screens.main.components.UIDefaults
 
-import android.util.Log
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
 // --- Константы для UI и логики ---
 object CalendarUiDefaults {
@@ -61,12 +51,12 @@ object CalendarUiDefaults {
     const val ShapeMainAlpha = 0.95f // Alpha for the main star shape
     const val SHAPEINNERRADIUS = 0.3f // Alpha for the main star shape
 
+
+
+    // CreationScreen
+    val ContainerPadding = 10.dp
+    val ContainerCornerRadius = 25.dp
+
 }
 
-// --- Вспомогательные функции и классы ---
-// (Оставим здесь же для простоты примера, но можно вынести в отдельный файл utils)
-
-// Улучшенный парсер
-private val isoOffsetDateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-private val isoLocalDateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
+val cuid = CalendarUiDefaults

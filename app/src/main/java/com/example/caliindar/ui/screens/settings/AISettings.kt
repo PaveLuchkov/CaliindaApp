@@ -45,7 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.caliindar.ui.screens.main.MainViewModel
-import com.example.caliindar.ui.screens.main.components.calendarui.cuid
+import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

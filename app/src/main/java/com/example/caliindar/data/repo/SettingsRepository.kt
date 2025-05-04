@@ -70,24 +70,4 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    val use12HourFormatFlow: Flow<Boolean> = dataStore.data
-        .catch { exception ->
-            // ... обработка ошибок ...
-            emit(emptyPreferences())
-        }
-        .map { preferences ->
-            // false (24-часа) по умолчанию, если ключ не найден
-            preferences[PreferencesKeys.USE_12_HOUR_FORMAT] ?: false
-        }
-
-    suspend fun saveUse12HourFormat(use12Hour: Boolean) {
-        try {
-            dataStore.edit { preferences ->
-                preferences[PreferencesKeys.USE_12_HOUR_FORMAT] = use12Hour
-            }
-            Log.i(TAG, "Saved 12-hour format setting: $use12Hour")
-        } catch (e: IOException) {
-            Log.e(TAG, "Error saving 12-hour format setting.", e)
-        }
-    }
 }

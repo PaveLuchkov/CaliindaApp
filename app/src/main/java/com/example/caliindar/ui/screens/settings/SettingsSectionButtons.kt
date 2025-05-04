@@ -34,7 +34,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.caliindar.R
 import com.example.caliindar.ui.screens.main.MainViewModel
-import com.example.caliindar.ui.screens.main.components.calendarui.cuid
+import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import com.example.caliindar.ui.theme.Typography
 
 
