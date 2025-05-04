@@ -1,6 +1,7 @@
 package com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -39,6 +40,7 @@ fun AdaptiveContainer(
             .padding(cuid.ContainerPadding) // Внутренний отступ
             .then(modifier), // Применяем внешние модификации, если они есть
         horizontalAlignment = Alignment.CenterHorizontally, // Выравнивание по вертикали по центру
+        verticalArrangement = Arrangement.Center,
         content = content // Вставляем содержимое из слота
     )
 }

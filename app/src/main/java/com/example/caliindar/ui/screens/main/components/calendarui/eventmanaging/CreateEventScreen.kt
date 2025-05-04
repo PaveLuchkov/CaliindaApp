@@ -4,29 +4,20 @@ package com.example.caliindar.ui.screens.main.components.calendarui.eventmanagin
 import android.text.format.DateFormat
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Schedule // Иконка для времени
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.ui.screens.main.MainViewModel
@@ -34,22 +25,13 @@ import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventNameSection
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.AdaptiveContainer
-import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.ChipsRow
-import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.CustomOutlinedTextField
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerDialog
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-
-data class EventTimeSettings(
-    val isAllDay: Boolean = false,
-    val isOneDay: Boolean = true,
-    val isRecurrence: Boolean = false,
-)
 
 @OptIn(ExperimentalMaterial3Api::class) // Необходимо для M3 Dialogs и Pickers
 @Composable
@@ -63,7 +45,6 @@ fun CreateEventScreen(
     var location by remember { mutableStateOf("") }
 
     var summaryError by remember { mutableStateOf<String?>(null) }
-    var dateTimeError by remember { mutableStateOf<String?>(null) }
     var validationError by remember { mutableStateOf<String?>(null) }
 
     val createEventState by viewModel.createEventResult.collectAsState()
@@ -80,20 +61,7 @@ fun CreateEventScreen(
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    // Форматеры
-    val currentLocale = LocalConfiguration.current.locales[0]
-    val deviceDateFormatter = remember(currentLocale) {
-        DateTimeFormatter
-            .ofLocalizedDate(FormatStyle.MEDIUM) // MEDIUM обычно хороший баланс (напр., "18 мая 2023")
-            // Можно использовать LONG для "18 мая 2023 г."
-            .withLocale(currentLocale)
-    }
-    // Форматтер для времени, соответствующий настройкам устройства (учитывает 12/24ч)
-    val deviceTimeFormatter = remember(currentLocale) {
-        DateTimeFormatter
-            .ofLocalizedTime(FormatStyle.SHORT) // SHORT обычно "HH:mm" или "h:mm a"
-            .withLocale(currentLocale)
-    }
+    // Форматер
     val systemZoneId = remember { ZoneId.systemDefault() }
 
     var eventDateTimeState by remember {
@@ -237,24 +205,22 @@ fun CreateEventScreen(
                     isLoading = isLoading
                 )
             }
-            // --- Общая ошибка даты/времени ---
-            Spacer(modifier = Modifier.height(4.dp)) // Небольшой отступ
-
             // --- НОВОЕ: Используем EventDateTimePicker ---
-            EventDateTimePicker(
-                initialState = eventDateTimeState,
-                onStateChange = { newState ->
-                    eventDateTimeState = newState
-                    validationError = null // Сброс ошибки валидации при любом изменении
-                },
-                isLoading = isLoading,
-                onRequestShowStartDatePicker = { showStartDatePicker = true },
-                onRequestShowStartTimePicker = { showStartTimePicker = true },
-                onRequestShowEndDatePicker = { showEndDatePicker = true },
-                onRequestShowEndTimePicker = { showEndTimePicker = true },
-                modifier = Modifier.fillMaxWidth() // Занимает всю ширину
-            )
-
+            AdaptiveContainer{
+                EventDateTimePicker(
+                    initialState = eventDateTimeState,
+                    onStateChange = { newState ->
+                        eventDateTimeState = newState
+                        validationError = null // Сброс ошибки валидации при любом изменении
+                    },
+                    isLoading = isLoading,
+                    onRequestShowStartDatePicker = { showStartDatePicker = true },
+                    onRequestShowStartTimePicker = { showStartTimePicker = true },
+                    onRequestShowEndDatePicker = { showEndDatePicker = true },
+                    onRequestShowEndTimePicker = { showEndTimePicker = true },
+                    modifier = Modifier.fillMaxWidth() // Занимает всю ширину
+                )
+            }
             validationError?.let {
                 Text(
                     it,

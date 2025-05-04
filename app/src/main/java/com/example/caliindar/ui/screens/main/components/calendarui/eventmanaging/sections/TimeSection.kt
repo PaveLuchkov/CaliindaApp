@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -80,6 +81,15 @@ fun EventDateTimePicker(
     var dateTimeError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
+
+    val timeStart = "Time Start*"
+    val timeEnd = "Time End*"
+    val dateStart = "Date Start*"
+    val dateEnd = "Date End*"
+    val dateSingle = "Date*"
+    val allDay  = "All Day"
+    val oneDay  = "One Day"
+    val recEvent  = "Recurrence"
 
     // --- Форматтеры для отображения (без изменений) ---
     val deviceDateFormatter = remember {
@@ -153,12 +163,13 @@ fun EventDateTimePicker(
     }
 
     // --- UI Компонента ---
-    Column(modifier = modifier) {
-
+    Column(
+        modifier = modifier
+    ) {
         // --- Filter Chips ---
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         ) {
             // --- Чип "All Day" ---
             FilterChip(
@@ -182,7 +193,7 @@ fun EventDateTimePicker(
                         }
                     }
                 },
-                label = { Text("Весь день") },
+                label = { Text(allDay) },
                 enabled = !isLoading
             )
 
@@ -218,7 +229,7 @@ fun EventDateTimePicker(
                         // Ничего не меняем здесь при выключении.
                     }
                 },
-                label = { Text("Один день") },
+                label = { Text(oneDay) },
                 enabled = !isLoading
             )
 
@@ -226,7 +237,7 @@ fun EventDateTimePicker(
             FilterChip(
                 selected = isRecurring,
                 onClick = { isRecurring = !isRecurring },
-                label = { Text("Повторение") },
+                label = { Text(recEvent) },
                 leadingIcon = if (isRecurring) {
                     { Icon(Icons.Filled.Check, contentDescription = "Повторение вкл.") }
                 } else null,
@@ -252,7 +263,7 @@ fun EventDateTimePicker(
             if (isAllDay && isOneDay) {
                 // Случай 1: All Day + One Day = Только Дата Начала
                 DatePickerField(
-                    label = "Дата*",
+                    label = dateSingle,
                     date = startDate,
                     dateFormatter = deviceDateFormatter,
                     isError = dateTimeError != null,
@@ -267,15 +278,15 @@ fun EventDateTimePicker(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
-                    DatePickerField("Дата начала*", startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(1f))
-                    DatePickerField("Дата конца*", endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(1f))
+                    DatePickerField(dateStart, startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(1f))
+                    DatePickerField(dateEnd, endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(1f))
                 }
             } else if (isOneDay) {
                 // Случай 3: Только One Day = Дата Начала + Время Начала + Время Конца
                 // Отобразим в двух строках для лучшего вида на малых экранах
                 // Строка 1: Дата
                 DatePickerField(
-                    label = "Дата*",
+                    label = dateSingle,
                     date = startDate,
                     dateFormatter = deviceDateFormatter,
                     isError = dateTimeError != null,
@@ -290,7 +301,7 @@ fun EventDateTimePicker(
                     verticalAlignment = Alignment.Top
                 ) {
                     TimePickerField(
-                        label = "Время начала*",
+                        label = timeStart,
                         time = startTime,
                         timeFormatter = deviceTimeFormatter,
                         isError = dateTimeError != null && startTime == null,
@@ -299,7 +310,7 @@ fun EventDateTimePicker(
                         modifier = Modifier.weight(1f) // Делим поровну
                     )
                     TimePickerField(
-                        label = "Время конца*",
+                        label = timeEnd,
                         time = endTime, // Используем endTime
                         timeFormatter = deviceTimeFormatter,
                         isError = dateTimeError != null && endTime == null, // Проверяем endTime
@@ -316,8 +327,8 @@ fun EventDateTimePicker(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
-                    DatePickerField("Дата начала*", startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(0.6f))
-                    TimePickerField("Время начала*", startTime, deviceTimeFormatter, dateTimeError != null && startTime == null, isLoading, onRequestShowStartTimePicker, Modifier.weight(0.4f))
+                    DatePickerField(dateStart, startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(0.6f))
+                    TimePickerField(timeStart, startTime, deviceTimeFormatter, dateTimeError != null && startTime == null, isLoading, onRequestShowStartTimePicker, Modifier.weight(0.4f))
                 }
                 // Блок Конца
                 Row(
@@ -325,8 +336,8 @@ fun EventDateTimePicker(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
-                    DatePickerField("Дата конца*", endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(0.6f))
-                    TimePickerField("Время конца*", endTime, deviceTimeFormatter, dateTimeError != null && endTime == null, isLoading, onRequestShowEndTimePicker, Modifier.weight(0.4f))
+                    DatePickerField(dateEnd, endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(0.6f))
+                    TimePickerField(timeEnd, endTime, deviceTimeFormatter, dateTimeError != null && endTime == null, isLoading, onRequestShowEndTimePicker, Modifier.weight(0.4f))
                 }
             }
         } // Конец Column для полей ввода
