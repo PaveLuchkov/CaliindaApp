@@ -17,6 +17,8 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.hilt.navigation.compose.hiltViewModel
 // AndroidX Compose
 
@@ -38,6 +40,7 @@ import com.example.caliindar.ui.theme.CaliindaTheme
 import com.example.caliindar.ui.screens.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.Composable // Для @Composable AppNavHost
+import androidx.compose.ui.Modifier
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -84,7 +87,8 @@ class MainActivity : ComponentActivity() {
                         // Запускаем процесс входа через лаунчер
                         // .let не обязателен, т.к. getSignInIntent должен всегда возвращать Intent
                         googleSignInLauncher.launch(signInIntent)
-                    }
+                    },
+                    modifier = Modifier.background(colorScheme.background),
                 )
             }
         }
