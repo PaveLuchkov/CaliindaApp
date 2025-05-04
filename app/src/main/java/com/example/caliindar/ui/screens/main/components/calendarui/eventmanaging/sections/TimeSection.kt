@@ -14,10 +14,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -238,9 +234,6 @@ fun EventDateTimePicker(
                 selected = isRecurring,
                 onClick = { isRecurring = !isRecurring },
                 label = { Text(recEvent) },
-                leadingIcon = if (isRecurring) {
-                    { Icon(Icons.Filled.Check, contentDescription = "Повторение вкл.") }
-                } else null,
                 enabled = !isLoading
             )
         }
@@ -377,7 +370,6 @@ private fun DatePickerField(
     ClickableTextField(
         value = date.format(dateFormatter),
         label = label,
-        trailingIcon = { Icon(Icons.Filled.DateRange, contentDescription = "Выбрать дату") },
         isError = isError,
         isLoading = isLoading,
         onClick = onClick,
@@ -399,7 +391,6 @@ private fun TimePickerField(
     ClickableTextField(
         value = time?.format(timeFormatter) ?: "--:--",
         label = label,
-        trailingIcon = { Icon(Icons.Filled.Schedule, contentDescription = "Выбрать время") },
         isError = isError,
         isLoading = isLoading,
         onClick = onClick,
@@ -413,7 +404,6 @@ private fun TimePickerField(
 private fun ClickableTextField(
     value: String,
     label: String,
-    trailingIcon: @Composable (() -> Unit)? = null,
     isError: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
@@ -425,7 +415,6 @@ private fun ClickableTextField(
             onValueChange = {}, // Не изменяется напрямую
             readOnly = true,
             label = { Text(label) },
-            trailingIcon = trailingIcon,
             modifier = Modifier.fillMaxWidth(),
             isError = isError,
             enabled = !isLoading,

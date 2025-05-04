@@ -15,8 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.local.DateTimeUtils
@@ -186,6 +189,16 @@ fun CreateEventScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onSaveClick,
+                elevation = FloatingActionButtonDefaults.elevation(
+                //    defaultElevation = 0.dp
+                )
+            ) {
+                Icon(Icons.Filled.Check, "Localized description")
+            }
         }
     ) { paddingValues ->
         Column(
@@ -232,53 +245,32 @@ fun CreateEventScreen(
 
 
 
-            // Описание
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Описание") },
-                modifier = Modifier.fillMaxWidth().height(100.dp),
-                maxLines = 4,
-                enabled = !isLoading,
-                shape = RoundedCornerShape(25.dp)
-            )
-
-            // Местоположение
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Местоположение") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = !isLoading,
-                shape = RoundedCornerShape(25.dp)
-            )
-
+            // Описание & Местоположение
+            AdaptiveContainer{
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    maxLines = 4,
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(25.dp)
+                )
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("Местоположение") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(25.dp)
+                )
+            }
             // Сообщение об ошибке от бэкенда
             generalError?.let {
                 Text(it, color = colorScheme.error, style = typography.bodyMedium)
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Кнопка Сохранить
-            Button(
-                onClick = onSaveClick,
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Сохранить")
-                }
-            }
         } // End Column
-
         val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
 
         // Диалог выбора Даты Начала
