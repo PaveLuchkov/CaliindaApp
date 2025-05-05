@@ -135,7 +135,7 @@ fun EventListItem(
             .background(cardBackground)
             .height(targetHeight) // Высота применяется здесь
     ) {
-        // --- Декорация (оставлена без изменений по запросу) ---
+        // --- Декорация ---
         if (!isMicroEvent) {
             // Тень
             Box(

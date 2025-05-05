@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.local.DateTimeUtils
+import com.example.caliindar.ui.common.BackgroundShapeContext
+import com.example.caliindar.ui.common.BackgroundShapes
 import com.example.caliindar.ui.screens.main.MainViewModel
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimePicker
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
@@ -84,17 +86,29 @@ fun CreateEventScreen(
             )
         )
     }
+
     fun formatEventTimesForSaving(
         state: EventDateTimeState,
         timeZoneId: String? // Теперь может быть null
     ): Pair<String?, String?> {
         return if (state.isAllDay) {
             val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-            val startDateStr = try { state.startDate.format(formatter) } catch (_: Exception) { null }
+            val startDateStr = try {
+                state.startDate.format(formatter)
+            } catch (_: Exception) {
+                null
+            }
             // Для all-day события конец должен быть на следующий день после фактического последнего дня
             val effectiveEndDate = state.endDate.plusDays(1)
-            val endDateStr = try { effectiveEndDate.format(formatter) } catch (_: Exception) { null }
-            Log.d("CreateEvent", "Formatting All-Day: Start Date=$startDateStr, End Date=$endDateStr")
+            val endDateStr = try {
+                effectiveEndDate.format(formatter)
+            } catch (_: Exception) {
+                null
+            }
+            Log.d(
+                "CreateEvent",
+                "Formatting All-Day: Start Date=$startDateStr, End Date=$endDateStr"
+            )
             Pair(startDateStr, endDateStr)
         } else {
             // Для событий со временем используем ISO с оффсетом
@@ -103,9 +117,22 @@ fun CreateEventScreen(
                 return Pair(null, null) // Не можем форматировать без таймзоны
             }
             // validateInput уже проверил, что startTime и endTime не null
-            val startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.startDate, state.startTime!!, false, timeZoneId)
-            val endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.endDate, state.endTime!!, false, timeZoneId)
-            Log.d("CreateEvent", "Formatting Timed: Start DateTime=$startTimeIso, End DateTime=$endTimeIso")
+            val startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(
+                state.startDate,
+                state.startTime!!,
+                false,
+                timeZoneId
+            )
+            val endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(
+                state.endDate,
+                state.endTime!!,
+                false,
+                timeZoneId
+            )
+            Log.d(
+                "CreateEvent",
+                "Formatting Timed: Start DateTime=$startTimeIso, End DateTime=$endTimeIso"
+            )
             Pair(startTimeIso, endTimeIso)
         }
     }
@@ -136,12 +163,15 @@ fun CreateEventScreen(
                 viewModel.consumeCreateEventResult()
                 onNavigateBack()
             }
+
             is CreateEventResult.Error -> {
                 generalError = result.message
                 viewModel.consumeCreateEventResult()
             }
+
             is CreateEventResult.Loading -> generalError = null
-            is CreateEventResult.Idle -> { /* Можно убрать generalError, если нужно */ }
+            is CreateEventResult.Idle -> { /* Можно убрать generalError, если нужно */
+            }
         }
     }
 
@@ -154,7 +184,10 @@ fun CreateEventScreen(
 
             if (startStr == null || endStr == null) {
                 validationError = "Ошибка форматирования даты/времени."
-                Log.e("CreateEvent", "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId")
+                Log.e(
+                    "CreateEvent",
+                    "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId"
+                )
                 return@saveLambda
             }
             var baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
@@ -168,7 +201,7 @@ fun CreateEventScreen(
                     val bydayString = eventDateTimeState.selectedWeekdays
                         .sorted()
                         .joinToString(",") { day ->
-                            when(day) {
+                            when (day) {
                                 DayOfWeek.MONDAY -> "MO"
                                 DayOfWeek.TUESDAY -> "TU"
                                 DayOfWeek.WEDNESDAY -> "WE"
@@ -196,17 +229,20 @@ fun CreateEventScreen(
                             // val endDateTimeUtc = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC)
 
                             // Более точный подход: конец дня в системной таймзоне -> UTC
-                            val endDateTimeUtc = endDate.atTime(23, 59, 59).atZone(systemZone).withZoneSameInstant(ZoneOffset.UTC)
+                            val endDateTimeUtc = endDate.atTime(23, 59, 59).atZone(systemZone)
+                                .withZoneSameInstant(ZoneOffset.UTC)
 
                             val untilString = untilFormatter.format(endDateTimeUtc)
                             ruleParts.add("UNTIL=$untilString")
                         }
                     }
+
                     RecurrenceEndType.COUNT -> {
                         eventDateTimeState.recurrenceCount?.let { count ->
                             ruleParts.add("COUNT=$count")
                         }
                     }
+
                     RecurrenceEndType.NEVER -> {
                         // Ничего не добавляем
                     }
@@ -220,8 +256,8 @@ fun CreateEventScreen(
 
             viewModel.createEvent(
                 summary = summary.trim(),
-                startTimeString  = startStr, // Отправляем отформатированную строку
-                endTimeString  = endStr,     // Отправляем отформатированную строку
+                startTimeString = startStr, // Отправляем отформатированную строку
+                endTimeString = endStr,     // Отправляем отформатированную строку
                 isAllDay = eventDateTimeState.isAllDay,
                 timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId, // Передаем ID таймзоны только для timed событий
                 description = description.trim().takeIf { it.isNotEmpty() },
@@ -248,280 +284,316 @@ fun CreateEventScreen(
             FloatingActionButton(
                 onClick = onSaveClick,
                 elevation = FloatingActionButtonDefaults.elevation(
-                //    defaultElevation = 0.dp
+                    //    defaultElevation = 0.dp
                 )
             ) {
                 Icon(Icons.Filled.Check, "Localized description")
             }
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxSize()
         ) {
-            AdaptiveContainer{
-                EventNameSection(
-                    summary = summary,
-                    summaryError = summaryError,
-                    onSummaryChange = { summary = it },
-                    onSummaryErrorChange = { summaryError = it },
-                    isLoading = isLoading
+            BackgroundShapes(BackgroundShapeContext.EventCreation)
+
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AdaptiveContainer {
+                    EventNameSection(
+                        summary = summary,
+                        summaryError = summaryError,
+                        onSummaryChange = { summary = it },
+                        onSummaryErrorChange = { summaryError = it },
+                        isLoading = isLoading
+                    )
+                }
+                // --- НОВОЕ: Используем EventDateTimePicker ---
+                AdaptiveContainer {
+                    EventDateTimePicker(
+                        state = eventDateTimeState,
+                        onStateChange = { newState ->
+                            eventDateTimeState = newState
+                            validationError = null // Сброс ошибки валидации при любом изменении
+                        },
+                        isLoading = isLoading,
+                        onRequestShowStartDatePicker = { showStartDatePicker = true },
+                        onRequestShowStartTimePicker = { showStartTimePicker = true },
+                        onRequestShowEndDatePicker = { showEndDatePicker = true },
+                        onRequestShowEndTimePicker = { showEndTimePicker = true },
+                        onRequestShowRecurrenceEndDatePicker = {
+                            showRecurrenceEndDatePicker = true
+                        },
+                        modifier = Modifier.fillMaxWidth() // Занимает всю ширину
+                    )
+                }
+                validationError?.let {
+                    Text(
+                        it,
+                        color = colorScheme.error,
+                        style = typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp) // Немного отступа сверху
+                    )
+                }
+                // Описание & Местоположение
+                AdaptiveContainer {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Описание") },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        maxLines = 4,
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(25.dp)
+                    )
+                    OutlinedTextField(
+                        value = location,
+                        onValueChange = { location = it },
+                        label = { Text("Местоположение") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(25.dp)
+                    )
+                }
+                // Сообщение об ошибке от бэкенда
+                generalError?.let {
+                    Text(it, color = colorScheme.error, style = typography.bodyMedium)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            } // End Column
+            val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
+
+            // Диалог выбора Даты Начала
+            if (showStartDatePicker) {
+                val datePickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = currentDateTimeState.startDate.atStartOfDay(
+                        systemZoneId
+                    ).toInstant().toEpochMilli()
+                    // Добавьте selectableDates, если нужно ограничить выбор
                 )
-            }
-            // --- НОВОЕ: Используем EventDateTimePicker ---
-            AdaptiveContainer{
-                EventDateTimePicker(
-                    state = eventDateTimeState,
-                    onStateChange = { newState ->
-                        eventDateTimeState = newState
-                        validationError = null // Сброс ошибки валидации при любом изменении
+                DatePickerDialog(
+                    onDismissRequest = { showStartDatePicker = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                datePickerState.selectedDateMillis?.let { millis ->
+                                    val selectedDate =
+                                        Instant.ofEpochMilli(millis).atZone(systemZoneId)
+                                            .toLocalDate()
+                                    // Обновляем состояние через copy
+                                    eventDateTimeState = currentDateTimeState.copy(
+                                        startDate = selectedDate,
+                                        // Если дата конца стала раньше начала, подтягиваем ее
+                                        // Или если режим "Один день", дата конца = дате начала
+                                        endDate = if (selectedDate.isAfter(currentDateTimeState.endDate) || currentDateTimeState.startTime == null)
+                                            selectedDate
+                                        else currentDateTimeState.endDate
+                                    )
+                                }
+                                showStartDatePicker = false
+                            },
+                            enabled = datePickerState.selectedDateMillis != null
+                        ) { Text("OK") }
                     },
-                    isLoading = isLoading,
-                    onRequestShowStartDatePicker = { showStartDatePicker = true },
-                    onRequestShowStartTimePicker = { showStartTimePicker = true },
-                    onRequestShowEndDatePicker = { showEndDatePicker = true },
-                    onRequestShowEndTimePicker = { showEndTimePicker = true },
-                    onRequestShowRecurrenceEndDatePicker = { showRecurrenceEndDatePicker = true },
-                    modifier = Modifier.fillMaxWidth() // Занимает всю ширину
-                )
-            }
-            validationError?.let {
-                Text(
-                    it,
-                    color = colorScheme.error,
-                    style = typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp) // Немного отступа сверху
-                )
-            }
-            // Описание & Местоположение
-            AdaptiveContainer{
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Описание") },
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    maxLines = 4,
-                    enabled = !isLoading,
-                    shape = RoundedCornerShape(25.dp)
-                )
-                OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text("Местоположение") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = !isLoading,
-                    shape = RoundedCornerShape(25.dp)
-                )
-            }
-            // Сообщение об ошибке от бэкенда
-            generalError?.let {
-                Text(it, color = colorScheme.error, style = typography.bodyMedium)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        } // End Column
-        val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
-
-        // Диалог выбора Даты Начала
-        if (showStartDatePicker) {
-            val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
-                // Добавьте selectableDates, если нужно ограничить выбор
-            )
-            DatePickerDialog(
-                onDismissRequest = { showStartDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            datePickerState.selectedDateMillis?.let { millis ->
-                                val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                                // Обновляем состояние через copy
-                                eventDateTimeState = currentDateTimeState.copy(
-                                    startDate = selectedDate,
-                                    // Если дата конца стала раньше начала, подтягиваем ее
-                                    // Или если режим "Один день", дата конца = дате начала
-                                    endDate = if (selectedDate.isAfter(currentDateTimeState.endDate) || currentDateTimeState.startTime == null)
-                                        selectedDate
-                                    else currentDateTimeState.endDate
-                                )
-                            }
-                            showStartDatePicker = false
-                        },
-                        enabled = datePickerState.selectedDateMillis != null
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showStartDatePicker = false }) { Text("Отмена") }
-                }
-            ) {
-                DatePicker(state = datePickerState)
-            }
-        }
-        // Диалог выбора Времени Начала
-        if (showStartTimePicker) { // Компонент не запросит, если не нужно
-            val initialTime = currentDateTimeState.startTime ?: LocalTime.now() // Безопасное значение по умолчанию
-            val timePickerState = rememberTimePickerState(
-                initialHour = initialTime.hour,
-                initialMinute = initialTime.minute,
-                is24Hour = DateFormat.is24HourFormat(context) // Учитываем настройку системы
-            )
-            TimePickerDialog( // Используем кастомную обертку
-                onDismissRequest = { showStartTimePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                        // Обновляем состояние через copy
-                        var newEndTime = currentDateTimeState.endTime
-                        // Если дата конца совпадает с датой начала и новое время начала >= времени конца,
-                        // сдвигаем время конца на час вперед
-                        if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
-                            currentDateTimeState.endTime != null &&
-                            !selectedTime.isBefore(currentDateTimeState.endTime)
-                        ) {
-                            newEndTime = selectedTime.plusHours(1).withNano(0)
-                        }
-                        eventDateTimeState = currentDateTimeState.copy(
-                            startTime = selectedTime,
-                            endTime = newEndTime
-                        )
-                        showStartTimePicker = false
-                    }) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showStartTimePicker = false }) { Text("Отмена") }
-                }
-            ) {
-                TimePicker(state = timePickerState) // Вставляем сам пикер
-            }
-        }
-
-        // Диалог выбора Даты Конца
-        if (showEndDatePicker) { // Компонент не запросит, если не нужно
-            val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = currentDateTimeState.endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
-                selectableDates = object : SelectableDates { // Ограничение выбора
-                    val startMillis = currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
-                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        return utcTimeMillis >= startMillis // Нельзя выбрать дату раньше даты начала
+                    dismissButton = {
+                        TextButton(onClick = { showStartDatePicker = false }) { Text("Отмена") }
                     }
-                    override fun isSelectableYear(year: Int): Boolean {
-                        return year >= currentDateTimeState.startDate.year // Оптимизация для годов
-                    }
+                ) {
+                    DatePicker(state = datePickerState)
                 }
-            )
-            DatePickerDialog(
-                onDismissRequest = { showEndDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            datePickerState.selectedDateMillis?.let { millis ->
-                                val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                                // Обновляем состояние через copy
-                                eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
-                                // Дополнительно можно проверить и скорректировать endTime, если нужно
-                            }
-                            showEndDatePicker = false
-                        },
-                        enabled = datePickerState.selectedDateMillis != null
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showEndDatePicker = false }) { Text("Отмена") }
-                }
-            ) {
-                DatePicker(state = datePickerState)
             }
-        }
-
-        // Диалог выбора Времени Конца
-        if (showEndTimePicker) { // Компонент не запросит, если не нужно
-            val initialTime = currentDateTimeState.endTime ?: currentDateTimeState.startTime?.plusHours(1) ?: LocalTime.now()
-            val timePickerState = rememberTimePickerState(
-                initialHour = initialTime.hour,
-                initialMinute = initialTime.minute,
-                is24Hour = DateFormat.is24HourFormat(context)
-            )
-            TimePickerDialog(
-                onDismissRequest = { showEndTimePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                        // Проверка: если даты одинаковые, время конца не может быть раньше или равно времени начала
-                        if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
-                            currentDateTimeState.startTime != null &&
-                            !currentDateTimeState.startTime.isBefore(selectedTime) // Если startTime НЕ раньше selectedTime (т.е. >=)
-                        )
-                        {
-                            Toast.makeText(context, "Время конца должно быть после времени начала", Toast.LENGTH_SHORT).show()
-                        } else {
+            // Диалог выбора Времени Начала
+            if (showStartTimePicker) { // Компонент не запросит, если не нужно
+                val initialTime = currentDateTimeState.startTime
+                    ?: LocalTime.now() // Безопасное значение по умолчанию
+                val timePickerState = rememberTimePickerState(
+                    initialHour = initialTime.hour,
+                    initialMinute = initialTime.minute,
+                    is24Hour = DateFormat.is24HourFormat(context) // Учитываем настройку системы
+                )
+                TimePickerDialog( // Используем кастомную обертку
+                    onDismissRequest = { showStartTimePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val selectedTime =
+                                LocalTime.of(timePickerState.hour, timePickerState.minute)
+                                    .withNano(0)
                             // Обновляем состояние через copy
-                            eventDateTimeState = currentDateTimeState.copy(endTime = selectedTime)
-                            showEndTimePicker = false
-                        }
-                    }) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showEndTimePicker = false }) { Text("Отмена") }
-                }
-            ) {
-                TimePicker(state = timePickerState)
-            }
-        }
-        if (showRecurrenceEndDatePicker) {
-            // Рассчитываем начальную дату для пикера
-            val initialSelectedDateMillis = eventDateTimeState.recurrenceEndDate
-                ?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-                ?: eventDateTimeState.startDate.plusMonths(1) // По умолчанию через месяц от старта
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-            // Состояние DatePicker'а
-            val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = initialSelectedDateMillis,
-                selectableDates = object : SelectableDates {
-                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                        val selectedLocalDate = Instant.ofEpochMilli(utcTimeMillis)
-                            .atZone(ZoneId.systemDefault()).toLocalDate()
-                        // Не раньше даты начала события
-                        return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
-                    }
-                    override fun isSelectableYear(year: Int): Boolean {
-                        return year >= eventDateTimeState.startDate.year
-                    }
-                }
-            )
-            // Создаем DatePickerDialog с правильной сигнатурой
-            DatePickerDialog(
-                onDismissRequest = { showRecurrenceEndDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            datePickerState.selectedDateMillis?.let { millis ->
-                                val selectedDate = Instant.ofEpochMilli(millis)
-                                    .atZone(ZoneId.systemDefault()).toLocalDate()
-                                eventDateTimeState = eventDateTimeState.copy(
-                                    recurrenceEndDate = selectedDate,
-                                    recurrenceEndType = RecurrenceEndType.DATE,
-                                    recurrenceCount = null
-                                )
+                            var newEndTime = currentDateTimeState.endTime
+                            // Если дата конца совпадает с датой начала и новое время начала >= времени конца,
+                            // сдвигаем время конца на час вперед
+                            if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
+                                currentDateTimeState.endTime != null &&
+                                !selectedTime.isBefore(currentDateTimeState.endTime)
+                            ) {
+                                newEndTime = selectedTime.plusHours(1).withNano(0)
                             }
-                            showRecurrenceEndDatePicker = false
-                        },
-                        // Можно добавить enabled = datePickerState.selectedDateMillis != null
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showRecurrenceEndDatePicker = false }) { Text("Cancel") }
+                            eventDateTimeState = currentDateTimeState.copy(
+                                startTime = selectedTime,
+                                endTime = newEndTime
+                            )
+                            showStartTimePicker = false
+                        }) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showStartTimePicker = false }) { Text("Отмена") }
+                    }
+                ) {
+                    TimePicker(state = timePickerState) // Вставляем сам пикер
                 }
-                // --- ИСПОЛЬЗУЕМ ИМЕНОВАННЫЙ ПАРАМЕТР content ---
-            ) { // Начало лямбды для content
-                DatePicker(state = datePickerState) // Передаем DatePicker как контент
-            } // Конец лямбды для content
-        }
-    } // End Scaffold
+            }
+
+            // Диалог выбора Даты Конца
+            if (showEndDatePicker) { // Компонент не запросит, если не нужно
+                val datePickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = currentDateTimeState.endDate.atStartOfDay(
+                        systemZoneId
+                    ).toInstant().toEpochMilli(),
+                    selectableDates = object : SelectableDates { // Ограничение выбора
+                        val startMillis =
+                            currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant()
+                                .toEpochMilli()
+
+                        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                            return utcTimeMillis >= startMillis // Нельзя выбрать дату раньше даты начала
+                        }
+
+                        override fun isSelectableYear(year: Int): Boolean {
+                            return year >= currentDateTimeState.startDate.year // Оптимизация для годов
+                        }
+                    }
+                )
+                DatePickerDialog(
+                    onDismissRequest = { showEndDatePicker = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                datePickerState.selectedDateMillis?.let { millis ->
+                                    val selectedDate =
+                                        Instant.ofEpochMilli(millis).atZone(systemZoneId)
+                                            .toLocalDate()
+                                    // Обновляем состояние через copy
+                                    eventDateTimeState =
+                                        currentDateTimeState.copy(endDate = selectedDate)
+                                    // Дополнительно можно проверить и скорректировать endTime, если нужно
+                                }
+                                showEndDatePicker = false
+                            },
+                            enabled = datePickerState.selectedDateMillis != null
+                        ) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showEndDatePicker = false }) { Text("Отмена") }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
+                }
+            }
+
+            // Диалог выбора Времени Конца
+            if (showEndTimePicker) { // Компонент не запросит, если не нужно
+                val initialTime =
+                    currentDateTimeState.endTime ?: currentDateTimeState.startTime?.plusHours(1)
+                    ?: LocalTime.now()
+                val timePickerState = rememberTimePickerState(
+                    initialHour = initialTime.hour,
+                    initialMinute = initialTime.minute,
+                    is24Hour = DateFormat.is24HourFormat(context)
+                )
+                TimePickerDialog(
+                    onDismissRequest = { showEndTimePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val selectedTime =
+                                LocalTime.of(timePickerState.hour, timePickerState.minute)
+                                    .withNano(0)
+                            // Проверка: если даты одинаковые, время конца не может быть раньше или равно времени начала
+                            if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
+                                currentDateTimeState.startTime != null &&
+                                !currentDateTimeState.startTime.isBefore(selectedTime) // Если startTime НЕ раньше selectedTime (т.е. >=)
+                            ) {
+                                Toast.makeText(
+                                    context,
+                                    "Время конца должно быть после времени начала",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                // Обновляем состояние через copy
+                                eventDateTimeState =
+                                    currentDateTimeState.copy(endTime = selectedTime)
+                                showEndTimePicker = false
+                            }
+                        }) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showEndTimePicker = false }) { Text("Отмена") }
+                    }
+                ) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+            if (showRecurrenceEndDatePicker) {
+                // Рассчитываем начальную дату для пикера
+                val initialSelectedDateMillis = eventDateTimeState.recurrenceEndDate
+                    ?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                    ?: eventDateTimeState.startDate.plusMonths(1) // По умолчанию через месяц от старта
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+                // Состояние DatePicker'а
+                val datePickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = initialSelectedDateMillis,
+                    selectableDates = object : SelectableDates {
+                        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                            val selectedLocalDate = Instant.ofEpochMilli(utcTimeMillis)
+                                .atZone(ZoneId.systemDefault()).toLocalDate()
+                            // Не раньше даты начала события
+                            return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
+                        }
+
+                        override fun isSelectableYear(year: Int): Boolean {
+                            return year >= eventDateTimeState.startDate.year
+                        }
+                    }
+                )
+                // Создаем DatePickerDialog с правильной сигнатурой
+                DatePickerDialog(
+                    onDismissRequest = { showRecurrenceEndDatePicker = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                datePickerState.selectedDateMillis?.let { millis ->
+                                    val selectedDate = Instant.ofEpochMilli(millis)
+                                        .atZone(ZoneId.systemDefault()).toLocalDate()
+                                    eventDateTimeState = eventDateTimeState.copy(
+                                        recurrenceEndDate = selectedDate,
+                                        recurrenceEndType = RecurrenceEndType.DATE,
+                                        recurrenceCount = null
+                                    )
+                                }
+                                showRecurrenceEndDatePicker = false
+                            },
+                            // Можно добавить enabled = datePickerState.selectedDateMillis != null
+                        ) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showRecurrenceEndDatePicker = false
+                        }) { Text("Cancel") }
+                    }
+                    // --- ИСПОЛЬЗУЕМ ИМЕНОВАННЫЙ ПАРАМЕТР content ---
+                ) { // Начало лямбды для content
+                    DatePicker(state = datePickerState) // Передаем DatePicker как контент
+                } // Конец лямбды для content
+            }
+        } // End Scaffold
+    }
 }
 
 

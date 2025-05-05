@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
@@ -21,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.SugNameChips
@@ -50,9 +53,12 @@ fun CustomOutlinedTextField(
         shape = RoundedCornerShape(cuid.ContainerCornerRadius),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = colorScheme.surfaceContainerLow,
-            unfocusedContainerColor = colorScheme.surfaceContainerLow
+            unfocusedContainerColor = colorScheme.surfaceContainerLow,
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent,
         ),
         keyboardOptions = keyboardOptions,
+        textStyle = typography.headlineMedium,
         enabled = enabled,
         singleLine = true,
         isError = isError,

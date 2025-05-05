@@ -36,7 +36,7 @@ fun AdaptiveContainer(
         modifier = Modifier
             .fillMaxWidth() // Занимает всю доступную ширину
             .clip(RoundedCornerShape(cornerRadius))
-            .background(color = colorScheme.surfaceContainer) // Цвет фона
+            .background(color = colorScheme.surfaceContainerLow) // Цвет фона
             .padding(cuid.ContainerPadding) // Внутренний отступ
             .then(modifier), // Применяем внешние модификации, если они есть
         horizontalAlignment = Alignment.CenterHorizontally, // Выравнивание по вертикали по центру

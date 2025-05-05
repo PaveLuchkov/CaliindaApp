@@ -31,10 +31,12 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavHostController
 import com.example.caliindar.data.calendar.CalendarDataManager
 import com.example.caliindar.data.calendar.EventNetworkState
+import com.example.caliindar.ui.common.BackgroundShapeContext
 import com.example.caliindar.ui.screens.main.components.calendarui.DayEventsPage
 import java.time.Instant
 import java.time.LocalDate
@@ -176,10 +178,7 @@ fun MainScreen(
                 .fillMaxSize()
         ) {
             // --- Слой 1: Фон (самый нижний) ---
-            BackgroundShapes(
-                colorScheme = MaterialTheme.colorScheme,
-                modifier = Modifier.fillMaxSize()
-            )
+            BackgroundShapes(BackgroundShapeContext.Main)
 
             VerticalPager(
                 state = pagerState,
@@ -197,8 +196,6 @@ fun MainScreen(
                     date = pageDate,
                     viewModel = viewModel,
                 )
-
-
 
             } // End Column
 
