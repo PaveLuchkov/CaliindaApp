@@ -24,6 +24,7 @@ import com.example.caliindar.ui.screens.main.MainViewModel
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimePicker
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventNameSection
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.RecurrenceEndType
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.RecurrenceOption
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.AdaptiveContainer
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerDialog
@@ -32,6 +33,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class) // Необходимо для M3 Dialogs и Pickers
@@ -61,9 +63,11 @@ fun CreateEventScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
 
     // Форматер
     val systemZoneId = remember { ZoneId.systemDefault() }
+    val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
     var eventDateTimeState by remember {
         mutableStateOf(
@@ -74,6 +78,7 @@ fun CreateEventScreen(
                 endTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0),
                 isAllDay = false,
                 selectedWeekdays = emptySet(),
+                recurrenceEndType = RecurrenceEndType.NEVER,
                 isRecurring = false, // Добавлено, если нужно управлять этим
                 recurrenceRule = null // Добавлено
             )
@@ -105,36 +110,22 @@ fun CreateEventScreen(
         }
     }
 
-    // --- Логика валидации (без изменений) ---
+    // --- Логика валидации ---
     fun validateInput(): Boolean {
         summaryError = if (summary.isBlank()) "Название не может быть пустым" else null
-        validationError = null // Сбрасываем ошибку валидации перед отправкой
-
-        // Используем eventDateTimeState для проверок
+        validationError = null
         val state = eventDateTimeState
-
-        // Проверка DateTimeComponent уже делает базовые проверки (конец >= начало)
-        // Но можно добавить дополнительные проверки здесь, если нужно
-
-        // Проверка на null времени, если не AllDay (уже проверяется в компоненте?)
-        // Проверим еще раз на всякий случай перед отправкой
         if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
             validationError = "Укажите время начала и конца"
             return false
         }
-
-        // Проверка возможности форматирования (остается полезной)
         val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZoneId)
-
         if (testStartTimeStr == null || testEndTimeStr == null) {
             validationError = "Не удалось сформировать дату/время для отправки"
             return false
         }
-
         return summaryError == null && validationError == null
     }
-
-
 
     // --- Обработка состояния ViewModel (без изменений) ---
     LaunchedEffect(createEventState) {
@@ -166,29 +157,63 @@ fun CreateEventScreen(
                 Log.e("CreateEvent", "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId")
                 return@saveLambda
             }
-            val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
-            val finalRecurrenceRule: String? = if (
-                baseRule == RecurrenceOption.Weekly.rruleValue &&
-                eventDateTimeState.selectedWeekdays.isNotEmpty()
-            ) {
-                // Формируем строку BYDAY=MO,TU...
-                val bydayString = eventDateTimeState.selectedWeekdays
-                    .sorted() // Сортируем MON -> SUN
-                    .joinToString(",") { day ->
-                        // Получаем стандартные 2-буквенные коды (MO, TU, WE, TH, FR, SA, SU)
-                        when(day) {
-                            DayOfWeek.MONDAY -> "MO"
-                            DayOfWeek.TUESDAY -> "TU"
-                            DayOfWeek.WEDNESDAY -> "WE"
-                            DayOfWeek.THURSDAY -> "TH"
-                            DayOfWeek.FRIDAY -> "FR"
-                            DayOfWeek.SATURDAY -> "SA"
-                            DayOfWeek.SUNDAY -> "SU"
+            var baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
+            var finalRecurrenceRule: String? = null
+
+            if (baseRule != null) {
+                var ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
+
+                // Добавляем BYDAY, если нужно
+                if (baseRule == RecurrenceOption.Weekly.rruleValue && eventDateTimeState.selectedWeekdays.isNotEmpty()) {
+                    val bydayString = eventDateTimeState.selectedWeekdays
+                        .sorted()
+                        .joinToString(",") { day ->
+                            when(day) {
+                                DayOfWeek.MONDAY -> "MO"
+                                DayOfWeek.TUESDAY -> "TU"
+                                DayOfWeek.WEDNESDAY -> "WE"
+                                DayOfWeek.THURSDAY -> "TH"
+                                DayOfWeek.FRIDAY -> "FR"
+                                DayOfWeek.SATURDAY -> "SA"
+                                DayOfWeek.SUNDAY -> "SU"
+                            }
+                        }
+                    ruleParts.add("BYDAY=$bydayString")
+                }
+
+                // Добавляем UNTIL или COUNT
+                when (eventDateTimeState.recurrenceEndType) {
+                    RecurrenceEndType.DATE -> {
+                        eventDateTimeState.recurrenceEndDate?.let { endDate ->
+                            // Форматируем дату окончания в UTC (конец дня)
+                            // Важно: UNTIL включает указанный момент. Часто берут конец дня.
+                            // Для простоты возьмем начало следующего дня и отформатируем.
+                            // Или, как в примере Google, T000000Z - начало дня UTC.
+                            // Используем конец дня даты окончания в системной таймзоне и конвертируем в UTC
+                            val systemZone = ZoneId.systemDefault()
+                            val endOfDay = endDate.atTime(LocalTime.MAX).atZone(systemZone)
+                            // Google часто использует T000000Z на *следующий* день, что эквивалентно концу дня
+                            // val endDateTimeUtc = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC)
+
+                            // Более точный подход: конец дня в системной таймзоне -> UTC
+                            val endDateTimeUtc = endDate.atTime(23, 59, 59).atZone(systemZone).withZoneSameInstant(ZoneOffset.UTC)
+
+                            val untilString = untilFormatter.format(endDateTimeUtc)
+                            ruleParts.add("UNTIL=$untilString")
                         }
                     }
-                "$baseRule;BYDAY=$bydayString" // Собираем правило
-            } else {
-                baseRule // Используем базовое правило
+                    RecurrenceEndType.COUNT -> {
+                        eventDateTimeState.recurrenceCount?.let { count ->
+                            ruleParts.add("COUNT=$count")
+                        }
+                    }
+                    RecurrenceEndType.NEVER -> {
+                        // Ничего не добавляем
+                    }
+                }
+
+                // Собираем все части через точку с запятой
+                finalRecurrenceRule = ruleParts.joinToString(";")
             }
             Log.d("CreateEvent", "Final RRULE to send: $finalRecurrenceRule")
 
@@ -260,6 +285,7 @@ fun CreateEventScreen(
                     onRequestShowStartTimePicker = { showStartTimePicker = true },
                     onRequestShowEndDatePicker = { showEndDatePicker = true },
                     onRequestShowEndTimePicker = { showEndTimePicker = true },
+                    onRequestShowRecurrenceEndDatePicker = { showRecurrenceEndDatePicker = true },
                     modifier = Modifier.fillMaxWidth() // Занимает всю ширину
                 )
             }
@@ -271,9 +297,6 @@ fun CreateEventScreen(
                     modifier = Modifier.padding(top = 4.dp) // Немного отступа сверху
                 )
             }
-
-
-
             // Описание & Местоположение
             AdaptiveContainer{
                 OutlinedTextField(
@@ -299,6 +322,7 @@ fun CreateEventScreen(
             generalError?.let {
                 Text(it, color = colorScheme.error, style = typography.bodyMedium)
             }
+            Spacer(modifier = Modifier.height(16.dp))
         } // End Column
         val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
 
@@ -447,7 +471,56 @@ fun CreateEventScreen(
                 TimePicker(state = timePickerState)
             }
         }
+        if (showRecurrenceEndDatePicker) {
+            // Рассчитываем начальную дату для пикера
+            val initialSelectedDateMillis = eventDateTimeState.recurrenceEndDate
+                ?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                ?: eventDateTimeState.startDate.plusMonths(1) // По умолчанию через месяц от старта
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
+            // Состояние DatePicker'а
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = initialSelectedDateMillis,
+                selectableDates = object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        val selectedLocalDate = Instant.ofEpochMilli(utcTimeMillis)
+                            .atZone(ZoneId.systemDefault()).toLocalDate()
+                        // Не раньше даты начала события
+                        return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
+                    }
+                    override fun isSelectableYear(year: Int): Boolean {
+                        return year >= eventDateTimeState.startDate.year
+                    }
+                }
+            )
+            // Создаем DatePickerDialog с правильной сигнатурой
+            DatePickerDialog(
+                onDismissRequest = { showRecurrenceEndDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val selectedDate = Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault()).toLocalDate()
+                                eventDateTimeState = eventDateTimeState.copy(
+                                    recurrenceEndDate = selectedDate,
+                                    recurrenceEndType = RecurrenceEndType.DATE,
+                                    recurrenceCount = null
+                                )
+                            }
+                            showRecurrenceEndDatePicker = false
+                        },
+                        // Можно добавить enabled = datePickerState.selectedDateMillis != null
+                    ) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRecurrenceEndDatePicker = false }) { Text("Cancel") }
+                }
+                // --- ИСПОЛЬЗУЕМ ИМЕНОВАННЫЙ ПАРАМЕТР content ---
+            ) { // Начало лямбды для content
+                DatePicker(state = datePickerState) // Передаем DatePicker как контент
+            } // Конец лямбды для content
+        }
     } // End Scaffold
 }
 

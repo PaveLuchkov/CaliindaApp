@@ -23,18 +23,21 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.DatePickerField
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerField
@@ -44,8 +47,14 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 import com.example.caliindar.R
+import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import java.time.DayOfWeek
 import java.time.format.TextStyle
+
+
+enum class RecurrenceEndType {
+    NEVER, DATE, COUNT
+}
 
 // Состояние, которое компонент будет возвращать наружу
 data class EventDateTimeState(
@@ -56,7 +65,10 @@ data class EventDateTimeState(
     val isAllDay: Boolean,
     val isRecurring: Boolean,
     val recurrenceRule: String? = null,
-    val selectedWeekdays: Set<DayOfWeek> = emptySet()
+    val selectedWeekdays: Set<DayOfWeek> = emptySet(),
+    val recurrenceEndType: RecurrenceEndType = RecurrenceEndType.NEVER, // Тип окончания
+    val recurrenceEndDate: LocalDate? = null, // Дата для UNTIL
+    val recurrenceCount: Int? = null
 )
 
 sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: String?) {
@@ -91,6 +103,7 @@ fun EventDateTimePicker(
     onRequestShowStartTimePicker: () -> Unit,
     onRequestShowEndDatePicker: () -> Unit,
     onRequestShowEndTimePicker: () -> Unit,
+    onRequestShowRecurrenceEndDatePicker: () -> Unit
 ) {
     var isAllDay by remember { mutableStateOf(state.isAllDay) }
     var isOneDay by remember { mutableStateOf(state.startDate == state.endDate) }
@@ -106,7 +119,13 @@ fun EventDateTimePicker(
     val allDay = stringResource(R.string.all_day)
     val oneDay = stringResource(R.string.one_day)
     val recEvent = stringResource(R.string.recurrence_event)
-    val repeatOnLabel = stringResource(R.string.recurrence_repeat_on)
+    val endsLabel = stringResource(R.string.recurrence_ends) // <-- Строка "Ends"
+    val endNeverLabel = stringResource(R.string.recurrence_end_never) // <-- Строка "Never"
+    val endDateLabel = stringResource(R.string.recurrence_end_date) // <-- Строка "On date"
+    val endCountLabel = stringResource(R.string.recurrence_end_count) // <-- Строка "After..."
+    val occurrencesLabel = stringResource(R.string.recurrence_occurrences) // <-- Строка "occurrences"
+    val recurrenceEndDateFieldLabel = stringResource(R.string.recurrence_end_date_field) // <-- Строка "End Date"
+    val recurrenceCountFieldLabel = stringResource(R.string.recurrence_count_field) // <-- Строка "Number of times"
 
     val weekdays = remember { DayOfWeek.entries.toTypedArray() }
 
@@ -436,6 +455,114 @@ fun EventDateTimePicker(
                         }
                     }
                 }
+                Column(modifier = Modifier.padding(top = 16.dp)) { // Добавим отступ
+                    Text(
+                        text = endsLabel, // "Ends"
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // --- Чипы для выбора типа окончания (NEVER, DATE, COUNT) ---
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                    ) {
+                        // Чип "Never"
+                        FilterChip(
+                            selected = state.recurrenceEndType == RecurrenceEndType.NEVER,
+                            onClick = {
+                                // Устанавливаем тип, сбрасываем дату и количество
+                                onStateChange(state.copy(
+                                    recurrenceEndType = RecurrenceEndType.NEVER,
+                                    recurrenceEndDate = null,
+                                    recurrenceCount = null
+                                ))
+                            },
+                            label = { Text(endNeverLabel) },
+                            enabled = !isLoading
+                        )
+                        // Чип "On date"
+                        FilterChip(
+                            selected = state.recurrenceEndType == RecurrenceEndType.DATE,
+                            onClick = {
+                                // Устанавливаем тип, ставим дату по умолчанию (если нет), сбрасываем количество
+                                val defaultEndDate = state.recurrenceEndDate
+                                    ?: state.startDate.plusMonths(1) // Пример: через месяц
+                                onStateChange(state.copy(
+                                    recurrenceEndType = RecurrenceEndType.DATE,
+                                    recurrenceEndDate = defaultEndDate,
+                                    recurrenceCount = null
+                                ))
+                                // Запрашиваем показ пикера, если дата была null
+                                if (state.recurrenceEndDate == null) {
+                                    onRequestShowRecurrenceEndDatePicker()
+                                }
+                            },
+                            label = { Text(endDateLabel) },
+                            enabled = !isLoading
+                        )
+                        // Чип "After..."
+                        FilterChip(
+                            selected = state.recurrenceEndType == RecurrenceEndType.COUNT,
+                            onClick = {
+                                val defaultCount = state.recurrenceCount ?: 10 // Пример: 10 раз
+                                onStateChange(state.copy(
+                                    recurrenceEndType = RecurrenceEndType.COUNT,
+                                    recurrenceEndDate = null,
+                                    recurrenceCount = defaultCount
+                                ))
+                            },
+                            label = { Text(endCountLabel) },
+                            enabled = !isLoading
+                        )
+                    }
+
+                    // --- Поле для выбора даты окончания (UNTIL) ---
+                    AnimatedVisibility(
+                        visible = state.recurrenceEndType == RecurrenceEndType.DATE,
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        DatePickerField(
+                            label = recurrenceEndDateFieldLabel, // "End Date"
+                            date = state.recurrenceEndDate,
+                            dateFormatter = deviceDateFormatter,
+                            isError = false, // TODO: Добавить валидацию даты окончания? (должна быть >= даты начала)
+                            isLoading = isLoading,
+                            onClick = onRequestShowRecurrenceEndDatePicker, // Открываем пикер
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 50.dp)
+                        )
+                    }
+
+                    // --- Поле для ввода количества (COUNT) ---
+                    AnimatedVisibility(
+                        visible = state.recurrenceEndType == RecurrenceEndType.COUNT,
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = state.recurrenceCount?.toString() ?: "",
+                            onValueChange = { text ->
+                                // Пытаемся преобразовать в Int, игнорируем невалидный ввод
+                                val count = text.filter { it.isDigit() }.toIntOrNull()?.coerceAtLeast(1) // Минимум 1 повторение
+                                // Обновляем только количество
+                                onStateChange(state.copy(recurrenceCount = count))
+                            },
+                            label = { Text(recurrenceCountFieldLabel) }, // "Number of times"
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 50.dp),
+                            shape = RoundedCornerShape(cuid.ContainerCornerRadius),
+                            enabled = !isLoading,
+                            isError = state.recurrenceCount == null // Ошибка, если пусто
+                        )
+                    }
+                } // --- КОНЕЦ СЕКЦИИ ОКОНЧАНИЯ ---
             }
         } // End AnimatedVisibility for Recurrence
     } // End Outer Column
