@@ -8,6 +8,7 @@
     <string name="all_day">All day</string>
     <string name="one_day">One day</string>
     <string name="recurrence_event">Repeat</string> <!-- Заменит ваш val recEvent -->
+    <string name="recurrence_repeat_on">Repeatщщщт</string> <!-- Заменит ваш val recEvent -->
 
     <!-- Строки для секции повторения -->
     <string name="recurrence_settings_title">Recurrence</string> <!-- Заменит ваш val -->

@@ -44,6 +44,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 import com.example.caliindar.R
+import java.time.DayOfWeek
+import java.time.format.TextStyle
 
 // Состояние, которое компонент будет возвращать наружу
 data class EventDateTimeState(
@@ -53,7 +55,8 @@ data class EventDateTimeState(
     val endTime: LocalTime?,
     val isAllDay: Boolean,
     val isRecurring: Boolean,
-    val recurrenceRule: String? = null
+    val recurrenceRule: String? = null,
+    val selectedWeekdays: Set<DayOfWeek> = emptySet()
 )
 
 sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: String?) {
@@ -102,8 +105,10 @@ fun EventDateTimePicker(
     val dateSingle = stringResource(R.string.date_single)
     val allDay = stringResource(R.string.all_day)
     val oneDay = stringResource(R.string.one_day)
-    val recEvent = stringResource(R.string.recurrence_event) 
-    val recurrenceSettingsTitle = stringResource(R.string.recurrence_settings_title) 
+    val recEvent = stringResource(R.string.recurrence_event)
+    val repeatOnLabel = stringResource(R.string.recurrence_repeat_on)
+
+    val weekdays = remember { DayOfWeek.entries.toTypedArray() }
 
     // --- Форматтеры для отображения (без изменений) ---
     val deviceDateFormatter = remember {
@@ -393,6 +398,44 @@ fun EventDateTimePicker(
                         state = state
                     )
                 }
+                AnimatedVisibility(
+                    visible = state.recurrenceRule == RecurrenceOption.Weekly.rruleValue, // Показываем только для Weekly
+                    enter = fadeIn(animationSpec = tween(150, delayMillis = 50)) + expandVertically(animationSpec = tween(300)),
+                    exit = fadeOut(animationSpec = tween(150)) + shrinkVertically(animationSpec = tween(300)),
+                ) {
+                    Column {
+                        // --- Чипы для дней недели ---
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                                .horizontalScroll(rememberScrollState()),
+                            // Центрируем дни недели, если их немного
+                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
+                        ) {
+                            weekdays.forEach { day ->
+                                val isSelected = day in state.selectedWeekdays
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        val currentDays = state.selectedWeekdays
+                                        val newDays = if (isSelected) {
+                                            // Не даем убрать последний выбранный день, если он один
+                                            if (currentDays.size > 1) currentDays - day else currentDays
+                                        } else {
+                                            currentDays + day
+                                        }
+                                        onStateChange(state.copy(selectedWeekdays = newDays))
+                                    },
+                                    label = {
+                                        Text(day.getDisplayName(TextStyle.SHORT, Locale.getDefault()))
+                                    },
+                                    enabled = !isLoading
+                                )
+                            }
+                        }
+                    }
+                }
             }
         } // End AnimatedVisibility for Recurrence
     } // End Outer Column
@@ -422,6 +465,48 @@ private fun FilterChipForOption(
         enabled = !isLoading,
         leadingIcon = if (option == currentSelection) {
             // Можно вернуть иконку, если хотите
+            // { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+            null
+        } else null
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterChipForFrequencyOption(
+    option: RecurrenceOption,
+    currentSelection: RecurrenceOption,
+    isLoading: Boolean,
+    state: EventDateTimeState, // Принимаем полное состояние
+    onStateChange: (EventDateTimeState) -> Unit // Принимаем лямбду
+) {
+    val isSelected = option == currentSelection
+    FilterChip(
+        selected = isSelected,
+        onClick = {
+            val newBaseRule = option.rruleValue
+            val newIsRecurring = option != RecurrenceOption.None
+
+            // --- Логика для selectedWeekdays при смене частоты ---
+            val newSelectedDays = if (option == RecurrenceOption.Weekly) {
+                // Если выбрали Weekly, оставляем текущие дни или ставим день старта по умолчанию
+                state.selectedWeekdays.ifEmpty { setOf(state.startDate.dayOfWeek) }
+            } else {
+                // Если выбрали НЕ Weekly, очищаем дни
+                emptySet()
+            }
+
+            onStateChange(state.copy(
+                recurrenceRule = newBaseRule,
+                isRecurring = newIsRecurring,
+                selectedWeekdays = newSelectedDays // Обновляем дни
+            ))
+        },
+        label = {
+            Text(stringResource(option.labelResId))
+        },
+        enabled = !isLoading,
+        leadingIcon = if (isSelected) {
             // { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
             null
         } else null
