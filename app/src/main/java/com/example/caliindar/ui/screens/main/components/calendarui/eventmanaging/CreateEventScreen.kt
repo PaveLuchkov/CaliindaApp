@@ -24,8 +24,10 @@ import com.example.caliindar.ui.screens.main.MainViewModel
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimePicker
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.EventNameSection
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.RecurrenceOption
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.AdaptiveContainer
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerDialog
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -71,6 +73,7 @@ fun CreateEventScreen(
                 endDate = initialDate,
                 endTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0),
                 isAllDay = false,
+                selectedWeekdays = emptySet(),
                 isRecurring = false, // Добавлено, если нужно управлять этим
                 recurrenceRule = null // Добавлено
             )
@@ -163,6 +166,32 @@ fun CreateEventScreen(
                 Log.e("CreateEvent", "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId")
                 return@saveLambda
             }
+            val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
+            val finalRecurrenceRule: String? = if (
+                baseRule == RecurrenceOption.Weekly.rruleValue &&
+                eventDateTimeState.selectedWeekdays.isNotEmpty()
+            ) {
+                // Формируем строку BYDAY=MO,TU...
+                val bydayString = eventDateTimeState.selectedWeekdays
+                    .sorted() // Сортируем MON -> SUN
+                    .joinToString(",") { day ->
+                        // Получаем стандартные 2-буквенные коды (MO, TU, WE, TH, FR, SA, SU)
+                        when(day) {
+                            DayOfWeek.MONDAY -> "MO"
+                            DayOfWeek.TUESDAY -> "TU"
+                            DayOfWeek.WEDNESDAY -> "WE"
+                            DayOfWeek.THURSDAY -> "TH"
+                            DayOfWeek.FRIDAY -> "FR"
+                            DayOfWeek.SATURDAY -> "SA"
+                            DayOfWeek.SUNDAY -> "SU"
+                        }
+                    }
+                "$baseRule;BYDAY=$bydayString" // Собираем правило
+            } else {
+                baseRule // Используем базовое правило
+            }
+            Log.d("CreateEvent", "Final RRULE to send: $finalRecurrenceRule")
+
 
             viewModel.createEvent(
                 summary = summary.trim(),
@@ -172,7 +201,7 @@ fun CreateEventScreen(
                 timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId, // Передаем ID таймзоны только для timed событий
                 description = description.trim().takeIf { it.isNotEmpty() },
                 location = location.trim().takeIf { it.isNotEmpty() },
-                recurrenceRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
+                recurrenceRule = finalRecurrenceRule
             )
         } else {
             Toast.makeText(context, "Проверьте введенные данные", Toast.LENGTH_SHORT).show()
