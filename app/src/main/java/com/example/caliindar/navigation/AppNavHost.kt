@@ -6,6 +6,8 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -41,24 +43,10 @@ fun AppNavHost(
         composable(
             NavRoutes.Main.route,
             enterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
-                    animationSpec = tween(slideDuration, easing = EaseOut)
-                ) // Можно добавить + fadeIn() для плавности
-            },
-            exitTransition = {
-                slideOutOfContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
-                    animationSpec = tween(slideDuration, easing = EaseIn),
-                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
-                ) // Можно добавить + fadeOut()
-            },
-            popEnterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.End, // Возвращается справа
+                fadeIn(
                     animationSpec = tween(slideDuration, easing = EaseOut),
-                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
-                ) // Можно добавить + fadeIn()
+                    initialAlpha = 0.6f
+                )
             },
             popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
                 slideOutOfContainer(
@@ -79,7 +67,7 @@ fun AppNavHost(
         composable(NavRoutes.Settings.route,
             enterTransition = {
                 slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start, // Въезжает слева
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
                     animationSpec = tween(slideDuration, easing = EaseOut)
                 ) // Можно добавить + fadeIn() для плавности
             },
@@ -103,6 +91,7 @@ fun AppNavHost(
                     animationSpec = tween(slideDuration, easing = EaseIn)
                 ) // Можно добавить + fadeOut()
             }
+
         ) {
             SettingsScreen(
                 viewModel = viewModel,
@@ -225,7 +214,33 @@ fun AppNavHost(
         }
         composable(
             route = "create_event/{initialDateEpochDay}", // Оставьте ваш шаблон роута как есть
-            arguments = listOf(navArgument("initialDateEpochDay") { type = NavType.LongType })
+            arguments = listOf(navArgument("initialDateEpochDay") { type = NavType.LongType }),
+            enterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Up, // Въезжает слева
+                    animationSpec = tween(slideDuration, easing = EaseOut)
+                ) // Можно добавить + fadeIn() для плавности
+            },
+            exitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Up, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+                    animationSpec = tween(slideDuration, easing = EaseIn),
+                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+                ) // Можно добавить + fadeOut()
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Down, // Возвращается справа
+                    animationSpec = tween(slideDuration, easing = EaseOut),
+                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+                ) // Можно добавить + fadeIn()
+            },
+            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Down, // Уезжает вправо при жесте "назад"
+                    animationSpec = tween(slideDuration, easing = EaseIn)
+                ) // Можно добавить + fadeOut()
+            }
         ) { backStackEntry ->
             val initialDateEpochDay = backStackEntry.arguments?.getLong("initialDateEpochDay") ?: LocalDate.now().toEpochDay()
             val initialDate = LocalDate.ofEpochDay(initialDateEpochDay)

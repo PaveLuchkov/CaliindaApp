@@ -5,33 +5,45 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.ChipsRow
-import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.CustomOutlinedTextField
 import android.text.format.DateFormat // Для определения формата времени 12/24
-import android.util.Log
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.DatePickerField
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerField
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
+import com.example.caliindar.R
 
 // Состояние, которое компонент будет возвращать наружу
 data class EventDateTimeState(
@@ -44,48 +56,54 @@ data class EventDateTimeState(
     val recurrenceRule: String? = null
 )
 
+sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: String?) {
+    object None : RecurrenceOption(R.string.recurrence_none, null)
+    object Daily : RecurrenceOption(R.string.recurrence_daily, "FREQ=DAILY")
+    object Weekly : RecurrenceOption(R.string.recurrence_weekly, "FREQ=WEEKLY")
+    object Monthly : RecurrenceOption(R.string.recurrence_monthly, "FREQ=MONTHLY")
+    object Yearly : RecurrenceOption(R.string.recurrence_yearly, "FREQ=YEARLY")
+    // Можно добавить Custom для ручного ввода или сложных правил
+
+    companion object {
+        fun fromRule(rule: String?): RecurrenceOption {
+            return when (rule) {
+                Daily.rruleValue -> Daily
+                Weekly.rruleValue -> Weekly
+                Monthly.rruleValue -> Monthly
+                Yearly.rruleValue -> Yearly
+                else -> None // Если null или не совпало - считаем "None"
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventDateTimePicker(
     modifier: Modifier = Modifier,
-    initialState: EventDateTimeState,
+    state: EventDateTimeState,
     onStateChange: (EventDateTimeState) -> Unit,
     isLoading: Boolean = false,
-    // Callbacks для запроса показа диалогов выбора
     onRequestShowStartDatePicker: () -> Unit,
     onRequestShowStartTimePicker: () -> Unit,
     onRequestShowEndDatePicker: () -> Unit,
     onRequestShowEndTimePicker: () -> Unit,
 ) {
-    // --- Внутреннее состояние компонента ---
-    // Используем флаги напрямую вместо selectedMode
-    var isAllDay by remember { mutableStateOf(initialState.isAllDay) }
-    // Добавляем флаг isOneDay
-    var isOneDay by remember {
-        mutableStateOf(
-            // Инициализируем isOneDay если начальные даты равны и время конца не задано (или all day)
-            initialState.startDate == initialState.endDate && (initialState.isAllDay || initialState.endTime == null)
-        )
-    }
-    var startDate by remember { mutableStateOf(initialState.startDate) }
-    var startTime by remember { mutableStateOf(initialState.startTime) }
-    var endDate by remember { mutableStateOf(initialState.endDate) }
-    var endTime by remember { mutableStateOf(initialState.endTime) }
-    var isRecurring by remember { mutableStateOf(initialState.isRecurring) }
-    var recurrenceRule by remember { mutableStateOf(initialState.recurrenceRule) }
+    var isAllDay by remember { mutableStateOf(state.isAllDay) }
+    var isOneDay by remember { mutableStateOf(state.startDate == state.endDate) }
 
     var dateTimeError by remember { mutableStateOf<String?>(null) }
-
     val context = LocalContext.current
 
-    val timeStart = "Time Start*"
-    val timeEnd = "Time End*"
-    val dateStart = "Date Start*"
-    val dateEnd = "Date End*"
-    val dateSingle = "Date*"
-    val allDay  = "All Day"
-    val oneDay  = "One Day"
-    val recEvent  = "Recurrence"
+    val timeStart = stringResource(R.string.time_start)
+    val timeEnd = stringResource(R.string.time_end)
+    val dateStart = stringResource(R.string.date_start)
+    val dateEnd = stringResource(R.string.date_end)
+    val dateSingle = stringResource(R.string.date_single)
+    val allDay = stringResource(R.string.all_day)
+    val oneDay = stringResource(R.string.one_day)
+    val recEvent = stringResource(R.string.recurrence_event) 
+    val recurrenceSettingsTitle = stringResource(R.string.recurrence_settings_title) 
 
     // --- Форматтеры для отображения (без изменений) ---
     val deviceDateFormatter = remember {
@@ -96,98 +114,96 @@ fun EventDateTimePicker(
         val pattern = if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a"
         DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
     }
-
+    LaunchedEffect(state.isAllDay) {
+        if (isAllDay != state.isAllDay) {
+            isAllDay = state.isAllDay
+            // Пересчитаем isOneDay на всякий случай, т.к. логика могла поменяться
+            isOneDay = state.startDate == state.endDate
+        }
+    }
     // --- Эффект для валидации и оповещения об изменениях ---
     // Зависимости теперь включают isAllDay и isOneDay
-    LaunchedEffect(startDate, startTime, endDate, endTime, isAllDay, isOneDay, isRecurring, recurrenceRule) {
-        dateTimeError = null // Сброс ошибки
-
-        // Определяем *актуальное* состояние на основе флагов для валидации и отправки
-        val actualStartDate = startDate
-        // endDate всегда равен startDate если isOneDay=true, иначе берем endDate
-        val actualEndDate = if (isOneDay) startDate else endDate
-        // startTime null только если isAllDay=true
-        val actualStartTime = if (isAllDay) null else startTime
-        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-        // endTime null только если isAllDay=true
-        val actualEndTime = if (isAllDay) null else {
-            // Если isOneDay, но не isAllDay, нам нужно endTime
-            if (isOneDay) {
-                // Если endTime не установлено, пытаемся его установить (например, +1 час от startTime)
-                // Важно: Не изменяем здесь локальные 'var endTime', только вычисляем для state/валидации
-                endTime ?: startTime?.plusHours(1)?.withNano(0) // Используем существующее или вычисляем
-            } else {
-                // Обычный режим Date Range, используем endTime
-                endTime
+    LaunchedEffect(state.startDate, state.endDate) {
+        val derivedOneDay = state.startDate == state.endDate
+        if (isOneDay != derivedOneDay) {
+            isOneDay = derivedOneDay
+            if (derivedOneDay && !isAllDay && state.startTime != null && state.endTime != null && !state.startTime.isBefore(state.endTime)) {
             }
         }
-        // Валидация (учитываем актуальные значения)
-        // 1. Даты: Конец >= Начала (только если не OneDay)
-        if (!isOneDay && actualEndDate.isBefore(actualStartDate)) {
-            dateTimeError = "Дата окончания не может быть раньше начала"
-        }
-        // 2. Время: Конец > Начала (только если не AllDay, не OneDay, и оба времени заданы)
-        else if (!isAllDay && !isOneDay && actualStartTime != null && actualEndTime != null) {
-            val startDateTime = actualStartTime.atDate(actualStartDate)
-            val endDateTime = actualEndTime.atDate(actualEndDate)
-            if (!startDateTime.isBefore(endDateTime)) { // Должно быть строго раньше
-                dateTimeError = "Время окончания должно быть позже начала"
-            }
-        }
-        // 3. Обязательность времени (если не AllDay)
-        else if (!isAllDay && actualStartTime == null) {
-            dateTimeError = "Укажите время начала" // Ошибка, если нужно время, но его нет
-        }
-        // 4. Обязательность времени конца (если не AllDay и не OneDay)
-        else if (!isAllDay && !isOneDay && actualEndTime == null) {
-            dateTimeError = "Укажите время конца" // Ошибка, если нужно время конца, но его нет
-        }
-
-
-        // Оповещение родителя с актуальным состоянием
-        onStateChange(
-            EventDateTimeState(
-                startDate = actualStartDate,
-                startTime = actualStartTime,
-                endDate = actualEndDate, // endDate будет равен startDate если isOneDay=true
-                endTime = actualEndTime, // endTime будет null если isAllDay=true или isOneDay=true
-                isAllDay = isAllDay,
-                isRecurring = isRecurring,
-                recurrenceRule = recurrenceRule
-            )
-        )
     }
 
-    // --- UI Компонента ---
+    LaunchedEffect(state) {
+        dateTimeError = null // Сброс
+        val actualIsOneDay = state.startDate == state.endDate
+
+        if (!actualIsOneDay && state.endDate.isBefore(state.startDate)) {
+            dateTimeError = context.getString(R.string.error_end_date_before_start) 
+        } else if (!state.isAllDay) {
+            if (state.startTime == null) {
+                dateTimeError = context.getString(R.string.error_start_time_missing) 
+            } else if (state.endTime == null) {
+                dateTimeError = context.getString(R.string.error_end_time_missing) 
+            } else {
+                val startDateTime = state.startTime.atDate(state.startDate)
+                val endDateTime = state.endTime.atDate(state.endDate)
+                if (!startDateTime.isBefore(endDateTime)) {
+                    dateTimeError = context.getString(R.string.error_end_time_not_after_start) 
+                }
+            }
+        }
+    }
+
+    // --- Общая ошибка даты/времени ---
+    // --- Поля ввода Даты/Времени (логика отображения изменена) ---
     Column(
         modifier = modifier
     ) {
         // --- Filter Chips ---
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         ) {
             // --- Чип "All Day" ---
             FilterChip(
-                selected = isAllDay,
+                selected = isAllDay, // Use internal flag for display
                 onClick = {
-                    val newState = !isAllDay
-                    isAllDay = newState
-                    if (newState) { // Включили All Day
-                        startTime = null
-                        endTime = null
-                    } else { // Выключили All Day
-                        // Восстанавливаем время по умолчанию
-                        val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-                        startTime = defaultStartTime
-                        // Если не One Day, восстанавливаем и время конца
-                        if (!isOneDay) {
-                            val defaultEndTime = if (startDate == endDate) defaultStartTime.plusHours(1) else defaultStartTime
-                            endTime = defaultEndTime.withNano(0)
+                    val newIsAllDay = !isAllDay
+                    isAllDay = newIsAllDay // Update internal flag FIRST for animation trigger
+
+                    // Prepare the new external state based on the change
+                    val newState = if (newIsAllDay) {
+                        state.copy(
+                            isAllDay = true,
+                            startTime = null,
+                            endTime = null
+                        )
+                    } else {
+                        // Turning All Day OFF
+                        val defaultStartTime = state.startTime // Try to keep existing
+                            ?: LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
+                        // Check internal isOneDay flag *after* it might have been toggled
+                        val currentIsOneDay = state.startDate == state.endDate // Check actual state dates
+
+                        val defaultEndTime = if (currentIsOneDay) {
+                            (state.endTime ?: defaultStartTime.plusHours(1)).withNano(0)
                         } else {
-                            endTime = null // Для One Day время конца не нужно
+                            (state.endTime ?: defaultStartTime).withNano(0)
                         }
+                        val finalEndTime = if (currentIsOneDay && !defaultStartTime.isBefore(defaultEndTime)) {
+                            defaultStartTime.plusHours(1).withNano(0)
+                        } else {
+                            defaultEndTime
+                        }
+
+                        state.copy(
+                            isAllDay = false,
+                            startTime = defaultStartTime,
+                            endTime = finalEndTime
+                        )
                     }
+                    onStateChange(newState)
                 },
                 label = { Text(allDay) },
                 enabled = !isLoading
@@ -195,35 +211,25 @@ fun EventDateTimePicker(
 
             // --- Чип "One Day" ---
             FilterChip(
-                selected = isOneDay,
+                selected = isOneDay, // Use internal flag for display
                 onClick = {
-                    val newState = !isOneDay
-                    isOneDay = newState
-                    if (newState) { // Включили One Day
-                        endDate = startDate // Устанавливаем дату конца = дате начала
-                        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                        // Время конца нужно, если НЕ All Day
-                        if (!isAllDay) {
-                            // Устанавливаем endTime, если его нет или оно некорректно
-                            if (endTime == null || (startTime != null && !startTime!!.isBefore(endTime!!))) {
-                                endTime = startTime?.plusHours(1)?.withNano(0) ?: LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0)
-                            }
-                            // startTime тоже должен быть установлен, если его нет
-                            if (startTime == null) {
-                                startTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-                                // Пересчитываем endTime на основе нового startTime
-                                endTime = startTime!!.plusHours(1).withNano(0)
-                            }
-                        } else {
-                            // Если All Day включен, время конца не нужно
-                            endTime = null
-                        }
-                        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-                    } else { // Выключили One Day
-                        // При выключении One Day, даты/время остаются как есть,
-                        // пользователь должен будет настроить endDate/endTime сам, если переходит в Date Range режим.
-                        // Ничего не меняем здесь при выключении.
+                    val newIsOneDay = !isOneDay
+                    isOneDay = newIsOneDay // Update internal flag FIRST for animation trigger
+
+                    // Prepare the new external state
+                    val newState = if (newIsOneDay) {
+                        // If turning One Day ON, ensure end date matches start date
+                        state.copy(endDate = state.startDate)
+                    } else {
+                        // If turning One Day OFF, the user needs to pick an end date.
+                        // We don't automatically set an end date here.
+                        // We might need to adjust time logic if isAllDay is false.
+                        // For now, just reflect the potential date structure change.
+                        // If the user intended a range, they'll pick endDate later.
+                        // If they were already in range mode, this doesn't change the dates.
+                        state.copy() // Keep dates as they are for now
                     }
+                    onStateChange(newState)
                 },
                 label = { Text(oneDay) },
                 enabled = !isLoading
@@ -231,207 +237,193 @@ fun EventDateTimePicker(
 
             // --- Чип "Recurring" ---
             FilterChip(
-                selected = isRecurring,
-                onClick = { isRecurring = !isRecurring },
-                label = { Text(recEvent) },
+                selected = state.isRecurring,
+                onClick = {
+                    val newIsRecurring = !state.isRecurring
+                    val newRule = if (!newIsRecurring) {
+                        // Выключаем повторение - сбрасываем правило
+                        null
+                    } else {
+                        // Включаем повторение - ставим Daily по умолчанию, если правила нет
+                        state.recurrenceRule ?: RecurrenceOption.Daily.rruleValue
+                    }
+                    onStateChange(state.copy(
+                        isRecurring = newIsRecurring,
+                        recurrenceRule = newRule
+                    ))
+                },
+                label = { Text(recEvent) }, // Текст из ресурса
                 enabled = !isLoading
             )
         }
 
-        // --- Общая ошибка даты/времени ---
-        dateTimeError?.let {
-            Text(
-                it,
-                color = colorScheme.error, // Используем MaterialTheme
-                style = typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+        // Animate error visibility for a smoother appearance/disappearance
+        AnimatedVisibility(
+            visible = dateTimeError != null,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column { // Wrap in column to allow spacer even when text invisible
+                Text(
+                    text = dateTimeError ?: "", // Provide default empty string
+                    color = colorScheme.error,
+                    style = typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
 
-        // --- Поля ввода Даты/Времени (логика отображения изменена) ---
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { // Используем Column для полей
 
-            // --- Определяем, что показывать ---
-            if (isAllDay && isOneDay) {
-                // Случай 1: All Day + One Day = Только Дата Начала
-                DatePickerField(
-                    label = dateSingle,
-                    date = startDate,
-                    dateFormatter = deviceDateFormatter,
-                    isError = dateTimeError != null,
-                    isLoading = isLoading,
-                    onClick = onRequestShowStartDatePicker,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                )
-            } else if (isAllDay) {
-                // Случай 2: Только All Day = Дата Начала + Дата Конца
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    DatePickerField(dateStart, startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(1f))
-                    DatePickerField(dateEnd, endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(1f))
-                }
-            } else if (isOneDay) {
-                // Случай 3: Только One Day = Дата Начала + Время Начала + Время Конца
-                // Отобразим в двух строках для лучшего вида на малых экранах
-                // Строка 1: Дата
-                DatePickerField(
-                    label = dateSingle,
-                    date = startDate,
-                    dateFormatter = deviceDateFormatter,
-                    isError = dateTimeError != null,
-                    isLoading = isLoading,
-                    onClick = onRequestShowStartDatePicker,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                )
-                // Строка 2: Время начала и конца
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    TimePickerField(
-                        label = timeStart,
-                        time = startTime,
-                        timeFormatter = deviceTimeFormatter,
-                        isError = dateTimeError != null && startTime == null,
-                        isLoading = isLoading,
-                        onClick = onRequestShowStartTimePicker,
-                        modifier = Modifier.weight(1f) // Делим поровну
+        // --- Поля ввода Даты/Времени (АНИМИРОВАННЫЕ) ---
+        // Apply animateContentSize to the container whose size changes
+        Column(
+            modifier = Modifier.animateContentSize(animationSpec = tween(300)),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AnimatedContent(
+                targetState = Pair(isAllDay, isOneDay),
+                transitionSpec = {
+                    if (targetState.first != initialState.first || targetState.second != initialState.second) {
+                        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                                slideInVertically(initialOffsetY = { it / 4 }, animationSpec = tween(270, delayMillis = 90))) togetherWith
+                                (fadeOut(animationSpec = tween(90)) +
+                                        slideOutVertically(targetOffsetY = { -it / 4 }, animationSpec = tween(120)))
+                    } else {
+                        fadeIn(animationSpec = tween(0)) togetherWith fadeOut(animationSpec = tween(0))
+                    }.using(
+                        SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> tween(250) })
                     )
-                    TimePickerField(
-                        label = timeEnd,
-                        time = endTime, // Используем endTime
-                        timeFormatter = deviceTimeFormatter,
-                        isError = dateTimeError != null && endTime == null, // Проверяем endTime
+                },
+                label = "DateTimeFieldsAnimation"
+            ) { targetLayoutState ->
+                val (showAllDay, showOneDay) = targetLayoutState
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { // Inner column for spacing
+                    when {
+                        // Case: All Day + One Day
+                        showAllDay && showOneDay -> {
+                            DatePickerField(dateSingle, state.startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.fillMaxWidth().padding(horizontal = 50.dp))
+                        }
+                        // Case: Only All Day
+                        showAllDay -> {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), Arrangement.spacedBy(8.dp), Alignment.Top) {
+                                DatePickerField(dateStart, state.startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(1f))
+                                DatePickerField(dateEnd, state.endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(1f))
+                            }
+                        }
+                        // Case: Only One Day
+                        showOneDay -> {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), Arrangement.spacedBy(8.dp), Alignment.Top) {
+                                TimePickerField(timeStart, state.startTime, deviceTimeFormatter, dateTimeError != null && state.startTime == null, isLoading, onRequestShowStartTimePicker, Modifier.weight(1f))
+                                TimePickerField(timeEnd, state.endTime, deviceTimeFormatter, dateTimeError != null && state.endTime == null, isLoading, onRequestShowEndTimePicker, Modifier.weight(1f))
+                            }
+                            DatePickerField(dateSingle, state.startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.fillMaxWidth().padding(horizontal = 50.dp))
+                        }
+                        // Case: Neither (Full Range)
+                        else -> {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), Arrangement.spacedBy(8.dp), Alignment.Top) {
+                                TimePickerField(timeStart, state.startTime, deviceTimeFormatter, dateTimeError != null && state.startTime == null, isLoading, onRequestShowStartTimePicker, Modifier.weight(0.5f))
+                                TimePickerField(timeEnd, state.endTime, deviceTimeFormatter, dateTimeError != null && state.endTime == null, isLoading, onRequestShowEndTimePicker, Modifier.weight(0.5f))
+                            }
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), Arrangement.spacedBy(8.dp), Alignment.Top) {
+                                DatePickerField(dateStart, state.startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(1f))
+                                DatePickerField(dateEnd, state.endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            } // End AnimatedContent
+        } // End Column for Date/Time fields with animateContentSize
+
+        // --- Настройки повторения (АНИМИРОВАННЫЕ) ---
+        AnimatedVisibility(
+            visible = state.isRecurring,
+            enter = fadeIn(animationSpec = tween(150, delayMillis = 50)) + expandVertically(animationSpec = tween(300)),
+            exit = fadeOut(animationSpec = tween(150)) + shrinkVertically(animationSpec = tween(300)),
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Column {
+                // --- Чипы для выбора частоты RRULE ---
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .horizontalScroll(rememberScrollState()), // Горизонтальная прокрутка
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                ) {
+                    // Вычисляем текущий выбор один раз
+                    val currentSelection = remember(state.recurrenceRule) {
+                        RecurrenceOption.fromRule(state.recurrenceRule)
+                    }
+
+                    // --- Явно создаем каждый чип ---
+                    // Чип "Ежедневно"
+                    FilterChipForOption(
+                        option = RecurrenceOption.Daily,
+                        currentSelection = currentSelection,
                         isLoading = isLoading,
-                        onClick = onRequestShowEndTimePicker, // Нужен callback для времени конца
-                        modifier = Modifier.weight(1f) // Делим поровну
+                        onStateChange = onStateChange,
+                        state = state
                     )
-                }
-            } else {
-                // Случай 4: Ни All Day, ни One Day = Полный набор полей
-                // Блок Начала
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    DatePickerField(dateStart, startDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowStartDatePicker, Modifier.weight(0.6f))
-                    TimePickerField(timeStart, startTime, deviceTimeFormatter, dateTimeError != null && startTime == null, isLoading, onRequestShowStartTimePicker, Modifier.weight(0.4f))
-                }
-                // Блок Конца
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    DatePickerField(dateEnd, endDate, deviceDateFormatter, dateTimeError != null, isLoading, onRequestShowEndDatePicker, Modifier.weight(0.6f))
-                    TimePickerField(timeEnd, endTime, deviceTimeFormatter, dateTimeError != null && endTime == null, isLoading, onRequestShowEndTimePicker, Modifier.weight(0.4f))
+
+                    // Чип "Еженедельно"
+                    FilterChipForOption(
+                        option = RecurrenceOption.Weekly,
+                        currentSelection = currentSelection,
+                        isLoading = isLoading,
+                        onStateChange = onStateChange,
+                        state = state
+                    )
+
+                    // Чип "Ежемесячно"
+                    FilterChipForOption(
+                        option = RecurrenceOption.Monthly,
+                        currentSelection = currentSelection,
+                        isLoading = isLoading,
+                        onStateChange = onStateChange,
+                        state = state
+                    )
+
+                    // Чип "Ежегодно"
+                    FilterChipForOption(
+                        option = RecurrenceOption.Yearly,
+                        currentSelection = currentSelection,
+                        isLoading = isLoading,
+                        onStateChange = onStateChange,
+                        state = state
+                    )
                 }
             }
-        } // Конец Column для полей ввода
-
-        // --- Настройки Повторения (если включено) ---
-        if (isRecurring) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "Настройки повторения (TODO)",
-                style = typography.titleMedium, // Используем MaterialTheme
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-            OutlinedTextField(
-                value = recurrenceRule ?: "",
-                onValueChange = { recurrenceRule = it }, // Пока просто строка
-                label = { Text("Правило (RRULE - TODO)") },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                enabled = !isLoading
-            )
-        }
-    }
+        } // End AnimatedVisibility for Recurrence
+    } // End Outer Column
 }
 
 // --- Вспомогательные Composable для полей ---
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DatePickerField(
-    label: String,
-    date: LocalDate,
-    dateFormatter: DateTimeFormatter,
-    isError: Boolean,
+private fun FilterChipForOption(
+    option: RecurrenceOption,
+    currentSelection: RecurrenceOption,
     isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    state: EventDateTimeState, // Нужен для copy()
+    onStateChange: (EventDateTimeState) -> Unit
 ) {
-    ClickableTextField(
-        value = date.format(dateFormatter),
-        label = label,
-        isError = isError,
-        isLoading = isLoading,
-        onClick = onClick,
-        modifier = modifier
+    FilterChip(
+        selected = (option == currentSelection),
+        onClick = {
+            onStateChange(state.copy(
+                recurrenceRule = option.rruleValue,
+                isRecurring = (option != RecurrenceOption.None)
+            ))
+        },
+        label = {
+            Text(stringResource(option.labelResId))
+        },
+        enabled = !isLoading,
+        leadingIcon = if (option == currentSelection) {
+            // Можно вернуть иконку, если хотите
+            // { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+            null
+        } else null
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TimePickerField(
-    label: String,
-    time: LocalTime?,
-    timeFormatter: DateTimeFormatter,
-    isError: Boolean,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ClickableTextField(
-        value = time?.format(timeFormatter) ?: "--:--",
-        label = label,
-        isError = isError,
-        isLoading = isLoading,
-        onClick = onClick,
-        modifier = modifier
-    )
-}
-
-// Общий Composable для кликабельного текстового поля (паттерн с оверлеем)
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ClickableTextField(
-    value: String,
-    label: String,
-    isError: Boolean,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {}, // Не изменяется напрямую
-            readOnly = true,
-            label = { Text(label) },
-            modifier = Modifier.fillMaxWidth(),
-            isError = isError,
-            enabled = !isLoading,
-            // Убираем interactionSource, т.к. клик обрабатывается оверлеем
-            // interactionSource = remember { MutableInteractionSource() }, // Не нужно
-            shape = RoundedCornerShape(16.dp) // Скругление можно вынести в параметры
-        )
-        // Прозрачный Оверлей для клика
-        Box(
-            modifier = Modifier
-                .matchParentSize() // Занимает все место родителя
-                .clickable(
-                    enabled = !isLoading,
-                    onClick = onClick,
-                    indication = null, // Можно убрать стандартную рябь
-                    interactionSource = remember { MutableInteractionSource() } // Для обработки состояний нажатия оверлея, если нужно
-                )
-        )
-    }
 }

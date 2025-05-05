@@ -1,3 +1,27 @@
 <resources>
     <string name="app_name">Caliinda</string>
+    <string name="time_start">Start time</string>
+    <string name="time_end">End time</string>
+    <string name="date_start">Start date</string>
+    <string name="date_end">End date</string>
+    <string name="date_single">Date</string>
+    <string name="all_day">All day</string>
+    <string name="one_day">One day</string>
+    <string name="recurrence_event">Repeat</string> <!-- Заменит ваш val recEvent -->
+
+    <!-- Строки для секции повторения -->
+    <string name="recurrence_settings_title">Recurrence</string> <!-- Заменит ваш val -->
+    <string name="recurrence_rule_label">Rule</string> <!-- Заменит ваш val -->
+    <string name="recurrence_none">Do not repeat</string>
+    <string name="recurrence_daily">Daily</string>
+    <string name="recurrence_weekly">Weekly</string>
+    <string name="recurrence_monthly">Monthly</string>
+    <string name="recurrence_yearly">Yearly</string>
+
+    <!-- Строки для ошибок и кнопок (если нужны) -->
+    <string name="error_end_date_before_start">End date cannot be before start date</string>
+    <string name="error_start_time_missing">Specify the start time</string>
+    <string name="error_end_time_missing">Specify the end time</string>
+    <string name="error_end_time_not_after_start">End time must be after start time</string>
+
 </resources>

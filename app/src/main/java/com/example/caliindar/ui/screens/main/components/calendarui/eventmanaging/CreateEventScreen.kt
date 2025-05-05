@@ -15,12 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalConfiguration
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.ui.screens.main.MainViewModel
@@ -34,7 +31,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class) // Необходимо для M3 Dialogs и Pickers
 @Composable
@@ -82,26 +78,28 @@ fun CreateEventScreen(
     }
     fun formatEventTimesForSaving(
         state: EventDateTimeState,
-        timeZoneId: String
+        timeZoneId: String? // Теперь может быть null
     ): Pair<String?, String?> {
-        val startTimeIso: String?
-        val endTimeIso: String?
-
-        if (state.isAllDay) {
+        return if (state.isAllDay) {
             val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-            startTimeIso = try { state.startDate.format(formatter) } catch (_: Exception) { null }
+            val startDateStr = try { state.startDate.format(formatter) } catch (_: Exception) { null }
+            // Для all-day события конец должен быть на следующий день после фактического последнего дня
             val effectiveEndDate = state.endDate.plusDays(1)
-            // Вариант 2: Конец = Фактический конец (если событие на неск. дней)
-            // val effectiveEndDate = state.endDate // Требует проверки API
-            endTimeIso = try { effectiveEndDate.format(formatter) } catch (_: Exception) { null }
-            Log.d("CreateEvent", "Formatting All-Day: Start=${startTimeIso}, End=${endTimeIso} (Derived from ${state.endDate})")
+            val endDateStr = try { effectiveEndDate.format(formatter) } catch (_: Exception) { null }
+            Log.d("CreateEvent", "Formatting All-Day: Start Date=$startDateStr, End Date=$endDateStr")
+            Pair(startDateStr, endDateStr)
         } else {
+            // Для событий со временем используем ISO с оффсетом
+            if (timeZoneId == null) {
+                Log.e("CreateEvent", "Cannot format timed event without TimeZone ID!")
+                return Pair(null, null) // Не можем форматировать без таймзоны
+            }
             // validateInput уже проверил, что startTime и endTime не null
-            startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.startDate, state.startTime!!, false, timeZoneId)
-            endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.endDate, state.endTime!!, false, timeZoneId)
-            Log.d("CreateEvent", "Formatting Timed: Start=$startTimeIso, End=$endTimeIso")
+            val startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.startDate, state.startTime!!, false, timeZoneId)
+            val endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(state.endDate, state.endTime!!, false, timeZoneId)
+            Log.d("CreateEvent", "Formatting Timed: Start DateTime=$startTimeIso, End DateTime=$endTimeIso")
+            Pair(startTimeIso, endTimeIso)
         }
-        return Pair(startTimeIso, endTimeIso)
     }
 
     // --- Логика валидации (без изменений) ---
@@ -155,24 +153,26 @@ fun CreateEventScreen(
 
     // Функция сохранения (логика форматирования без изменений)
     val onSaveClick: () -> Unit = saveLambda@{
-        generalError = null // Сброс ошибки от VM
+        generalError = null
         if (validateInput()) {
-            val (startTimeIso, endTimeIso) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
+            // Передаем userTimeZoneId в функцию форматирования
+            val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
 
-            if (startTimeIso == null || endTimeIso == null) {
-                validationError = "Ошибка форматирования даты/времени." // Ошибка форматирования
-                Log.e("CreateEvent", "Failed to format ISO strings based on state: $eventDateTimeState")
+            if (startStr == null || endStr == null) {
+                validationError = "Ошибка форматирования даты/времени."
+                Log.e("CreateEvent", "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId")
                 return@saveLambda
             }
 
             viewModel.createEvent(
                 summary = summary.trim(),
-                startTimeString = startTimeIso,
-                endTimeString = endTimeIso,
+                startTimeString  = startStr, // Отправляем отформатированную строку
+                endTimeString  = endStr,     // Отправляем отформатированную строку
                 isAllDay = eventDateTimeState.isAllDay,
+                timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId, // Передаем ID таймзоны только для timed событий
                 description = description.trim().takeIf { it.isNotEmpty() },
                 location = location.trim().takeIf { it.isNotEmpty() },
-                recurrenceRule = eventDateTimeState.recurrenceRule // Передаем правило повторения
+                recurrenceRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
             )
         } else {
             Toast.makeText(context, "Проверьте введенные данные", Toast.LENGTH_SHORT).show()
@@ -221,7 +221,7 @@ fun CreateEventScreen(
             // --- НОВОЕ: Используем EventDateTimePicker ---
             AdaptiveContainer{
                 EventDateTimePicker(
-                    initialState = eventDateTimeState,
+                    state = eventDateTimeState,
                     onStateChange = { newState ->
                         eventDateTimeState = newState
                         validationError = null // Сброс ошибки валидации при любом изменении
@@ -308,7 +308,6 @@ fun CreateEventScreen(
                 DatePicker(state = datePickerState)
             }
         }
-
         // Диалог выбора Времени Начала
         if (showStartTimePicker) { // Компонент не запросит, если не нужно
             val initialTime = currentDateTimeState.startTime ?: LocalTime.now() // Безопасное значение по умолчанию

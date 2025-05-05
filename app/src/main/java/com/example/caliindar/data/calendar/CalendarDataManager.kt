@@ -119,9 +119,6 @@ class CalendarDataManager @Inject constructor(
         val startOfDayUTC = date.atStartOfDay(ZoneOffset.UTC)
         val startMillis = startOfDayUTC.toInstant().toEpochMilli()
         val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
-
-        // Log.d(TAG, "Requesting event Flow from DB for date: $date (Range UTC millis: $startMillis <= t < $endMillis)")
-
         // Комбинируем Flow из DAO и Flow таймзоны из настроек
         return combine(
             eventDao.getEventsForDateRangeFlow(startMillis, endMillis),
@@ -165,11 +162,13 @@ class CalendarDataManager @Inject constructor(
     /** Создает новое событие через бэкенд */
     suspend fun createEvent(
         summary: String,
-        startTimeString: String,
-        endTimeString: String,
-        isAllDay: Boolean,
+        startTimeString: String, // <-- Возвращаем строковое поле
+        endTimeString: String,   // <-- Возвращаем строковое поле
+        isAllDay: Boolean,       // <-- Возвращаем булево поле
+        timeZoneId: String?,     // <-- Передаем ID таймзоны (может быть null для all day)
         description: String?,
-        location: String?
+        location: String?,
+        recurrenceRule: String?
     ) { // Теперь suspend
         if (summary.isBlank()) {
             _createEventResult.value = CreateEventResult.Error("Название не может быть пустым")
@@ -193,11 +192,30 @@ class CalendarDataManager @Inject constructor(
         val requestBody = try {
             JSONObject().apply {
                 put("summary", summary)
-                put("startTime", startTimeString)
-                put("endTime", endTimeString)
-                put("isAllDay", isAllDay)
-                put("description", description?.takeIf { it.isNotBlank() })
-                put("location", location?.takeIf { it.isNotBlank() })
+                // --- ВОЗВРАЩАЕМ ПОЛЯ В КОРЕНЬ ---
+                put("startTime", startTimeString) // Строка (date или dateTime)
+                put("endTime", endTimeString)   // Строка (date или dateTime)
+                put("isAllDay", isAllDay)       // Булево значение
+                // Таймзона нужна бэкенду для формирования запроса к Google
+                if (!isAllDay && timeZoneId != null) {
+                    put("timeZoneId", timeZoneId) // Отправляем ID таймзоны
+                } else if (!isAllDay && timeZoneId == null) {
+                    Log.w(TAG, "Sending timed event without timeZoneId to backend!")
+                    // Бэкенд должен будет обработать этот случай или вернуть ошибку
+                }
+                // --- КОНЕЦ ВОЗВРАЩЕНИЯ ПОЛЕЙ ---
+
+                description?.takeIf { it.isNotBlank() }?.let { put("description", it) }
+                location?.takeIf { it.isNotBlank() }?.let { put("location", it) }
+
+                // --- Добавляем recurrence (как и раньше) ---
+                recurrenceRule?.takeIf { it.isNotBlank() }?.let { ruleString ->
+                    val fullRuleString = "RRULE:$ruleString"
+                    val recurrenceArray = JSONArray().apply { put(fullRuleString) }
+                    // Убедитесь, что ключ "recurrence" ожидает ваш бэкенд
+                    put("recurrence", recurrenceArray)
+                }
+
             }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
         } catch (e: JSONException) {
             Log.e(TAG, "Error creating JSON for new event", e)

@@ -232,10 +232,10 @@ class MainViewModel @Inject constructor(
     fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> = calendarDataManager.getEventsFlowForDate(date)
     fun createEvent(
         summary: String, startTimeString: String, endTimeString: String,
-        isAllDay: Boolean, description: String?, location: String?, recurrenceRule: String?
+        isAllDay: Boolean, description: String?, timeZoneId: String?, location: String?, recurrenceRule: String?
     ) {
         viewModelScope.launch {
-            calendarDataManager.createEvent(summary, startTimeString, endTimeString, isAllDay, description, location)
+            calendarDataManager.createEvent(summary, startTimeString, endTimeString, isAllDay, timeZoneId = timeZoneId, description, location, recurrenceRule = recurrenceRule)
         }
     }
     fun consumeCreateEventResult() = calendarDataManager.consumeCreateEventResult()

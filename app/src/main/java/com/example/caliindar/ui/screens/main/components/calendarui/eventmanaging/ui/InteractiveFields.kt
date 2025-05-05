@@ -1,6 +1,9 @@
 package com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +33,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.sections.SugNameChips
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,5 +88,83 @@ fun ChipsRow(
                 modifier = Modifier.height(35.dp)
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DatePickerField(
+    label: String,
+    date: LocalDate,
+    dateFormatter: DateTimeFormatter,
+    isError: Boolean,
+    isLoading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ClickableTextField(
+        value = date.format(dateFormatter),
+        label = label,
+        isError = isError,
+        isLoading = isLoading,
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun TimePickerField(
+    label: String,
+    time: LocalTime?,
+    timeFormatter: DateTimeFormatter,
+    isError: Boolean,
+    isLoading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ClickableTextField(
+        value = time?.format(timeFormatter) ?: "--:--",
+        label = label,
+        isError = isError,
+        isLoading = isLoading,
+        onClick = onClick,
+        modifier = modifier
+    )
+}
+
+// Общий Composable для кликабельного текстового поля (паттерн с оверлеем)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClickableTextField(
+    value: String,
+    label: String,
+    isError: Boolean,
+    isLoading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {}, // Не изменяется напрямую
+            readOnly = true,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            isError = isError,
+            enabled = !isLoading,
+            shape = RoundedCornerShape(cuid.ContainerCornerRadius)
+        )
+        // Прозрачный Оверлей для клика
+        Box(
+            modifier = Modifier
+                .matchParentSize() // Занимает все место родителя
+                .clickable(
+                    enabled = !isLoading,
+                    onClick = onClick,
+                    indication = null, // Можно убрать стандартную рябь
+                    interactionSource = remember { MutableInteractionSource() } // Для обработки состояний нажатия оверлея, если нужно
+                )
+        )
     }
 }
