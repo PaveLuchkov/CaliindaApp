@@ -1,6 +1,6 @@
 [versions]
 accompanistSystemuicontroller = "0.34.0"
-agp = "8.9.1"
+agp = "8.9.2"
 coreTesting = "2.2.0"
 credentialsPlayServicesAuth = "1.5.0"
 datastorePreferences = "1.1.4"

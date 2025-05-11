@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
@@ -46,7 +47,7 @@ fun CustomOutlinedTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(text = label) },
+        label = { Text(text = label, textAlign = TextAlign.Center) },
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
@@ -58,7 +59,7 @@ fun CustomOutlinedTextField(
             unfocusedBorderColor = Color.Transparent,
         ),
         keyboardOptions = keyboardOptions,
-        textStyle = typography.headlineMedium,
+        textStyle = typography.headlineMedium.copy(textAlign = TextAlign.Center),
         enabled = enabled,
         singleLine = true,
         isError = isError,
@@ -97,7 +98,8 @@ internal fun DatePickerField(
     isError: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     ClickableTextField(
         value = date?.format(dateFormatter) ?: "",
@@ -106,6 +108,7 @@ internal fun DatePickerField(
         isLoading = isLoading,
         onClick = onClick,
         modifier = modifier,
+        textAlign = textAlign
     )
 }
 
@@ -139,7 +142,8 @@ private fun ClickableTextField(
     isError: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Box(modifier = modifier) {
         OutlinedTextField(

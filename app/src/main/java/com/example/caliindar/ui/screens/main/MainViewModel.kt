@@ -72,6 +72,7 @@ import com.example.caliindar.data.ai.model.AiVisualizerState
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.calendar.EventNetworkState
 import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -124,7 +125,8 @@ class MainViewModel @Inject constructor(
     // --- НАБЛЮДАТЕЛИ (вынесены из init для чистоты) ---
     private fun observeAuthState() {
         viewModelScope.launch {
-            authManager.authState.collect { auth ->
+            authManager.authState.map { it.isSignedIn }.distinctUntilChanged().collect { isSignedIn ->
+                val auth = authManager.authState.value
                 val previousState = _uiState.value
                 _uiState.update { currentUiState ->
                     currentUiState.copy(
@@ -136,10 +138,10 @@ class MainViewModel @Inject constructor(
                         message = if (auth.isSignedIn != previousState.isSignedIn || auth.authError != null) null else currentUiState.message
                     )
                 }
-                if (auth.isSignedIn) {
+                if (isSignedIn) {
                     Log.d(TAG, "Auth observer: User is signed in. Triggering calendar check.")
                     // Инициируем проверку календаря при подтверждении входа
-                    calendarDataManager.setCurrentVisibleDate(calendarDataManager.currentVisibleDate.value)
+                    calendarDataManager.setCurrentVisibleDate(calendarDataManager.currentVisibleDate.value, forceRefresh = true)
                 }
             }
         }

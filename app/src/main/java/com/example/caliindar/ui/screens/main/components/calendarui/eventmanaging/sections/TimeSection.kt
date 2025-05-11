@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.DatePickerField
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerField
@@ -455,14 +456,13 @@ fun EventDateTimePicker(
                         }
                     }
                 }
-                Column(modifier = Modifier.padding(top = 16.dp)) { // Добавим отступ
+                Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) { // Добавим отступ
                     Text(
-                        text = endsLabel, // "Ends"
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        text = endsLabel, // "Ending"
+                        style = typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     // --- Чипы для выбора типа окончания (NEVER, DATE, COUNT) ---
                     Row(
                         modifier = Modifier

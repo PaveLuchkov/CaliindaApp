@@ -14,25 +14,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccessTimeFilled
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material3.Button
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.caliindar.R
 import com.example.caliindar.ui.screens.main.MainViewModel
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import com.example.caliindar.ui.theme.Typography
@@ -86,7 +79,7 @@ fun GoogleAccountSection(
                    if (!uiState.isSignedIn) {
                        Button(
                            onClick = onSignInClick, // Вызываем лямбду
-                           enabled = !uiState.isLoading // Блокируем кнопку во время входа
+                       //    enabled = !uiState.isLoading // Блокируем кнопку во время входа
                        ) {
                            Text("Log-in")
                        }

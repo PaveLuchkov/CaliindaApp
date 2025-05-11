@@ -56,7 +56,7 @@ class AuthManager @Inject constructor(
     init {
         Log.d(TAG, "Initializing AuthManager...")
         gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestScopes(Scope("https://www.googleapis.com/auth/calendar.events"))
+            .requestScopes(Scope("https://www.googleapis.com/auth/calendar"))
             .requestServerAuthCode(webClientId)
             .requestIdToken(webClientId)
             .requestEmail()

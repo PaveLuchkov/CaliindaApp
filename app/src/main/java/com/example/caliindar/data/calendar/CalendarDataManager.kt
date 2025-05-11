@@ -73,45 +73,53 @@ class CalendarDataManager @Inject constructor(
     // --- Публичные методы для ViewModel ---
 
     /** Устанавливает текущую видимую дату и запускает проверку/загрузку диапазона */
-    fun setCurrentVisibleDate(newDate: LocalDate) {
+    fun setCurrentVisibleDate(newDate: LocalDate, forceRefresh: Boolean = false) {
         Log.d(TAG, "setCurrentVisibleDate: CALLED with $newDate. Current value: ${_currentVisibleDate.value}")
 
         // Only proceed if date is different OR range is not loaded yet
-        val needsUpdate = newDate != _currentVisibleDate.value || _loadedDateRange.value == null
-        if (!needsUpdate) {
-            Log.d(TAG, "setCurrentVisibleDate: Date $newDate is same as current AND range is loaded. Skipping.")
+        val needsDateUpdate = newDate != _currentVisibleDate.value
+        val needsRangeCheck = _loadedDateRange.value == null || forceRefresh || needsDateUpdate
+        if (!needsDateUpdate && !forceRefresh && _loadedDateRange.value != null) {
+            Log.d(TAG, "setCurrentVisibleDate: Date $newDate is same, no forceRefresh, range loaded. Skipping.")
             return
         }
 
         Log.i(TAG, "setCurrentVisibleDate: Proceeding to set date and check range for $newDate")
 
         // --- Explicit Cancellation ---
-        activeFetchJob?.cancel(CancellationException("New date set: $newDate")) // Cancel previous job with a reason
+        activeFetchJob?.cancel(CancellationException("New date set: $newDate, forceRefresh=$forceRefresh"))
         Log.d(TAG, "setCurrentVisibleDate: Previous activeFetchJob cancelled (if existed).")
         // --------------------------
 
-        _currentVisibleDate.value = newDate // Update the state
-
-        activeFetchJob = managerScope.launch { // Store the reference to the NEW job
-            Log.d(TAG, "setCurrentVisibleDate: New coroutine launched for ensureDateRangeLoadedAround($newDate). Job: ${coroutineContext[Job]}")
-            try {
-                ensureDateRangeLoadedAround(newDate)
-            } catch (ce: CancellationException) {
-                Log.d(TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} cancelled while ensuring range for $newDate: ${ce.message}")
-                throw ce
-            } catch (e: Exception) {
-                Log.e(TAG, "setCurrentVisibleDate: Error in ensureDateRangeLoadedAround for $newDate", e)
-                // Decide if you need to handle errors here, e.g., update network state
-            } finally {
-                // Optional: Clear the reference only if this *specific* job instance completes naturally or with error (not cancellation from outside)
-                // It might be safer *not* to clear it here, relying on the next call to cancel it.
-                // if (activeFetchJob == coroutineContext[Job] && coroutineContext.isActive) {
-                //     activeFetchJob = null
-                // }
-                Log.d(TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} finished for $newDate")
-            }
+        if (needsDateUpdate) {
+            _currentVisibleDate.value = newDate
         }
-        Log.d(TAG, "setCurrentVisibleDate: Assigned new activeFetchJob: ${activeFetchJob}")
+
+        // --- ВАЖНО: ПРОВЕРКА АУТЕНТИФИКАЦИИ ПЕРЕД ЗАПУСКОМ ЗАГРУЗКИ ---
+        if (authManager.authState.value.isSignedIn) {
+            // Запускаем корутину ТОЛЬКО если пользователь вошел
+            activeFetchJob = managerScope.launch {
+                Log.d(TAG, "setCurrentVisibleDate: New coroutine launched for ensureDateRangeLoadedAround($newDate, forceRefresh=$forceRefresh). Job: ${coroutineContext[Job]}")
+                try {
+                    ensureDateRangeLoadedAround(newDate, forceRefresh)
+                } catch (ce: CancellationException) {
+                    Log.d(TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} cancelled while ensuring range for $newDate: ${ce.message}")
+                    throw ce // Перебрасываем отмену
+                } catch (e: Exception) {
+                    Log.e(TAG, "setCurrentVisibleDate: Error in ensureDateRangeLoadedAround for $newDate", e)
+                    // Возможно, обновить _rangeNetworkState здесь, если ensureDateRangeLoadedAround не сделает этого
+                } finally {
+                    Log.d(TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} finished for $newDate")
+                }
+            }
+            Log.d(TAG, "setCurrentVisibleDate: Assigned new activeFetchJob: ${activeFetchJob}")
+        } else {
+            // Пользователь не вошел - не запускаем загрузку
+            Log.w(TAG, "setCurrentVisibleDate: Skipping range load for $newDate because user is not signed in.")
+            // Опционально: установить состояние ошибки или ожидания входа
+            // _rangeNetworkState.value = EventNetworkState.Error("Требуется вход")
+            activeFetchJob = null // Убедимся, что нет активной задачи
+        }
     }
 
     /** Предоставляет Flow событий из БД для указанной даты */
@@ -307,7 +315,7 @@ class CalendarDataManager @Inject constructor(
     // --- Приватные/внутренние методы ---
 
     /** Проверяет, нужно ли загружать/расширять диапазон дат */
-    internal suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate) = withContext(ioDispatcher) { // В IO
+    internal suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) = withContext(ioDispatcher) { // В IO
         val currentlyLoaded = _loadedDateRange.value
         val isLoading = _rangeNetworkState.value is EventNetworkState.Loading
 
@@ -319,7 +327,13 @@ class CalendarDataManager @Inject constructor(
         val idealTargetRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong())..centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
         Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, ideal=$idealTargetRange")
 
-        Log.d(TAG, "ensureDateRangeLoadedAround: Proceeding with checks/fetch for $centerDate")
+        if (forceLoad) {
+            Log.i(TAG, "Force load requested for $centerDate. Fetching ideal range: $idealTargetRange and replacing.")
+            fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true)
+            return@withContext
+        }
+
+        Log.d(TAG, "ensureDateRangeLoadedAround: Proceeding with standard checks/fetch for $centerDate (forceLoad=false)")
         if (currentlyLoaded == null) {
             Log.i(TAG, "Initial load: $idealTargetRange")
             fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true)
@@ -367,8 +381,6 @@ class CalendarDataManager @Inject constructor(
         while (freshToken == null && attempts < maxAttempts) {
             attempts++
             Log.w(TAG, "fetchAndStoreDateRange: Failed to get token (attempt $attempts/$maxAttempts). Retrying in ${retryDelay}ms...")
-            // НЕ устанавливаем ошибку сразу
-            // _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации") // <- УБРАТЬ ОТСЮДА
             delay(retryDelay) // Ждем перед повторной попыткой
             freshToken = authManager.getFreshIdToken()
         }
