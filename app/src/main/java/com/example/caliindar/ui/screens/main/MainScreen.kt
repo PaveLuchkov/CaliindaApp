@@ -99,6 +99,13 @@ fun MainScreen(
             viewModel.clearAuthError()
         }
     }
+
+    LaunchedEffect(uiState.deleteOperationError) {
+        uiState.deleteOperationError?.let { error ->
+            snackbarHostState.showSnackbar("Ошибка удаления: $error")
+            viewModel.clearDeleteError() // Сбрасываем ошибку после показа
+        }
+    }
     // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
     val isSignedIn = uiState.isSignedIn // Получаем статус входа
@@ -210,6 +217,30 @@ fun MainScreen(
 
         } // End основной Box
     } // End Scaffold
+
+    if (uiState.showDeleteConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDelete() }, // Закрытие диалога по тапу вне или кнопкой "назад"
+            title = { Text("Подтверждение") },
+            text = { Text("Вы уверены, что хотите удалить это событие?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Диалог сам закроется, так как confirmDeleteEvent изменит uiState
+                        viewModel.confirmDeleteEvent()
+                    }
+                ) {
+                    Text("Удалить")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { viewModel.cancelDelete() }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
