@@ -70,6 +70,7 @@ import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 import com.example.caliindar.data.ai.model.AiVisualizerState
 import com.example.caliindar.data.calendar.CreateEventResult
+import com.example.caliindar.data.calendar.DeleteEventResult
 import com.example.caliindar.data.calendar.EventNetworkState
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -100,6 +101,7 @@ class MainViewModel @Inject constructor(
     val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = calendarDataManager.loadedDateRange
     val rangeNetworkState: StateFlow<EventNetworkState> = calendarDataManager.rangeNetworkState
     val createEventResult: StateFlow<CreateEventResult> = calendarDataManager.createEventResult
+    val deleteEventResult: StateFlow<DeleteEventResult> = calendarDataManager.deleteEventResult
 
     // Состояния AI
     val aiState: StateFlow<AiVisualizerState> = aiInteractionManager.aiState
@@ -120,6 +122,7 @@ class MainViewModel @Inject constructor(
         observeAiState() // Наблюдаем и за AI для обновления isLoading и message
         observeCalendarNetworkState()
         observeCreateEventResult()
+        observeDeleteEventResult()
     }
 
     // --- НАБЛЮДАТЕЛИ (вынесены из init для чистоты) ---
@@ -208,19 +211,73 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private fun observeDeleteEventResult() {
+        viewModelScope.launch {
+            calendarDataManager.deleteEventResult.collect { result ->
+                _uiState.update { currentState ->
+                    val updatedState = when (result) {
+                        is DeleteEventResult.Success -> {
+                            Log.i(TAG, "Event deletion successful (observed in VM).")
+                            // Можно добавить сообщение об успехе в message, если нужно
+                            // Сбрасываем ID и ошибку
+                            currentState.copy(
+                                eventToDeleteId = null, // Убираем ID, т.к. операция завершена
+                                deleteOperationError = null,
+                                // message = "Событие удалено" // Опционально
+                            )
+                        }
+                        is DeleteEventResult.Error -> {
+                            Log.e(TAG, "Event deletion failed (observed in VM): ${result.message}")
+                            // Показываем специфическую ошибку удаления
+                            currentState.copy(
+                                eventToDeleteId = null, // Убираем ID, т.к. операция завершена
+                                deleteOperationError = result.message,
+                                showDeleteConfirmationDialog = false // Скрываем диалог, если он был открыт и произошла ошибка
+                            )
+                        }
+                        is DeleteEventResult.Loading -> {
+                            // Состояние загрузки обрабатывается в calculateIsLoading
+                            // Сбрасываем ошибку на время загрузки
+                            currentState.copy(deleteOperationError = null)
+                        }
+                        is DeleteEventResult.Idle -> {
+                            // Если состояние стало Idle, значит результат обработан
+                            // Сбрасываем ошибку, если она была
+                            if (currentState.deleteOperationError != null) {
+                                currentState.copy(deleteOperationError = null)
+                            } else {
+                                currentState // Не меняем, если не нужно
+                            }
+                        }
+                    }
+                    // Обновляем isLoading независимо от результата, так как он зависит от всех операций
+                    updatedState.copy(isLoading = calculateIsLoading())
+                }
+
+                // Потребляем результат (сбрасываем в Idle в DataManager),
+                // когда он Success или Error, чтобы UI не реагировал на него повторно
+                if (result is DeleteEventResult.Success || result is DeleteEventResult.Error) {
+                    calendarDataManager.consumeDeleteEventResult()
+                }
+            }
+        }
+    }
+
     // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
     /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
     private fun calculateIsLoading(
         authLoading: Boolean = authManager.authState.value.isLoading, // Берем текущие значения по умолчанию
         networkState: EventNetworkState = calendarDataManager.rangeNetworkState.value,
         aiState: AiVisualizerState = aiInteractionManager.aiState.value,
-        createEventState: CreateEventResult = calendarDataManager.createEventResult.value
+        createEventState: CreateEventResult = calendarDataManager.createEventResult.value,
+        deleteEventState: DeleteEventResult = calendarDataManager.deleteEventResult.value
     ): Boolean {
         val calendarLoading = networkState is EventNetworkState.Loading
         val creatingEvent = createEventState is CreateEventResult.Loading
+        val deletingEvent = deleteEventState is DeleteEventResult.Loading
         val aiThinking = aiState == AiVisualizerState.THINKING
         // Комбинируем все источники загрузки
-        return authLoading || calendarLoading || creatingEvent || aiThinking
+        return authLoading || calendarLoading || creatingEvent || aiThinking || deletingEvent
     }
 
     // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
@@ -285,11 +342,78 @@ class MainViewModel @Inject constructor(
             Log.d(TAG, "Audio permission status updated to: $isGranted")
         }
     }
+
+
+    /**
+     * Вызывается из UI, когда пользователь инициирует удаление события.
+     * Устанавливает ID события и показывает диалог подтверждения.
+     */
+    fun requestDeleteConfirmation(event: CalendarEvent) {
+        Log.d(TAG, "VM::requestDeleteConfirmation CALLED for event ID: ${event.id}")
+        _uiState.update { currentState ->
+            Log.d(TAG, "VM::INSIDE update lambda. Current showDialog: ${currentState.showDeleteConfirmationDialog}") // <-- ЛОГ 3.1.1
+            val newState = currentState.copy(
+                eventToDeleteId = event.id,
+                showDeleteConfirmationDialog = true,
+                deleteOperationError = null
+            )
+            Log.d(TAG, "VM::INSIDE update lambda. New state showDialog: ${newState.showDeleteConfirmationDialog}") // <-- ЛОГ 3.1.2
+            newState // Возвращаем новое состояние
+        }
+        Log.d(TAG, "VM::UI state update finished. StateFlow value showDialog: ${_uiState.value.showDeleteConfirmationDialog}")
+    }
+
+
+    /**
+     * Вызывается из UI, когда пользователь отменяет удаление в диалоге.
+     */
+    fun cancelDelete() {
+        _uiState.update {
+            it.copy(
+                eventToDeleteId = null,
+                showDeleteConfirmationDialog = false
+            )
+        }
+        Log.d(TAG, "Delete confirmation cancelled.")
+    }
+
+    /**
+     * Вызывается из UI, когда пользователь подтверждает удаление в диалоге.
+     * Запускает процесс удаления через DataManager.
+     */
+    fun confirmDeleteEvent() {
+        val eventIdToDelete = _uiState.value.eventToDeleteId
+        if (eventIdToDelete == null) {
+            Log.w(TAG, "confirmDeleteEvent called but eventToDeleteId is null.")
+            // Просто скроем диалог на всякий случай
+            _uiState.update { it.copy(showDeleteConfirmationDialog = false) }
+            return
+        }
+
+        Log.d(TAG, "Confirming deletion for event ID: $eventIdToDelete")
+        // Сначала скроем диалог (оптимистично или чтобы не мешал лоадеру)
+        _uiState.update { it.copy(showDeleteConfirmationDialog = false) }
+
+        // Запускаем корутину для вызова suspend функции DataManager
+        viewModelScope.launch {
+            calendarDataManager.deleteEvent(eventIdToDelete)
+            // Результат операции (успех/ошибка) будет получен и обработан
+            // в `observeDeleteEventResult`
+        }
+    }
+
+    /**
+     * Вызывается из UI для сброса флага ошибки удаления после ее показа (например, в Snackbar).
+     */
+    fun clearDeleteError() {
+        _uiState.update { it.copy(deleteOperationError = null) }
+    }
+
     fun clearGeneralError() {
         // Сбрасываем только generalError, не трогая authError
         _uiState.update { it.copy(showGeneralError = null) }
         // Возможно, стоит сбросить и ошибку сети календаря?
-        // calendarDataManager.clearNetworkError() // Опционально
+        calendarDataManager.clearNetworkError() // Опционально
     }
 
     // --- LIFECYCLE ---

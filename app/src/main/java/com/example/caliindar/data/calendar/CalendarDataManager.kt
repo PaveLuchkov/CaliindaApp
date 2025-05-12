@@ -61,12 +61,15 @@ class CalendarDataManager @Inject constructor(
     private val _loadedDateRange = MutableStateFlow<ClosedRange<LocalDate>?>(null)
     private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
     private val _createEventResult = MutableStateFlow<CreateEventResult>(CreateEventResult.Idle)
+    private val _deleteEventResult = MutableStateFlow<DeleteEventResult>(DeleteEventResult.Idle)
 
     // --- Публичные StateFlow для ViewModel ---
     val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
     val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = _loadedDateRange.asStateFlow()
     val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
     val createEventResult: StateFlow<CreateEventResult> = _createEventResult.asStateFlow()
+
+    val deleteEventResult: StateFlow<DeleteEventResult> = _deleteEventResult.asStateFlow()
 
     private var activeFetchJob: Job? = null
 
@@ -269,6 +272,92 @@ class CalendarDataManager @Inject constructor(
     /** Сбрасывает состояние результата создания события */
     fun consumeCreateEventResult() {
         _createEventResult.value = CreateEventResult.Idle
+    }
+
+    /**
+     * Запускает процесс удаления события на бэкенде и в локальной БД.
+     * Результат операции будет доступен через [deleteEventResult] StateFlow.
+     *
+     * @param eventId Уникальный идентификатор события для удаления.
+     */
+    suspend fun deleteEvent(eventId: String) {
+        // Проверяем, не идет ли уже удаление (простая блокировка)
+        if (_deleteEventResult.value is DeleteEventResult.Loading) {
+            Log.w(TAG, "deleteEvent called while another deletion is in progress for ID: $eventId. Ignoring.")
+            return // Можно вернуть ошибку или просто игнорировать
+        }
+
+        _deleteEventResult.value = DeleteEventResult.Loading
+        Log.i(TAG, "Attempting to delete event with ID: $eventId")
+
+        // Получаем токен
+        val freshToken = authManager.getFreshIdToken()
+        if (freshToken == null) {
+            Log.e(TAG, "Cannot delete event $eventId: Failed to get fresh ID token.")
+            _deleteEventResult.value = DeleteEventResult.Error("Ошибка аутентификации")
+            return
+        }
+
+        // Формируем запрос
+        val url = "$backendBaseUrl/calendar/events/$eventId"
+        val request = Request.Builder()
+            .url(url)
+            .delete() // Используем метод DELETE
+            .header("Authorization", "Bearer $freshToken")
+            .build()
+
+        try {
+            // Выполняем запрос в IO dispatcher
+            val response = withContext(ioDispatcher) {
+                okHttpClient.newCall(request).execute()
+            }
+
+            if (response.isSuccessful) { // Успех, если код 2xx (особенно 204 No Content)
+                Log.i(TAG, "Event $eventId successfully deleted on backend (Code: ${response.code}). Deleting locally.")
+                // Удаляем из локальной БД ТОЛЬКО после успешного удаления на бэкенде
+                try {
+                    withContext(ioDispatcher) {
+                        eventDao.deleteEventById(eventId)
+                    }
+                    Log.i(TAG, "Event $eventId successfully deleted from local DB.")
+                    _deleteEventResult.value = DeleteEventResult.Success
+                } catch (dbError: Exception) {
+                    Log.e(TAG, "Failed to delete event $eventId from local DB after successful backend deletion.", dbError)
+                    // Бэкенд удалил, но локально не смогли. Сложная ситуация.
+                    // Можно сообщить об ошибке, но событие уже удалено на сервере.
+                    _deleteEventResult.value = DeleteEventResult.Error("Ошибка синхронизации: событие удалено на сервере, но не локально.")
+                }
+            } else {
+                // Ошибка от бэкенда
+                val errorMsg = parseBackendError(response.body?.string(), response.code)
+                Log.e(TAG, "Error deleting event $eventId via backend: ${response.code} - $errorMsg")
+                _deleteEventResult.value = DeleteEventResult.Error(errorMsg) // Используем распарсенное сообщение
+            }
+
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error deleting event $eventId", e)
+            _deleteEventResult.value = DeleteEventResult.Error("Сетевая ошибка: ${e.message}")
+        } catch (e: Exception) {
+            // Ловим другие возможные ошибки (например, CancellationException)
+            if (e is CancellationException) {
+                Log.w(TAG, "Delete event $eventId job was cancelled.", e)
+                _deleteEventResult.value = DeleteEventResult.Idle // Или Error("Отменено")? Idle лучше, т.к. непонятно состояние
+                throw e // Перебрасываем отмену
+            }
+            Log.e(TAG, "Unexpected error deleting event $eventId", e)
+            _deleteEventResult.value = DeleteEventResult.Error("Неизвестная ошибка: ${e.message}")
+        } finally {
+            // Можно добавить сброс в Idle через некоторое время, если Success/Error не обработаны в UI,
+            // но лучше использовать consume метод.
+        }
+    }
+
+    /**
+     * Сбрасывает состояние результата удаления события в Idle.
+     * Вызывать после того, как UI обработал результат (например, показал Snackbar).
+     */
+    fun consumeDeleteEventResult() {
+        _deleteEventResult.value = DeleteEventResult.Idle
     }
 
     /** Принудительно обновляет данные для указанной даты */

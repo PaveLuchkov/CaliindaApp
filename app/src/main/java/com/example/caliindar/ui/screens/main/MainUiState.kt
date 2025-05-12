@@ -11,6 +11,9 @@ data class MainUiState(
     val showGeneralError: String? = null,
     val showAuthError: String? = null,
     val displayName: String? = null,
+    val eventToDeleteId: String? = null, // ID события, которое запросили удалить
+    val showDeleteConfirmationDialog: Boolean = false, // Показывать ли диалог подтверждения
+    val deleteOperationError: String? = null // Ошибка, специфичная для операции удаления
 )
 
 data class CalendarEvent(

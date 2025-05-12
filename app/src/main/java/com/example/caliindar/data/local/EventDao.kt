@@ -50,7 +50,10 @@ interface EventDao {
         insertOrReplaceEvents(newEvents)
     }
 
-    // Дополнительно (если нужно):
-    // @Query("DELETE FROM calendar_events")
-    // suspend fun deleteAllEvents()
+    /**
+     * Удаляет событие из локальной базы данных по его уникальному ID.
+     * @param eventId Уникальный идентификатор события (обычно строка, совпадающая с Google Calendar event ID).
+     */
+    @Query("DELETE FROM calendar_events WHERE id = :eventId") // Убедись, что поле ID в твоей Entity называется 'id'
+    suspend fun deleteEventById(eventId: String)
 }
