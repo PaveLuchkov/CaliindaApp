@@ -2,10 +2,5 @@
 <resources>
 
     <style name="Theme.Caliindar" parent="Theme.AppCompat.Light">
-        <!-- Добавьте эти строки -->
-        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <item name="android:windowTranslucentStatus">true</item>
-        <item name="android:windowTranslucentNavigation">true</item>
-        <item name="android:fitsSystemWindows">true</item>
     </style>
 </resources>
