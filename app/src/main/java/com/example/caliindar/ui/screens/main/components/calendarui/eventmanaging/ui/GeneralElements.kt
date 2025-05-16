@@ -26,25 +26,26 @@ import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
  * Content
 [AdaptiveContainer] - container for any content.
 [TimePickerDialog] - timepicker
+[DeleteConfirmationDialog] - delete confirmation dialog
  **/
 
 
-@Composable // Адаптивный контейнер для любого контента
+@Composable
 fun AdaptiveContainer(
-    modifier: Modifier = Modifier, // Позволяем модифицировать контейнер извне
-    content: @Composable ColumnScope.() -> Unit // Слот для любого содержимого
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
 ) {
-    val cornerRadius = cuid.SettingsItemCornerRadius // Общий радиус скругления
-    Column( // Используем Row, чтобы контент мог располагаться горизонтально
+    val cornerRadius = cuid.SettingsItemCornerRadius
+    Column(
         modifier = Modifier
-            .fillMaxWidth() // Занимает всю доступную ширину
+            .fillMaxWidth()
             .clip(RoundedCornerShape(cornerRadius))
-            .background(color = colorScheme.surfaceContainerLow) // Цвет фона
-            .padding(cuid.ContainerPadding) // Внутренний отступ
-            .then(modifier), // Применяем внешние модификации, если они есть
-        horizontalAlignment = Alignment.CenterHorizontally, // Выравнивание по вертикали по центру
+            .background(color = colorScheme.surfaceContainerLow)
+            .padding(cuid.ContainerPadding)
+            .then(modifier),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        content = content // Вставляем содержимое из слота
+        content = content
     )
 }
 
@@ -56,14 +57,12 @@ fun TimePickerDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    // Используем стандартный AlertDialog из M3 как контейнер
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(title) },
         text = {
-            // Обертка для центрирования TimePicker, если нужно
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                content() // Сюда передается TimePicker(state = ...)
+                content()
             }
         },
         confirmButton = confirmButton,
@@ -74,12 +73,12 @@ fun TimePickerDialog(
 @Composable
 fun DeleteConfirmationDialog(
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit // Вызывается при нажатии "Отмена" или клике вне диалога
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss, // Действие при отмене (тап вне диалога или кнопка "Назад")
+        onDismissRequest = onDismiss,
         title = {
-            Text(text = stringResource(R.string.delete_conf)) // Используй stringResource(R.string.delete_confirmation_title)
+            Text(text = stringResource(R.string.delete_conf))
         },
         text = {
             Text(text = stringResource(R.string.delete_confirmation_message))
@@ -88,14 +87,11 @@ fun DeleteConfirmationDialog(
             TextButton(
                 onClick = {
                     onConfirm()
-                    // onDismiss() // Диалог обычно скрывается автоматически после обновления UI состояния,
-                    // которое управляет его видимостью (showDeleteConfirmationDialog во ViewModel).
-                    // Если нет, то можно раскомментировать.
                 }
             ) {
                 Text(
                     text = stringResource(R.string.delete),
-                    color = colorScheme.error // Выделяем кнопку удаления цветом ошибки
+                    color = colorScheme.error
                 )
             }
         },
@@ -103,7 +99,7 @@ fun DeleteConfirmationDialog(
             TextButton(
                 onClick = onDismiss
             ) {
-                Text(text = stringResource(R.string.cancel)) // Используй stringResource(R.string.cancel_action)
+                Text(text = stringResource(R.string.cancel))
             }
         }
     )

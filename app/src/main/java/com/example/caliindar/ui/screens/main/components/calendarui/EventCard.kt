@@ -268,8 +268,6 @@ fun EventListItem(
                         contentPadding = PaddingValues(horizontal = 12.dp)
                     ) {
                         Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
-//                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-//                        Text("Delete") // Или локализованная строка
                     }
                 }
             } // Конец AnimatedVisibility
