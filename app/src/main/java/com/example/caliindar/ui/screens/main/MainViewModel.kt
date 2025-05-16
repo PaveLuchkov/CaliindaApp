@@ -69,9 +69,11 @@ import java.time.LocalTime
 import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 import com.example.caliindar.data.ai.model.AiVisualizerState
+import com.example.caliindar.data.calendar.ApiDeleteEventMode
 import com.example.caliindar.data.calendar.CreateEventResult
 import com.example.caliindar.data.calendar.DeleteEventResult
 import com.example.caliindar.data.calendar.EventNetworkState
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringDeleteChoice
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -349,18 +351,15 @@ class MainViewModel @Inject constructor(
      * Устанавливает ID события и показывает диалог подтверждения.
      */
     fun requestDeleteConfirmation(event: CalendarEvent) {
-        Log.d(TAG, "VM::requestDeleteConfirmation CALLED for event ID: ${event.id}")
-        _uiState.update { currentState ->
-            Log.d(TAG, "VM::INSIDE update lambda. Current showDialog: ${currentState.showDeleteConfirmationDialog}") // <-- ЛОГ 3.1.1
-            val newState = currentState.copy(
-                eventToDeleteId = event.id,
-                showDeleteConfirmationDialog = true,
+        _uiState.update {
+            it.copy(
+                eventPendingDeletion = event,
+                showDeleteConfirmationDialog = event.recurringEventId == null && event.originalStartTime == null, // Показываем простой диалог, если нет признаков повторения
+                showRecurringDeleteOptionsDialog = event.recurringEventId != null || event.originalStartTime != null, // Показываем диалог с опциями, если есть признаки повторения
                 deleteOperationError = null
             )
-            Log.d(TAG, "VM::INSIDE update lambda. New state showDialog: ${newState.showDeleteConfirmationDialog}") // <-- ЛОГ 3.1.2
-            newState // Возвращаем новое состояние
         }
-        Log.d(TAG, "VM::UI state update finished. StateFlow value showDialog: ${_uiState.value.showDeleteConfirmationDialog}")
+        Log.d(TAG, "Requested delete for event ID: ${event.id}, recurringId: ${event.recurringEventId}, originalStart: ${event.originalStartTime}")
     }
 
 
@@ -370,11 +369,11 @@ class MainViewModel @Inject constructor(
     fun cancelDelete() {
         _uiState.update {
             it.copy(
-                eventToDeleteId = null,
-                showDeleteConfirmationDialog = false
+                eventPendingDeletion = null,
+                showDeleteConfirmationDialog = false,
+                showRecurringDeleteOptionsDialog = false
             )
         }
-        Log.d(TAG, "Delete confirmation cancelled.")
     }
 
     /**
@@ -382,23 +381,42 @@ class MainViewModel @Inject constructor(
      * Запускает процесс удаления через DataManager.
      */
     fun confirmDeleteEvent() {
-        val eventIdToDelete = _uiState.value.eventToDeleteId
-        if (eventIdToDelete == null) {
-            Log.w(TAG, "confirmDeleteEvent called but eventToDeleteId is null.")
-            // Просто скроем диалог на всякий случай
-            _uiState.update { it.copy(showDeleteConfirmationDialog = false) }
-            return
+        val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+        _uiState.update { it.copy(showDeleteConfirmationDialog = false, eventPendingDeletion = null) }
+        viewModelScope.launch {
+            // Для одиночного события или если мы решаем удалить экземпляр как обычное событие (что сделает его исключением)
+            // или если это мастер и мы хотим удалить всю серию по умолчанию.
+            calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.DEFAULT)
+        }
+    }
+
+    fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
+        val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+        _uiState.update { it.copy(showRecurringDeleteOptionsDialog = false, eventPendingDeletion = null) }
+
+        val mode = when (choice) {
+            RecurringDeleteChoice.SINGLE_INSTANCE -> ApiDeleteEventMode.INSTANCE_ONLY
+            RecurringDeleteChoice.ALL_IN_SERIES -> ApiDeleteEventMode.DEFAULT // Бэкенд обработает это как удаление всей серии
         }
 
-        Log.d(TAG, "Confirming deletion for event ID: $eventIdToDelete")
-        // Сначала скроем диалог (оптимистично или чтобы не мешал лоадеру)
-        _uiState.update { it.copy(showDeleteConfirmationDialog = false) }
+        // Для INSTANCE_ONLY, ID должен быть ID экземпляра.
+        // Для ALL_IN_SERIES, Google API обычно сам разбирается, если передать ID экземпляра,
+        // но безопаснее передать ID мастер-события, если он известен (eventToDelete.recurringEventId).
+        // Однако, если eventToDelete.id УЖЕ является ID мастер-события (т.е. recurringEventId == null, но событие по своей природе повторяющееся),
+        // то eventToDelete.id и есть то, что нужно для удаления всей серии.
 
-        // Запускаем корутину для вызова suspend функции DataManager
+        val idForBackendCall: String
+        if (mode == ApiDeleteEventMode.INSTANCE_ONLY) {
+            idForBackendCall = eventToDelete.id // Должен быть ID экземпляра
+        } else { // ALL_IN_SERIES (через DEFAULT на бэке)
+            // Если у нас есть recurringEventId, это ID мастер-события.
+            // Если нет, то eventToDelete.id - это либо одиночное, либо уже ID мастер-события.
+            idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
+        }
+
+        Log.d(TAG, "Confirming recurring delete. Event ID for backend: $idForBackendCall, Mode: $mode")
         viewModelScope.launch {
-            calendarDataManager.deleteEvent(eventIdToDelete)
-            // Результат операции (успех/ошибка) будет получен и обработан
-            // в `observeDeleteEventResult`
+            calendarDataManager.deleteEvent(idForBackendCall, mode)
         }
     }
 

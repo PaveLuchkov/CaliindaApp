@@ -34,6 +34,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 
+enum class ApiDeleteEventMode(val value: String) {
+    DEFAULT("default"),           // Поведение по умолчанию (обычно вся серия для мастер-события)
+    INSTANCE_ONLY("instance_only") // Только этот экземпляр
+    // Можно добавить ALL_SERIES("all_series"), если бэкенд будет его явно обрабатывать,
+    // но пока DEFAULT часто выполняет эту роль.
+}
 
 @Singleton
 class CalendarDataManager @Inject constructor(
@@ -279,18 +285,17 @@ class CalendarDataManager @Inject constructor(
      * Результат операции будет доступен через [deleteEventResult] StateFlow.
      *
      * @param eventId Уникальный идентификатор события для удаления.
+     * @param mode Режим удаления для повторяющихся событий.
      */
-    suspend fun deleteEvent(eventId: String) {
-        // Проверяем, не идет ли уже удаление (простая блокировка)
+    suspend fun deleteEvent(eventId: String, mode: ApiDeleteEventMode = ApiDeleteEventMode.DEFAULT) { // <-- ДОБАВЛЕН ПАРАМЕТР mode
         if (_deleteEventResult.value is DeleteEventResult.Loading) {
             Log.w(TAG, "deleteEvent called while another deletion is in progress for ID: $eventId. Ignoring.")
-            return // Можно вернуть ошибку или просто игнорировать
+            return
         }
 
         _deleteEventResult.value = DeleteEventResult.Loading
-        Log.i(TAG, "Attempting to delete event with ID: $eventId")
+        Log.i(TAG, "Attempting to delete event with ID: $eventId, mode: ${mode.value}")
 
-        // Получаем токен
         val freshToken = authManager.getFreshIdToken()
         if (freshToken == null) {
             Log.e(TAG, "Cannot delete event $eventId: Failed to get fresh ID token.")
@@ -298,58 +303,63 @@ class CalendarDataManager @Inject constructor(
             return
         }
 
-        // Формируем запрос
-        val url = "$backendBaseUrl/calendar/events/$eventId"
+        // --- НОВОЕ: Формируем URL с query-параметром mode ---
+        var url = "$backendBaseUrl/calendar/events/$eventId"
+        if (mode != ApiDeleteEventMode.DEFAULT) {
+            url += "?mode=${mode.value}"
+        }
+        Log.d(TAG, "Delete request URL: $url")
+        // ---------------------------------------------------
+
         val request = Request.Builder()
-            .url(url)
-            .delete() // Используем метод DELETE
+            .url(url) // Используем обновленный URL
+            .delete()
             .header("Authorization", "Bearer $freshToken")
             .build()
 
         try {
-            // Выполняем запрос в IO dispatcher
             val response = withContext(ioDispatcher) {
                 okHttpClient.newCall(request).execute()
             }
 
-            if (response.isSuccessful) { // Успех, если код 2xx (особенно 204 No Content)
-                Log.i(TAG, "Event $eventId successfully deleted on backend (Code: ${response.code}). Deleting locally.")
-                // Удаляем из локальной БД ТОЛЬКО после успешного удаления на бэкенде
+            if (response.isSuccessful) {
+                Log.i(TAG, "Event $eventId successfully processed for deletion on backend (Mode: ${mode.value}, Code: ${response.code}). Deleting locally.")
                 try {
                     withContext(ioDispatcher) {
+                        // Локально мы всегда удаляем по ID.
+                        // Если это был "отмененный" экземпляр, он либо перестанет приходить от Google,
+                        // либо придет со статусом 'cancelled'. В обоих случаях, при следующем
+                        // fetchAndStoreDateRange с replace=true он будет удален или перезаписан.
+                        // Если fetchAndStoreDateRange не делает replace, а только добавляет,
+                        // то отмененные экземпляры могут остаться до полной очистки диапазона.
+                        // Для простоты, пока что удаляем по ID.
                         eventDao.deleteEventById(eventId)
                     }
-                    Log.i(TAG, "Event $eventId successfully deleted from local DB.")
+                    Log.i(TAG, "Event $eventId (or its reference) successfully deleted from local DB.")
                     _deleteEventResult.value = DeleteEventResult.Success
                 } catch (dbError: Exception) {
                     Log.e(TAG, "Failed to delete event $eventId from local DB after successful backend deletion.", dbError)
-                    // Бэкенд удалил, но локально не смогли. Сложная ситуация.
-                    // Можно сообщить об ошибке, но событие уже удалено на сервере.
-                    _deleteEventResult.value = DeleteEventResult.Error("Ошибка синхронизации: событие удалено на сервере, но не локально.")
+                    _deleteEventResult.value = DeleteEventResult.Error("Ошибка синхронизации: событие обработано на сервере, но не удалено локально.")
                 }
             } else {
-                // Ошибка от бэкенда
                 val errorMsg = parseBackendError(response.body?.string(), response.code)
-                Log.e(TAG, "Error deleting event $eventId via backend: ${response.code} - $errorMsg")
-                _deleteEventResult.value = DeleteEventResult.Error(errorMsg) // Используем распарсенное сообщение
+                Log.e(TAG, "Error deleting event $eventId (Mode: ${mode.value}) via backend: ${response.code} - $errorMsg")
+                _deleteEventResult.value = DeleteEventResult.Error(errorMsg)
             }
 
         } catch (e: IOException) {
-            Log.e(TAG, "Network error deleting event $eventId", e)
+            Log.e(TAG, "Network error deleting event $eventId (Mode: ${mode.value})", e)
             _deleteEventResult.value = DeleteEventResult.Error("Сетевая ошибка: ${e.message}")
         } catch (e: Exception) {
-            // Ловим другие возможные ошибки (например, CancellationException)
             if (e is CancellationException) {
-                Log.w(TAG, "Delete event $eventId job was cancelled.", e)
-                _deleteEventResult.value = DeleteEventResult.Idle // Или Error("Отменено")? Idle лучше, т.к. непонятно состояние
-                throw e // Перебрасываем отмену
+                Log.w(TAG, "Delete event $eventId (Mode: ${mode.value}) job was cancelled.", e)
+                _deleteEventResult.value = DeleteEventResult.Idle
+                throw e
             }
-            Log.e(TAG, "Unexpected error deleting event $eventId", e)
+            Log.e(TAG, "Unexpected error deleting event $eventId (Mode: ${mode.value})", e)
             _deleteEventResult.value = DeleteEventResult.Error("Неизвестная ошибка: ${e.message}")
-        } finally {
-            // Можно добавить сброс в Idle через некоторое время, если Success/Error не обработаны в UI,
-            // но лучше использовать consume метод.
         }
+        // finally блок можно убрать, если consumeDeleteEventResult() всегда вызывается из ViewModel
     }
 
     /**
@@ -577,7 +587,6 @@ class CalendarDataManager @Inject constructor(
 
     /** Парсит JSON-ответ со списком событий */
     private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
-        // --- ВЕСЬ КОД ТВОЕГО МЕТОДА parseEventsResponse ---
         val events = mutableListOf<CalendarEvent>()
         try {
             val jsonArray = JSONArray(jsonString)
@@ -591,6 +600,8 @@ class CalendarDataManager @Inject constructor(
                     val summary = eventObject.optString("summary", "Без названия")
                     val description = eventObject.optString("description")
                     val location = eventObject.optString("location")
+                    val recurringEventId = eventObject.optString("recurringEventId", null).takeIf { !it.isNullOrEmpty() }
+                    val originalStartTime = eventObject.optString("originalStartTime", null).takeIf { !it.isNullOrEmpty() }
 
                     if (id.isNullOrEmpty() || startTimeStr.isNullOrEmpty()) {
                         Log.w(TAG, "Skipping event due to missing id or startTime in JSON object: ${eventObject.optString("summary")}")
@@ -605,7 +616,9 @@ class CalendarDataManager @Inject constructor(
                             endTime = endTimeStr.takeIf { !it.isNullOrEmpty() } ?: startTimeStr, // Используем твой fallback
                             description = description,
                             location = location,
-                            isAllDay = isAllDay
+                            isAllDay = isAllDay,
+                            recurringEventId = recurringEventId,
+                            originalStartTime = originalStartTime
                         )
                     )
                 } catch (e: JSONException) {
@@ -642,5 +655,4 @@ class CalendarDataManager @Inject constructor(
     // Helper minOf/maxOf для LocalDate (если нет в стандартной библиотеке нужной версии)
     private fun minOf(a: LocalDate, b: LocalDate): LocalDate = if (a.isBefore(b)) a else b
     private fun maxOf(a: LocalDate, b: LocalDate): LocalDate = if (a.isAfter(b)) a else b
-
 }

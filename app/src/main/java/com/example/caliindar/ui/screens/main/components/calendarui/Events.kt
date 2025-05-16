@@ -43,6 +43,7 @@ import com.example.caliindar.data.local.DateTimeUtils.parseToInstant
 import com.example.caliindar.ui.screens.main.components.UIDefaults.CalendarUiDefaults
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.DeleteConfirmationDialog
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringEventDeleteOptionsDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -378,10 +379,21 @@ fun DayEventsPage(
                 Spacer(modifier = Modifier.weight(1f))
             }
         } // End Column
-        if (uiState.showDeleteConfirmationDialog) {
-            DeleteConfirmationDialog(
+        if (uiState.showDeleteConfirmationDialog && uiState.eventPendingDeletion != null) {
+            DeleteConfirmationDialog( // Твой существующий диалог
+                // Передавай нужные параметры, например, имя события
+                // eventName = uiState.eventPendingDeletion!!.summary,
+                // isRecurring = false, // Мы знаем, что это одиночное
                 onConfirm = { viewModel.confirmDeleteEvent() },
                 onDismiss = { viewModel.cancelDelete() }
+            )
+        } else if (uiState.showRecurringDeleteOptionsDialog && uiState.eventPendingDeletion != null) {
+            RecurringEventDeleteOptionsDialog(
+                eventName = uiState.eventPendingDeletion!!.summary,
+                onDismiss = { viewModel.cancelDelete() },
+                onOptionSelected = { choice ->
+                    viewModel.confirmRecurringDelete(choice)
+                }
             )
         }
     } // End Box

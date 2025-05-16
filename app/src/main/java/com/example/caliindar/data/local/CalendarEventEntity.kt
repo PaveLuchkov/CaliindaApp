@@ -12,6 +12,8 @@ data class CalendarEventEntity(
     val description: String?,
     val location: String?,
     val isAllDay: Boolean = false,
+    val recurringEventId: String? = null, // Новое поле
+    val originalStartTimeString: String? = null, // Новое поле (храним как строку)
     // Опционально: Можно добавить userGoogleId, если планируешь мультиюзерность в одной БД
     // val userGoogleId: String,
     // Опционально: Можно добавить время последнего обновления из сети

@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [CalendarEventEntity::class],
-    version = 2, // Увеличивай версию при изменении схемы
+    version = 3, // Увеличивай версию при изменении схемы
     exportSchema = false // Установи true и укажи путь для схем в production
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -12,7 +12,9 @@ data class MainUiState(
     val showAuthError: String? = null,
     val displayName: String? = null,
     val eventToDeleteId: String? = null,
+    val eventPendingDeletion: CalendarEvent? = null,
     val showDeleteConfirmationDialog: Boolean = false,
+    val showRecurringDeleteOptionsDialog: Boolean = false,
     val deleteOperationError: String? = null
 )
 
@@ -23,5 +25,7 @@ data class CalendarEvent(
     val endTime: String?,
     val description: String? = null,
     val location: String? = null,
-    val isAllDay: Boolean = false
+    val isAllDay: Boolean = false,
+    val recurringEventId: String? = null, // ID "мастер-события", если это экземпляр
+    val originalStartTime: String? = null // Для измененных экземпляров, их оригинальное время начала
 )

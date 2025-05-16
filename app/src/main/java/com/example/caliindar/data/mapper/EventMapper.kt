@@ -58,7 +58,9 @@ object EventMapper {
                 endTimeMillis = endTimeMillis,
                 description = event.description,
                 location = event.location,
-                isAllDay = isAllDayEvent // Сохраняем флаг из CalendarEvent
+                isAllDay = isAllDayEvent,
+                recurringEventId = event.recurringEventId,       // Из event (domain)
+                originalStartTimeString = event.originalStartTime // Из event (domain)
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error mapping CalendarEvent to Entity: ${event.id}", e)
@@ -81,7 +83,9 @@ object EventMapper {
             endTime = endTimeStr ?: "",   // Передаем отформатированную строку
             description = entity.description,
             location = entity.location,
-            isAllDay = entity.isAllDay // Берем флаг из БД
+            isAllDay = entity.isAllDay,
+            recurringEventId = entity.recurringEventId,
+            originalStartTime = entity.originalStartTimeString
         )
     }
 }
