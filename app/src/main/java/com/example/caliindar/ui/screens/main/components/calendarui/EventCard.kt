@@ -1,21 +1,38 @@
 package com.example.caliindar.ui.screens.main.components.calendarui
 
 import RoundedPolygonShape
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -48,10 +65,18 @@ import kotlin.math.exp
 fun EventListItem(
     event: CalendarEvent,
     timeFormatter: (CalendarEvent) -> String,
-    isCurrentEvent: Boolean, // Получаем снаружи
+    isCurrentEvent: Boolean,
     isNextEvent: Boolean,
     proximityRatio: Float,
-    modifier: Modifier = Modifier, // Позволяем контейнеру управлять внешними отступами/размером
+    // --- ИСПОЛЬЗУЕМ ПЕРЕДАННЫЕ ЗНАЧЕНИЯ ---
+    isMicroEventFromList: Boolean,   // Бывший isMicroEvent
+    targetHeightFromList: Dp,      // Бывший targetHeight
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onDeleteClickFromList: () -> Unit,
+    onEditClickFromList: () -> Unit,
+    // -----------------------------------
+    modifier: Modifier = Modifier,
     currentTimeZoneId: String
 ) {
     // --- Расчет высоты  ---
@@ -63,14 +88,6 @@ fun EventListItem(
         } else {
             0L
         }
-    }
-
-    val isMicroEvent = remember(eventDurationMinutes) {
-        eventDurationMinutes in 1..cuid.MicroEventMaxDurationMinutes
-    }
-
-    val targetHeight = remember(isMicroEvent, eventDurationMinutes) {
-        calculateEventHeight(eventDurationMinutes, isMicroEvent)
     }
 
     // --- Генерация формы ---
@@ -89,20 +106,15 @@ fun EventListItem(
     val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
     val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
 
-    val starContainerSize = remember(eventDurationMinutes) {
-        calculateShapeContainerSize(eventDurationMinutes)
+    val starContainerSize = remember(eventDurationMinutes, isMicroEventFromList) {
+        if (isMicroEventFromList || eventDurationMinutes <= 0L) 0.dp
+        else calculateShapeContainerSize(eventDurationMinutes)
     }
 
 
     // Compute the transitionColor
     val transitionColorCard = colorScheme.primaryContainer.transitionTo(colorScheme.tertiaryContainer, proximityRatio)
     val transitionColorText = colorScheme.onPrimaryContainer.transitionTo(colorScheme.onTertiaryContainer, proximityRatio)
-
-    val starOffsetY = starContainerSize * shapeParams.offestParam
-    val starOffsetX = starContainerSize * -shapeParams.offestParam
-    val rotationAngle = shapeParams.rotationAngle
-    val shadowColor = Color.Black.copy(alpha = 0.3f)
-    val density = LocalDensity.current
     val darkerShadowColor = Color.Black
 
     // --- Параметры текущего события (получаем isCurrentEvent) ---
@@ -121,9 +133,8 @@ fun EventListItem(
         else -> colorScheme.onPrimaryContainer // Обычный фон
     }
     // --- Композиция UI ---
-    Box(
-        modifier = modifier // Применяем модификатор от родителя
-            // Убрали внешний padding отсюда
+    Box( // Корневой Box для тени, фона, высоты и кликабельности
+        modifier = modifier
             .shadow(
                 elevation = cardElevation,
                 shape = RoundedCornerShape(cuid.EventItemCornerRadius),
@@ -133,99 +144,133 @@ fun EventListItem(
             )
             .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
             .background(cardBackground)
-            .height(targetHeight) // Высота применяется здесь
+            .height(targetHeightFromList)
+            .clickable { onToggleExpand() }
     ) {
-        // --- Декорация ---
-        if (!isMicroEvent) {
-            // Тень
+        Column(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .graphicsLayer(
-                        translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
-                        translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
-                        rotationZ = rotationAngle,
-                        /*
-                        renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            BlurEffect(radiusX = cuid.StarShadowBlurRadius, radiusY = cuid.StarShadowBlurRadius, edgeTreatment = TileMode.Decal)
-                        } else null
+                    .weight(1f) // Занимает все место, ОСТАВЛЯЯ место для кнопок снизу
+                    .fillMaxWidth()
+                    // Внутренние отступы для текста и звезды
+                    .padding(
+                        horizontal = cuid.ItemHorizontalPadding,
+                        vertical = if (isMicroEventFromList) cuid.MicroItemContentVerticalPadding else cuid.StandardItemContentVerticalPadding
+                    ),
+                // Выравнивание контента можно оставить TopStart или изменить на Center, если нужно
+                contentAlignment = Alignment.TopStart
+            ) {
+                if (!isMicroEventFromList && starContainerSize > 0.dp) {
+                    val density = LocalDensity.current
+                    val starOffsetY = starContainerSize * shapeParams.offestParam
+                    val starOffsetX = starContainerSize * -shapeParams.offestParam
+                    val rotationAngle = shapeParams.rotationAngle
+                    val shadowColor = Color.Black.copy(alpha = 0.3f) // Переместил
 
-                         */
+                    Box( // Тень
+                        modifier = Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                            .graphicsLayer(
+                                translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
+                                translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
+                                rotationZ = rotationAngle
+                            ).requiredSize(starContainerSize).clip(clip2Star)
+                            .background(shadowColor)
                     )
-                    .requiredSize(starContainerSize)
-                    .clip(clip2Star)
-                    .background(shadowColor)
-            )
-            // Основная фигура
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .graphicsLayer(
-                        translationX = with(density) { starOffsetX.toPx() },
-                        translationY = with(density) { starOffsetY.toPx() },
-                        rotationZ = rotationAngle
+                    Box( // Основная фигура
+                        modifier = Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                            .graphicsLayer(
+                                translationX = with(density) { starOffsetX.toPx() },
+                                translationY = with(density) { starOffsetY.toPx() },
+                                rotationZ = rotationAngle
+                            ).requiredSize(starContainerSize).clip(clipStar)
+                            .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha))
                     )
-                    .requiredSize(starContainerSize)
-                    .clip(clipStar)
-                    .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha)) // Используем фон карточки
-            )
-        }
-
-        // --- Текстовый контент ---
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                // Используем константы для внутренних отступов
-                .padding(
-                    horizontal = cuid.ItemHorizontalPadding, // Внутренний горизонтальный
-                    vertical = if (isMicroEvent) cuid.MicroItemContentVerticalPadding else cuid.StandardItemContentVerticalPadding
-                ),
-            contentAlignment = Alignment.TopStart
-        ) {
-            if (isMicroEvent) {
+                }
+                    if (isMicroEventFromList) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = event.summary,
+                                color = cardTextColor,
+                                style = typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            Spacer(modifier = Modifier.width(cuid.HeaderBottomSpacing))
+                            Text(
+                                text = timeFormatter(event),
+                                color = cardTextColor,
+                                style = typography.labelMedium,
+                                maxLines = 1
+                            )
+                        }
+                    } else {
+                        Column(
+                            verticalArrangement = Arrangement.Top
+                        ) {
+                            Text(
+                                text = event.summary,
+                                color = cardTextColor,
+                                style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = timeFormatter(event),
+                                color = cardTextColor,
+                                style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(animationSpec = tween(150, delayMillis = 100)) + slideInVertically(animationSpec = tween(250, delayMillis = 50), initialOffsetY = { it / 2 }),
+                exit = slideOutVertically(animationSpec = tween(250), targetOffsetY = { it }) + fadeOut(animationSpec = tween(150))
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 8.dp), // Отступы для ряда кнопок
+                    horizontalArrangement = Arrangement.End, // Кнопки справа
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = event.summary,
-                        color = cardTextColor,
-                        style = typography.titleLarge.copy(fontWeight = FontWeight.Medium),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    Spacer(modifier = Modifier.width(cuid.HeaderBottomSpacing))
-                    Text(
-                        text = timeFormatter(event),
-                        color = cardTextColor,
-                        style = typography.labelMedium,
-                        maxLines = 1
-                    )
+                    OutlinedButton(
+                        onClick = {
+                            // Важно: onClick для кнопок не должен вызывать onToggleExpand,
+                            // он должен вызывать onEditClickFromList / onDeleteClickFromList.
+                            // Схлопывание происходит в EventsList после вызова этих колбэков.
+                            onEditClickFromList()
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Редактировать", modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text("Edit") // Или локализованная строка
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            onDeleteClickFromList()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text("Delete") // Или локализованная строка
+                    }
                 }
-            } else {
-                Column(
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = event.summary,
-                        color = cardTextColor,
-                        style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = timeFormatter(event),
-                        color = cardTextColor,
-                        style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                        maxLines = 1
-                    )
-                }
-            }
+            } // Конец AnimatedVisibility
         }
-    }
-}
+    } // Конец Column (контент + кнопки)
+} // Конец корневого Box
+
 
 fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
     return if (isMicroEvent) {

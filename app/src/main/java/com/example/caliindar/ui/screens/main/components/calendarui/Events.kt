@@ -1,6 +1,8 @@
 package com.example.caliindar.ui.screens.main.components.calendarui
 
 import android.util.Log
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -27,7 +29,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +42,7 @@ import com.example.caliindar.data.local.DateTimeUtils
 import com.example.caliindar.data.local.DateTimeUtils.parseToInstant
 import com.example.caliindar.ui.screens.main.components.UIDefaults.CalendarUiDefaults
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
+import com.example.caliindar.ui.screens.main.components.calendarui.eventmanaging.ui.DeleteConfirmationDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -56,7 +61,6 @@ data class GeneratedShapeParams(
     val offestParam: Float,
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EventsList(
     events: List<CalendarEvent>,
@@ -66,11 +70,15 @@ fun EventsList(
     currentTimeZoneId: String,
     listState: LazyListState,
     nextStartTime: Instant?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDeleteRequest: (CalendarEvent) -> Unit,
+    onEditRequest: (CalendarEvent) -> Unit,
 ) {
     val transitionWindowDurationMillis = remember { // Запоминаем длительность окна в мс
         Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()
     }
+
+    var expandedEventId by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -78,6 +86,55 @@ fun EventsList(
     ) {
 
         items(items = events, key = { it.id }) { event ->
+
+            val isExpanded = event.id == expandedEventId
+
+
+            val eventDurationMinutes = remember(event.startTime, event.endTime, currentTimeZoneId) {
+                val start = parseToInstant(event.startTime, currentTimeZoneId)
+                val end = parseToInstant(event.endTime, currentTimeZoneId)
+                if (start != null && end != null && end.isAfter(start)) {
+                    Duration.between(start, end).toMinutes()
+                } else {
+                    0L
+                }
+            }
+
+            val isMicroEvent = remember(eventDurationMinutes) {
+                eventDurationMinutes > 0 && eventDurationMinutes <= cuid.MicroEventMaxDurationMinutes
+            }
+
+            val baseHeight = remember(isMicroEvent, eventDurationMinutes) {
+                calculateEventHeight(eventDurationMinutes, isMicroEvent)
+            }
+
+
+            val buttonsRowHeight = 56.dp // Увеличил немного для стандартных кнопок
+            val expandedAdditionalHeight = remember(isMicroEvent) {
+                // Для микро-событий можно добавить чуть меньше высоты или стандартную,
+                // в зависимости от того, как кнопки будут выглядеть.
+                // Если кнопки стандартного размера, то и добавка стандартная.
+                if (isMicroEvent && baseHeight < buttonsRowHeight * 1.5f) { // Если микро совсем маленькое
+                    buttonsRowHeight * 1.2f // Чуть больше, чем сами кнопки
+                } else {
+                    buttonsRowHeight
+                }
+            }
+
+            val expandedCalculatedHeight = remember(baseHeight, expandedAdditionalHeight) {
+                if (eventDurationMinutes > 120 && !isMicroEvent) { // Пример: для событий > 2 часов
+                    (baseHeight + expandedAdditionalHeight * 0.5f).coerceAtLeast(baseHeight) // Небольшая добавка или ничего
+                } else {
+                    baseHeight + expandedAdditionalHeight
+                }
+            }
+
+            val animatedHeight by animateDpAsState(
+                targetValue = if (isExpanded) expandedCalculatedHeight else baseHeight,
+                animationSpec = tween(durationMillis = 250), // Скорость анимации
+                label = "eventItemHeightAnimation"
+            )
+
             val isCurrent = remember(currentTime, event.startTime, event.endTime) {
                 val start = parseToInstant(event.startTime, currentTimeZoneId)
                 val end = parseToInstant(event.endTime, currentTimeZoneId)
@@ -125,13 +182,27 @@ fun EventsList(
                 isCurrentEvent = isCurrent,
                 isNextEvent = isNext,
                 proximityRatio = proximityRatio,
+                // --- ПЕРЕДАЕМ НОВЫЕ ПАРАМЕТРЫ ---
+                isMicroEventFromList = isMicroEvent, // Переименовал, чтобы не конфликтовать с внутренним в EventListItem
+                targetHeightFromList = animatedHeight, // Передаем анимированную высоту
+                isExpanded = isExpanded,
+                onToggleExpand = {
+                    expandedEventId = if (isExpanded) null else event.id
+                },
+                onDeleteClickFromList = { // Переименовал колбэк
+                    onDeleteRequest(event) // Вызываем оригинальный onDeleteRequest
+                    expandedEventId = null // Схлопываем после действия
+                },
+                onEditClickFromList = { // Переименовал колбэк
+                    onEditRequest(event) // Вызываем оригинальный onEditRequest
+                    expandedEventId = null // Схлопываем после действия
+                },
+                // --------------------------------
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CalendarUiDefaults.ItemHorizontalPadding, vertical = CalendarUiDefaults.ItemVerticalPadding ),
-                    // .animateItemPlacement(),
+                    .padding(horizontal = CalendarUiDefaults.ItemHorizontalPadding, vertical = CalendarUiDefaults.ItemVerticalPadding),
                 currentTimeZoneId = currentTimeZoneId
             )
-        //    Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
@@ -146,7 +217,7 @@ fun DayEventsPage(
     val eventsState = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList()) //Returns State<List<CalendarEvent>>
     val events = eventsState.value
     Log.d("DayEventsPage", "Events received from flow: ${events.joinToString { it.summary + " (allDay=" + it.isAllDay + ")" }}")
-
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
 
     val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
@@ -254,6 +325,7 @@ fun DayEventsPage(
                     fontSize = 16.sp,
                 )
             }
+            // TODO СДЕЛАТЬ ТОЖЕ УДАЛЕНИЕ РЕДАКТИРОВАНИЕ
             if (allDayEvents.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовка даты
                 Column(
@@ -275,15 +347,20 @@ fun DayEventsPage(
                     { event -> DateTimeFormatterUtil.formatEventListTime(context, event, currentTimeZoneId) } // Передаем оба параметра
                 }
                 EventsList(
-                    events = timedEvents, // Передаем только события со временем
+                    events = timedEvents,
                     timeFormatter = timeFormatterLambda,
                     isToday = isToday,
                     nextStartTime = nextStartTime,
                     currentTime = currentTime,
                     listState = listState,
-                    modifier = Modifier
-                        .weight(1f) // Занимает оставшееся место
-                        .fillMaxWidth(),
+                    // --- Убедись, что имена параметров соответствуют определению EventsList ---
+                    onDeleteRequest = viewModel::requestDeleteConfirmation,
+                    onEditRequest = { eventToEdit ->
+                        // TODO: Реализуй логику редактирования (например, навигация или показ диалога)
+                        Log.d("DayEventsPage", "Edit requested for: ${eventToEdit.id}")
+                        // viewModel.navigateToEditScreen(eventToEdit.id)
+                    },
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                     currentTimeZoneId = currentTimeZoneId
                 )
             } else if (allDayEvents.isEmpty()) {
@@ -301,6 +378,12 @@ fun DayEventsPage(
                 Spacer(modifier = Modifier.weight(1f))
             }
         } // End Column
+        if (uiState.showDeleteConfirmationDialog) {
+            DeleteConfirmationDialog(
+                onConfirm = { viewModel.confirmDeleteEvent() },
+                onDismiss = { viewModel.cancelDelete() }
+            )
+        }
     } // End Box
 }
 

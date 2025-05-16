@@ -218,29 +218,6 @@ fun MainScreen(
         } // End основной Box
     } // End Scaffold
 
-    if (uiState.showDeleteConfirmationDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.cancelDelete() }, // Закрытие диалога по тапу вне или кнопкой "назад"
-            title = { Text("Подтверждение") },
-            text = { Text("Вы уверены, что хотите удалить это событие?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Диалог сам закроется, так как confirmDeleteEvent изменит uiState
-                        viewModel.confirmDeleteEvent()
-                    }
-                ) {
-                    Text("Удалить")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { viewModel.cancelDelete() }) {
-                    Text("Отмена")
-                }
-            }
-        )
-    }
-
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },

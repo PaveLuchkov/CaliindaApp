@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,5 +66,43 @@ fun TimePickerDialog(
         },
         confirmButton = confirmButton,
         dismissButton = dismissButton
+    )
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit // Вызывается при нажатии "Отмена" или клике вне диалога
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss, // Действие при отмене (тап вне диалога или кнопка "Назад")
+        title = {
+            Text(text = "Подтверждение удаления") // Используй stringResource(R.string.delete_confirmation_title)
+        },
+        text = {
+            Text(text = "Вы уверены, что хотите удалить это событие? Это действие нельзя будет отменить.") // Используй stringResource(R.string.delete_confirmation_message)
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
+                    // onDismiss() // Диалог обычно скрывается автоматически после обновления UI состояния,
+                    // которое управляет его видимостью (showDeleteConfirmationDialog во ViewModel).
+                    // Если нет, то можно раскомментировать.
+                }
+            ) {
+                Text(
+                    text = "Удалить", // Используй stringResource(R.string.delete_action)
+                    color = colorScheme.error // Выделяем кнопку удаления цветом ошибки
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(text = "Отмена") // Используй stringResource(R.string.cancel_action)
+            }
+        }
     )
 }
