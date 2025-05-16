@@ -51,8 +51,6 @@ fun EventListItem(
     isCurrentEvent: Boolean, // Получаем снаружи
     isNextEvent: Boolean,
     proximityRatio: Float,
-    isMicroEvent: Boolean,
-    targetHeight: Dp,
     modifier: Modifier = Modifier, // Позволяем контейнеру управлять внешними отступами/размером
     currentTimeZoneId: String
 ) {
@@ -65,6 +63,14 @@ fun EventListItem(
         } else {
             0L
         }
+    }
+
+    val isMicroEvent = remember(eventDurationMinutes) {
+        eventDurationMinutes in 1..cuid.MicroEventMaxDurationMinutes
+    }
+
+    val targetHeight = remember(isMicroEvent, eventDurationMinutes) {
+        calculateEventHeight(eventDurationMinutes, isMicroEvent)
     }
 
     // --- Генерация формы ---
