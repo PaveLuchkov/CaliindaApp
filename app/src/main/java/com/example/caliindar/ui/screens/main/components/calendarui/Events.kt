@@ -109,7 +109,7 @@ fun EventsList(
             }
 
 
-            val buttonsRowHeight = 56.dp // Увеличил немного для стандартных кнопок
+            val buttonsRowHeight = 48.dp // Увеличил немного для стандартных кнопок
             val expandedAdditionalHeight = remember(isMicroEvent) {
                 // Для микро-событий можно добавить чуть меньше высоты или стандартную,
                 // в зависимости от того, как кнопки будут выглядеть.
@@ -325,7 +325,7 @@ fun DayEventsPage(
                     fontSize = 16.sp,
                 )
             }
-            // TODO СДЕЛАТЬ ТОЖЕ УДАЛЕНИЕ РЕДАКТИРОВАНИЕ
+            // TODO СДЕЛАТЬ ТОЖЕ УДАЛЕНИЕ РЕДАКТИРОВАНИЕ (но выход кнопок по центру)
             if (allDayEvents.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовка даты
                 Column(
@@ -388,28 +388,7 @@ fun DayEventsPage(
 }
 
 
-@Composable
-fun AllDayEventItem(event: CalendarEvent) {
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(25.dp))
-            .background(colorScheme.tertiary)
-            .padding(horizontal = CalendarUiDefaults.AllDayItemPadding, vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding) // Вертикальный отступ чуть больше
-    ) {
-        Text(
-            text = event.summary,
-            style = typography.bodyLarge, // Стиль можно подобрать
-            fontWeight = FontWeight.Medium,
-            color = colorScheme.onTertiary,
-            textAlign = TextAlign.Center, // Или TextAlign.Start
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 3.dp),
-        )
-    }
-}
 
 
 

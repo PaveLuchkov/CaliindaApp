@@ -16,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.caliindar.R
 import com.example.caliindar.ui.screens.main.components.UIDefaults.CalendarUiDefaults
 import com.example.caliindar.ui.screens.main.components.UIDefaults.cuid
 
@@ -77,10 +79,10 @@ fun DeleteConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss, // Действие при отмене (тап вне диалога или кнопка "Назад")
         title = {
-            Text(text = "Подтверждение удаления") // Используй stringResource(R.string.delete_confirmation_title)
+            Text(text = stringResource(R.string.delete_conf)) // Используй stringResource(R.string.delete_confirmation_title)
         },
         text = {
-            Text(text = "Вы уверены, что хотите удалить это событие? Это действие нельзя будет отменить.") // Используй stringResource(R.string.delete_confirmation_message)
+            Text(text = stringResource(R.string.delete_confirmation_message))
         },
         confirmButton = {
             TextButton(
@@ -92,7 +94,7 @@ fun DeleteConfirmationDialog(
                 }
             ) {
                 Text(
-                    text = "Удалить", // Используй stringResource(R.string.delete_action)
+                    text = stringResource(R.string.delete),
                     color = colorScheme.error // Выделяем кнопку удаления цветом ошибки
                 )
             }
@@ -101,7 +103,7 @@ fun DeleteConfirmationDialog(
             TextButton(
                 onClick = onDismiss
             ) {
-                Text(text = "Отмена") // Используй stringResource(R.string.cancel_action)
+                Text(text = stringResource(R.string.cancel)) // Используй stringResource(R.string.cancel_action)
             }
         }
     )

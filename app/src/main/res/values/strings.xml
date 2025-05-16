@@ -16,6 +16,11 @@
     <string name="recurrence_end_date_field">Date ending</string>
     <string name="recurrence_count_field">Count repetitions</string>
 
+    <string name="delete_confirmation_message">Are you sure you want to delete this event? This action cannot be undone.</string>
+    <string name="delete_conf">Delete confirmation</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+
     <!-- Строки для секции повторения -->
     <string name="recurrence_settings_title">Recurrence</string> <!-- Заменит ваш val -->
     <string name="recurrence_rule_label">Rule</string> <!-- Заменит ваш val -->

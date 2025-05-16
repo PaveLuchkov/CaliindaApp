@@ -3,8 +3,10 @@ package com.example.caliindar.ui.screens.main.components.calendarui
 import RoundedPolygonShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -46,6 +48,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -230,24 +233,28 @@ fun EventListItem(
                 }
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = fadeIn(animationSpec = tween(150, delayMillis = 100)) + slideInVertically(animationSpec = tween(250, delayMillis = 50), initialOffsetY = { it / 2 }),
-                exit = slideOutVertically(animationSpec = tween(250), targetOffsetY = { it }) + fadeOut(animationSpec = tween(150))
+                enter = fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) + // Задержка для fadeIn может быть синхронизирована или убрана, если expandVertically начинается сразу
+                        expandVertically(
+                            animationSpec = tween(durationMillis = 250, delayMillis = 50), // Согласуй длительности с animateDpAsState
+                            expandFrom = Alignment.Top // Кнопки появляются снизу, значит расширяются от своего верхнего края вниз
+                        ),
+                exit = shrinkVertically(
+                    animationSpec = tween(durationMillis = 250),
+                    shrinkTowards = Alignment.Top // Схлопываются к своему верхнему краю
+                ) + fadeOut(animationSpec = tween(durationMillis = 150))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 8.dp), // Отступы для ряда кнопок
+                        .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp), // Отступы для ряда кнопок
                     horizontalArrangement = Arrangement.End, // Кнопки справа
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    Button(
                         onClick = {
-                            // Важно: onClick для кнопок не должен вызывать onToggleExpand,
-                            // он должен вызывать onEditClickFromList / onDeleteClickFromList.
-                            // Схлопывание происходит в EventsList после вызова этих колбэков.
                             onEditClickFromList()
                         },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp)
                     ) {
                         Icon(Icons.Filled.Edit, contentDescription = "Редактировать", modifier = Modifier.size(ButtonDefaults.IconSize))
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
@@ -258,12 +265,11 @@ fun EventListItem(
                         onClick = {
                             onDeleteClickFromList()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp)
                     ) {
                         Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
-                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                        Text("Delete") // Или локализованная строка
+//                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+//                        Text("Delete") // Или локализованная строка
                     }
                 }
             } // Конец AnimatedVisibility
@@ -271,6 +277,29 @@ fun EventListItem(
     } // Конец Column (контент + кнопки)
 } // Конец корневого Box
 
+
+@Composable
+fun AllDayEventItem(event: CalendarEvent) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(25.dp))
+            .background(colorScheme.tertiary)
+            .padding(horizontal = CalendarUiDefaults.AllDayItemPadding, vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding) // Вертикальный отступ чуть больше
+    ) {
+        Text(
+            text = event.summary,
+            style = typography.bodyLarge, // Стиль можно подобрать
+            fontWeight = FontWeight.Medium,
+            color = colorScheme.onTertiary,
+            textAlign = TextAlign.Center, // Или TextAlign.Start
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 3.dp),
+        )
+    }
+}
 
 fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
     return if (isMicroEvent) {
