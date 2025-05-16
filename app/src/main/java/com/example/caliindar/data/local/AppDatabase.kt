@@ -11,7 +11,3 @@ import androidx.room.RoomDatabase
 abstract class AppDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
 }
-
-// ВАЖНО: Так как мы используем fallbackToDestructiveMigration,
-// старая база данных будет удалена при обновлении. Для продакшена
-// нужно будет написать реальную миграцию (ALTER TABLE ... ADD COLUMN ...).

@@ -352,14 +352,18 @@ class MainViewModel @Inject constructor(
      */
     fun requestDeleteConfirmation(event: CalendarEvent) {
         _uiState.update {
+            // --- ПРОВЕРЬ ЭТУ ЛОГИКУ ВНИМАТЕЛЬНО ---
+            val isActuallyRecurring = event.recurringEventId != null || event.originalStartTime != null
+            // ---------------------------------------
+            Log.d(TAG, "requestDeleteConfirmation for event: ${event.id}, summary: '${event.summary}', isAllDay: ${event.isAllDay}, recurringId: ${event.recurringEventId}, originalStart: ${event.originalStartTime}, calculatedIsRecurring: $isActuallyRecurring")
+
             it.copy(
                 eventPendingDeletion = event,
-                showDeleteConfirmationDialog = event.recurringEventId == null && event.originalStartTime == null, // Показываем простой диалог, если нет признаков повторения
-                showRecurringDeleteOptionsDialog = event.recurringEventId != null || event.originalStartTime != null, // Показываем диалог с опциями, если есть признаки повторения
+                showDeleteConfirmationDialog = !isActuallyRecurring, // Показываем простой диалог, если НЕ повторяющееся
+                showRecurringDeleteOptionsDialog = isActuallyRecurring, // Показываем диалог с опциями, если ПОВТОРЯЮЩЕЕСЯ
                 deleteOperationError = null
             )
         }
-        Log.d(TAG, "Requested delete for event ID: ${event.id}, recurringId: ${event.recurringEventId}, originalStart: ${event.originalStartTime}")
     }
 
 

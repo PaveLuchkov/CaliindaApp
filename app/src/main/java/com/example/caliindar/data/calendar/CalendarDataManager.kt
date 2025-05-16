@@ -600,8 +600,19 @@ class CalendarDataManager @Inject constructor(
                     val summary = eventObject.optString("summary", "Без названия")
                     val description = eventObject.optString("description")
                     val location = eventObject.optString("location")
-                    val recurringEventId = eventObject.optString("recurringEventId", null).takeIf { !it.isNullOrEmpty() }
-                    val originalStartTime = eventObject.optString("originalStartTime", null).takeIf { !it.isNullOrEmpty() }
+                    val recurringEventIdObj: Any? = eventObject.opt("recurringEventId") // Получаем как Any?
+                    val recurringEventId = if (recurringEventIdObj is String && recurringEventIdObj != "null") { // "null" как строка
+                        recurringEventIdObj.trim().takeIf { it.isNotEmpty() }
+                    } else {
+                        null
+                    }
+                    val originalStartTimeObj: Any? = eventObject.opt("originalStartTime")
+                    val originalStartTime = if (originalStartTimeObj is String && originalStartTimeObj != "null") {
+                        originalStartTimeObj.trim().takeIf { it.isNotEmpty() }
+                    } else {
+                        null
+                    }
+
 
                     if (id.isNullOrEmpty() || startTimeStr.isNullOrEmpty()) {
                         Log.w(TAG, "Skipping event due to missing id or startTime in JSON object: ${eventObject.optString("summary")}")

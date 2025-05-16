@@ -381,9 +381,6 @@ fun DayEventsPage(
         } // End Column
         if (uiState.showDeleteConfirmationDialog && uiState.eventPendingDeletion != null) {
             DeleteConfirmationDialog( // Твой существующий диалог
-                // Передавай нужные параметры, например, имя события
-                // eventName = uiState.eventPendingDeletion!!.summary,
-                // isRecurring = false, // Мы знаем, что это одиночное
                 onConfirm = { viewModel.confirmDeleteEvent() },
                 onDismiss = { viewModel.cancelDelete() }
             )
