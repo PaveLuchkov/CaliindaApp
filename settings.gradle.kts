@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Caliindar"
+rootProject.name = "Caliinda"
 include(":app")

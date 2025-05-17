@@ -19,7 +19,38 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.caliinda.ui.screens.main.MainViewModel
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AppBarRow
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
+import androidx.compose.material3.FloatingToolbarExitDirection.Companion.Bottom
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.unit.dp
 
+
+
+@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ChatInputBar(
     uiState: com.example.caliinda.ui.screens.main.MainUiState, // Принимаем весь стейт
@@ -38,7 +69,7 @@ fun ChatInputBar(
     val keyboardController = LocalSoftwareKeyboardController.current
     val isSendEnabled = textFieldValue.text.isNotBlank() && uiState.isSignedIn && !uiState.isLoading && !uiState.isListening
     val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isListening // Disable toggle during recording/loading
-
+    var expanded by rememberSaveable { mutableStateOf(true) }
     // Request focus when text input becomes visible
     LaunchedEffect(isTextInputVisible) {
         if (isTextInputVisible) {
@@ -93,7 +124,9 @@ fun ChatInputBar(
                         colors = IconButtonDefaults.iconButtonColors(
                             // Используем цвета M3
                             containerColor = if (isSendEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, // Используем surfaceVariant для disabled
-                            contentColor = if (isSendEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f) // Стандартный disabled alpha
+                            contentColor = if (isSendEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                alpha = 0.38f
+                            ) // Стандартный disabled alpha
                         )
                     ) {
                         Icon(
@@ -104,7 +137,6 @@ fun ChatInputBar(
                 }
             }
         }
-
         // --- Bottom App Bar with Icons ---
         BottomAppBar(
             // containerColor = MaterialTheme.colorScheme.surface, // Можно задать цвет фона

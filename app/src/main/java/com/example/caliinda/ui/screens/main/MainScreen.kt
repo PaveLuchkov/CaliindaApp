@@ -22,6 +22,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.navigation.NavHostController
 import com.example.caliinda.data.calendar.EventNetworkState
 import com.example.caliinda.ui.common.BackgroundShapeContext
@@ -30,8 +36,21 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
+    ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -118,6 +137,8 @@ fun MainScreen(
 
 
     var isFabPressed by remember { mutableStateOf(false) }
+    val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+    var expanded by rememberSaveable { mutableStateOf(true) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -149,22 +170,38 @@ fun MainScreen(
                 )
         },
         bottomBar = {
-            ChatInputBar(
-                uiState = uiState, // Передаем весь uiState, т.к. Bar зависит от многих полей
-                textFieldValue = textFieldState,
-                onTextChanged = { textFieldState = it },
-                onSendClick = {
-                    viewModel.sendTextMessage(textFieldState.text)
-                    textFieldState = TextFieldValue("") // Очищаем поле после отправки
-                },
-                onRecordStart = { viewModel.startListening() }, // Передаем лямбды для записи
-                onRecordStopAndSend = { viewModel.stopListening() },
-                onUpdatePermissionResult = { granted -> viewModel.updatePermissionStatus(granted) }, // Передаем лямбду для обновления разрешений
-                isTextInputVisible = isTextInputVisible,
-                onToggleTextInput = { isTextInputVisible = !isTextInputVisible },
-                viewModel,
-                navController = navController
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(), // Box занимает всю ширину bottomBar
+                contentAlignment = Alignment.Center // Центрируем содержимое Box (наш тулбар)
+            ) {
+                HorizontalFloatingToolbar(
+                    expanded = expanded,
+                    floatingActionButton = {
+                        FloatingToolbarDefaults.VibrantFloatingActionButton(
+                            onClick = { /* viewModel.onAddEventClick() или другое действие */ },
+                        ) {
+                            Icon(Icons.Filled.Add, "Добавить событие")
+                        }
+                    },
+                    modifier = Modifier
+                        .offset(y = -ScreenOffset),
+                    colors = vibrantColors,
+                    content = {
+                        IconButton(onClick = { /* Переход к профилю/настройкам пользователя */ }) {
+                            Icon(Icons.Filled.Person, contentDescription = "Профиль")
+                        }
+                        IconButton(onClick = { /* Действие редактирования, если применимо */ }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Редактировать")
+                        }
+                        IconButton(onClick = { /* Избранное или другое действие */ }) {
+                            Icon(Icons.Filled.Favorite, contentDescription = "Избранное")
+                        }
+                        IconButton(onClick = { /* Дополнительные опции */ }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "Еще")
+                        }
+                    },
+                )
+            }
         }
     ) { paddingValues ->
         Box(
