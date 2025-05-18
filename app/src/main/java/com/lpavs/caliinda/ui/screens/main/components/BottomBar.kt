@@ -67,9 +67,9 @@ fun BottomBar(
                 onStartRecording = onRecordStart, // Передаем лямбды
                 onStopRecordingAndSend = onRecordStopAndSend,
                 onUpdatePermissionResult = onUpdatePermissionResult,
-                modifier = Modifier.size(56.dp) // Standard FAB size
             )
         },
+        expandedShadowElevation = 0.dp,
         modifier =
             modifier, //.align(Alignment.BottomEnd) .offset(x = -ScreenOffset, y = -ScreenOffset)
         colors = vibrantColors,

@@ -20,6 +20,7 @@
     <string name="delete_conf">Delete confirmation</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="no_events">No events</string>
 
     <!-- Строки для секции повторения -->
     <string name="recurrence_settings_title">Recurrence</string> <!-- Заменит ваш val -->

@@ -10,9 +10,11 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,9 +48,9 @@ fun RecordButton(
 
     // --- Анимации и формы (без изменений) ---
     val targetBackgroundColor = if (uiState.isListening) {
-        MaterialTheme.colorScheme.error
+        colorScheme.error
     } else {
-        MaterialTheme.colorScheme.primary
+        colorScheme.primary
     }
     val animatedBackgroundColor by animateColorAsState(
         targetValue = targetBackgroundColor,
@@ -99,7 +101,7 @@ fun RecordButton(
         "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${uiState.isListening}"
     )
 
-    FloatingActionButton(
+    LargeFloatingActionButton(
         onClick = {
             // Если нужно простое нажатие для запроса разрешения, если его нет
             if (!uiState.isPermissionGranted && isInteractionEnabled) {
@@ -110,8 +112,8 @@ fun RecordButton(
         shape = MaterialShapes.Cookie4Sided.toShape(),
         containerColor = animatedBackgroundColor,
         contentColor = animatedContentColor,
-        elevation = FloatingActionButtonDefaults.elevation(0.dp),
         modifier = modifier
+            .fillMaxSize()
             .pointerInput(isInteractionEnabled, uiState.isPermissionGranted) { // Передаем зависимости в key
                 if (!isInteractionEnabled) {
                     Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")

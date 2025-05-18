@@ -119,9 +119,6 @@ fun ChatInputBar(
         }
         // --- Bottom App Bar with Icons ---
         BottomAppBar(
-            // containerColor = MaterialTheme.colorScheme.surface, // Можно задать цвет фона
-            // contentColor = MaterialTheme.colorScheme.onSurface, // Цвет контента по умолчанию
-
             actions = {
                 // Keyboard Toggle Button
                 IconButton(
@@ -152,8 +149,7 @@ fun ChatInputBar(
                     uiState = uiState, // Передаем стейт
                     onStartRecording = onRecordStart, // Передаем лямбды
                     onStopRecordingAndSend = onRecordStopAndSend,
-                    onUpdatePermissionResult = onUpdatePermissionResult,
-                    modifier = Modifier.size(56.dp) // Standard FAB size
+                    onUpdatePermissionResult = onUpdatePermissionResult
                 )
             },
         )

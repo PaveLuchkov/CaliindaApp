@@ -32,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +52,9 @@ import com.lpavs.caliinda.ui.theme.LocalFixedAccentColors
 import com.lpavs.caliinda.util.DateTimeFormatterUtil
 import kotlinx.coroutines.launch
 import java.time.Duration
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.ui.res.stringResource
+import com.lpavs.caliinda.R
 
 data class GeneratedShapeParams(
     val numVertices: Int,
@@ -331,13 +336,23 @@ fun DayEventsPage(
             } else if (allDayEvents.isEmpty()) {
                 // Показываем сообщение "нет событий", только если НЕТ НИКАКИХ событий
                 Box(
-                    modifier = Modifier
-                        .weight(1f) // Занимает место списка
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center // Центрируем сообщение
-                ) {
-                    Text("На эту дату событий нет", style = typography.bodyLarge)
+                   modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ){
+                    Box( // Корневой Box для тени, фона, высоты и кликабельности
+                        modifier = Modifier
+                            .shadow(
+                                elevation = 5.dp,
+                                shape = RoundedCornerShape(cuid.EventItemCornerRadius),
+                                clip = false,
+                            )
+                            .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
+                            .background(color = colorScheme.secondaryContainer)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center // Центрируем сообщение
+                    ) {
+                        Text(stringResource(R.string.no_events), style = typography.bodyLarge, color = colorScheme.onSecondaryContainer)
+                    }
                 }
             } else {
                 Spacer(modifier = Modifier.weight(1f))
