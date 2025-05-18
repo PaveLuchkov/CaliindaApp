@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalMaterial3Api::class) // Для CenterAlignedTopAppBar
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) // Для CenterAlignedTopAppBar
 @Composable
 fun CalendarAppBar(
     isListening: Boolean,
@@ -39,8 +39,16 @@ fun CalendarAppBar(
             )
         },
         navigationIcon = {
-            IconButton(
+            FilledIconButton(
                 onClick = onGoToTodayClick,
+                modifier =
+                    Modifier.minimumInteractiveComponentSize()
+                        .size(
+                            IconButtonDefaults.smallContainerSize(
+                                IconButtonDefaults.IconButtonWidthOption.Wide
+                            )
+                        ),
+                shape = IconButtonDefaults.smallRoundShape
             ) {
                 Icon(
                     Icons.Filled.Today,
@@ -60,8 +68,16 @@ fun CalendarAppBar(
                     )
                 }
 
-                IconButton(
+                FilledIconButton(
                     onClick = onNavigateToSettings,
+                    modifier =
+                        Modifier.minimumInteractiveComponentSize()
+                            .size(
+                                IconButtonDefaults.smallContainerSize(
+                                    IconButtonDefaults.IconButtonWidthOption.Wide
+                                )
+                            ),
+                    shape = IconButtonDefaults.smallRoundShape
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
