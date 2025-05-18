@@ -10,6 +10,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
@@ -100,104 +101,103 @@ fun RecordButton(
         "RecordButton",
         "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${uiState.isListening}"
     )
-
-    LargeFloatingActionButton(
-        onClick = {
-            // Если нужно простое нажатие для запроса разрешения, если его нет
-            if (!uiState.isPermissionGranted && isInteractionEnabled) {
-                scope.launch { requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
-            }
-            Log.d("RecordButton", "FAB onClick triggered (handled permission request if needed)")
-        },
-        shape = MaterialShapes.Cookie4Sided.toShape(),
-        containerColor = animatedBackgroundColor,
-        contentColor = animatedContentColor,
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(isInteractionEnabled, uiState.isPermissionGranted) { // Передаем зависимости в key
-                if (!isInteractionEnabled) {
-                    Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")
-                    return@pointerInput // Не обрабатываем ввод, если кнопка неактивна
+        LargeFloatingActionButton(
+            onClick = {
+                // Если нужно простое нажатие для запроса разрешения, если его нет
+                if (!uiState.isPermissionGranted && isInteractionEnabled) {
+                    scope.launch { requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
                 }
-                awaitPointerEventScope {
-                    while (true) {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        Log.d("RecordButton", "Pointer down detected.")
-                        isPressed = true
-                        try {
-                            // Проверяем разрешение прямо перед началом записи
-                            val hasPermission = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.RECORD_AUDIO
-                            ) == PackageManager.PERMISSION_GRANTED
+                Log.d("RecordButton", "FAB onClick triggered (handled permission request if needed)")
+            },
+            shape = MaterialShapes.Cookie4Sided.toShape(),
+            containerColor = animatedBackgroundColor,
+            contentColor = animatedContentColor,
+            modifier = modifier
+//                .fillMaxSize()
+                .pointerInput(isInteractionEnabled, uiState.isPermissionGranted) { // Передаем зависимости в key
+                    if (!isInteractionEnabled) {
+                        Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")
+                        return@pointerInput // Не обрабатываем ввод, если кнопка неактивна
+                    }
+                    awaitPointerEventScope {
+                        while (true) {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            Log.d("RecordButton", "Pointer down detected.")
+                            isPressed = true
+                            try {
+                                // Проверяем разрешение прямо перед началом записи
+                                val hasPermission = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.RECORD_AUDIO
+                                ) == PackageManager.PERMISSION_GRANTED
 
-                            // Обновляем статус разрешения в ViewModel на всякий случай
-                            onUpdatePermissionResult(hasPermission)
+                                // Обновляем статус разрешения в ViewModel на всякий случай
+                                onUpdatePermissionResult(hasPermission)
 
-                            if (hasPermission) {
-                                // Если уже идет запись, нажатие игнорируем (остановка по отпусканию)
-                                if (!uiState.isListening) {
-                                    Log.d("RecordButton", "Permission granted, starting recording.")
-                                    down.consume() // Потребляем событие
-                                    scope.launch { onStartRecording() } // Вызываем лямбду начала записи
-                                    try {
-                                        waitForUpOrCancellation() // Ждем отпускания
-                                        Log.d("RecordButton", "Pointer up detected, stopping recording.")
-                                    } finally {
-                                        // Всегда останавливаем запись при отпускании/отмене, если она была начата
-                                        scope.launch { onStopRecordingAndSend() } // Вызываем лямбду остановки
+                                if (hasPermission) {
+                                    // Если уже идет запись, нажатие игнорируем (остановка по отпусканию)
+                                    if (!uiState.isListening) {
+                                        Log.d("RecordButton", "Permission granted, starting recording.")
+                                        down.consume() // Потребляем событие
+                                        scope.launch { onStartRecording() } // Вызываем лямбду начала записи
+                                        try {
+                                            waitForUpOrCancellation() // Ждем отпускания
+                                            Log.d("RecordButton", "Pointer up detected, stopping recording.")
+                                        } finally {
+                                            // Всегда останавливаем запись при отпускании/отмене, если она была начата
+                                            scope.launch { onStopRecordingAndSend() } // Вызываем лямбду остановки
+                                        }
+                                    } else {
+                                        Log.d("RecordButton", "Already recording, waiting for up.")
+                                        // Потребляем событие, чтобы оно не всплыло
+                                        down.consume()
+                                        // Просто ждем отпускания, чтобы остановить запись (логика в finally)
+                                        try {
+                                            waitForUpOrCancellation()
+                                            Log.d("RecordButton", "Pointer up detected while recording, stopping recording.")
+                                        } finally {
+                                            // Всегда останавливаем запись при отпускании/отмене
+                                            scope.launch { onStopRecordingAndSend() }
+                                        }
                                     }
                                 } else {
-                                    Log.d("RecordButton", "Already recording, waiting for up.")
-                                    // Потребляем событие, чтобы оно не всплыло
-                                    down.consume()
-                                    // Просто ждем отпускания, чтобы остановить запись (логика в finally)
+                                    Log.d("RecordButton", "Permission denied, requesting permission.")
+                                    down.consume() // Потребляем событие, чтобы не начать запись
+                                    scope.launch { requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
                                     try {
-                                        waitForUpOrCancellation()
-                                        Log.d("RecordButton", "Pointer up detected while recording, stopping recording.")
-                                    } finally {
-                                        // Всегда останавливаем запись при отпускании/отмене
-                                        scope.launch { onStopRecordingAndSend() }
-                                    }
+                                        waitForUpOrCancellation() // Ждем отпускания (ничего не делаем)
+                                        Log.d("RecordButton", "Pointer up after permission request.")
+                                    } finally { /* Ничего не делаем */ }
                                 }
-                            } else {
-                                Log.d("RecordButton", "Permission denied, requesting permission.")
-                                down.consume() // Потребляем событие, чтобы не начать запись
-                                scope.launch { requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
-                                try {
-                                    waitForUpOrCancellation() // Ждем отпускания (ничего не делаем)
-                                    Log.d("RecordButton", "Pointer up after permission request.")
-                                } finally { /* Ничего не делаем */ }
+                            } finally {
+                                Log.d("RecordButton", "Pointer input block finished, setting isPressed=false.")
+                                isPressed = false // Сбрасываем состояние нажатия
                             }
-                        } finally {
-                            Log.d("RecordButton", "Pointer input block finished, setting isPressed=false.")
-                            isPressed = false // Сбрасываем состояние нажатия
                         }
                     }
                 }
-            }
-            .graphicsLayer {
-                scaleX = animatedScale
-                scaleY = animatedScale
-                // Вращение применяется внутри CustomRotatingMorphShape
-            }
-            .clip(
-                if (isPressed || uiState.isListening) {
-                    // Используем CustomRotatingMorphShape из папки common
-                    CustomRotatingMorphShape(
-                        morph = morph,
-                        percentage = animatedProgress.value,
-                        rotation = animatedRotation.value
-                    )
-                } else {
-                    // Стандартная форма FAB обычно CircleShape, но оставим RoundedCornerShape, как было
-                    MaterialShapes.Cookie4Sided.toShape() // Используем стандартную форму FAB
-                }
-            ),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Mic,
-            contentDescription = if (uiState.isListening) "Идет запись (Отпустите для остановки)" else "Начать запись (Нажмите и удерживайте)",
-            tint = animatedContentColor
-        )
+                .clip(
+                    if (isPressed || uiState.isListening) {
+                        // Используем CustomRotatingMorphShape из папки common
+                        CustomRotatingMorphShape(
+                            morph = morph,
+                            percentage = animatedProgress.value,
+                            rotation = animatedRotation.value
+                        )
+                    } else {
+                        // Стандартная форма FAB обычно CircleShape, но оставим RoundedCornerShape, как было
+                        MaterialShapes.Cookie4Sided.toShape() // Используем стандартную форму FAB
+                    }
+                )
+                .graphicsLayer { // Масштабируем и вращаем весь Box
+                    scaleX = animatedScale
+                    scaleY = animatedScale
+                },
+
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Mic,
+                contentDescription = if (uiState.isListening) "Идет запись (Отпустите для остановки)" else "Начать запись (Нажмите и удерживайте)",
+                tint = animatedContentColor
+            )
+        }
     }
-}

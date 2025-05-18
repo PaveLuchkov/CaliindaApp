@@ -12,6 +12,7 @@ import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.coroutineContext
 
 enum class ApiDeleteEventMode(val value: String) {
     DEFAULT("default"),           // Поведение по умолчанию (обычно вся серия для мастер-события)
@@ -416,12 +418,12 @@ class CalendarDataManager @Inject constructor(
     /** Проверяет, нужно ли загружать/расширять диапазон дат */
     internal suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) = withContext(ioDispatcher) { // В IO
         val currentlyLoaded = _loadedDateRange.value
-        val isLoading = _rangeNetworkState.value is EventNetworkState.Loading
+//        val isLoading = _rangeNetworkState.value is EventNetworkState.Loading
 
-        if (isLoading) {
-            Log.d(TAG, "Load check skipped for $centerDate, range fetch already in progress.")
-            return@withContext
-        }
+//        if (isLoading) {
+//            Log.d(TAG, "Load check skipped for $centerDate, range fetch already in progress.")
+//            return@withContext
+//        }
 
         val idealTargetRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong())..centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
         Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, ideal=$idealTargetRange")
@@ -464,80 +466,147 @@ class CalendarDataManager @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate,
         replaceLoadedRange: Boolean
-    ) = withContext(ioDispatcher) { // Гарантированно в IO
-        // Предотвращаем двойную загрузку (простая проверка)
-        if (_rangeNetworkState.value is EventNetworkState.Loading && !replaceLoadedRange) { // Разрешаем replace=true перекрыть загрузку
-            Log.d(TAG, "Range fetch request ignored for $startDate..$endDate (replace=$replaceLoadedRange), already loading.")
-            return@withContext
-        }
+    ) {
+        // Эта функция вызывается из корутины, обычно работающей на ioDispatcher (через ensureDateRangeLoadedAround)
 
-        // Получаем токен через AuthManager
-        var freshToken = authManager.getFreshIdToken() // Вызываем suspend функцию менеджера
+        // --- 1. ПОЛУЧЕНИЕ ТОКЕНА (ОТМЕНЯЕМАЯ ЧАСТЬ) ---
+        // Эта часть должна быть вне NonCancellable. Если корутина будет отменена здесь,
+        // мы не будем начинать дорогостоящий сетевой запрос.
+        var freshToken: String? = null
         var attempts = 0
-        val maxAttempts = 3 // Максимум попыток
-        val retryDelay = 500L // Задержка между попытками (мс)
+        val maxAttempts = 3
+        val retryDelay = 500L
 
+        Log.d(TAG, "FADR: Attempting to get token for $startDate to $endDate. Current job: ${coroutineContext[Job]}")
         while (freshToken == null && attempts < maxAttempts) {
             attempts++
-            Log.w(TAG, "fetchAndStoreDateRange: Failed to get token (attempt $attempts/$maxAttempts). Retrying in ${retryDelay}ms...")
-            delay(retryDelay) // Ждем перед повторной попыткой
-            freshToken = authManager.getFreshIdToken()
+            try {
+                // authManager.getFreshIdToken() - это suspend функция, она может быть прервана отменой.
+                freshToken = authManager.getFreshIdToken()
+                if (freshToken == null && attempts < maxAttempts) {
+                    Log.w(TAG, "FADR: Failed to get token (attempt $attempts/$maxAttempts) for $startDate to $endDate. Retrying in ${retryDelay}ms...")
+                    delay(retryDelay) // delay() также реагирует на отмену корутины.
+                }
+            } catch (e: CancellationException) {
+                Log.i(TAG, "FADR: Token acquisition explicitly CANCELLED for $startDate to $endDate. Job: ${coroutineContext[Job]}")
+                // Если отменили здесь, _rangeNetworkState еще не был установлен в Loading для этого вызова.
+                // Просто перебрасываем исключение, чтобы родительская корутина (activeFetchJob) корректно завершилась как отмененная.
+                throw e
+            }
         }
 
         if (freshToken == null) {
-            Log.w(TAG, "Cannot fetch range: Failed to get fresh ID token.")
-            _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации")
-            return@withContext // Выход, если нет токена
+            Log.w(TAG, "FADR: Cannot fetch range $startDate-$endDate. Failed to get fresh ID token after $maxAttempts attempts.")
+            // Если не удалось получить токен, устанавливаем ошибку и выходим.
+            // Это не отмена, а логическая ошибка.
+            _rangeNetworkState.value = EventNetworkState.Error("Ошибка аутентификации (токен не получен)")
+            return
         }
+        Log.d(TAG, "FADR: Token acquired for $startDate to $endDate.")
 
-        Log.i(TAG, "Starting fetch for date range: $startDate to $endDate (replace=$replaceLoadedRange)")
+        // --- 2. УСТАНОВКА СОСТОЯНИЯ ЗАГРУЗКИ И НАЧАЛО НЕОТМЕНЯЕМОЙ ОПЕРАЦИИ ---
+        // Устанавливаем состояние Loading *ПЕРЕД* входом в NonCancellable блок.
+        // Если корутина будет отменена между этой строкой и началом NonCancellable блока,
+        // то блок `finally` должен будет обработать это и сбросить состояние Loading.
         _rangeNetworkState.value = EventNetworkState.Loading
-
-        val url = "$backendBaseUrl/calendar/events/range" +
-                "?startDate=${startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}" +
-                "&endDate=${endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
-
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .header("Authorization", "Bearer $freshToken") // Используем свежий токен
-            .build()
+        Log.i(TAG, "FADR: Set state to Loading for $startDate to $endDate. About to enter NonCancellable. Job: ${coroutineContext[Job]}")
 
         try {
-            val responseBodyString = okHttpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errorMsg = parseBackendError(response.body?.string(), response.code)
-                    Log.e(TAG, "Error fetching range from backend: ${response.code} - $errorMsg")
-                    throw IOException("Backend error: ${response.code} - $errorMsg")
+            withContext(NonCancellable) {
+                Log.i(TAG, "[NC] ENTER NonCancellable block for $startDate to $endDate. Current Job: ${coroutineContext[Job]}")
+
+                val url = "$backendBaseUrl/calendar/events/range" +
+                        "?startDate=${startDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}" +
+                        "&endDate=${endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}"
+
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .header("Authorization", "Bearer $freshToken")
+                    .build()
+
+                try {
+                    // okHttpClient.newCall(request).execute() - блокирующий вызов.
+                    // NonCancellable защищает эту корутину от внешней отмены во время выполнения этого вызова.
+                    val responseBodyString = okHttpClient.newCall(request).execute().use { response ->
+                        if (!response.isSuccessful) {
+                            val errorMsg = parseBackendError(response.body?.string(), response.code)
+                            Log.e(TAG, "[NC] Error fetching range from backend for $startDate to $endDate: ${response.code} - $errorMsg")
+                            // Устанавливаем состояние ошибки ВНУТРИ NonCancellable блока
+                            _rangeNetworkState.value = EventNetworkState.Error("Ошибка сервера: $errorMsg (${response.code})")
+                            return@withContext // Выходим из NonCancellable блока
+                        }
+                        response.body?.string()
+                    }
+
+                    // Проверяем, не установили ли мы ошибку на предыдущем шаге
+                    if (_rangeNetworkState.value is EventNetworkState.Error) {
+                        Log.w(TAG, "[NC] Skipping further processing for $startDate to $endDate due to earlier error in NC block.")
+                        return@withContext // Выходим, так как ошибка уже установлена
+                    }
+
+                    if (responseBodyString.isNullOrBlank()) {
+                        Log.w(TAG, "[NC] Empty response body for range $startDate to $endDate.")
+                        // saveEventsToDb - suspend функция, но она вызовется в NonCancellable контексте
+                        saveEventsToDb(emptyList(), startDate, endDate)
+                        updateLoadedRange(startDate..endDate, replaceLoadedRange) // Не suspend
+                        _rangeNetworkState.value = EventNetworkState.Idle // Успех (пустой ответ)
+                        Log.i(TAG, "[NC] Successfully processed EMPTY response for $startDate to $endDate.")
+                    } else {
+                        Log.i(TAG,"[NC] Range received from network for $startDate to $endDate. Size: ${responseBodyString.length}")
+                        val networkEvents = parseEventsResponse(responseBodyString) // Не suspend
+                        saveEventsToDb(networkEvents, startDate, endDate) // Suspend, но в NonCancellable
+                        updateLoadedRange(startDate..endDate, replaceLoadedRange) // Не suspend
+                        _rangeNetworkState.value = EventNetworkState.Idle // Успех
+                        Log.i(TAG, "[NC] Successfully processed NON-EMPTY response for $startDate to $endDate.")
+                    }
+
+                } catch (e: IOException) {
+                    // Эти ошибки (сетевые, парсинг) происходят ВНУТРИ NonCancellable блока.
+                    Log.e(TAG, "[NC] IOException during network call/processing for $startDate to $endDate", e)
+                    _rangeNetworkState.value = EventNetworkState.Error("Ошибка сети (в NC): ${e.message}")
+                } catch (e: JSONException) {
+                    Log.e(TAG, "[NC] JSONException during parsing for $startDate to $endDate", e)
+                    _rangeNetworkState.value = EventNetworkState.Error("Ошибка парсинга JSON (в NC): ${e.message}")
+                } catch (e: Exception) {
+                    // Любые другие неожиданные ошибки ВНУТРИ NonCancellable блока.
+                    // Сюда не должна попадать CancellationException от *внешней* отмены.
+                    Log.e(TAG, "[NC] Unexpected Exception for $startDate to $endDate", e)
+                    _rangeNetworkState.value = EventNetworkState.Error("Неизвестная ошибка (в NC): ${e.message}")
                 }
-                response.body?.string() // Возвращаем тело ответа
-            }
+                Log.i(TAG, "[NC] EXIT NonCancellable block for $startDate to $endDate. Final state: ${_rangeNetworkState.value}")
+            } // --- Конец NonCancellable блока ---
 
-            if (responseBodyString.isNullOrBlank()) {
-                Log.w(TAG, "Empty response body for range $startDate to $endDate.")
-                // Если ответ пустой, все равно считаем диапазон загруженным и чистим БД
-                // (на случай, если там были старые события для этого диапазона)
-                saveEventsToDb(emptyList(), startDate, endDate) // Сохраняем пустой список
-                updateLoadedRange(startDate..endDate, replaceLoadedRange) // Обновляем диапазон
-                _rangeNetworkState.value = EventNetworkState.Idle // Успех (пустой)
-                return@withContext
-            }
-
-            Log.i(TAG,"Range received from network for $startDate to $endDate. Size: ${responseBodyString.length}")
-            val networkEvents = parseEventsResponse(responseBodyString)
-            saveEventsToDb(networkEvents, startDate, endDate)
-            updateLoadedRange(startDate..endDate, replaceLoadedRange) // Обновляем _loadedDateRange
-            _rangeNetworkState.value = EventNetworkState.Idle // Успех
-
-        } catch (e: IOException) {
-            Log.e(TAG, "Network error fetching range $startDate to $endDate", e)
-            _rangeNetworkState.value = EventNetworkState.Error("Ошибка сети: ${e.message}")
-        } catch (e: JSONException) {
-            Log.e(TAG, "JSON parsing error for range $startDate to $endDate", e)
-            _rangeNetworkState.value = EventNetworkState.Error("Ошибка чтения ответа сервера.")
+        } catch (e: CancellationException) {
+            // Этот блок `catch` сработает, если отмена произошла *ПОСЛЕ* установки `_rangeNetworkState.value = Loading`,
+            // но *ДО* фактического входа в `withContext(NonCancellable)`.
+            // `NonCancellable` блок сам по себе не должен пробрасывать `CancellationException` от внешней отмены.
+            Log.i(TAG, "FADR: Operation CANCELLED for $startDate to $endDate *before* NonCancellable block (but after setting Loading). Job: ${coroutineContext[Job]}")
+            // Состояние Loading будет сброшено в `finally`.
+            // Важно перебросить CancellationException, чтобы родительская корутина (activeFetchJob)
+            // корректно завершилась как отмененная.
+            throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error processing range response for $startDate to $endDate", e)
-            _rangeNetworkState.value = EventNetworkState.Error("Ошибка обработки данных: ${e.message}")
+            // Этот блок поймает исключения, которые могли произойти *вне* `NonCancellable` блока
+            // (например, если сам `withContext(NonCancellable)` бросил что-то при инициализации, что маловероятно),
+            // но *после* установки `Loading` и *до* или *после* `NonCancellable` блока.
+            // Ошибки ВНУТРИ `NonCancellable` блока обрабатываются его собственным `try-catch`.
+            Log.e(TAG, "FADR: Generic Exception for $startDate to $endDate (outside NC block, or unhandled before NC). Job: ${coroutineContext[Job]}", e)
+            _rangeNetworkState.value = EventNetworkState.Error("Общая ошибка обработки данных (вне NC): ${e.message}")
+        } finally {
+            // Этот блок `finally` выполнится всегда:
+            // - после нормального завершения `try` блока (включая `NonCancellable`).
+            // - после любого исключения, пойманного в `catch` блоках.
+            // - если `try` блок был прерван `CancellationException` (которая потом перебрасывается).
+            // Его задача - убедиться, что состояние `Loading` не "зависло".
+            // Если `NonCancellable` блок успешно выполнился, он сам установит `Idle` или `Error`.
+            // Этот `finally` важен для случаев, когда отмена или ошибка произошли *до* `NonCancellable` блока,
+            // но *после* установки `_rangeNetworkState.value = Loading`.
+            if (_rangeNetworkState.value is EventNetworkState.Loading) {
+                Log.w(TAG, "FADR FINALLY: State still Loading for $startDate to $endDate. This implies cancellation/error before NC block completed its state update. Resetting to Idle. Job: ${coroutineContext[Job]}")
+                _rangeNetworkState.value = EventNetworkState.Idle // Безопасный сброс в состояние Idle
+            }
+            Log.d(TAG, "FADR: FINALLY block executed for $startDate to $endDate. Current _rangeNetworkState: ${_rangeNetworkState.value}. Job: ${coroutineContext[Job]}")
         }
     }
 

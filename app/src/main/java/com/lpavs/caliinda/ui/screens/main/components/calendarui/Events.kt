@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,6 +88,7 @@ fun EventsList(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
 
         items(items = events, key = { it.id }) { event ->
@@ -204,11 +206,15 @@ fun EventsList(
                 // --------------------------------
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CalendarUiDefaults.ItemHorizontalPadding, vertical = CalendarUiDefaults.ItemVerticalPadding),
+                    .padding(
+                        horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                        vertical = CalendarUiDefaults.ItemVerticalPadding
+                    ),
                 currentTimeZoneId = currentTimeZoneId
             )
         }
     }
+    Box(modifier = Modifier.height(70.dp))
 }
 
 
@@ -330,7 +336,9 @@ fun DayEventsPage(
                         Log.d("DayEventsPage", "Edit requested for: ${eventToEdit.id}")
                         // viewModel.navigateToEditScreen(eventToEdit.id)
                     },
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     currentTimeZoneId = currentTimeZoneId
                 )
             } else if (allDayEvents.isEmpty()) {
@@ -357,6 +365,7 @@ fun DayEventsPage(
             } else {
                 Spacer(modifier = Modifier.weight(1f))
             }
+
         } // End Column
         if (uiState.showDeleteConfirmationDialog && uiState.eventPendingDeletion != null) {
             DeleteConfirmationDialog( // Твой существующий диалог

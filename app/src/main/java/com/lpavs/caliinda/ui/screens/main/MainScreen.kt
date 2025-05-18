@@ -74,6 +74,8 @@ fun MainScreen(
             .toInstant()
             .toEpochMilli(),
     )
+    val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
+    val isListening = uiState.isListening
 
     // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
     LaunchedEffect(pagerState.settledPage) { // Реагируем, когда страница "устаканилась"
@@ -164,8 +166,6 @@ fun MainScreen(
                     viewModel = viewModel,
                 )
             } // End Column
-            val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
-            val isListening = uiState.isListening
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
