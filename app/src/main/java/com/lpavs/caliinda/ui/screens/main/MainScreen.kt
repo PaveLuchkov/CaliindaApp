@@ -74,9 +74,6 @@ fun MainScreen(
             .toEpochMilli(),
     )
 
-    val titleFormatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")) }
-    val appBarTitle = currentVisibleDate.format(titleFormatter)
-
     // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
     LaunchedEffect(pagerState.settledPage) { // Реагируем, когда страница "устаканилась"
         val settledDate = today.plusDays((pagerState.settledPage - initialPageIndex).toLong())
@@ -106,30 +103,12 @@ fun MainScreen(
     }
     // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
-    val isSignedIn = uiState.isSignedIn // Получаем статус входа
-
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        Log.d("MainScreen", "Permission result: $isGranted")
-        viewModel.updatePermissionStatus(isGranted)
-        if (!isGranted) {
-            // Handle permission denial (e.g., show message)
-            scope.launch { /* Show snackbar or message */ }
-        }
-    }
-
     LaunchedEffect(Unit) {
         val hasPermission = ContextCompat.checkSelfPermission(
             context, Manifest.permission.RECORD_AUDIO
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         viewModel.updatePermissionStatus(hasPermission)
     }
-
-
-    var isFabPressed by remember { mutableStateOf(false) }
-    val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
-    var expanded by rememberSaveable { mutableStateOf(true) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
