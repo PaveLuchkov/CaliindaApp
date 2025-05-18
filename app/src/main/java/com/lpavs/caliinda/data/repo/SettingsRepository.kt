@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.time.ZoneId
 
 @Singleton
 class SettingsRepository @Inject constructor(
@@ -56,7 +57,7 @@ class SettingsRepository @Inject constructor(
             } else throw exception
         }
         .map { preferences ->
-            preferences[PreferencesKeys.TIME_ZONE] ?: ""
+            preferences[PreferencesKeys.TIME_ZONE] ?: ZoneId.systemDefault().id
         }
 
     suspend fun saveTimeZone(timeZone: String) {

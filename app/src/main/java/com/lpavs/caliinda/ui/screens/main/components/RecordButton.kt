@@ -19,17 +19,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import kotlinx.coroutines.launch
-import com.lpavs.caliinda.ui.common.CustomRotatingMorphShape // <-- Импорт
+import com.lpavs.caliinda.ui.common.CustomRotatingMorphShape
 import com.lpavs.caliinda.ui.screens.main.MainUiState
 
 
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RecordButton(
     uiState: MainUiState,
@@ -105,10 +107,11 @@ fun RecordButton(
             }
             Log.d("RecordButton", "FAB onClick triggered (handled permission request if needed)")
         },
+        shape = MaterialShapes.Cookie4Sided.toShape(),
         containerColor = animatedBackgroundColor,
         contentColor = animatedContentColor,
+        elevation = FloatingActionButtonDefaults.elevation(0.dp),
         modifier = modifier
-            // .size(56.dp) // Размер задается извне через modifier
             .pointerInput(isInteractionEnabled, uiState.isPermissionGranted) { // Передаем зависимости в key
                 if (!isInteractionEnabled) {
                     Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")
@@ -185,8 +188,7 @@ fun RecordButton(
                     )
                 } else {
                     // Стандартная форма FAB обычно CircleShape, но оставим RoundedCornerShape, как было
-                    FloatingActionButtonDefaults.shape // Используем стандартную форму FAB
-                    // RoundedCornerShape(16.dp)
+                    MaterialShapes.Cookie4Sided.toShape() // Используем стандартную форму FAB
                 }
             ),
     ) {

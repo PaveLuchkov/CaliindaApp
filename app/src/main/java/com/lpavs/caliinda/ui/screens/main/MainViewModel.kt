@@ -74,6 +74,7 @@ class MainViewModel @Inject constructor(
     // Состояния Настроек
     val timeZone: StateFlow<String> = settingsRepository.timeZoneFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
+
     val botTemperState: StateFlow<String> = settingsRepository.botTemperFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "") // Пустая строка или осмысленный дефолт
 
