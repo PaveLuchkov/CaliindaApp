@@ -71,7 +71,7 @@ fun MainScreen(
         initialSelectedDateMillis = currentVisibleDate
             .atStartOfDay(ZoneId.systemDefault())
             .toInstant()
-            .toEpochMilli()
+            .toEpochMilli(),
     )
 
     val titleFormatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")) }
@@ -157,7 +157,7 @@ fun MainScreen(
 
                     showDatePicker = true // Показываем диалог
                 },
-                currentDateTitle = appBarTitle
+                date = currentVisibleDate
                 )
         },
     ) { paddingValues ->

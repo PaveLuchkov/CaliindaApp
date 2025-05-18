@@ -255,7 +255,7 @@ fun DayEventsPage(
             if (currentEventIndex != -1) currentEventIndex
             else if (nextStartTime != null) {
                 timedEvents.indexOfFirst { event ->
-                    val start = DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
+                    val start = parseToInstant(event.startTime, currentTimeZoneId)
                     start != null && start == nextStartTime
                 }
             } else -1
@@ -280,20 +280,7 @@ fun DayEventsPage(
         }
     }
 
-    val fixedColors = LocalFixedAccentColors.current
-
-    val headerBackgroundColor = if (isToday) {
-        fixedColors.tertiaryFixed // Today's color
-    } else {
-        fixedColors.secondaryFixed // Other dates' color
-    }
-
-    val headerTextColor = if (isToday) {
-        fixedColors.onTertiaryFixed // Today's text color
-    } else {
-        fixedColors.onSecondaryFixed// Other dates' text color
-    }
-
+//    val fixedColors = LocalFixedAccentColors.current
 
     Box(
         modifier = Modifier
@@ -303,27 +290,6 @@ fun DayEventsPage(
             .fillMaxSize())
         {
             Spacer(modifier = Modifier.height(3.dp))
-            // Заголовок Дня (можно вынести в отдельный Composable)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(25.dp))
-                    .background(color = headerBackgroundColor)
-            ){
-                Text(
-                    // TODO: ЗАМЕНИТЬ ОТОБРАЖЕНИЕ ВРЕМЕНИ НА ЛОКАЛЬ
-                    text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))),
-                    style = typography.titleLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = headerTextColor,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .fillMaxWidth(),// Больше отступы
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                )
-            }
             // TODO СДЕЛАТЬ ТОЖЕ УДАЛЕНИЕ РЕДАКТИРОВАНИЕ (но выход кнопок по центру)
             if (allDayEvents.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовка даты
