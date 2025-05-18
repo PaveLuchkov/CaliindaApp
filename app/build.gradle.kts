@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.caliinda"
+    namespace = "com.lpavs.caliinda"
     compileSdk = 35
 
     defaultConfig {
