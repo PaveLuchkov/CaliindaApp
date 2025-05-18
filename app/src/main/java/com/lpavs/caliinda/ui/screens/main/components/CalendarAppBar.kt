@@ -31,9 +31,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) // Для CenterAlignedTopAppBar
 @Composable
 fun CalendarAppBar(
-    isListening: Boolean,
     onNavigateToSettings: () -> Unit,
-    isBusy: Boolean, // Используем isBusy (включает загрузку и другие состояния занятости)
     onGoToTodayClick: () -> Unit,
     onTitleClick: () -> Unit, // <-- Новый колбэк для клика по заголовку
     date: LocalDate
@@ -95,17 +93,6 @@ fun CalendarAppBar(
         actions = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Показываем индикатор только если isBusy И НЕ isListening
-                /*
-                if (isBusy && !isListening) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(end = 8.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-
-                 */
 
                 FilledIconButton(
                     onClick = onNavigateToSettings,

@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
     ExperimentalMaterial3ExpressiveApi::class
@@ -114,8 +115,6 @@ fun MainScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CalendarAppBar( // Передаем только нужные данные
-                isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading,
-                isListening = uiState.isListening,
                 onNavigateToSettings = onNavigateToSettings,
                 onGoToTodayClick = {
                     scope.launch {
@@ -164,9 +163,16 @@ fun MainScreen(
                     date = pageDate,
                     viewModel = viewModel,
                 )
-
             } // End Column
-
+            val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
+            val isListening = uiState.isListening
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (isBusy && !isListening)
+                { LoadingIndicator() }
+            }
             // --- Слой 3: AI Visualizer (рисуется поверх фона и списка) ---
             AiVisualizer(
                 aiState = aiState,
