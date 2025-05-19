@@ -4,7 +4,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Keyboard
@@ -73,6 +72,11 @@ import kotlinx.coroutines.launch // Для запуска корутины сб�
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ButtonDefaults
@@ -86,65 +90,142 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.ImeAction
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
+import androidx.compose.ui.text.input.TextFieldValue
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
-fun SimpleToggleButton() {
-    // 1. Храним состояние (например, "включено" или "выключено")
-    var isToggled by remember { mutableStateOf(false) }
+fun Bar(
+    textFieldValue: TextFieldValue,
+    onTextChanged: (TextFieldValue) -> Unit,
+) {
+    var onKeyboardToggle by remember { mutableStateOf(true)}
+    val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+    HorizontalFloatingToolbar(
+        expanded = true,
+        floatingActionButton = {
+            AnimatedContent(
+                targetState = onKeyboardToggle,
+                transitionSpec = {
+                    // Анимация для FAB: простой fade in/out
+                    // Если onKeyboardToggle = true (показываем микрофон), то он въезжает, Send выезжает.
+                    // Если onKeyboardToggle = false (показываем Send), то он въезжает, микрофон выезжает.
+                    if (targetState) { // Переход к микрофону
+                        (slideInVertically { height -> height } + fadeIn()).togetherWith(
+                            slideOutVertically { height -> -height } + fadeOut())
+                    } else { // Переход к кнопке Send
+                        (slideInVertically { height -> -height } + fadeIn()).togetherWith(
+                            slideOutVertically { height -> height } + fadeOut())
+                    }
+                },
+                label = "fab_animation"
+            ){isIconMode ->
+                if (!isIconMode) {
+                    FloatingActionButton(
+                        onClick = {},
+                    ){
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Отправить",
+                        )
+                    }
+                }
+                else
+                    FloatingActionButton(
+                        onClick = {},
+                    ){
+                        Icon(
+                            imageVector = Icons.Filled.Mic,
+                            contentDescription = "Голосовое",
+                        )
+                    }
+            }
+        },
+        expandedShadowElevation = 0.dp,
+        colors = vibrantColors,
+        content = {
+            AnimatedContent(
+                targetState = onKeyboardToggle,
+                label = "content animation"
+            ) {isInputMode ->
+                if (!isInputMode) {
+                    IconButton(
+                        onClick = {onKeyboardToggle = !onKeyboardToggle},
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Убрать ввод текста"
+                        )
+                    }
+                    OutlinedTextField( // Или TextField, или BasicTextField + кастомное оформление
+                        value = textFieldValue,
+                        onValueChange = onTextChanged,
+                        modifier = Modifier.width(200.dp),
+                        placeholder = { Text("Type message") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Send
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSend = { }
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = colorScheme.onSecondaryContainer,
+                        ),
+                        singleLine = true,
+                    )}
+                else {
+                    IconButton(
+                        onClick = {
+                        },
+                        // enabled = isKeyboardToggleEnabled TODO : enable after done
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AddCircle,
+                            contentDescription = "Create event"
+                        )
+                    }
+                    IconButton(
+                        onClick = { onKeyboardToggle = !onKeyboardToggle },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Keyboard,
+                            contentDescription = "Показать клавиатуру"
+                        )
+                    }
+                }
+            }
 
-    IconButton(
-        onClick = {
-            // 2. Изменяем состояние по клику
-            isToggled = !isToggled
-        }
-    ) {
-        // 3. Используем состояние для определения внешнего вида
-        Icon(
-            imageVector = if (isToggled) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            contentDescription = if (isToggled) "Убрать из избранного" else "Добавить в избранное",
-            tint = if (isToggled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+        },
+    )
 }
 
-// Пример использования с изменением фона кнопки
+@OptIn(ExperimentalAnimationApi::class) // Для AnimatedContent
 @Composable
-fun ToggleButtonWithBackground() {
-    var isSelected by remember { mutableStateOf(false) }
+fun ToggleBetweenComponents() {
+    var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
 
-    Button(
-        onClick = { isSelected = !isSelected },
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    ) {
-        Icon(
-            imageVector = if (isSelected) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            contentDescription = "Toggle Favorite"
-        )
-        Text(text = if (isSelected) "Выбрано" else "Не выбрано", modifier = Modifier.padding(start = 8.dp))
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Кнопка для переключения
+        Bar(
+            textFieldValue = textFieldState,
+            onTextChanged = { textFieldState = it }
+            )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ToggleButtonPreview() {
+fun ToggleComponentsPreview() {
     MaterialTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text("Простая Toggle Icon кнопка:")
-            SimpleToggleButton()
-            Text("Toggle кнопка с фоном и текстом:")
-            ToggleButtonWithBackground()
+        Box(modifier = Modifier
+            .fillMaxSize()
+            , contentAlignment = Alignment.Center) {
+            ToggleBetweenComponents()
         }
     }
 }
