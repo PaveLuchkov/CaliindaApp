@@ -69,10 +69,13 @@ fun BottomBar(
         }
     }
     HorizontalFloatingToolbar(
+        modifier =
+            modifier,
         expanded = true, // Тулбар всегда "развернут", когда виден
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onSendClick,
+
             ){
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
@@ -81,14 +84,12 @@ fun BottomBar(
                 )
             }
         },
-        modifier =
-            modifier,
         expandedShadowElevation = 0.dp,
         colors = vibrantColors,
         content = {
             IconButton(
                 onClick = {/* TODO Возврат к другому бару*/}, // Эта функция теперь будет ПОКАЗЫВАТЬ текстовое поле
-            ) {
+                ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Убрать ввод текста"
