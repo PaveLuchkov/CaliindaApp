@@ -63,6 +63,10 @@ import kotlin.math.abs
 import androidx.compose.animation.* // Импорты для AnimatedContent и анимаций
 import androidx.compose.animation.core.EaseInExpo
 import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween // Для настройки скорости анимации
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -95,6 +99,8 @@ import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
@@ -102,28 +108,49 @@ fun Bar(
     textFieldValue: TextFieldValue,
     onTextChanged: (TextFieldValue) -> Unit,
 ) {
-    var onKeyboardToggle by remember { mutableStateOf(true)}
+    var onKeyboardToggle by remember { mutableStateOf(true) }
     val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+    val colorScheme = MaterialTheme.colorScheme // Added for OutlinedTextField colors
+
     HorizontalFloatingToolbar(
+        modifier = Modifier
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy, // Чтобы сам тулбар не "скакал"
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+            .padding(8.dp),
         expanded = true,
         floatingActionButton = {
             AnimatedContent(
                 targetState = onKeyboardToggle,
                 transitionSpec = {
-                    // Анимация для FAB: простой fade in/out
-                    // Если onKeyboardToggle = true (показываем микрофон), то он въезжает, Send выезжает.
-                    // Если onKeyboardToggle = false (показываем Send), то он въезжает, микрофон выезжает.
-                    if (targetState) { // Переход к микрофону
-                        (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                            slideOutVertically { height -> -height } + fadeOut())
-                    } else { // Переход к кнопке Send
-                        (slideInVertically { height -> -height } + fadeIn()).togetherWith(
-                            slideOutVertically { height -> height } + fadeOut())
+                    // Определяем спецификации анимации spring
+                    val enterSpringSpec = spring<IntOffset>(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                    val exitSpringSpec = spring<IntOffset>(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                    val fadeSpringSpec = spring<Float>(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+
+                    if (targetState) { // Переход к микрофону (onKeyboardToggle = true)
+                        (slideInHorizontally(animationSpec = enterSpringSpec) { height -> height } + fadeIn(animationSpec = fadeSpringSpec))
+                            .togetherWith(slideOutHorizontally(animationSpec = exitSpringSpec) { height -> -height } + fadeOut(animationSpec = fadeSpringSpec))
+                    } else { // Переход к кнопке Send (onKeyboardToggle = false)
+                        (slideInHorizontally(animationSpec = enterSpringSpec) { height -> -height } + fadeIn(animationSpec = fadeSpringSpec))
+                            .togetherWith(slideOutHorizontally(animationSpec = exitSpringSpec) { height -> height } + fadeOut(animationSpec = fadeSpringSpec))
                     }
                 },
                 label = "fab_animation"
-            ){isIconMode ->
-                if (!isIconMode) {
+            ) { isIconMode -> // isIconMode это onKeyboardToggle
+                if (!isIconMode) { // Режим ввода текста, показываем Send
                     FloatingActionButton(
                         onClick = {},
                     ){
@@ -132,8 +159,7 @@ fun Bar(
                             contentDescription = "Отправить",
                         )
                     }
-                }
-                else
+                } else { // Режим иконок, показываем Mic
                     FloatingActionButton(
                         onClick = {},
                     ){
@@ -142,90 +168,245 @@ fun Bar(
                             contentDescription = "Голосовое",
                         )
                     }
+                }
             }
         },
         expandedShadowElevation = 0.dp,
         colors = vibrantColors,
         content = {
-            AnimatedContent(
-                targetState = onKeyboardToggle,
-                label = "content animation"
-            ) {isInputMode ->
-                if (!isInputMode) {
-                    IconButton(
-                        onClick = {onKeyboardToggle = !onKeyboardToggle},
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Убрать ввод текста"
-                        )
-                    }
-                    OutlinedTextField( // Или TextField, или BasicTextField + кастомное оформление
-                        value = textFieldValue,
-                        onValueChange = onTextChanged,
-                        modifier = Modifier.width(200.dp),
-                        placeholder = { Text("Type message") },
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Send
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onSend = { }
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedTextColor = colorScheme.onSecondaryContainer,
-                        ),
-                        singleLine = true,
-                    )}
-                else {
-                    IconButton(
-                        onClick = {
-                        },
-                        // enabled = isKeyboardToggleEnabled TODO : enable after done
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.AddCircle,
-                            contentDescription = "Create event"
-                        )
-                    }
-                    IconButton(
-                        onClick = { onKeyboardToggle = !onKeyboardToggle },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Keyboard,
-                            contentDescription = "Показать клавиатуру"
-                        )
-                    }
+            if (!onKeyboardToggle) {
+                IconButton(
+                    onClick = { onKeyboardToggle = !onKeyboardToggle },
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Убрать ввод текста"
+                    )
+                }
+                OutlinedTextField(
+                    // Или TextField, или BasicTextField + кастомное оформление
+                    value = textFieldValue,
+                    onValueChange = onTextChanged,
+                    modifier = Modifier.width(200.dp),
+                    placeholder = { Text("Type message") },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSend = { }
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedTextColor = colorScheme.onSecondaryContainer,
+                    ),
+                    singleLine = true,
+                )
+            } else {
+                IconButton(
+                    onClick = {
+                    },
+                    // enabled = isKeyboardToggleEnabled TODO : enable after done
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AddCircle,
+                        contentDescription = "Create event"
+                    )
+                }
+                IconButton(
+                    onClick = { onKeyboardToggle = !onKeyboardToggle },
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Keyboard,
+                        contentDescription = "Показать клавиатуру"
+                    )
                 }
             }
-
-        },
+        }
     )
 }
 
-@OptIn(ExperimentalAnimationApi::class) // Для AnimatedContent
-@Composable
-fun ToggleBetweenComponents() {
-    var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
+//@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
+//@Composable
+//fun Bar(
+//    textFieldValue: TextFieldValue,
+//    onTextChanged: (TextFieldValue) -> Unit,
+//) {
+//    var onKeyboardToggle by remember { mutableStateOf(true) }
+//    val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+//    val colorScheme = MaterialTheme.colorScheme // Added for OutlinedTextField colors
+//
+//    HorizontalFloatingToolbar(
+//        modifier = Modifier
+//            .animateContentSize(
+//                animationSpec = spring(
+//                    dampingRatio = Spring.DampingRatioMediumBouncy, // Чтобы сам тулбар не "скакал"
+//                    stiffness = Spring.StiffnessLow
+//                )
+//            ),
+//        expanded = true,
+//        floatingActionButton = {
+//            AnimatedContent(
+//                targetState = onKeyboardToggle,
+//                transitionSpec = {
+//                    // Определяем спецификации анимации spring
+//                    val enterSpringSpec = spring<IntOffset>(
+//                        dampingRatio = Spring.DampingRatioMediumBouncy,
+//                        stiffness = Spring.StiffnessLow
+//                    )
+//                    val exitSpringSpec = spring<IntOffset>(
+//                        dampingRatio = Spring.DampingRatioMediumBouncy,
+//                        stiffness = Spring.StiffnessLow
+//                    )
+//                    val fadeSpringSpec = spring<Float>(
+//                        dampingRatio = Spring.DampingRatioNoBouncy,
+//                        stiffness = Spring.StiffnessMedium
+//                    )
+//
+//                    if (targetState) { // Переход к микрофону (onKeyboardToggle = true)
+//                        (slideInVertically(animationSpec = enterSpringSpec) { height -> height } + fadeIn(animationSpec = fadeSpringSpec))
+//                            .togetherWith(slideOutVertically(animationSpec = exitSpringSpec) { height -> -height } + fadeOut(animationSpec = fadeSpringSpec))
+//                    } else { // Переход к кнопке Send (onKeyboardToggle = false)
+//                        (slideInVertically(animationSpec = enterSpringSpec) { height -> -height } + fadeIn(animationSpec = fadeSpringSpec))
+//                            .togetherWith(slideOutVertically(animationSpec = exitSpringSpec) { height -> height } + fadeOut(animationSpec = fadeSpringSpec))
+//                    }
+//                },
+//                label = "fab_animation"
+//            ) { isIconMode -> // isIconMode это onKeyboardToggle
+//                if (!isIconMode) { // Режим ввода текста, показываем Send
+//                    FloatingActionButton(
+//                        onClick = {},
+//                    ){
+//                        Icon(
+//                            imageVector = Icons.AutoMirrored.Filled.Send,
+//                            contentDescription = "Отправить",
+//                        )
+//                    }
+//                } else { // Режим иконок, показываем Mic
+//                    FloatingActionButton(
+//                        onClick = {},
+//                    ){
+//                        Icon(
+//                            imageVector = Icons.Filled.Mic,
+//                            contentDescription = "Голосовое",
+//                        )
+//                    }
+//                }
+//            }
+//        },
+//        expandedShadowElevation = 0.dp,
+//        colors = vibrantColors,
+//        content = {
+//            AnimatedContent(
+//                targetState = onKeyboardToggle,
+//                label = "content_animation",
+//                transitionSpec = {
+//                    // Общая спецификация spring для контента
+//                    val contentSpringSpec = spring<IntOffset>(
+//                        dampingRatio = Spring.DampingRatioNoBouncy, // Чтобы не слишком прыгало
+//                        stiffness = Spring.StiffnessMedium
+//                    )
+//                    val fadeSpringSpec = spring<Float>(
+//                        dampingRatio = Spring.DampingRatioNoBouncy,
+//                        stiffness = Spring.StiffnessMedium
+//                    )
+//                    val sizeTransformSpringSpec = spring<IntSize>(
+//                        dampingRatio = Spring.DampingRatioLowBouncy, // Можно немного "резиновости" для изменения размера
+//                        stiffness = Spring.StiffnessLow
+//                    )
+//                    if (targetState) {
+//                        (slideInHorizontally(animationSpec = contentSpringSpec) { fullWidth -> fullWidth } + fadeIn(animationSpec = fadeSpringSpec))
+//                            .togetherWith(slideOutHorizontally(animationSpec = contentSpringSpec) { fullWidth -> -fullWidth } + fadeOut(animationSpec = fadeSpringSpec))
+//                    } else {
+//                        (slideInHorizontally(animationSpec = contentSpringSpec) { fullWidth -> -fullWidth } + fadeIn(animationSpec = fadeSpringSpec))
+//                            .togetherWith(slideOutHorizontally(animationSpec = contentSpringSpec) { fullWidth -> fullWidth } + fadeOut(animationSpec = fadeSpringSpec))
+//                    }.using(
+//                        SizeTransform(
+//                            clip = false, // Важно, чтобы контент не обрезался во время анимации размера
+//                            sizeAnimationSpec = { _, _ -> sizeTransformSpringSpec }
+//                        )
+//                    )
+//
+//                }
+//            ) { isInputModeActive -> // true = иконки, false = текстовое поле
+//                if (!isInputModeActive) { // Режим ввода текста
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        modifier = Modifier.fillMaxWidth() // Занять доступную ширину
+//                    ) {
+//                        IconButton(
+//                            onClick = { onKeyboardToggle = true }, // Переключить в режим иконок
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+//                                contentDescription = "Убрать ввод текста"
+//                            )
+//                        }
+//                        OutlinedTextField(
+//                            value = textFieldValue,
+//                            onValueChange = onTextChanged,
+//                            modifier = Modifier.width(200.dp), // Занять оставшееся место
+//                            placeholder = { Text("Type message") },
+//                            keyboardOptions = KeyboardOptions.Default.copy(
+//                                imeAction = ImeAction.Send
+//                            ),
+//                            keyboardActions = KeyboardActions(
+//                                onSend = { /* TODO: Handle send action */ }
+//                            ),
+//                            colors = OutlinedTextFieldDefaults.colors(
+//                                focusedBorderColor = Color.Transparent,
+//                                unfocusedBorderColor = Color.Transparent,
+//                                focusedTextColor = colorScheme.onSecondaryContainer,
+//                            ),
+//                            singleLine = true,
+//                        )
+//                    }
+//                } else { // Режим иконок
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.Start, // Иконки слева
+//                        modifier = Modifier.fillMaxWidth()
+//                    ) {
+//                        IconButton(
+//                            onClick = {
+//                                // TODO: Handle create event
+//                            },
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Filled.AddCircle,
+//                                contentDescription = "Create event"
+//                            )
+//                        }
+//                        IconButton(
+//                            onClick = { onKeyboardToggle = false }, // Переключить в режим ввода текста
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Filled.Keyboard,
+//                                contentDescription = "Показать клавиатуру"
+//                            )
+//                        }
+//                        // Можно добавить Spacer, если иконки должны быть распределены
+//                        // Spacer(Modifier.weight(1f))
+//                    }
+//                }
+//            }
+//        },
+//    )
+//}
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Кнопка для переключения
-        Bar(
-            textFieldValue = textFieldState,
-            onTextChanged = { textFieldState = it }
-            )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
 fun ToggleComponentsPreview() {
+    var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
     MaterialTheme {
         Box(modifier = Modifier
             .fillMaxSize()
             , contentAlignment = Alignment.Center) {
-            ToggleBetweenComponents()
+            Bar(
+                textFieldValue = textFieldState,
+                onTextChanged = { textFieldState = it }
+            )
         }
     }
 }
