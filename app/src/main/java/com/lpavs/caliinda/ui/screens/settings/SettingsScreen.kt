@@ -11,12 +11,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import androidx.compose.material.icons.rounded.AccessTimeFilled
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import com.lpavs.caliinda.R
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
@@ -52,6 +53,7 @@ fun SettingsScreen(
         }
     ) { paddingValues ->
         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .padding(paddingValues)
                 .padding(16.dp) // Дополнительные отступы для контента
@@ -59,7 +61,7 @@ fun SettingsScreen(
         ) {
             if (uiState.isLoading && !uiState.isSignedIn) {
                 // Показываем индикатор во время процесса входа
-                CircularProgressIndicator()
+                LoadingIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
             }
             GoogleAccountSection(
