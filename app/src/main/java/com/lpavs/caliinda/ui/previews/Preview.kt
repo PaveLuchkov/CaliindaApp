@@ -110,7 +110,6 @@ fun Bar(
 ) {
     var onKeyboardToggle by remember { mutableStateOf(true) }
     val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
-    val colorScheme = MaterialTheme.colorScheme // Added for OutlinedTextField colors
 
     AnimatedContent(
         targetState = onKeyboardToggle,
@@ -142,33 +141,59 @@ fun Bar(
                     )
                 }
     ){
-        HorizontalFloatingToolbar(
-            expanded = true,
-            floatingActionButton = {
-                if (!it) { // Режим ввода текста, показываем Send
+        if (!it) {
+            HorizontalFloatingToolbar(
+                expanded = true,
+                floatingActionButton = {
                     FloatingActionButton(
                         onClick = {},
-                    ){
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Отправить",
-                        )
-                    }
-                } else { // Режим иконок, показываем Mic
-                    FloatingActionButton(
-                        onClick = {},
-                    ){
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Mic,
                             contentDescription = "Голосовое",
                         )
                     }
+                },
+                expandedShadowElevation = 0.dp,
+                colors = vibrantColors,
+                content = {
+                    IconButton(
+                        onClick = {
+                        },
+                        // enabled = isKeyboardToggleEnabled TODO : enable after done
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AddCircle,
+                            contentDescription = "Create event"
+                        )
+                    }
+                    IconButton(
+                        onClick = { onKeyboardToggle = !onKeyboardToggle },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Keyboard,
+                            contentDescription = "Показать клавиатуру"
+                        )
+                    }
                 }
-            },
-            expandedShadowElevation = 0.dp,
-            colors = vibrantColors,
-            content = {
-                if (!it) {
+            )
+        }
+        else {
+            HorizontalFloatingToolbar(
+                expanded = true,
+                floatingActionButton = {
+                    FloatingActionButton(
+                        onClick = {},
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Отправить",
+                        )
+                    }
+                },
+                expandedShadowElevation = 0.dp,
+                colors = vibrantColors,
+                content = {
                     IconButton(
                         onClick = { onKeyboardToggle = !onKeyboardToggle },
                     ) {
@@ -197,28 +222,9 @@ fun Bar(
                         ),
                         singleLine = true,
                     )
-                } else {
-                    IconButton(
-                        onClick = {
-                        },
-                        // enabled = isKeyboardToggleEnabled TODO : enable after done
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.AddCircle,
-                            contentDescription = "Create event"
-                        )
-                    }
-                    IconButton(
-                        onClick = { onKeyboardToggle = !onKeyboardToggle },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Keyboard,
-                            contentDescription = "Показать клавиатуру"
-                        )
-                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 

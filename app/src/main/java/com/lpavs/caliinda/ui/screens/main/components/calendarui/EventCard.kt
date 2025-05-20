@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.ui.screens.main.components.calendarui
 
-import RoundedPolygonShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -53,6 +52,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
+import com.lpavs.caliinda.ui.common.RoundedPolygonShape
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.CalendarUiDefaults
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid

@@ -1,6 +1,13 @@
 package com.lpavs.caliinda.ui.screens.main.components
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -28,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 
 
 @ExperimentalMaterial3ExpressiveApi
@@ -52,6 +61,7 @@ fun BottomBar(
     val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isListening // Disable toggle during recording/loading
     var expanded by rememberSaveable { mutableStateOf(true) }
     val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+    var onKeyboardToggle by remember { mutableStateOf(true) }
 
     // Request focus when text input becomes visible
     LaunchedEffect(isTextInputVisible) {
@@ -68,93 +78,124 @@ fun BottomBar(
             keyboardController?.hide()
         }
     }
-    HorizontalFloatingToolbar(
+    AnimatedContent(
         modifier =
             modifier,
-        expanded = true, // Тулбар всегда "развернут", когда виден
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onSendClick,
-
-            ){
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Отправить",
-                    tint = if (isSendEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                )
-            }
-        },
-        expandedShadowElevation = 0.dp,
-        colors = vibrantColors,
-        content = {
-            IconButton(
-                onClick = {/* TODO Возврат к другому бару*/}, // Эта функция теперь будет ПОКАЗЫВАТЬ текстовое поле
-                ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Убрать ввод текста"
-                )
-            }
-            OutlinedTextField( // Или TextField, или BasicTextField + кастомное оформление
-                value = textFieldValue,
-                onValueChange = onTextChanged,
-                modifier = Modifier.width(200.dp),
-                placeholder = { Text("Type message") },
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Send
-                ),
-                keyboardActions = KeyboardActions(
-                    onSend = {
-                        if (isSendEnabled) {
-                            onSendClick()
-                        }
-                    }
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedTextColor = colorScheme.onSecondaryContainer,
-                ),
-                singleLine = true,
+        targetState = onKeyboardToggle,
+        transitionSpec = {
+            // Общая спецификация spring для контента
+            val contentSpringSpec = spring<IntOffset>(
+                dampingRatio = Spring.DampingRatioNoBouncy, // Чтобы не слишком прыгало
+                stiffness = Spring.StiffnessMediumLow
             )
-        },
-    )
-//    HorizontalFloatingToolbar(
-//        expanded = expanded,
-//        floatingActionButton = {
-//            RecordButton(
-//                uiState = uiState, // Передаем стейт
-//                onStartRecording = onRecordStart, // Передаем лямбды
-//                onStopRecordingAndSend = onRecordStopAndSend,
-//                onUpdatePermissionResult = onUpdatePermissionResult,
-//            )
-//        },
-//        expandedShadowElevation = 0.dp,
-//        modifier =
-//            modifier, //.align(Alignment.BottomEnd) .offset(x = -ScreenOffset, y = -ScreenOffset)
-//        colors = vibrantColors,
-//        content = {
-//            IconButton(
-//                onClick = {
-//                    val selectedDate = viewModel.currentVisibleDate.value // Берем видимую дату
-//                    navController.navigate("create_event/${selectedDate.toEpochDay()}")
-//                },
-//                // enabled = isKeyboardToggleEnabled TODO : enable after done
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Filled.AddCircle,
-//                    contentDescription = "Create event"
-//                )
-//            }
-//            IconButton(
-//                onClick = onToggleTextInput,
-//                enabled = isKeyboardToggleEnabled
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Filled.Keyboard,
-//                    contentDescription = if (isTextInputVisible) "Скрыть клавиатуру" else "Показать клавиатуру"
-//                )
-//            }
-//        },
-//    )
+            val fadeSpringSpec = spring<Float>(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+            val sizeTransformSpringSpec = spring<IntSize>(
+                dampingRatio = Spring.DampingRatioLowBouncy, // Можно немного "резиновости" для изменения размера
+                stiffness = Spring.StiffnessLow
+            )
+            if (targetState) {
+                (fadeIn(animationSpec = fadeSpringSpec))
+                    .togetherWith(fadeOut(animationSpec = fadeSpringSpec))
+            } else {
+                (fadeIn(animationSpec = fadeSpringSpec))
+                    .togetherWith(fadeOut(animationSpec = fadeSpringSpec))
+            }.using(
+                SizeTransform(
+                    clip = false,
+                    sizeAnimationSpec = { _, _ -> sizeTransformSpringSpec }
+                )
+            )
+        }
+    ) {
+        if (!it) {
+            HorizontalFloatingToolbar(
+                expanded = true, // Тулбар всегда "развернут", когда виден
+                colors = vibrantColors,
+                floatingActionButton = {
+                    FloatingActionButton(
+                        onClick = onSendClick,
+                        contentColor = colorScheme.onPrimaryContainer
+                        ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Отправить"
+                        )
+                    }
+                },
+                content = {
+                    IconButton(
+                        onClick = { onKeyboardToggle = !onKeyboardToggle  }, // Эта функция теперь будет ПОКАЗЫВАТЬ текстовое поле
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Убрать ввод текста"
+                        )
+                    }
+                    OutlinedTextField(
+                        // Или TextField, или BasicTextField + кастомное оформление
+                        value = textFieldValue,
+                        onValueChange = onTextChanged,
+                        modifier = Modifier.width(200.dp),
+                        placeholder = { Text("Type message") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Send
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSend = {
+                                if (isSendEnabled) {
+                                    onSendClick()
+                                }
+                            }
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = colorScheme.onSecondaryContainer,
+                        ),
+                        singleLine = true,
+                    )
+                },
+            )
+        } else {
+            HorizontalFloatingToolbar(
+                expanded = expanded,
+                colors = vibrantColors,
+                floatingActionButton = {
+                    RecordButton(
+                        uiState = uiState, // Передаем стейт
+                        onStartRecording = onRecordStart, // Передаем лямбды
+                        onStopRecordingAndSend = onRecordStopAndSend,
+                        onUpdatePermissionResult = onUpdatePermissionResult,
+                    )
+                },
+                expandedShadowElevation = 0.dp,
+                content = {
+                    IconButton(
+                        onClick = {
+                            val selectedDate =
+                                viewModel.currentVisibleDate.value // Берем видимую дату
+                            navController.navigate("create_event/${selectedDate.toEpochDay()}")
+                        },
+                        // enabled = isKeyboardToggleEnabled TODO : enable after done
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AddCircle,
+                            contentDescription = "Create event"
+                        )
+                    }
+                    IconButton(
+                        onClick = { onKeyboardToggle = !onKeyboardToggle },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Keyboard,
+                            contentDescription = "Показать клавиатуру"
+                        )
+                    }
+                },
+            )
+        }
+    }
 }
