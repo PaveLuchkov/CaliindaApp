@@ -111,7 +111,8 @@ fun BottomBar(
                 floatingActionButton = {
                     FloatingActionButton(
                         onClick = onSendClick,
-                        contentColor = colorScheme.onPrimaryContainer
+                        contentColor = colorScheme.onPrimary,
+                        containerColor = colorScheme.primary
                         ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,

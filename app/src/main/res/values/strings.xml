@@ -20,6 +20,8 @@
     <string name="delete_conf">Delete confirmation</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="save">Save</string>
+
     <string name="no_events">No events</string>
 
     <!-- Строки для секции повторения -->

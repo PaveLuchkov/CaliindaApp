@@ -296,7 +296,8 @@ fun MainScreen(
                             showCreateEventSheet = false
                         }
                     }
-                }
+                },
+                currentSheetValue = sheetState.currentValue
             )
         }
     }

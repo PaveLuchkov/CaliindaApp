@@ -4,6 +4,14 @@ package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging
 import android.text.format.DateFormat
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
@@ -19,6 +27,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.ui.common.BackgroundShapeContext
@@ -44,7 +54,8 @@ import java.time.format.DateTimeFormatter
 fun CreateEventScreen(
     viewModel: MainViewModel,
     initialDate: LocalDate,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    currentSheetValue: SheetValue
 ) {
     var summary by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -67,6 +78,7 @@ fun CreateEventScreen(
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
+
 
     // Форматер
     val systemZoneId = remember { ZoneId.systemDefault() }
@@ -270,44 +282,60 @@ fun CreateEventScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth() // Занимает всю доступную ширину
-            //.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.9f) // Ограничение по высоте (90% экрана)
-    ) {
-        // Кастомный TopBar для листа
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 4.dp, vertical = 0.dp), // Меньше отступы для иконки
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            IconButton(onClick = onDismiss, enabled = !isLoading) { // Используем onDismiss
-//                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-//            }
-//            Text(
-//                "New Event",
-//                style = MaterialTheme.typography.titleLarge, // Стиль заголовка
-//                modifier = Modifier.weight(1f) // Чтобы заголовок занимал доступное место
-//            )
-//            // Можно добавить сюда иконку сохранения, если не хотим отдельную кнопку внизу
-//            // IconButton(onClick = onSaveClick, enabled = !isLoading) {
-//            //     Icon(Icons.Filled.Check, "Сохранить")
-//            // }
-//            Spacer(Modifier.width(48.dp)) // Пустое место, чтобы текст был по центру если нет кнопки справа
-//        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 0.dp), // Меньше отступы для иконки
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            AnimatedContent(
+                targetState = currentSheetValue,
+                transitionSpec = {
+                    // Определяем анимацию. Эта анимация будет одинакова для входа/выхода
+                    // кнопки, но можно настроить разные, если targetState меняется с/на PartiallyExpanded.
+                    (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                            scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
+                        .togetherWith(
+                            fadeOut(animationSpec = tween(90)) +
+                                    scaleOut(targetScale = 0.92f, animationSpec = tween(90)) // Уменьшаем при исчезновении
+                        )
+                        .using(SizeTransform(clip = false)) // clip = false, если кнопка не обрезается
+                },
+                label = "SaveButtonAnimation"
+            ) {targetValue ->
+                if (targetValue == SheetValue.PartiallyExpanded){
+                    Button(
+                        onClick = onSaveClick,
+                        enabled = !isLoading,
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary // Цвет индикатора на кнопке
+                            )
+                        } else {
+                            Icon(Icons.Filled.Check, contentDescription = "Сохранить")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text(stringResource(R.string.save))
+                        }
+                    }
+                } else {
+                    Spacer(Modifier.height(0.dp).fillMaxWidth()) // Занимает ширину, чтобы не было скачков
+                }
+            }
+
+        }
 
         // Основной контент с прокруткой
         Column(
             modifier = Modifier
-                .weight(1f) // Занимает оставшееся место перед нижней кнопкой
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp), // Горизонтальные отступы для контента
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 16.dp) // Горизонтальные отступы для контента
+                .fillMaxWidth(),
         ) {
             // BackgroundShapes здесь может быть не нужен или потребует адаптации
             // BackgroundShapes(BackgroundShapeContext.EventCreation)
-
             AdaptiveContainer {
                 EventNameSection(
                     summary = summary,
@@ -336,6 +364,8 @@ fun CreateEventScreen(
             validationError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
+
+
             AdaptiveContainer {
                 OutlinedTextField(
                     value = description,
@@ -363,25 +393,45 @@ fun CreateEventScreen(
         } // End Scrollable Column
 
         // Кнопка сохранения внизу листа
-        Button(
-            onClick = onSaveClick,
-            enabled = !isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp) // Отступы для кнопки
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary // Цвет индикатора на кнопке
+    AnimatedContent(
+        targetState = currentSheetValue,
+        transitionSpec = {
+            // Определяем анимацию. Эта анимация будет одинакова для входа/выхода
+            // кнопки, но можно настроить разные, если targetState меняется с/на PartiallyExpanded.
+            (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                    scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
+                .togetherWith(
+                    fadeOut(animationSpec = tween(90)) +
+                            scaleOut(targetScale = 0.92f, animationSpec = tween(90)) // Уменьшаем при исчезновении
                 )
-            } else {
-                Icon(Icons.Filled.Check, contentDescription = "Сохранить")
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Сохранить")
-            }
+                .using(SizeTransform(clip = false)) // clip = false, если кнопка не обрезается
+        },
+        label = "SaveButtonAnimation"
+    ) {targetValue ->
+        if (targetValue != SheetValue.PartiallyExpanded) {
+            Button(
+                onClick = onSaveClick,
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp) // Отступы для кнопки
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary // Цвет индикатора на кнопке
+                    )
+                } else {
+                    Icon(Icons.Filled.Check, contentDescription = "Сохранить")
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(stringResource(R.string.save))
+                }
+            } // End Root Column for Sheet Content
+        } else {
+            Spacer(Modifier.height(0.dp).fillMaxWidth()) // Занимает ширину, чтобы не было скачков
         }
-    } // End Root Column for Sheet Content
+    }
+
     val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
 
     // Диалог выбора Даты Начала
