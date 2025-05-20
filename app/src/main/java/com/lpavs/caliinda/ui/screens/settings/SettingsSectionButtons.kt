@@ -68,7 +68,7 @@ fun GoogleAccountSection(
                     contentDescription = "Account")
             }
            Spacer(modifier = Modifier.width(16.dp))
-           Text(text = name, style = Typography.bodyMedium)
+           Text(text = name, style = Typography.bodyLarge)
            Spacer(Modifier.weight(1f))
            Box(
                modifier = Modifier
