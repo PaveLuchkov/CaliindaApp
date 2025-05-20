@@ -49,7 +49,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class) // Необходимо для M3 Dialogs и Pickers
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) // Необходимо для M3 Dialogs и Pickers
 @Composable
 fun CreateEventScreen(
     viewModel: MainViewModel,
@@ -78,6 +78,7 @@ fun CreateEventScreen(
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
+
 
 
     // Форматер
@@ -292,38 +293,47 @@ fun CreateEventScreen(
             AnimatedContent(
                 targetState = currentSheetValue,
                 transitionSpec = {
-                    // Определяем анимацию. Эта анимация будет одинакова для входа/выхода
-                    // кнопки, но можно настроить разные, если targetState меняется с/на PartiallyExpanded.
-                    (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
-                            scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-                        .togetherWith(
-                            fadeOut(animationSpec = tween(90)) +
-                                    scaleOut(targetScale = 0.92f, animationSpec = tween(90)) // Уменьшаем при исчезновении
-                        )
-                        .using(SizeTransform(clip = false)) // clip = false, если кнопка не обрезается
+                    // Animation for size change only.
+                    // The new content will scale in, the old content will scale out.
+                    fadeIn(animationSpec = tween(90, delayMillis = 90))
+                        .togetherWith(fadeOut(animationSpec = tween(90)))
+                        .using(SizeTransform(clip = false)) // clip = false is good if button doesn't need clipping
                 },
                 label = "SaveButtonAnimation"
-            ) {targetValue ->
-                if (targetValue == SheetValue.PartiallyExpanded){
-                    Button(
-                        onClick = onSaveClick,
-                        enabled = !isLoading,
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary // Цвет индикатора на кнопке
-                            )
-                        } else {
-                            Icon(Icons.Filled.Check, contentDescription = "Сохранить")
-                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text(stringResource(R.string.save))
-                        }
+            ) { targetSheetValue ->
+                val expandedSize = ButtonDefaults.LargeContainerHeight
+                val defaultSize = ButtonDefaults.MediumContainerHeight
+
+                val isNotCompactState =
+                    targetSheetValue == SheetValue.Expanded
+
+                // Define icon sizes for different states
+
+                val size = if (!isNotCompactState) defaultSize else expandedSize
+
+                Button(
+                    onClick = onSaveClick,
+                    enabled = !isLoading,
+                    modifier = Modifier.heightIn(size),
+                    contentPadding = ButtonDefaults.contentPaddingFor(size)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp), // Keep consistent size for loader
+                            color = colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = "Сохранить", // Consider using stringResource here too
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)) // Animated icon size
+                        )
+//                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size))) // Or use animated spacerWidth
+//                        Text(stringResource(R.string.save), style = ButtonDefaults.textStyleFor(size)) // Ensure R.string.save exists
                     }
-                } else {
-                    Spacer(Modifier.height(0.dp).fillMaxWidth()) // Занимает ширину, чтобы не было скачков
                 }
             }
+
 
         }
 
@@ -362,7 +372,7 @@ fun CreateEventScreen(
                 )
             }
             validationError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(it, color = colorScheme.error, style = typography.bodySmall)
             }
 
 
@@ -393,44 +403,6 @@ fun CreateEventScreen(
         } // End Scrollable Column
 
         // Кнопка сохранения внизу листа
-    AnimatedContent(
-        targetState = currentSheetValue,
-        transitionSpec = {
-            // Определяем анимацию. Эта анимация будет одинакова для входа/выхода
-            // кнопки, но можно настроить разные, если targetState меняется с/на PartiallyExpanded.
-            (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
-                    scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-                .togetherWith(
-                    fadeOut(animationSpec = tween(90)) +
-                            scaleOut(targetScale = 0.92f, animationSpec = tween(90)) // Уменьшаем при исчезновении
-                )
-                .using(SizeTransform(clip = false)) // clip = false, если кнопка не обрезается
-        },
-        label = "SaveButtonAnimation"
-    ) {targetValue ->
-        if (targetValue != SheetValue.PartiallyExpanded) {
-            Button(
-                onClick = onSaveClick,
-                enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp) // Отступы для кнопки
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary // Цвет индикатора на кнопке
-                    )
-                } else {
-                    Icon(Icons.Filled.Check, contentDescription = "Сохранить")
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.save))
-                }
-            } // End Root Column for Sheet Content
-        } else {
-            Spacer(Modifier.height(0.dp).fillMaxWidth()) // Занимает ширину, чтобы не было скачков
-        }
-    }
 
     val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
 
