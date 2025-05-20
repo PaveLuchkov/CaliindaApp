@@ -215,9 +215,6 @@ class MainViewModel @Inject constructor(
                     // Обновляем isLoading независимо от результата, так как он зависит от всех операций
                     updatedState.copy(isLoading = calculateIsLoading())
                 }
-
-                // Потребляем результат (сбрасываем в Idle в DataManager),
-                // когда он Success или Error, чтобы UI не реагировал на него повторно
                 if (result is DeleteEventResult.Success || result is DeleteEventResult.Error) {
                     calendarDataManager.consumeDeleteEventResult()
                 }
@@ -265,7 +262,6 @@ class MainViewModel @Inject constructor(
             calendarDataManager.refreshDate(calendarDataManager.currentVisibleDate.value)
         }
     }
-    fun clearRangeNetworkError() = calendarDataManager.clearNetworkError()
 
     // --- ДЕЙСТВИЯ AI ---
     fun startListening() {

@@ -328,17 +328,11 @@ class CalendarDataManager @Inject constructor(
                 Log.i(TAG, "Event $eventId successfully processed for deletion on backend (Mode: ${mode.value}, Code: ${response.code}). Deleting locally.")
                 try {
                     withContext(ioDispatcher) {
-                        // Локально мы всегда удаляем по ID.
-                        // Если это был "отмененный" экземпляр, он либо перестанет приходить от Google,
-                        // либо придет со статусом 'cancelled'. В обоих случаях, при следующем
-                        // fetchAndStoreDateRange с replace=true он будет удален или перезаписан.
-                        // Если fetchAndStoreDateRange не делает replace, а только добавляет,
-                        // то отмененные экземпляры могут остаться до полной очистки диапазона.
-                        // Для простоты, пока что удаляем по ID.
                         eventDao.deleteEventById(eventId)
                     }
                     Log.i(TAG, "Event $eventId (or its reference) successfully deleted from local DB.")
                     _deleteEventResult.value = DeleteEventResult.Success
+                    refreshDate(_currentVisibleDate.value)
                 } catch (dbError: Exception) {
                     Log.e(TAG, "Failed to delete event $eventId from local DB after successful backend deletion.", dbError)
                     _deleteEventResult.value = DeleteEventResult.Error("Ошибка синхронизации: событие обработано на сервере, но не удалено локально.")
@@ -361,7 +355,6 @@ class CalendarDataManager @Inject constructor(
             Log.e(TAG, "Unexpected error deleting event $eventId (Mode: ${mode.value})", e)
             _deleteEventResult.value = DeleteEventResult.Error("Неизвестная ошибка: ${e.message}")
         }
-        // finally блок можно убрать, если consumeDeleteEventResult() всегда вызывается из ViewModel
     }
 
     /**
@@ -418,13 +411,6 @@ class CalendarDataManager @Inject constructor(
     /** Проверяет, нужно ли загружать/расширять диапазон дат */
     internal suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) = withContext(ioDispatcher) { // В IO
         val currentlyLoaded = _loadedDateRange.value
-//        val isLoading = _rangeNetworkState.value is EventNetworkState.Loading
-
-//        if (isLoading) {
-//            Log.d(TAG, "Load check skipped for $centerDate, range fetch already in progress.")
-//            return@withContext
-//        }
-
         val idealTargetRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong())..centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
         Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, ideal=$idealTargetRange")
 
