@@ -213,54 +213,81 @@ fun BottomSheetDemo2() {
 
 // Sheet content
     if (openBottomSheet) {
-
         ModalBottomSheet(
             onDismissRequest = { openBottomSheet = false },
             sheetState = bottomSheetState,
+            contentWindowInsets = { WindowInsets.navigationBars } // Recommended for system nav bar
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Button(
-                    // Note: If you provide logic outside of onDismissRequest to remove the sheet,
-                    // you must additionally handle intended state cleanup, if any.
-                    onClick = {
-                        // SAVE FUNCTIONALITY HERE
-                        scope
-                            .launch { bottomSheetState.hide() }
-                            .invokeOnCompletion {
-                                if (!bottomSheetState.isVisible) {
-                                    openBottomSheet = false
-                                }
-                            }
-                    }
+            // Use a Box to layer the scrollable content and the fixed button row
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .padding(bottom = 88.dp) // ADJUST THIS VALUE AS NEEDED
                 ) {
-                    Text("Hide Bottom Sheet")
-                }
-            }
-            var text by remember { mutableStateOf("") }
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                modifier = Modifier.padding(horizontal = 16.dp),
-                label = { Text("Text field") }
-            )
-            LazyColumn {
-                items(25) {
-                    ListItem(
-                        headlineContent = { Text("Item $it") },
-                        leadingContent = {
-                            Icon(
-                                Icons.Default.Favorite,
-                                contentDescription = "Localized description"
-                            )
-                        },
-                        colors =
-                            ListItemDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                            ),
+                    // 1a. Поле ввода текста
+                    var text by remember { mutableStateOf("") }
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        label = { Text("Text field") }
                     )
+
+                    // 1b. Прокручиваемый список занимает все доступное оставшееся место в этой Column
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f) // Takes remaining space in *this* Column
+                            .fillMaxWidth()
+                    ) {
+                        items(25) {
+                            ListItem(
+                                headlineContent = { Text("Item $it") },
+                                leadingContent = {
+                                    Icon(
+                                        Icons.Default.Favorite,
+                                        contentDescription = "Localized description"
+                                    )
+                                },
+                                colors = ListItemDefaults.colors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                ),
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                }
+
+                // 2. Фиксированный Row с кнопкой внизу Box
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter) // Align this Row to the bottom of the Box
+                        .background(MaterialTheme.colorScheme.surface) // Add background to cover scrolled content
+                        .padding(horizontal = 16.dp, vertical = 16.dp), // Padding for the content within the Row
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = {
+                            scope
+                                .launch { bottomSheetState.hide() }
+                                .invokeOnCompletion {
+                                    if (!bottomSheetState.isVisible) {
+                                        openBottomSheet = false
+                                    }
+                                }
+                        }
+                    ) {
+                        Text("Hide Bottom Sheet")
+                    }
                 }
             }
-
         }
     }
 }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,12 +34,16 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CreateEventScreen
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
     ExperimentalMaterial3ExpressiveApi::class
@@ -76,6 +81,12 @@ fun MainScreen(
     )
     val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
     val isListening = uiState.isListening
+
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false // Чтобы лист либо полностью открыт, либо закрыт
+    )
+    var showCreateEventSheet by remember { mutableStateOf(false) }
+    var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
 
     // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
     LaunchedEffect(pagerState.settledPage) { // Реагируем, когда страница "устаканилась"
@@ -138,7 +149,7 @@ fun MainScreen(
                     showDatePicker = true // Показываем диалог
                 },
                 date = currentVisibleDate
-                )
+            )
         },
     ) { paddingValues ->
         Box(
@@ -170,8 +181,9 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (isBusy && !isListening)
-                { LoadingIndicator() }
+                if (isBusy && !isListening) {
+                    LoadingIndicator()
+                }
             }
             // --- Слой 3: AI Visualizer (рисуется поверх фона и списка) ---
             AiVisualizer(
@@ -193,10 +205,12 @@ fun MainScreen(
                 onRecordStopAndSend = { viewModel.stopListening() },
                 onUpdatePermissionResult = { granted -> viewModel.updatePermissionStatus(granted) }, // Передаем лямбду для обновления разрешений
                 isTextInputVisible = isTextInputVisible,
-                onToggleTextInput = { isTextInputVisible = !isTextInputVisible },
                 viewModel,
-                navController = navController,
-                modifier = Modifier.align(Alignment.BottomCenter) .offset(y = -ScreenOffset)
+                modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
+                onCreateEventClick = {
+                    selectedDateForSheet = currentVisibleDate // Use current visible date from Pager
+                    showCreateEventSheet = true
+                }
             )
         } // End основной Box
     } // End Scaffold
@@ -217,22 +231,31 @@ fun MainScreen(
                             // Проверяем, изменилась ли дата
                             if (selectedDate != currentVisibleDate) {
                                 // 1. Сообщаем ViewModel о новой дате *до* скролла
-                                Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
+                                Log.d(
+                                    "DatePicker",
+                                    "Date selected: $selectedDate. Updating ViewModel."
+                                )
                                 viewModel.onVisibleDateChanged(selectedDate)
 
                                 // 2. Рассчитываем целевую страницу
                                 val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
                                 val targetPageIndex = (initialPageIndex + daysDifference)
                                     // Ограничиваем индекс на всякий случай
-                                    .coerceIn(0L, Int.MAX_VALUE.toLong() -1L).toInt()
+                                    .coerceIn(0L, Int.MAX_VALUE.toLong() - 1L).toInt()
 
                                 // 3. Запускаем скролл к странице (используем scrollToPage для мгновенного перехода)
                                 scope.launch {
-                                    Log.d("DatePicker", "Scrolling Pager to page index: $targetPageIndex")
+                                    Log.d(
+                                        "DatePicker",
+                                        "Scrolling Pager to page index: $targetPageIndex"
+                                    )
                                     pagerState.scrollToPage(targetPageIndex)
                                 }
                             } else {
-                                Log.d("DatePicker", "Selected date $selectedDate is the same as current $currentVisibleDate. No action.")
+                                Log.d(
+                                    "DatePicker",
+                                    "Selected date $selectedDate is the same as current $currentVisibleDate. No action."
+                                )
                             }
                         } else {
                             Log.w("DatePicker", "Confirm clicked but selectedDateMillis is null.")
@@ -254,4 +277,32 @@ fun MainScreen(
             DatePicker(state = datePickerState)
         }
     }
-} // End MainScreen
+    if (showCreateEventSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showCreateEventSheet = false },
+            sheetState = sheetState,
+            contentWindowInsets = { WindowInsets.navigationBars } // Recommended for system nav bar
+        ) {
+            // Use a Box to layer the scrollable content and the fixed button row
+            CreateEventScreen(
+                viewModel = viewModel,
+                initialDate = selectedDateForSheet, // Pass the selected date
+                onDismiss = { // Lambda for your sheet content to call when it wants to close
+                    scope.launch {
+                        sheetState.hide() // Programmatically hide the sheet
+                    }.invokeOnCompletion {
+                        // This ensures state is updated even if hide() is interrupted
+                        if (!sheetState.isVisible) {
+                            showCreateEventSheet = false
+                        }
+                    }
+                }
+            )
+        }
+    }
+    LaunchedEffect(sheetState.isVisible) {
+        if (!sheetState.isVisible && showCreateEventSheet) {
+            showCreateEventSheet = false
+        }
+    }
+}

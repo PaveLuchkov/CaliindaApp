@@ -211,44 +211,44 @@ fun AppNavHost(
                 title = "Terms of Use"
             )
         }
-        composable(
-            route = "create_event/{initialDateEpochDay}", // Оставьте ваш шаблон роута как есть
-            arguments = listOf(navArgument("initialDateEpochDay") { type = NavType.LongType }),
-            enterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Up, // Въезжает слева
-                    animationSpec = tween(slideDuration, easing = EaseOut)
-                ) // Можно добавить + fadeIn() для плавности
-            },
-            exitTransition = {
-                slideOutOfContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Up, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
-                    animationSpec = tween(slideDuration, easing = EaseIn),
-                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
-                ) // Можно добавить + fadeOut()
-            },
-            popEnterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Down, // Возвращается справа
-                    animationSpec = tween(slideDuration, easing = EaseOut),
-                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
-                ) // Можно добавить + fadeIn()
-            },
-            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
-                slideOutOfContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Down, // Уезжает вправо при жесте "назад"
-                    animationSpec = tween(slideDuration, easing = EaseIn)
-                ) // Можно добавить + fadeOut()
-            }
-        ) { backStackEntry ->
-            val initialDateEpochDay = backStackEntry.arguments?.getLong("initialDateEpochDay") ?: LocalDate.now().toEpochDay()
-            val initialDate = LocalDate.ofEpochDay(initialDateEpochDay)
-            CreateEventScreen(
-                viewModel = viewModel, // ПРАВИЛЬНО: Используем экземпляр, переданный в AppNavHost
-                initialDate = initialDate,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
+//        composable(
+//            route = "create_event/{initialDateEpochDay}", // Оставьте ваш шаблон роута как есть
+//            arguments = listOf(navArgument("initialDateEpochDay") { type = NavType.LongType }),
+//            enterTransition = {
+//                slideIntoContainer(
+//                    towards = AnimatedContentTransitionScope.SlideDirection.Up, // Въезжает слева
+//                    animationSpec = tween(slideDuration, easing = EaseOut)
+//                ) // Можно добавить + fadeIn() для плавности
+//            },
+//            exitTransition = {
+//                slideOutOfContainer(
+//                    towards = AnimatedContentTransitionScope.SlideDirection.Up, // Уезжает влево (чуть медленнее/меньше, чтобы создать эффект глубины)
+//                    animationSpec = tween(slideDuration, easing = EaseIn),
+//                    targetOffset = { fullWidth -> -fullWidth / 4 } // Смещаем не полностью за экран сразу
+//                ) // Можно добавить + fadeOut()
+//            },
+//            popEnterTransition = {
+//                slideIntoContainer(
+//                    towards = AnimatedContentTransitionScope.SlideDirection.Down, // Возвращается справа
+//                    animationSpec = tween(slideDuration, easing = EaseOut),
+//                    initialOffset = { fullWidth -> -fullWidth / 4 } // Начинает с той же позиции, куда уехал exit
+//                ) // Можно добавить + fadeIn()
+//            },
+//            popExitTransition = { // <-- САМАЯ ВАЖНАЯ для предиктивного жеста
+//                slideOutOfContainer(
+//                    towards = AnimatedContentTransitionScope.SlideDirection.Down, // Уезжает вправо при жесте "назад"
+//                    animationSpec = tween(slideDuration, easing = EaseIn)
+//                ) // Можно добавить + fadeOut()
+//            }
+//        ) { backStackEntry ->
+//            val initialDateEpochDay = backStackEntry.arguments?.getLong("initialDateEpochDay") ?: LocalDate.now().toEpochDay()
+//            val initialDate = LocalDate.ofEpochDay(initialDateEpochDay)
+//            CreateEventScreen(
+//                viewModel = viewModel, // ПРАВИЛЬНО: Используем экземпляр, переданный в AppNavHost
+//                initialDate = initialDate,
+//                onNavigateBack = { navController.popBackStack() }
+//            )
+//        }
     }
 }
 

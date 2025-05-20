@@ -51,8 +51,8 @@ fun BottomBar(
     onUpdatePermissionResult: (Boolean) -> Unit, // Лямбда для обновления разрешения
     isTextInputVisible: Boolean,
     viewModel: MainViewModel,
-    navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCreateEventClick: () -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -106,7 +106,7 @@ fun BottomBar(
     ) {
         if (!it) {
             HorizontalFloatingToolbar(
-                expanded = true, // Тулбар всегда "развернут", когда виден
+                expanded = expanded,
                 colors = vibrantColors,
                 floatingActionButton = {
                     FloatingActionButton(
@@ -168,11 +168,7 @@ fun BottomBar(
                 expandedShadowElevation = 0.dp,
                 content = {
                     IconButton(
-                        onClick = {
-                            val selectedDate =
-                                viewModel.currentVisibleDate.value // Берем видимую дату
-                            navController.navigate("create_event/${selectedDate.toEpochDay()}")
-                        },
+                        onClick = onCreateEventClick,
                         // enabled = isKeyboardToggleEnabled TODO : enable after done
                     ) {
                         Icon(
