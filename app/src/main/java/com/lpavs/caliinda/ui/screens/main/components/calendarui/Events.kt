@@ -2,7 +2,9 @@ package com.lpavs.caliinda.ui.screens.main.components.calendarui
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -60,6 +62,8 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import com.lpavs.caliinda.R
 
 data class GeneratedShapeParams(
@@ -97,22 +101,35 @@ fun EventsList(
     ) {
 
         items(items = events, key = { event -> event.id }) { event ->
-
+            val fadeSpringSpec = spring<Float>(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+            val sliderSpringSpec = spring<IntOffset>(
+                dampingRatio = Spring.DampingRatioHighBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+            val popUndUpSpec = spring<IntOffset>(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
             AnimatedVisibility(
                 visible = true, // Всегда true, т.к. если элемента нет в `events`, он не будет здесь.
                 // AnimatedVisibility здесь для управления enter/exit анимацией.
-                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
+                enter = slideInVertically(
                     initialOffsetY = { it / 2 }, // Начать с половины высоты выше/ниже
-                    animationSpec = tween(300)
+                    animationSpec = sliderSpringSpec
                 ),
-                exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(
+                exit = fadeOut(animationSpec = fadeSpringSpec) + slideOutVertically(
                     targetOffsetY = { it / 2 },
-                    animationSpec = tween(300)
+                    animationSpec = sliderSpringSpec
                 ),
                 // Этот модификатор анимирует позицию элемента при изменении списка
                 // (когда другие элементы добавляются/удаляются)
                 modifier = Modifier.animateItem(
-                    placementSpec = tween(durationMillis = 300)
+                    placementSpec = popUndUpSpec,
+                    fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                    fadeOutSpec = spring(stiffness = Spring.StiffnessHigh)
                 )
             ) {
 
@@ -224,9 +241,9 @@ fun EventsList(
                     onToggleExpand = {
                         expandedEventId = if (isExpanded) null else event.id
                     },
-                    onDeleteClickFromList = { // Переименовал колбэк
+                    onDeleteClickFromList = {
                         onDeleteRequest(event) // Вызываем оригинальный onDeleteRequest
-                        expandedEventId = null // Схлопываем после действия
+//                        expandedEventId = null // Схлопываем после действия
                     },
                     onEditClickFromList = { // Переименовал колбэк
                         onEditRequest(event) // Вызываем оригинальный onEditRequest
