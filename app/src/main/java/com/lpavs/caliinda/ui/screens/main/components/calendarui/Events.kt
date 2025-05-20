@@ -1,8 +1,13 @@
 package com.lpavs.caliinda.ui.screens.main.components.calendarui
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,127 +96,152 @@ fun EventsList(
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
 
-        items(items = events, key = { it.id }) { event ->
+        items(items = events, key = { event -> event.id }) { event ->
 
-            val isExpanded = event.id == expandedEventId
+            AnimatedVisibility(
+                visible = true, // Всегда true, т.к. если элемента нет в `events`, он не будет здесь.
+                // AnimatedVisibility здесь для управления enter/exit анимацией.
+                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
+                    initialOffsetY = { it / 2 }, // Начать с половины высоты выше/ниже
+                    animationSpec = tween(300)
+                ),
+                exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(
+                    targetOffsetY = { it / 2 },
+                    animationSpec = tween(300)
+                ),
+                // Этот модификатор анимирует позицию элемента при изменении списка
+                // (когда другие элементы добавляются/удаляются)
+                modifier = Modifier.animateItem(
+                    placementSpec = tween(durationMillis = 300)
+                )
+            ) {
 
-
-            val eventDurationMinutes = remember(event.startTime, event.endTime, currentTimeZoneId) {
-                val start = parseToInstant(event.startTime, currentTimeZoneId)
-                val end = parseToInstant(event.endTime, currentTimeZoneId)
-                if (start != null && end != null && end.isAfter(start)) {
-                    Duration.between(start, end).toMinutes()
-                } else {
-                    0L
-                }
-            }
-
-            val isMicroEvent = remember(eventDurationMinutes) {
-                eventDurationMinutes > 0 && eventDurationMinutes <= cuid.MicroEventMaxDurationMinutes
-            }
-
-            val baseHeight = remember(isMicroEvent, eventDurationMinutes) {
-                calculateEventHeight(eventDurationMinutes, isMicroEvent)
-            }
-
-
-            val buttonsRowHeight = 56.dp // Увеличил немного для стандартных кнопок
-            val expandedAdditionalHeight = remember(isMicroEvent) {
-                // Для микро-событий можно добавить чуть меньше высоты или стандартную,
-                // в зависимости от того, как кнопки будут выглядеть.
-                // Если кнопки стандартного размера, то и добавка стандартная.
-                if (isMicroEvent && baseHeight < buttonsRowHeight * 1.5f) { // Если микро совсем маленькое
-                    buttonsRowHeight * 1.2f // Чуть больше, чем сами кнопки
-                } else {
-                    buttonsRowHeight
-                }
-            }
-
-            val expandedCalculatedHeight = remember(baseHeight, expandedAdditionalHeight) {
-                if (eventDurationMinutes > 120 && !isMicroEvent) { // Пример: для событий > 2 часов
-                    (baseHeight + expandedAdditionalHeight * 0.9f).coerceAtLeast(baseHeight) // Небольшая добавка или ничего
-                } else {
-                    baseHeight + expandedAdditionalHeight
-                }
-            }
-
-            val animatedHeight by animateDpAsState(
-                targetValue = if (isExpanded) expandedCalculatedHeight else baseHeight,
-                animationSpec = tween(durationMillis = 250), // Скорость анимации
-                label = "eventItemHeightAnimation"
-            )
-
-            val isCurrent = remember(currentTime, event.startTime, event.endTime) {
-                val start = parseToInstant(event.startTime, currentTimeZoneId)
-                val end = parseToInstant(event.endTime, currentTimeZoneId)
-                start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
-            }
+                val isExpanded = event.id == expandedEventId
 
 
-
-            val isNext = remember(event.startTime, nextStartTime) {
-                // isNext вычисляется ТОЛЬКО если nextStartTime не null (т.е. мы на сегодня и следующее событие есть)
-                if (nextStartTime == null) false
-                else {
-                    val currentEventStart = parseToInstant(event.startTime, currentTimeZoneId)
-                    currentEventStart != null && currentEventStart == nextStartTime
-                }
-            }
-
-            val proximityRatio = remember(currentTime, event.startTime, isToday) {
-                // Коэффициент рассчитывается только для СЕГОДНЯ и для БУДУЩИХ событий
-                if (!isToday) {
-                    0f // Не сегодня - нет перехода
-                } else {
-                    val start = parseToInstant(event.startTime, currentTimeZoneId)
-                    if (start == null || currentTime.isAfter(start)) {
-                        // Событие в прошлом или не парсится - максимальный переход (или без перехода?)
-                        // Если хотим переход только для будущих, то 0f. Если для текущих/прошлых тоже, то 1f.
-                        // Сделаем 0f для простоты - переход только для будущих.
-                        0f
-                    } else {
-                        val timeUntilStartMillis = Duration.between(currentTime, start).toMillis()
-                        if (timeUntilStartMillis > transitionWindowDurationMillis || transitionWindowDurationMillis <= 0) {
-                            0f // Слишком далеко или некорректное окно - нет перехода
+                val eventDurationMinutes =
+                    remember(event.startTime, event.endTime, currentTimeZoneId) {
+                        val start = parseToInstant(event.startTime, currentTimeZoneId)
+                        val end = parseToInstant(event.endTime, currentTimeZoneId)
+                        if (start != null && end != null && end.isAfter(start)) {
+                            Duration.between(start, end).toMinutes()
                         } else {
-                            // Рассчитываем коэффициент: 1.0 (близко) -> 0.0 (далеко в пределах окна)
-                            (1.0f - (timeUntilStartMillis.toFloat() / transitionWindowDurationMillis.toFloat())).coerceIn(0f, 1f)
+                            0L
+                        }
+                    }
+
+                val isMicroEvent = remember(eventDurationMinutes) {
+                    eventDurationMinutes > 0 && eventDurationMinutes <= cuid.MicroEventMaxDurationMinutes
+                }
+
+                val baseHeight = remember(isMicroEvent, eventDurationMinutes) {
+                    calculateEventHeight(eventDurationMinutes, isMicroEvent)
+                }
+
+
+                val buttonsRowHeight = 56.dp // Увеличил немного для стандартных кнопок
+                val expandedAdditionalHeight = remember(isMicroEvent) {
+                    // Для микро-событий можно добавить чуть меньше высоты или стандартную,
+                    // в зависимости от того, как кнопки будут выглядеть.
+                    // Если кнопки стандартного размера, то и добавка стандартная.
+                    if (isMicroEvent && baseHeight < buttonsRowHeight * 1.5f) { // Если микро совсем маленькое
+                        buttonsRowHeight * 1.2f // Чуть больше, чем сами кнопки
+                    } else {
+                        buttonsRowHeight
+                    }
+                }
+
+                val expandedCalculatedHeight = remember(baseHeight, expandedAdditionalHeight) {
+                    if (eventDurationMinutes > 120 && !isMicroEvent) { // Пример: для событий > 2 часов
+                        (baseHeight + expandedAdditionalHeight * 0.9f).coerceAtLeast(baseHeight) // Небольшая добавка или ничего
+                    } else {
+                        baseHeight + expandedAdditionalHeight
+                    }
+                }
+
+                val animatedHeight by animateDpAsState(
+                    targetValue = if (isExpanded) expandedCalculatedHeight else baseHeight,
+                    animationSpec = tween(durationMillis = 250), // Скорость анимации
+                    label = "eventItemHeightAnimation"
+                )
+
+                val isCurrent = remember(currentTime, event.startTime, event.endTime) {
+                    val start = parseToInstant(event.startTime, currentTimeZoneId)
+                    val end = parseToInstant(event.endTime, currentTimeZoneId)
+                    start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(
+                        end
+                    )
+                }
+
+
+                val isNext = remember(event.startTime, nextStartTime) {
+                    // isNext вычисляется ТОЛЬКО если nextStartTime не null (т.е. мы на сегодня и следующее событие есть)
+                    if (nextStartTime == null) false
+                    else {
+                        val currentEventStart = parseToInstant(event.startTime, currentTimeZoneId)
+                        currentEventStart != null && currentEventStart == nextStartTime
+                    }
+                }
+
+                val proximityRatio = remember(currentTime, event.startTime, isToday) {
+                    // Коэффициент рассчитывается только для СЕГОДНЯ и для БУДУЩИХ событий
+                    if (!isToday) {
+                        0f // Не сегодня - нет перехода
+                    } else {
+                        val start = parseToInstant(event.startTime, currentTimeZoneId)
+                        if (start == null || currentTime.isAfter(start)) {
+                            // Событие в прошлом или не парсится - максимальный переход (или без перехода?)
+                            // Если хотим переход только для будущих, то 0f. Если для текущих/прошлых тоже, то 1f.
+                            // Сделаем 0f для простоты - переход только для будущих.
+                            0f
+                        } else {
+                            val timeUntilStartMillis =
+                                Duration.between(currentTime, start).toMillis()
+                            if (timeUntilStartMillis > transitionWindowDurationMillis || transitionWindowDurationMillis <= 0) {
+                                0f // Слишком далеко или некорректное окно - нет перехода
+                            } else {
+                                // Рассчитываем коэффициент: 1.0 (близко) -> 0.0 (далеко в пределах окна)
+                                (1.0f - (timeUntilStartMillis.toFloat() / transitionWindowDurationMillis.toFloat())).coerceIn(
+                                    0f,
+                                    1f
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-        //    Spacer(modifier = Modifier.height(2.dp))
-            EventListItem(
-                event = event,
-                timeFormatter = timeFormatter,
-                isCurrentEvent = isCurrent,
-                isNextEvent = isNext,
-                proximityRatio = proximityRatio,
-                // --- ПЕРЕДАЕМ НОВЫЕ ПАРАМЕТРЫ ---
-                isMicroEventFromList = isMicroEvent, // Переименовал, чтобы не конфликтовать с внутренним в EventListItem
-                targetHeightFromList = animatedHeight, // Передаем анимированную высоту
-                isExpanded = isExpanded,
-                onToggleExpand = {
-                    expandedEventId = if (isExpanded) null else event.id
-                },
-                onDeleteClickFromList = { // Переименовал колбэк
-                    onDeleteRequest(event) // Вызываем оригинальный onDeleteRequest
-                    expandedEventId = null // Схлопываем после действия
-                },
-                onEditClickFromList = { // Переименовал колбэк
-                    onEditRequest(event) // Вызываем оригинальный onEditRequest
-                    expandedEventId = null // Схлопываем после действия
-                },
-                // --------------------------------
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = CalendarUiDefaults.ItemHorizontalPadding,
-                        vertical = CalendarUiDefaults.ItemVerticalPadding
-                    ),
-                currentTimeZoneId = currentTimeZoneId
-            )
+                //    Spacer(modifier = Modifier.height(2.dp))
+                EventListItem(
+                    event = event,
+                    timeFormatter = timeFormatter,
+                    isCurrentEvent = isCurrent,
+                    isNextEvent = isNext,
+                    proximityRatio = proximityRatio,
+                    // --- ПЕРЕДАЕМ НОВЫЕ ПАРАМЕТРЫ ---
+                    isMicroEventFromList = isMicroEvent, // Переименовал, чтобы не конфликтовать с внутренним в EventListItem
+                    targetHeightFromList = animatedHeight, // Передаем анимированную высоту
+                    isExpanded = isExpanded,
+                    onToggleExpand = {
+                        expandedEventId = if (isExpanded) null else event.id
+                    },
+                    onDeleteClickFromList = { // Переименовал колбэк
+                        onDeleteRequest(event) // Вызываем оригинальный onDeleteRequest
+                        expandedEventId = null // Схлопываем после действия
+                    },
+                    onEditClickFromList = { // Переименовал колбэк
+                        onEditRequest(event) // Вызываем оригинальный onEditRequest
+                        expandedEventId = null // Схлопываем после действия
+                    },
+                    // --------------------------------
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                            vertical = CalendarUiDefaults.ItemVerticalPadding
+                        ),
+                    currentTimeZoneId = currentTimeZoneId
+                )
+            }
         }
     }
     Box(modifier = Modifier.height(70.dp))
@@ -383,6 +413,7 @@ fun DayEventsPage(
         }
     } // End Box
 }
+
 
 
 

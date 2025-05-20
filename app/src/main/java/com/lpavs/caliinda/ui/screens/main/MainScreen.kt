@@ -176,7 +176,7 @@ fun MainScreen(
                     date = pageDate,
                     viewModel = viewModel,
                 )
-            } // End Column
+            }
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,

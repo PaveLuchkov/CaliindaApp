@@ -1,5 +1,16 @@
 package com.lpavs.caliinda.ui.screens.main.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -27,14 +38,15 @@ import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.text.format
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) // Для CenterAlignedTopAppBar
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CalendarAppBar(
     onNavigateToSettings: () -> Unit,
     onGoToTodayClick: () -> Unit,
-    onTitleClick: () -> Unit, // <-- Новый колбэк для клика по заголовку
-    date: LocalDate
+    onTitleClick: () -> Unit,
+    date: LocalDate // date теперь будет targetState для AnimatedContent
 ) {
     val isToday = date == LocalDate.now()
     val headerBackgroundColor = if (isToday) {
@@ -75,13 +87,13 @@ fun CalendarAppBar(
         navigationIcon = {
             FilledIconButton(
                 onClick = onGoToTodayClick,
-                modifier =
-                    Modifier.minimumInteractiveComponentSize()
-                        .size(
-                            IconButtonDefaults.smallContainerSize(
-                                IconButtonDefaults.IconButtonWidthOption.Wide
-                            )
-                        ),
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .size(
+                        IconButtonDefaults.smallContainerSize(
+                            IconButtonDefaults.IconButtonWidthOption.Wide
+                        )
+                    ),
                 shape = IconButtonDefaults.smallRoundShape
             ) {
                 Icon(
@@ -92,17 +104,15 @@ fun CalendarAppBar(
         },
         actions = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Показываем индикатор только если isBusy И НЕ isListening
-
                 FilledIconButton(
                     onClick = onNavigateToSettings,
-                    modifier =
-                        Modifier.minimumInteractiveComponentSize()
-                            .size(
-                                IconButtonDefaults.smallContainerSize(
-                                    IconButtonDefaults.IconButtonWidthOption.Wide
-                                )
-                            ),
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .size(
+                            IconButtonDefaults.smallContainerSize(
+                                IconButtonDefaults.IconButtonWidthOption.Wide
+                            )
+                        ),
                     shape = IconButtonDefaults.smallRoundShape
                 ) {
                     Icon(
@@ -113,7 +123,7 @@ fun CalendarAppBar(
             }
         },
         colors = topAppBarColors(
-        containerColor = Color.Transparent
+            containerColor = Color.Transparent
         )
     )
 }
