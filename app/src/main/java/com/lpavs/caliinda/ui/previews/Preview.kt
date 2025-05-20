@@ -112,45 +112,40 @@ fun Bar(
     val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
     val colorScheme = MaterialTheme.colorScheme // Added for OutlinedTextField colors
 
-    HorizontalFloatingToolbar(
-        modifier = Modifier
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy, // Чтобы сам тулбар не "скакал"
-                    stiffness = Spring.StiffnessLow
-                )
-            )
-            .padding(8.dp),
-        expanded = true,
-        floatingActionButton = {
-            AnimatedContent(
-                targetState = onKeyboardToggle,
-                transitionSpec = {
-                    // Определяем спецификации анимации spring
-                    val enterSpringSpec = spring<IntOffset>(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    )
-                    val exitSpringSpec = spring<IntOffset>(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
+    AnimatedContent(
+        targetState = onKeyboardToggle,
+        transitionSpec = {
+                    // Общая спецификация spring для контента
+                    val contentSpringSpec = spring<IntOffset>(
+                        dampingRatio = Spring.DampingRatioNoBouncy, // Чтобы не слишком прыгало
+                        stiffness = Spring.StiffnessMediumLow
                     )
                     val fadeSpringSpec = spring<Float>(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        dampingRatio = Spring.DampingRatioLowBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
-
-                    if (targetState) { // Переход к микрофону (onKeyboardToggle = true)
-                        (slideInHorizontally(animationSpec = enterSpringSpec) { height -> height } + fadeIn(animationSpec = fadeSpringSpec))
-                            .togetherWith(slideOutHorizontally(animationSpec = exitSpringSpec) { height -> -height } + fadeOut(animationSpec = fadeSpringSpec))
-                    } else { // Переход к кнопке Send (onKeyboardToggle = false)
-                        (slideInHorizontally(animationSpec = enterSpringSpec) { height -> -height } + fadeIn(animationSpec = fadeSpringSpec))
-                            .togetherWith(slideOutHorizontally(animationSpec = exitSpringSpec) { height -> height } + fadeOut(animationSpec = fadeSpringSpec))
-                    }
-                },
-                label = "fab_animation"
-            ) { isIconMode -> // isIconMode это onKeyboardToggle
-                if (!isIconMode) { // Режим ввода текста, показываем Send
+                    val sizeTransformSpringSpec = spring<IntSize>(
+                        dampingRatio = Spring.DampingRatioLowBouncy, // Можно немного "резиновости" для изменения размера
+                        stiffness = Spring.StiffnessLow
+                    )
+                    if (targetState) {
+                        (fadeIn(animationSpec = fadeSpringSpec))
+                            .togetherWith(fadeOut(animationSpec = fadeSpringSpec))
+                    } else {
+                        (fadeIn(animationSpec = fadeSpringSpec))
+                            .togetherWith(fadeOut(animationSpec = fadeSpringSpec))
+                    }.using(
+                        SizeTransform(
+                            clip = false,
+                            sizeAnimationSpec = { _, _ -> sizeTransformSpringSpec }
+                        )
+                    )
+                }
+    ){
+        HorizontalFloatingToolbar(
+            expanded = true,
+            floatingActionButton = {
+                if (!it) { // Режим ввода текста, показываем Send
                     FloatingActionButton(
                         onClick = {},
                     ){
@@ -169,61 +164,62 @@ fun Bar(
                         )
                     }
                 }
+            },
+            expandedShadowElevation = 0.dp,
+            colors = vibrantColors,
+            content = {
+                if (!it) {
+                    IconButton(
+                        onClick = { onKeyboardToggle = !onKeyboardToggle },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Убрать ввод текста"
+                        )
+                    }
+                    OutlinedTextField(
+                        // Или TextField, или BasicTextField + кастомное оформление
+
+                        value = textFieldValue,
+                        onValueChange = onTextChanged,
+                        modifier = Modifier.width(200.dp),
+                        placeholder = { Text("Type message") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Send
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSend = { }
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = colorScheme.onSecondaryContainer,
+                        ),
+                        singleLine = true,
+                    )
+                } else {
+                    IconButton(
+                        onClick = {
+                        },
+                        // enabled = isKeyboardToggleEnabled TODO : enable after done
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AddCircle,
+                            contentDescription = "Create event"
+                        )
+                    }
+                    IconButton(
+                        onClick = { onKeyboardToggle = !onKeyboardToggle },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Keyboard,
+                            contentDescription = "Показать клавиатуру"
+                        )
+                    }
+                }
             }
-        },
-        expandedShadowElevation = 0.dp,
-        colors = vibrantColors,
-        content = {
-            if (!onKeyboardToggle) {
-                IconButton(
-                    onClick = { onKeyboardToggle = !onKeyboardToggle },
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Убрать ввод текста"
-                    )
-                }
-                OutlinedTextField(
-                    // Или TextField, или BasicTextField + кастомное оформление
-                    value = textFieldValue,
-                    onValueChange = onTextChanged,
-                    modifier = Modifier.width(200.dp),
-                    placeholder = { Text("Type message") },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        imeAction = ImeAction.Send
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSend = { }
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = colorScheme.onSecondaryContainer,
-                    ),
-                    singleLine = true,
-                )
-            } else {
-                IconButton(
-                    onClick = {
-                    },
-                    // enabled = isKeyboardToggleEnabled TODO : enable after done
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.AddCircle,
-                        contentDescription = "Create event"
-                    )
-                }
-                IconButton(
-                    onClick = { onKeyboardToggle = !onKeyboardToggle },
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Keyboard,
-                        contentDescription = "Показать клавиатуру"
-                    )
-                }
-            }
-        }
-    )
+        )
+    }
 }
 
 //@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
