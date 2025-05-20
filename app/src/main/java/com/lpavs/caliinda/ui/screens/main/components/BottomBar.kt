@@ -50,7 +50,6 @@ fun BottomBar(
     onRecordStopAndSend: () -> Unit, // Лямбда для остановки/отправки
     onUpdatePermissionResult: (Boolean) -> Unit, // Лямбда для обновления разрешения
     isTextInputVisible: Boolean,
-    onToggleTextInput: () -> Unit,
     viewModel: MainViewModel,
     navController: NavHostController,
     modifier: Modifier = Modifier
@@ -58,7 +57,6 @@ fun BottomBar(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val isSendEnabled = textFieldValue.text.isNotBlank() && uiState.isSignedIn && !uiState.isLoading && !uiState.isListening
-    val isKeyboardToggleEnabled = uiState.isSignedIn && !uiState.isListening // Disable toggle during recording/loading
     var expanded by rememberSaveable { mutableStateOf(true) }
     val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
     var onKeyboardToggle by remember { mutableStateOf(true) }
@@ -84,17 +82,13 @@ fun BottomBar(
         targetState = onKeyboardToggle,
         transitionSpec = {
             // Общая спецификация spring для контента
-            val contentSpringSpec = spring<IntOffset>(
-                dampingRatio = Spring.DampingRatioNoBouncy, // Чтобы не слишком прыгало
-                stiffness = Spring.StiffnessMediumLow
-            )
             val fadeSpringSpec = spring<Float>(
                 dampingRatio = Spring.DampingRatioLowBouncy,
                 stiffness = Spring.StiffnessMedium
             )
             val sizeTransformSpringSpec = spring<IntSize>(
                 dampingRatio = Spring.DampingRatioLowBouncy, // Можно немного "резиновости" для изменения размера
-                stiffness = Spring.StiffnessLow
+                stiffness = Spring.StiffnessMediumLow
             )
             if (targetState) {
                 (fadeIn(animationSpec = fadeSpringSpec))
