@@ -247,7 +247,7 @@ fun EventsList(
                     },
                     onEditClickFromList = { // Переименовал колбэк
                         onEditRequest(event) // Вызываем оригинальный onEditRequest
-                        expandedEventId = null // Схлопываем после действия
+//                        expandedEventId = null // Схлопываем после действия
                     },
                     // --------------------------------
                     modifier = Modifier
@@ -396,11 +396,7 @@ fun DayEventsPage(
                     listState = listState,
                     // --- Убедись, что имена параметров соответствуют определению EventsList ---
                     onDeleteRequest = viewModel::requestDeleteConfirmation,
-                    onEditRequest = { eventToEdit ->
-                        // TODO: Реализуй логику редактирования (например, навигация или показ диалога)
-                        Log.d("DayEventsPage", "Edit requested for: ${eventToEdit.id}")
-                        // viewModel.navigateToEditScreen(eventToEdit.id)
-                    },
+                    onEditRequest = viewModel::requestEditEvent,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
@@ -446,6 +442,7 @@ fun DayEventsPage(
                 }
             )
         }
+
     } // End Box
 }
 

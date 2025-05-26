@@ -66,6 +66,7 @@ class MainViewModel @Inject constructor(
     val rangeNetworkState: StateFlow<EventNetworkState> = calendarDataManager.rangeNetworkState
     val createEventResult: StateFlow<CreateEventResult> = calendarDataManager.createEventResult
     val deleteEventResult: StateFlow<DeleteEventResult> = calendarDataManager.deleteEventResult
+    val updateEventResult: StateFlow<UpdateEventResult> = calendarDataManager.updateEventResult
 
     // Состояния AI
     val aiState: StateFlow<AiVisualizerState> = aiInteractionManager.aiState
@@ -466,7 +467,8 @@ class MainViewModel @Inject constructor(
                 eventBeingEdited = event, // Сохраняем оригинал для предзаполнения формы и для update API
                 showRecurringEditOptionsDialog = isRecurring, // Если повторяющееся, сначала показываем выбор режима
                 showEditEventDialog = !isRecurring, // Если одиночное, сразу показываем форму редактирования
-                editOperationError = null, // Сбрасываем предыдущую ошибку
+                selectedUpdateMode = if (!isRecurring) ClientEventUpdateMode.SINGLE_INSTANCE else it.selectedUpdateMode,
+                editOperationError = null
                 // Сбрасываем состояние формы редактирования, если оно хранится в UiState
                 // editFormState = EditEventFormState(summary = event.summary, ...)
             )
@@ -477,13 +479,12 @@ class MainViewModel @Inject constructor(
     /**
      * Вызывается из диалога выбора режима редактирования для повторяющихся событий.
      */
-    fun onRecurringEditOptionSelected(choice: ClientEventUpdateMode) { // Используем ClientEventUpdateMode из DataManager
-        // Теперь, когда режим выбран, показываем основную форму/диалог редактирования
+    fun onRecurringEditOptionSelected(choice: ClientEventUpdateMode) {
         _uiState.update {
             it.copy(
-                showRecurringEditOptionsDialog = false, // Скрываем диалог выбора режима
-                showEditEventDialog = true // Показываем диалог/экран редактирования
-                // eventBeingEdited уже должен быть установлен
+                showRecurringEditOptionsDialog = false,
+                showEditEventDialog = true,
+                selectedUpdateMode = choice // <--- СОХРАНЯЕМ ВЫБРАННЫЙ РЕЖИМ
             )
         }
         Log.d(TAG, "Recurring edit mode selected: $choice for event: ${_uiState.value.eventBeingEdited?.id}")
@@ -549,6 +550,9 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(editOperationError = null) }
     }
 
+    fun consumeUpdateEventResult() {
+        calendarDataManager.consumeUpdateEventResult()
+    }
     // --- LIFECYCLE ---
     override fun onCleared() {
         super.onCleared()

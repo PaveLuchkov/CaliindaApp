@@ -10,6 +10,7 @@ import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui
 
 data class SugNameChips(val name: String, val fullText: String)
 val suggestedEventNames = listOf(
+    SugNameChips("Test", "Testing EVENT"),
     SugNameChips("Work", "💼 Working"),
     SugNameChips("Dinner", "🍽️ Dinner"),
     SugNameChips("Meeting", "🤝 Meeting"),

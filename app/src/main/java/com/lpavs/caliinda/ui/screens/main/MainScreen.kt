@@ -44,6 +44,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CreateEventScreen
+import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.EditEventScreen
+import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringEventEditOptionsDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
     ExperimentalMaterial3ExpressiveApi::class
@@ -88,6 +90,11 @@ fun MainScreen(
     var showCreateEventSheet by remember { mutableStateOf(false) }
     var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
 
+    // Флаг показа BottomSheet для редактирования
+    var showEditEventSheet by remember { mutableStateOf(false) }
+// Состояние BottomSheet для редактирования (можно использовать отдельное или то же самое, если они не показываются одновременно)
+    val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
     // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
     LaunchedEffect(pagerState.settledPage) { // Реагируем, когда страница "устаканилась"
         val settledDate = today.plusDays((pagerState.settledPage - initialPageIndex).toLong())
@@ -122,6 +129,43 @@ fun MainScreen(
             context, Manifest.permission.RECORD_AUDIO
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         viewModel.updatePermissionStatus(hasPermission)
+    }
+
+    if (uiState.showRecurringEditOptionsDialog && uiState.eventBeingEdited != null) {
+        RecurringEventEditOptionsDialog( // Вам нужно создать этот Composable
+            eventName = uiState.eventBeingEdited!!.summary,
+            onDismiss = { viewModel.cancelEditEvent() }, // Если пользователь закрыл диалог
+            onOptionSelected = { choice ->
+                viewModel.onRecurringEditOptionSelected(choice)
+                // После этого uiState.showRecurringEditOptionsDialog станет false,
+                // а uiState.showEditEventDialog станет true, что запустит показ EditEventScreen
+            }
+        )
+    }
+
+    LaunchedEffect(uiState.showEditEventDialog, uiState.eventBeingEdited) {
+        if (uiState.showEditEventDialog && uiState.eventBeingEdited != null) {
+            showEditEventSheet = true
+        } else {
+            // Если ViewModel сказал скрыть диалог редактирования, скрываем и наш BottomSheet
+            if (showEditEventSheet) { // Только если он был показан
+                scope.launch { editSheetState.hide() }.invokeOnCompletion {
+                    if (!editSheetState.isVisible) {
+                        showEditEventSheet = false
+                        // Важно: Сообщить ViewModel, что редактирование отменено/завершено,
+                        // если это не делается автоматически при onDismiss в EditEventScreen
+                        // viewModel.cancelEditEvent() // или аналогичный метод для сброса eventBeingEdited
+                    }
+                }
+            }
+        }
+    }
+// Если пользователь свайпнул BottomSheet редактирования вниз
+    LaunchedEffect(editSheetState.isVisible) {
+        if (!editSheetState.isVisible && showEditEventSheet) {
+            showEditEventSheet = false
+            viewModel.cancelEditEvent() // Сообщаем ViewModel, что редактирование отменено
+        }
     }
 
     Scaffold(
@@ -299,6 +343,51 @@ fun MainScreen(
                 },
                 currentSheetValue = sheetState.currentValue
             )
+        }
+    }
+    if (showEditEventSheet) {
+        val eventToEdit = uiState.eventBeingEdited
+        val mode = uiState.selectedUpdateMode // Получаем сохраненный режим
+
+        if (eventToEdit != null && mode != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    // При свайпе вниз или тапе вне области
+                    scope.launch { editSheetState.hide() }.invokeOnCompletion {
+                        if (!editSheetState.isVisible) {
+                            showEditEventSheet = false
+                            viewModel.cancelEditEvent() // Сообщаем ViewModel, что редактирование отменено
+                        }
+                    }
+                },
+                sheetState = editSheetState,
+                contentWindowInsets = { WindowInsets.navigationBars }
+            ) {
+                EditEventScreen(
+                    viewModel = viewModel,
+                    eventToEdit = eventToEdit,
+                    selectedUpdateMode = mode, // <--- ПЕРЕДАЕМ РЕЖИМ
+                    onDismiss = {
+                        scope.launch { editSheetState.hide() }.invokeOnCompletion {
+                            if (!editSheetState.isVisible) {
+                                showEditEventSheet = false
+                                viewModel.cancelEditEvent() // Сообщаем ViewModel
+                            }
+                        }
+                    },
+                    currentSheetValue = editSheetState.currentValue
+                )
+            }
+        } else {
+            // Если eventToEdit или mode вдруг null, хотя showEditEventSheet=true,
+            // это ошибка состояния, скрываем лист.
+            if (showEditEventSheet) { // Предотвращаем рекурсию, если mode был null и вызвал cancelEdit
+                LaunchedEffect(Unit) { // Запускаем только один раз при такой ситуации
+                    Log.e("MainScreen", "Inconsistent state for showing EditEventSheet. Hiding.")
+                    showEditEventSheet = false
+                    viewModel.cancelEditEvent()
+                }
+            }
         }
     }
     LaunchedEffect(sheetState.isVisible) {

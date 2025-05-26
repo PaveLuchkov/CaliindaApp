@@ -55,7 +55,8 @@ object EventMapper {
                 location = event.location,
                 isAllDay = isAllDayEvent,
                 recurringEventId = event.recurringEventId,       // Из event (domain)
-                originalStartTimeString = event.originalStartTime // Из event (domain)
+                originalStartTimeString = event.originalStartTime,
+                recurrenceRuleString = event.recurrenceRule
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error mapping CalendarEvent to Entity: ${event.id}", e)
@@ -80,7 +81,8 @@ object EventMapper {
             location = entity.location,
             isAllDay = entity.isAllDay,
             recurringEventId = entity.recurringEventId,
-            originalStartTime = entity.originalStartTimeString
+            originalStartTime = entity.originalStartTimeString,
+            recurrenceRule = entity.recurrenceRuleString
         )
     }
 }

@@ -80,13 +80,20 @@ sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: St
     // Можно добавить Custom для ручного ввода или сложных правил
 
     companion object {
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        val ALL_OPTIONS: List<RecurrenceOption> = listOf(None, Daily, Weekly, Monthly, Yearly)
+        // ----------------------
+
+        // Ваша функция fromRule выглядит хорошо, но ее можно немного улучшить
+        // для большей безопасности и чтобы она использовала ALL_OPTIONS, если это предпочтительнее.
+        // Текущая реализация fromRule не использует ALL_OPTIONS и это нормально.
         fun fromRule(rule: String?): RecurrenceOption {
             return when (rule) {
                 Daily.rruleValue -> Daily
                 Weekly.rruleValue -> Weekly
                 Monthly.rruleValue -> Monthly
                 Yearly.rruleValue -> Yearly
-                else -> None // Если null или не совпало - считаем "None"
+                else -> None
             }
         }
     }

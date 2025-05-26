@@ -29,7 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 
-
+@Deprecated("Это старый метод бара")
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ChatInputBar(

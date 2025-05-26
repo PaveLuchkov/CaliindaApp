@@ -14,10 +14,8 @@ data class CalendarEventEntity(
     val isAllDay: Boolean = false,
     val recurringEventId: String? = null, // Новое поле
     val originalStartTimeString: String? = null, // Новое поле (храним как строку)
-    // Опционально: Можно добавить userGoogleId, если планируешь мультиюзерность в одной БД
-    // val userGoogleId: String,
-    // Опционально: Можно добавить время последнего обновления из сети
-    val lastFetchedMillis: Long = System.currentTimeMillis()
+    val lastFetchedMillis: Long = System.currentTimeMillis(),
+    val recurrenceRuleString: String? = null,
 )
 
 data class UpdateEventApiRequest(
@@ -27,5 +25,6 @@ data class UpdateEventApiRequest(
     val isAllDay: Boolean? = null,
     val timeZoneId: String? = null,
     val description: String? = null,
-    val location: String? = null
+    val location: String? = null,
+    val recurrence: List<String>? = null
 )

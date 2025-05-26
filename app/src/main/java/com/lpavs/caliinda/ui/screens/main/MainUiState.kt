@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.ui.screens.main
 
+import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
+
 // Переносим MainUiState в свой файл
 data class MainUiState(
     val isSignedIn: Boolean = false,
@@ -19,6 +21,7 @@ data class MainUiState(
     val eventBeingEdited: CalendarEvent? = null, // Событие, которое сейчас редактируется (оригинальные данные)
     val showRecurringEditOptionsDialog: Boolean = false, // Показать диалог выбора режима редактирования для повторяющихся
     val showEditEventDialog: Boolean = false, // Показать основной диалог/экран редактирования
+    val selectedUpdateMode: ClientEventUpdateMode? = null,
     val editOperationError: String? = null, // Ошибка, специфичная для операции обновления
 )
 
@@ -31,5 +34,6 @@ data class CalendarEvent(
     val location: String? = null,
     val isAllDay: Boolean = false,
     val recurringEventId: String? = null, // ID "мастер-события", если это экземпляр
-    val originalStartTime: String? = null // Для измененных экземпляров, их оригинальное время начала
+    val originalStartTime: String? = null, // Для измененных экземпляров, их оригинальное время начала
+    val recurrenceRule: String? = null
 )

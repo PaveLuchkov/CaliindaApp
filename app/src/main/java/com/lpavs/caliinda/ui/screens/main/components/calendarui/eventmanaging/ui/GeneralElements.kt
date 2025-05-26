@@ -10,17 +10,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.material3.NavigationBarDefaults.Elevation
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,8 +41,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
+import androidx.compose.foundation.layout.height
 
 /**
  * Content
@@ -217,4 +227,92 @@ fun RecurringEventDeleteOptionsDialog(
             }
         }
     )
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class) // Для компонентов Material 3 внутри диалога
+@Composable
+fun RecurringEventEditOptionsDialog(
+    eventName: String,
+    onDismiss: () -> Unit,
+    onOptionSelected: (ClientEventUpdateMode) -> Unit,
+    modifier: Modifier = Modifier,
+    properties: DialogProperties = DialogProperties() // Можно передавать кастомные свойства, если нужно
+) {
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.widthIn(min = 280.dp, max = 560.dp), // Рекомендации по ширине диалогов M3
+        properties = properties,
+    ) {
+        // Обертка для Material 3 стилей (фон, форма, elevation)
+        Surface(
+            shape = shapes.extraLarge, // Стандартная форма для диалогов M3
+            color = colorScheme.surface, // Цвет фона диалога
+            tonalElevation = Elevation, // Стандартная тень для диалогов
+            modifier = Modifier.wrapContentSize() // Чтобы Surface обернул контент
+        ) {
+            Column(
+                modifier = Modifier
+                    // Замени DialogDefaults.внутренниеОтступы на правильное имя, если оно другое
+                    // или просто Modifier.padding(all = 24.dp)
+                    .padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp) // Явные отступы
+            ) {
+                // Заголовок
+                Text(
+                    text = "Редактировать повторяющееся событие",
+                    style = typography.headlineSmall, // Стиль заголовка M3
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Текст с именем события
+                Text(
+                    text = "Как вы хотите отредактировать \"$eventName\"?",
+                    style = typography.bodyMedium, // Стиль основного текста M3
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                // Опции выбора (кнопки)
+                // Кнопка "Только это событие"
+                TextButton(
+                    onClick = { onOptionSelected(ClientEventUpdateMode.SINGLE_INSTANCE) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Только это событие")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Кнопка "Все события в серии"
+                TextButton(
+                    onClick = { onOptionSelected(ClientEventUpdateMode.ALL_IN_SERIES) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Все события в серии")
+                }
+
+                // Опционально: "Это и последующие", если поддерживается
+                // Spacer(modifier = Modifier.height(8.dp))
+                // TextButton(
+                //     onClick = { onOptionSelected(ClientEventUpdateMode.THIS_AND_FOLLOWING) },
+                //     modifier = Modifier.fillMaxWidth()
+                // ) {
+                //     Text("Это и последующие события")
+                // }
+
+                Spacer(modifier = Modifier.height(24.dp)) // Отступ перед кнопкой "Отмена"
+
+                // Кнопка "Отмена"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End // Выравниваем кнопку "Отмена" вправо
+                ) {
+                    TextButton(
+                        onClick = onDismiss
+                    ) {
+                        Text("Отмена")
+                    }
+                }
+            }
+        }
+    }
 }

@@ -393,7 +393,7 @@ class CalendarDataManager @Inject constructor(
             return
         }
 
-        val url = "$backendBaseUrl/calendar/events/$eventId?mode=${mode.value}" // Добавляем mode как query параметр
+        val url = "$backendBaseUrl/calendar/events/$eventId?update_mode=${mode.value}" // Добавляем mode как query параметр
 
         val requestBodyJson = try {
             Gson().toJson(updateData) // Или kotlinx.serialization: Json.encodeToString(updateData)
@@ -765,6 +765,11 @@ class CalendarDataManager @Inject constructor(
                         null
                     }
 
+                    var rruleString: String? = null
+                    val recurrenceJsonArray = eventObject.optJSONArray("recurrence")
+                    if (recurrenceJsonArray != null && recurrenceJsonArray.length() > 0) {
+                        rruleString = recurrenceJsonArray.optString(0, null)
+                    }
 
                     if (id.isNullOrEmpty() || startTimeStr.isNullOrEmpty()) {
                         Log.w(TAG, "Skipping event due to missing id or startTime in JSON object: ${eventObject.optString("summary")}")
@@ -781,7 +786,8 @@ class CalendarDataManager @Inject constructor(
                             location = location,
                             isAllDay = isAllDay,
                             recurringEventId = recurringEventId,
-                            originalStartTime = originalStartTime
+                            originalStartTime = originalStartTime,
+                            recurrenceRule = rruleString
                         )
                     )
                 } catch (e: JSONException) {
