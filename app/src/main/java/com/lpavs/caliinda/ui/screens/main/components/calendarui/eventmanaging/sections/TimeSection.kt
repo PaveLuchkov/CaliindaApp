@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import android.text.format.DateFormat // Для определения формата времени 12/24
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -112,6 +113,7 @@ fun EventDateTimePicker(
     onRequestShowEndTimePicker: () -> Unit,
     onRequestShowRecurrenceEndDatePicker: () -> Unit
 ) {
+    Log.d("EventDateTimePicker", "Received state: $state")
     var isAllDay by remember { mutableStateOf(state.isAllDay) }
     var isOneDay by remember { mutableStateOf(state.startDate == state.endDate) }
 

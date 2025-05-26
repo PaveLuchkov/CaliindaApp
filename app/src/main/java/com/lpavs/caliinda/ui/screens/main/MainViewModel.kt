@@ -480,14 +480,25 @@ class MainViewModel @Inject constructor(
      * Вызывается из диалога выбора режима редактирования для повторяющихся событий.
      */
     fun onRecurringEditOptionSelected(choice: ClientEventUpdateMode) {
+        val currentEvent = _uiState.value.eventBeingEdited
+        if (currentEvent == null) {
+            Log.e(TAG, "onRecurringEditOptionSelected called but eventBeingEdited is null.")
+            cancelEditEvent()
+            return
+        }
+
+        // Независимо от 'choice', currentEvent (если это экземпляр с мастером)
+        // теперь должен иметь 'recurrenceRule', полученный от бэкенда.
+        Log.d(TAG, "Recurring edit mode selected: $choice for event: ${currentEvent.id}. Current RRULE in event: ${currentEvent.recurrenceRule}")
+
         _uiState.update {
             it.copy(
                 showRecurringEditOptionsDialog = false,
                 showEditEventDialog = true,
-                selectedUpdateMode = choice // <--- СОХРАНЯЕМ ВЫБРАННЫЙ РЕЖИМ
+                selectedUpdateMode = choice
+                // eventBeingEdited остается тем же, так как он уже "обогащен"
             )
         }
-        Log.d(TAG, "Recurring edit mode selected: $choice for event: ${_uiState.value.eventBeingEdited?.id}")
     }
 
     /**

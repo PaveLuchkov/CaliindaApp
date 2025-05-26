@@ -765,10 +765,19 @@ class CalendarDataManager @Inject constructor(
                         null
                     }
 
-                    var rruleString: String? = null
-                    val recurrenceJsonArray = eventObject.optJSONArray("recurrence")
-                    if (recurrenceJsonArray != null && recurrenceJsonArray.length() > 0) {
-                        rruleString = recurrenceJsonArray.optString(0, null)
+                    var finalRRuleForCalendarEvent: String? = null
+                    val rawRecurrenceRuleWithPrefix = eventObject.optString("recurrenceRule", null) // Читаем поле "recurrenceRule"
+
+                    if (!rawRecurrenceRuleWithPrefix.isNullOrBlank()) {
+                        if (rawRecurrenceRuleWithPrefix.startsWith("RRULE:")) {
+                            finalRRuleForCalendarEvent = rawRecurrenceRuleWithPrefix.removePrefix("RRULE:")
+                        } else {
+                            // Если префикса нет, это может быть ошибкой или старым форматом.
+                            // Для совместимости можно оставить, но лучше, чтобы бэкенд всегда присылал с префиксом,
+                            // а клиент его убирал. Судя по вашим логам, бэкенд присылает с "RRULE:".
+                            finalRRuleForCalendarEvent = rawRecurrenceRuleWithPrefix
+                            Log.w(TAG, "Received recurrenceRule from backend without 'RRULE:' prefix: $rawRecurrenceRuleWithPrefix for event $id")
+                        }
                     }
 
                     if (id.isNullOrEmpty() || startTimeStr.isNullOrEmpty()) {
@@ -787,7 +796,7 @@ class CalendarDataManager @Inject constructor(
                             isAllDay = isAllDay,
                             recurringEventId = recurringEventId,
                             originalStartTime = originalStartTime,
-                            recurrenceRule = rruleString
+                            recurrenceRule = finalRRuleForCalendarEvent
                         )
                     )
                 } catch (e: JSONException) {
