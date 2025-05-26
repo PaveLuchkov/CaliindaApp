@@ -4,7 +4,11 @@ import android.text.format.DateFormat
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -326,11 +330,19 @@ fun EditEventScreen(
         AnimatedContent(
             targetState = currentSheetValue,
             transitionSpec = {
-                // Animation for size change only.
-                // The new content will scale in, the old content will scale out.
-                fadeIn(animationSpec = tween(90, delayMillis = 90))
-                    .togetherWith(fadeOut(animationSpec = tween(90)))
-                    .using(SizeTransform(clip = false)) // clip = false is good if button doesn't need clipping
+                (EnterTransition.None)
+                    .togetherWith(ExitTransition.None)
+                    .using(SizeTransform(
+                        clip = false, // false - чтобы контент не обрезался во время анимации размера
+                        sizeAnimationSpec = { _, _ ->
+                            // Используем spring для более "живой" анимации размера
+                            spring(
+                                dampingRatio = Spring.DampingRatioLowBouncy, // Попробуйте LowBouncy или MediumBouncy
+                                stiffness = Spring.StiffnessMediumLow // Попробуйте Medium или Low
+                            )
+                        }
+                    )
+                    )
             },
             label = "SaveButtonAnimation"
         ) { targetSheetValue ->
