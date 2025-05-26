@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -114,6 +113,9 @@ fun EditEventScreen(
     }
     var eventDateTimeState by remember(eventToEdit.id) { mutableStateOf(initialEventDateTimeState) }
     // ----------------------------------------
+    LaunchedEffect(initialEventDateTimeState) { // Или просто Log.d без LaunchedEffect, если это только для отладки
+        Log.d("EditEventScreen", "Initial EventDateTimeState for UI: $initialEventDateTimeState")
+    }
 
     // Состояния для управления видимостью диалогов M3 (остаются)
     var showStartDatePicker by remember { mutableStateOf(false) }
@@ -279,6 +281,9 @@ fun EditEventScreen(
                 finalRecurrenceRule = ruleParts.joinToString(";")
             }
             // -----------------------------------------------------------
+            val recurrenceForApi: List<String>? = finalRecurrenceRule?.let { rule ->
+                listOf("RRULE:$rule") // Оборачиваем в список и добавляем RRULE:
+            }
 
             // --- Формируем объект UpdateEventApiRequest только с измененными полями ---
             val updateRequest = buildUpdateEventApiRequest(
@@ -289,7 +294,7 @@ fun EditEventScreen(
                 currentDateTimeState = eventDateTimeState,
                 formattedStartStr = startStr,
                 formattedEndStr = endStr,
-                finalRecurrenceRule = finalRecurrenceRule,
+                currentRecurrenceForApi = recurrenceForApi,
                 userTimeZoneIdForTimed = userTimeZoneId // Передаем таймзону для timed событий
             )
 
@@ -303,7 +308,7 @@ fun EditEventScreen(
             }
 
             viewModel.confirmEventUpdate(
-                updatedEventData = updateRequest ?: UpdateEventApiRequest(recurrence = if(recurrenceChanged && finalRecurrenceRule != null) listOf(finalRecurrenceRule) else if (recurrenceChanged && finalRecurrenceRule == null) emptyList() else null ),
+                updatedEventData = updateRequest ?: UpdateEventApiRequest(),
                 modeFromUi = selectedUpdateMode
             )
         } else {
@@ -422,7 +427,7 @@ fun EditEventScreen(
             )
         }
         generalError?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            Text(it, color = colorScheme.error, style = typography.bodyMedium)
         }
         Spacer(modifier = Modifier.height(16.dp)) // Отступ перед кнопкой сохранения
     } // End Scrollable Column
@@ -765,6 +770,20 @@ fun parseCalendarEventToDateTimeState(
         }
     }
 
+    Log.d("ParseToState", "--- Parsing Event to EventDateTimeState ---")
+    Log.d("ParseToState", "Original Event ID: ${event.id}")
+    Log.d("ParseToState", "Original Event Summary: ${event.summary}")
+    Log.d("ParseToState", "Original RRULE String: ${event.recurrenceRule}")
+    Log.d("ParseToState", "Parsed isAllDay: $isAllDay")
+    Log.d("ParseToState", "Parsed StartDate: $parsedStartDate, StartTime: $parsedStartTime")
+    Log.d("ParseToState", "Parsed EndDate: $parsedEndDate, EndTime: $parsedEndTime")
+    Log.d("ParseToState", "Parsed isRecurring: $isRecurring")
+    Log.d("ParseToState", "Parsed recurrenceRule (FREQ): ${recurrenceOption?.rruleValue}")
+    Log.d("ParseToState", "Parsed selectedWeekdays: $selectedWeekdays")
+    Log.d("ParseToState", "Parsed recurrenceEndType: $recurrenceEndType")
+    Log.d("ParseToState", "Parsed recurrenceEndDate: $recurrenceEndDate")
+    Log.d("ParseToState", "Parsed recurrenceCount: $recurrenceCount")
+    Log.d("ParseToState", "-----------------------------------------")
 
     return EventDateTimeState(
         startDate = parsedStartDate,
@@ -788,12 +807,13 @@ fun buildUpdateEventApiRequest(
     currentDescription: String,
     currentLocation: String,
     currentDateTimeState: EventDateTimeState,
-    formattedStartStr: String, // Уже отформатированные для API
-    formattedEndStr: String,   // Уже отформатированные для API
-    finalRecurrenceRule: String?, // Собранный RRULE из формы
-    userTimeZoneIdForTimed: String // Таймзона для timed событий
-): UpdateEventApiRequest? { // Возвращает null, если нет изменений кроме recurrence
+    formattedStartStr: String,
+    formattedEndStr: String,
+    currentRecurrenceForApi: List<String>?,
+    userTimeZoneIdForTimed: String
+): UpdateEventApiRequest? {
     var hasChanges = false
+
     val summaryUpdate = currentSummary.takeIf { it != originalEvent.summary }?.also { hasChanges = true }
     val descriptionUpdate = currentDescription.takeIf { it != (originalEvent.description ?: "") }?.also { hasChanges = true }
     val locationUpdate = currentLocation.takeIf { it != (originalEvent.location ?: "") }?.also { hasChanges = true }
@@ -801,58 +821,38 @@ fun buildUpdateEventApiRequest(
     var startTimeUpdate: String? = null
     var endTimeUpdate: String? = null
     var isAllDayUpdate: Boolean? = null
-    var timeZoneIdUpdate: String? = null // Потенциально
-    var recurrenceUpdate: List<String>? = null
-    // Сравниваем текущий собранный RRULE с оригинальным.
-    // Если оригинальный был null, а новый нет - это изменение.
-    // Если оба не null, но разные - это изменение.
-    // Если новый стал null, а старый был - это изменение (удаление повторения).
-    if (finalRecurrenceRule != originalEvent.recurrenceRule) { // Сравнение строк
-        hasChanges = true
-        if (finalRecurrenceRule != null) {
-            recurrenceUpdate = listOf(finalRecurrenceRule) // Google API ожидает массив строк
-        } else {
-            recurrenceUpdate = emptyList() // Пустой список для удаления всех правил повторения
-        }
-    }
-    // Сравниваем startTime, endTime, isAllDay
+    var timeZoneIdUpdate: String? = null
+
     if (currentDateTimeState.isAllDay != originalEvent.isAllDay) {
         isAllDayUpdate = currentDateTimeState.isAllDay
         hasChanges = true
     }
 
-    // Если тип (all-day/timed) изменился или сами строки времени изменились
-    if (isAllDayUpdate != null || formattedStartStr != originalEvent.startTime) {
+    if (formattedStartStr != originalEvent.startTime) {
         startTimeUpdate = formattedStartStr
         hasChanges = true
     }
-    if (isAllDayUpdate != null || formattedEndStr != originalEvent.endTime) {
+    if (formattedEndStr != originalEvent.endTime) {
         endTimeUpdate = formattedEndStr
         hasChanges = true
     }
 
-    // Если событие стало/осталось timed и таймзона могла измениться (сложно отследить без исходной таймзоны события)
-    // Пока что, если isAllDay не true, и мы передаем startTime/endTime, то передаем и timeZoneId.
-    // Бэкенд должен использовать его, если он есть.
-    if (!currentDateTimeState.isAllDay && (startTimeUpdate != null || endTimeUpdate != null)) {
-        // Если оригинальное событие имело другую таймзону (мы ее не храним в CalendarEvent явно),
-        // то это изменение. Пока просто передаем текущую пользовательскую.
-        // Это место для улучшения, если нужно точнее отслеживать изменение таймзоны.
-        timeZoneIdUpdate = userTimeZoneIdForTimed // Передаем всегда для timed, если время меняется
-        // hasChanges = true // Не обязательно, если только таймзона, а время нет
+    if (!currentDateTimeState.isAllDay && userTimeZoneIdForTimed.isNotBlank()) {
+        if (isAllDayUpdate != null || startTimeUpdate != null || endTimeUpdate != null) {
+            timeZoneIdUpdate = userTimeZoneIdForTimed
+        }
     }
 
+    var recurrenceUpdate: List<String>? = null
+    val originalRecurrenceAsApiList: List<String>? = originalEvent.recurrenceRule
+        ?.takeIf { it.isNotBlank() }
+        ?.let { listOf("RRULE:$it") }
 
-    // Сравнение recurrenceRule - самое сложное, т.к. порядок частей может меняться.
-    // Простейший вариант - прямое сравнение строк.
-    // Более надежно - парсить обе RRULE и сравнивать компоненты.
-    // Пока что, если finalRecurrenceRule отличается от originalEvent.recurrenceRule, считаем изменением.
-    // Но UpdateEventApiRequest не содержит recurrence. Это обрабатывается отдельно на бэке.
-    // Здесь мы только проверяем, есть ли изменения в *других* полях.
-
-    if (!hasChanges) {
-        return null // Нет изменений в полях, которые отправляются в UpdateEventApiRequest
+    if (currentRecurrenceForApi != originalRecurrenceAsApiList) {
+        recurrenceUpdate = currentRecurrenceForApi
     }
+
+    if (!hasChanges && recurrenceUpdate == null) return null
 
     return UpdateEventApiRequest(
         summary = summaryUpdate,

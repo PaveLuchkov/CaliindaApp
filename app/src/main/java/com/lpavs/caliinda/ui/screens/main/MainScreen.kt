@@ -137,8 +137,6 @@ fun MainScreen(
             onDismiss = { viewModel.cancelEditEvent() }, // Если пользователь закрыл диалог
             onOptionSelected = { choice ->
                 viewModel.onRecurringEditOptionSelected(choice)
-                // После этого uiState.showRecurringEditOptionsDialog станет false,
-                // а uiState.showEditEventDialog станет true, что запустит показ EditEventScreen
             }
         )
     }
