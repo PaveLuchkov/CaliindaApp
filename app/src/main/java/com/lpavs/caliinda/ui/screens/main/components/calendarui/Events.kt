@@ -337,7 +337,7 @@ fun DayEventsPage(
             }
         }
     }
-
+    var expandedAllDayEventId by remember { mutableStateOf<String?>(null) }
 //    val fixedColors = LocalFixedAccentColors.current
 
     Box(
@@ -357,8 +357,26 @@ fun DayEventsPage(
                         .padding(horizontal = 16.dp) // Общий горизонтальный отступ
                 ) {
                     allDayEvents.forEach { event ->
-                        AllDayEventItem(event = event) // Используем новый Composable
-                        Spacer(modifier = Modifier.height(3.dp)) // Отступ между элементами "весь день"
+                        val isExpanded = event.id == expandedAllDayEventId
+                        AllDayEventItem(
+                            event = event,
+                            isExpanded = isExpanded,
+                            onToggleExpand = {
+                                expandedAllDayEventId = if (isExpanded) null else event.id
+                            },
+                            onDeleteClick = {
+                                viewModel.requestDeleteConfirmation(event)
+                                // expandedAllDayEventId = null // Схлопываем после запроса на удаление
+                            },
+                            onEditClick = {
+                                // TODO: Реализуй логику редактирования
+                                Log.d("DayEventsPage", "Edit requested for AllDay event: ${event.id}")
+                                // viewModel.navigateToEditScreen(event.id) // Пример
+                                expandedAllDayEventId = null // Схлопываем после клика на редактирование
+                            },
+                            // modifier = Modifier.padding(vertical = 2.dp) // Небольшой отступ между AllDayEventItem, если нужно
+                        )
+                        Spacer(modifier = Modifier.height(6.dp)) // Отступ между элементами "весь день"
                     }
                 }
             }

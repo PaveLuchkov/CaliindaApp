@@ -67,9 +67,8 @@ fun EventListItem(
     isCurrentEvent: Boolean,
     isNextEvent: Boolean,
     proximityRatio: Float,
-    // --- ИСПОЛЬЗУЕМ ПЕРЕДАННЫЕ ЗНАЧЕНИЯ ---
-    isMicroEventFromList: Boolean,   // Бывший isMicroEvent
-    targetHeightFromList: Dp,      // Бывший targetHeight
+    isMicroEventFromList: Boolean,
+    targetHeightFromList: Dp,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onDeleteClickFromList: () -> Unit,
@@ -78,7 +77,6 @@ fun EventListItem(
     modifier: Modifier = Modifier,
     currentTimeZoneId: String
 ) {
-    // --- Расчет высоты  ---
     val eventDurationMinutes = remember(event.startTime, event.endTime) {
         val start = parseToInstant(event.startTime, currentTimeZoneId)
         val end = parseToInstant(event.endTime, currentTimeZoneId)
@@ -89,7 +87,6 @@ fun EventListItem(
         }
     }
 
-    // --- Генерация формы ---
     val shapeParams = remember(event.id) {
         generateShapeParams(event.id) // Use helper
     }
@@ -273,25 +270,98 @@ fun EventListItem(
 
 
 @Composable
-fun AllDayEventItem(event: CalendarEvent) {
+fun AllDayEventItem(
+    event: CalendarEvent,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier // Добавил modifier
+) {
+    val cardBackground = colorScheme.tertiary
+    val cardTextColor = colorScheme.onTertiary
 
-    Box(
-        modifier = Modifier
+    Box( // Внешний Box для кликабельности, фона и формы
+        modifier = modifier // Используем переданный modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(25.dp))
-            .background(colorScheme.tertiary)
-            .padding(horizontal = CalendarUiDefaults.AllDayItemPadding, vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding) // Вертикальный отступ чуть больше
+            .clip(RoundedCornerShape(cuid.EventItemCornerRadius)) // Используем радиус как у обычных событий для консистентности
+            .background(cardBackground)
+            .clickable { onToggleExpand() }
     ) {
-        Text(
-            text = event.summary,
-            style = typography.bodyLarge, // Стиль можно подобрать
-            fontWeight = FontWeight.Medium,
-            color = colorScheme.onTertiary,
-            textAlign = TextAlign.Center, // Или TextAlign.Start
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 3.dp),
-        )
+                .padding( // Внутренние отступы для контента
+                    horizontal = CalendarUiDefaults.AllDayItemPadding,
+                    vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding
+                )
+        ) {
+            Text(
+                text = event.summary,
+                style = typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = cardTextColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp), // Небольшой вертикальный отступ для самого текста
+            )
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                        expandVertically(
+                            animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                            expandFrom = Alignment.Top
+                        ),
+                exit = shrinkVertically(
+                    animationSpec = tween(durationMillis = 250),
+                    shrinkTowards = Alignment.Top
+                ) + fadeOut(animationSpec = tween(durationMillis = 150))
+            ) {
+                // Добавляем небольшой отступ сверху перед кнопками, если они видны
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp), // Отступы для ряда кнопок
+                    horizontalArrangement = Arrangement.Center, // Кнопки справа
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = {
+                            onEditClick()
+                            onToggleExpand() // Опционально: схлопывать после клика
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        // Можно настроить цвета кнопок, чтобы они лучше смотрелись на tertiary фоне
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorScheme.onTertiary,
+                            contentColor = colorScheme.tertiary
+                        )
+                    ) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Редактировать", modifier = Modifier.size(ButtonDefaults.IconSize))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            onDeleteClick()
+                            // onToggleExpand() // Опционально: схлопывать после клика
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorScheme.onTertiary,
+                            contentColor = colorScheme.tertiary
+                        )
+                    ) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
+                        // Можно убрать текст, если нужна только иконка для компактности
+                        // Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        // Text("Delete")
+                    }
+                }
+            }
+        }
     }
 }
 
