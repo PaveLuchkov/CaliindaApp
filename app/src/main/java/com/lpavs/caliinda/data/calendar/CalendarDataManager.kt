@@ -1,9 +1,11 @@
 package com.lpavs.caliinda.data.calendar
 
 import android.util.Log
+import com.google.gson.Gson
 import com.lpavs.caliinda.data.auth.AuthManager // Нужен для токена
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.data.local.EventDao
+import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.data.mapper.EventMapper
 import com.lpavs.caliinda.data.repo.SettingsRepository
 import com.lpavs.caliinda.di.BackendUrl
@@ -42,6 +44,11 @@ enum class ApiDeleteEventMode(val value: String) {
     // Можно добавить ALL_SERIES("all_series"), если бэкенд будет его явно обрабатывать,
     // но пока DEFAULT часто выполняет эту роль.
 }
+enum class ClientEventUpdateMode(val value: String) {
+    SINGLE_INSTANCE("single_instance"),
+    ALL_IN_SERIES("all_in_series")
+    // THIS_AND_FOLLOWING("this_and_following") // Пока не поддерживается
+}
 
 @Singleton
 class CalendarDataManager @Inject constructor(
@@ -70,13 +77,14 @@ class CalendarDataManager @Inject constructor(
     private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
     private val _createEventResult = MutableStateFlow<CreateEventResult>(CreateEventResult.Idle)
     private val _deleteEventResult = MutableStateFlow<DeleteEventResult>(DeleteEventResult.Idle)
+    private val _updateEventResult = MutableStateFlow<UpdateEventResult>(UpdateEventResult.Idle)
 
     // --- Публичные StateFlow для ViewModel ---
     val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
     val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = _loadedDateRange.asStateFlow()
     val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
     val createEventResult: StateFlow<CreateEventResult> = _createEventResult.asStateFlow()
-
+    val updateEventResult: StateFlow<UpdateEventResult> = _updateEventResult.asStateFlow()
     val deleteEventResult: StateFlow<DeleteEventResult> = _deleteEventResult.asStateFlow()
 
     private var activeFetchJob: Job? = null
@@ -364,6 +372,95 @@ class CalendarDataManager @Inject constructor(
     fun consumeDeleteEventResult() {
         _deleteEventResult.value = DeleteEventResult.Idle
     }
+
+    suspend fun updateEvent(
+        eventId: String,
+        updateData: UpdateEventApiRequest, // Данные для обновления
+        mode: ClientEventUpdateMode
+    ) {
+        if (_updateEventResult.value is UpdateEventResult.Loading) {
+            Log.w(TAG, "updateEvent called while another update is in progress for ID: $eventId. Ignoring.")
+            // Можно вернуть предыдущий результат или специфическую ошибку, если это suspend функция, возвращающая результат
+            return
+        }
+        _updateEventResult.value = UpdateEventResult.Loading
+        Log.i(TAG, "Attempting to update event ID: $eventId, mode: ${mode.value}, data: $updateData")
+
+        val freshToken = authManager.getFreshIdToken()
+        if (freshToken == null) {
+            Log.e(TAG, "Cannot update event $eventId: Failed to get fresh ID token.")
+            _updateEventResult.value = UpdateEventResult.Error("Ошибка аутентификации")
+            return
+        }
+
+        val url = "$backendBaseUrl/calendar/events/$eventId?mode=${mode.value}" // Добавляем mode как query параметр
+
+        val requestBodyJson = try {
+            Gson().toJson(updateData) // Или kotlinx.serialization: Json.encodeToString(updateData)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error serializing updateData to JSON for event $eventId", e)
+            _updateEventResult.value = UpdateEventResult.Error("Ошибка подготовки данных для обновления.")
+            return
+        }
+
+        val request = Request.Builder()
+            .url(url)
+            .patch(requestBodyJson.toRequestBody("application/json; charset=utf-8".toMediaType())) // Используем PATCH
+            .header("Authorization", "Bearer $freshToken")
+            .build()
+
+        try {
+            val response = withContext(ioDispatcher) {
+                okHttpClient.newCall(request).execute()
+            }
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.string()
+                if (responseBody != null) {
+                    try {
+                        // Парсим ответ бэкенда (предполагаем, что он соответствует UpdateEventResponse на бэке)
+                        val responseObject = JSONObject(responseBody) // Или Gson().fromJson(...)
+                        val newEventId = responseObject.optString("eventId", eventId) // Берем новый ID или старый
+                        Log.i(TAG, "Event $eventId successfully updated on backend (Mode: ${mode.value}). New/Confirmed ID: $newEventId")
+
+                        // После успешного обновления на бэкенде, нужно обновить данные локально.
+                        // Самый надежный способ - полностью перезапросить диапазон, т.к. свойства могли измениться.
+                        // Особенно если изменилось время, событие могло "переехать" на другой день.
+                        refreshDate(currentVisibleDate.value) // Принудительно обновляем текущий видимый диапазон
+
+                        _updateEventResult.value = UpdateEventResult.Success(newEventId)
+                    } catch (e: JSONException) {
+                        Log.e(TAG, "Error parsing successful update response for event $eventId", e)
+                        _updateEventResult.value = UpdateEventResult.Error("Ошибка ответа сервера после обновления.")
+                    }
+                } else {
+                    Log.e(TAG, "Successful update response for event $eventId has empty body.")
+                    _updateEventResult.value = UpdateEventResult.Error("Пустой ответ сервера после обновления.")
+                }
+            } else {
+                val errorMsg = parseBackendError(response.body?.string(), response.code)
+                Log.e(TAG, "Error updating event $eventId (Mode: ${mode.value}) via backend: ${response.code} - $errorMsg")
+                _updateEventResult.value = UpdateEventResult.Error(errorMsg)
+            }
+
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error updating event $eventId (Mode: ${mode.value})", e)
+            _updateEventResult.value = UpdateEventResult.Error("Сетевая ошибка: ${e.message}")
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                Log.w(TAG, "Update event $eventId (Mode: ${mode.value}) job was cancelled.", e)
+                _updateEventResult.value = UpdateEventResult.Idle
+                throw e
+            }
+            Log.e(TAG, "Unexpected error updating event $eventId (Mode: ${mode.value})", e)
+            _updateEventResult.value = UpdateEventResult.Error("Неизвестная ошибка: ${e.message}")
+        }
+    }
+
+    fun consumeUpdateEventResult() {
+        _updateEventResult.value = UpdateEventResult.Idle
+    }
+
 
     /** Принудительно обновляет данные для указанной даты */
     suspend fun refreshDate(date: LocalDate) {

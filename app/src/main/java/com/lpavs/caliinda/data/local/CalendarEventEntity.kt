@@ -19,3 +19,13 @@ data class CalendarEventEntity(
     // Опционально: Можно добавить время последнего обновления из сети
     val lastFetchedMillis: Long = System.currentTimeMillis()
 )
+
+data class UpdateEventApiRequest(
+    val summary: String? = null,
+    val startTime: String? = null,
+    val endTime: String? = null,
+    val isAllDay: Boolean? = null,
+    val timeZoneId: String? = null,
+    val description: String? = null,
+    val location: String? = null
+)

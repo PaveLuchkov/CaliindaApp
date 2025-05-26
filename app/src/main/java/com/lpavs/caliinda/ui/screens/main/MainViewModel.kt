@@ -34,6 +34,9 @@ import com.lpavs.caliinda.data.calendar.DeleteEventResult
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringDeleteChoice
 import com.google.android.gms.tasks.Task
+import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
+import com.lpavs.caliinda.data.calendar.UpdateEventResult
+import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @HiltViewModel
@@ -85,6 +88,7 @@ class MainViewModel @Inject constructor(
         observeCalendarNetworkState()
         observeCreateEventResult()
         observeDeleteEventResult()
+        observeUpdateEventResult()
     }
 
     // --- НАБЛЮДАТЕЛИ (вынесены из init для чистоты) ---
@@ -222,6 +226,62 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private fun observeUpdateEventResult() {
+        viewModelScope.launch {
+            calendarDataManager.updateEventResult.collect { result ->
+                _uiState.update { currentState ->
+                    val updatedState = when (result) {
+                        is UpdateEventResult.Success -> {
+                            Log.i(
+                                TAG,
+                                "Event update successful (observed in VM). Event ID: ${result.updatedEventId}"
+                            )
+                            currentState.copy(
+                                eventBeingEdited = null, // Сбрасываем редактируемое событие
+                                showEditEventDialog = false, // Закрываем диалог редактирования
+                                editOperationError = null,
+                                message = "Событие успешно обновлено" // Опциональное сообщение
+                            )
+                        }
+
+                        is UpdateEventResult.Error -> {
+                            Log.e(TAG, "Event update failed (observed in VM): ${result.message}")
+                            currentState.copy(
+                                // eventBeingEdited оставляем, чтобы пользователь мог исправить ошибку в форме
+                                // showEditEventDialog тоже оставляем открытым
+                                editOperationError = result.message
+                            )
+                        }
+
+                        is UpdateEventResult.Loading -> {
+                            currentState.copy(editOperationError = null) // Сбрасываем ошибку на время загрузки
+                        }
+
+                        is UpdateEventResult.Idle -> {
+                            // Если состояние стало Idle, значит результат обработан (или не было операции)
+                            // Если была ошибка и она показана, и теперь Idle, то можно ее сбросить,
+                            // если это не делается явно через clearEditError().
+                            // Либо просто не меняем message и error.
+                            if (currentState.editOperationError != null || currentState.message == "Событие успешно обновлено") {
+                                currentState.copy(
+                                    editOperationError = null,
+                                    message = null
+                                ) // Пример сброса
+                            } else {
+                                currentState
+                            }
+                        }
+                    }
+                    updatedState.copy(isLoading = calculateIsLoading()) // Обновляем общий isLoading
+                }
+
+                if (result is UpdateEventResult.Success || result is UpdateEventResult.Error) {
+                    calendarDataManager.consumeUpdateEventResult() // Сбрасываем состояние в DataManager
+                }
+            }
+        }
+    }
+
     // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
     /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
     private fun calculateIsLoading(
@@ -229,14 +289,16 @@ class MainViewModel @Inject constructor(
         networkState: EventNetworkState = calendarDataManager.rangeNetworkState.value,
         aiState: AiVisualizerState = aiInteractionManager.aiState.value,
         createEventState: CreateEventResult = calendarDataManager.createEventResult.value,
-        deleteEventState: DeleteEventResult = calendarDataManager.deleteEventResult.value
+        deleteEventState: DeleteEventResult = calendarDataManager.deleteEventResult.value,
+        updateEventState: UpdateEventResult = calendarDataManager.updateEventResult.value
     ): Boolean {
         val calendarLoading = networkState is EventNetworkState.Loading
         val creatingEvent = createEventState is CreateEventResult.Loading
         val deletingEvent = deleteEventState is DeleteEventResult.Loading
+        val updatingEvent = updateEventState is UpdateEventResult.Loading
         val aiThinking = aiState == AiVisualizerState.THINKING
         // Комбинируем все источники загрузки
-        return authLoading || calendarLoading || creatingEvent || aiThinking || deletingEvent
+        return authLoading || calendarLoading || creatingEvent || aiThinking || deletingEvent || updatingEvent
     }
 
     // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
@@ -392,6 +454,99 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(showGeneralError = null) }
         // Возможно, стоит сбросить и ошибку сети календаря?
         calendarDataManager.clearNetworkError() // Опционально
+    }
+
+    /**
+     * Вызывается из UI, когда пользователь инициирует редактирование события.
+     */
+    fun requestEditEvent(event: CalendarEvent) {
+        val isRecurring = event.recurringEventId != null || event.originalStartTime != null
+        _uiState.update {
+            it.copy(
+                eventBeingEdited = event, // Сохраняем оригинал для предзаполнения формы и для update API
+                showRecurringEditOptionsDialog = isRecurring, // Если повторяющееся, сначала показываем выбор режима
+                showEditEventDialog = !isRecurring, // Если одиночное, сразу показываем форму редактирования
+                editOperationError = null, // Сбрасываем предыдущую ошибку
+                // Сбрасываем состояние формы редактирования, если оно хранится в UiState
+                // editFormState = EditEventFormState(summary = event.summary, ...)
+            )
+        }
+        Log.d(TAG, "Requested edit for event ID: ${event.id}, isRecurring: $isRecurring")
+    }
+
+    /**
+     * Вызывается из диалога выбора режима редактирования для повторяющихся событий.
+     */
+    fun onRecurringEditOptionSelected(choice: ClientEventUpdateMode) { // Используем ClientEventUpdateMode из DataManager
+        // Теперь, когда режим выбран, показываем основную форму/диалог редактирования
+        _uiState.update {
+            it.copy(
+                showRecurringEditOptionsDialog = false, // Скрываем диалог выбора режима
+                showEditEventDialog = true // Показываем диалог/экран редактирования
+                // eventBeingEdited уже должен быть установлен
+            )
+        }
+        Log.d(TAG, "Recurring edit mode selected: $choice for event: ${_uiState.value.eventBeingEdited?.id}")
+    }
+
+    /**
+     * Вызывается для отмены процесса редактирования (закрытия диалогов).
+     */
+    fun cancelEditEvent() {
+        _uiState.update {
+            it.copy(
+                eventBeingEdited = null,
+                showRecurringEditOptionsDialog = false,
+                showEditEventDialog = false,
+                editOperationError = null
+                // editFormState = EditEventFormState() // Сброс формы
+            )
+        }
+        Log.d(TAG, "Event editing cancelled.")
+    }
+
+    /**
+     * Вызывается из UI (формы/диалога редактирования) для сохранения изменений.
+     * @param updatedEventData Данные, введенные пользователем в форме.
+     * @param mode Режим обновления (особенно важен для повторяющихся, выбирается заранее).
+     *             Если событие одиночное, mode обычно SINGLE_INSTANCE или можно передать специальное значение,
+     *             которое бэкенд поймет как "не повторяющееся".
+     *             Но так как update_mode на бэке обязательный, всегда передаем режим.
+     */
+    fun confirmEventUpdate(
+        updatedEventData: UpdateEventApiRequest, // Модель с опциональными полями для API
+        // Режим должен быть определен до вызова этой функции (например, сохранен в UiState или передан)
+        // Для одиночных событий можно по умолчанию использовать SINGLE_INSTANCE,
+        // т.к. для них это не имеет особого значения, API применит изменения к этому ID.
+        // Для повторяющихся - режим уже должен быть выбран пользователем.
+        modeFromUi: ClientEventUpdateMode // Режим, выбранный пользователем (или дефолтный для одиночных)
+    ) {
+        val originalEvent = _uiState.value.eventBeingEdited
+        if (originalEvent == null) {
+            Log.e(TAG, "confirmEventUpdate called but eventBeingEdited is null.")
+            _uiState.update { it.copy(editOperationError = "Ошибка: нет данных для редактирования.") }
+            return
+        }
+
+        Log.d(TAG, "Confirming update for event ID: ${originalEvent.id}, mode: $modeFromUi, data: $updatedEventData")
+        // Можно здесь же закрыть диалог редактирования оптимистично, или ждать ответа.
+        // _uiState.update { it.copy(showEditEventDialog = false) }
+
+        viewModelScope.launch {
+            calendarDataManager.updateEvent(
+                eventId = originalEvent.id, // ID оригинального события/экземпляра
+                updateData = updatedEventData,
+                mode = modeFromUi
+            )
+            // Результат (успех/ошибка) будет обработан в observeUpdateEventResult
+        }
+    }
+
+    /**
+     * Сбрасывает ошибку операции редактирования.
+     */
+    fun clearEditError() {
+        _uiState.update { it.copy(editOperationError = null) }
     }
 
     // --- LIFECYCLE ---
