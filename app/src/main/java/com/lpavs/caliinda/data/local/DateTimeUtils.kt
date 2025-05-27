@@ -68,7 +68,7 @@ object DateTimeUtils {
     fun formatDateTimeToIsoWithOffset(
         date: LocalDate?,
         time: LocalTime?,
-        isAllDay: Boolean,
+        isAllDay: Boolean, // Этот параметр здесь, возможно, не так нужен, если isAllDay обрабатывается выше
         zoneIdString: String
     ): String? {
         if (date == null) return null
@@ -80,23 +80,50 @@ object DateTimeUtils {
             ZoneId.systemDefault()
         }
 
-        // Определяем время: полночь для all-day или указанное время
-        val effectiveTime = if (isAllDay) LocalTime.MIDNIGHT else time
+        if (time == null && !isAllDay) { // Явно проверяем, что для timed-события время должно быть
+            Log.w("DateTimeUtils", "Time is required for non-all-day event formatting to ISO offset string.")
+            return null
+        }
 
-        // Если время не указано для события НЕ "весь день", это ошибка
-        if (effectiveTime == null) {
-            Log.w("DateTimeUtils", "Time is required for non-all-day event formatting.")
+        val effectiveTime = if (isAllDay) LocalTime.MIDNIGHT else time!! // Если не all-day, time не должен быть null
+
+        return try {
+            val zonedDateTime = date.atTime(effectiveTime).atZone(zoneId)
+            zonedDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) // Возвращает с offset'ом
+        } catch (e: Exception) {
+            Log.e("DateTimeUtils", "Error formatting date/time to ISO offset string", e)
+            null
+        }
+    }
+
+    // --- НОВАЯ ФУНКЦИЯ ---
+    /**
+     * Форматирует LocalDate и LocalTime в строку ISO 8601 вида "yyyy-MM-dd'T'HH:mm:ss"
+     * БЕЗ информации о таймзоне или смещении.
+     * Предполагается, что timeZoneId будет отправлен отдельно.
+     *
+     * @param date Дата события.
+     * @param time Время события.
+     * @return Строка "yyyy-MM-dd'T'HH:mm:ss" или null при ошибке.
+     */
+    fun formatLocalDateTimeToNaiveIsoString( // Назовем "Naive", чтобы подчеркнуть отсутствие TZ info
+        date: LocalDate?,
+        time: LocalTime?
+    ): String? {
+        if (date == null || time == null) {
+            Log.w("DateTimeUtils", "Date and Time are required for formatting to naive ISO string.")
             return null
         }
 
         return try {
-            // Собираем LocalDateTime и применяем часовой пояс для получения ZonedDateTime
-            val zonedDateTime = date.atTime(effectiveTime).atZone(zoneId)
-            // Форматируем в ISO 8601 со смещением
-            zonedDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            // Собираем LocalDateTime (без информации о зоне)
+            val localDateTime = LocalDateTime.of(date, time)
+            // Форматируем в ISO 8601 без смещения и без 'Z'
+            // Стандартный DateTimeFormatter.ISO_LOCAL_DATE_TIME как раз это и делает.
+            localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) // "YYYY-MM-DDTHH:MM:SS"
         } catch (e: Exception) {
-            Log.e("DateTimeUtils", "Error formatting date/time to ISO offset string", e)
-            null // Возвращаем null при ошибке
+            Log.e("DateTimeUtils", "Error formatting LocalDateTime to naive ISO string", e)
+            null
         }
     }
 }

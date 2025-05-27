@@ -750,13 +750,22 @@ class CalendarDataManager @Inject constructor(
                     val endTimeStr = eventObject.optString("endTime")
                     val id = eventObject.optString("id")
                     val summary = eventObject.optString("summary", "Без названия")
-                    val description = eventObject.optString("description")
-                    val location = eventObject.optString("location")
-                    val recurringEventIdObj: Any? = eventObject.opt("recurringEventId") // Получаем как Any?
-                    val recurringEventId = if (recurringEventIdObj is String && recurringEventIdObj != "null") { // "null" как строка
-                        recurringEventIdObj.trim().takeIf { it.isNotEmpty() }
+                    val description: String? = if (eventObject.has("description") && !eventObject.isNull("description")) {
+                        eventObject.getString("description")
                     } else {
-                        null
+                        null // Явно присваиваем Kotlin null
+                    } // Объявляем как nullable String
+                    val location: String? = if (eventObject.has("location") && !eventObject.isNull("location")) {
+                        eventObject.getString("location")
+                    } else {
+                        null // Явно присваиваем Kotlin null
+                    } // Объявляем как nullable String
+                    val recurringEventId: String?
+                    if (eventObject.has("recurringEventId") && !eventObject.isNull("recurringEventId")) {
+                        val str = eventObject.getString("recurringEventId")
+                        recurringEventId = if (str != "null") str.trim().takeIf { it.isNotEmpty() } else null
+                    } else {
+                        recurringEventId = null
                     }
                     val originalStartTimeObj: Any? = eventObject.opt("originalStartTime")
                     val originalStartTime = if (originalStartTimeObj is String && originalStartTimeObj != "null") {
@@ -766,19 +775,21 @@ class CalendarDataManager @Inject constructor(
                     }
 
                     var finalRRuleForCalendarEvent: String? = null
-                    val rawRecurrenceRuleWithPrefix = eventObject.optString("recurrenceRule", null) // Читаем поле "recurrenceRule"
+                    if (eventObject.has("recurrenceRule") && !eventObject.isNull("recurrenceRule")) {
+                        val rawRecurrenceRuleFromApi = eventObject.getString("recurrenceRule")
 
-                    if (!rawRecurrenceRuleWithPrefix.isNullOrBlank()) {
-                        if (rawRecurrenceRuleWithPrefix.startsWith("RRULE:")) {
-                            finalRRuleForCalendarEvent = rawRecurrenceRuleWithPrefix.removePrefix("RRULE:")
-                        } else {
-                            // Если префикса нет, это может быть ошибкой или старым форматом.
-                            // Для совместимости можно оставить, но лучше, чтобы бэкенд всегда присылал с префиксом,
-                            // а клиент его убирал. Судя по вашим логам, бэкенд присылает с "RRULE:".
-                            finalRRuleForCalendarEvent = rawRecurrenceRuleWithPrefix
-                            Log.w(TAG, "Received recurrenceRule from backend without 'RRULE:' prefix: $rawRecurrenceRuleWithPrefix for event $id")
+                        // Проверяем, что полученная строка не является буквально "null" и не пустая
+                        if (rawRecurrenceRuleFromApi != "null" && rawRecurrenceRuleFromApi.isNotBlank()) {
+                            if (rawRecurrenceRuleFromApi.startsWith("RRULE:")) {
+                                finalRRuleForCalendarEvent = rawRecurrenceRuleFromApi.removePrefix("RRULE:")
+                            } else {
+                                // Если префикса нет, но строка не "null" и не пустая, берем как есть
+                                finalRRuleForCalendarEvent = rawRecurrenceRuleFromApi
+                                Log.w(TAG, "Received recurrenceRule from backend without 'RRULE:' prefix: $rawRecurrenceRuleFromApi for event $id")
+                            }
                         }
                     }
+
 
                     if (id.isNullOrEmpty() || startTimeStr.isNullOrEmpty()) {
                         Log.w(TAG, "Skipping event due to missing id or startTime in JSON object: ${eventObject.optString("summary")}")

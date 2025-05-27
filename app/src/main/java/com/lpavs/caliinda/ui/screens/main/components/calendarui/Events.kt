@@ -368,11 +368,9 @@ fun DayEventsPage(
                                 viewModel.requestDeleteConfirmation(event)
                                 // expandedAllDayEventId = null // Схлопываем после запроса на удаление
                             },
-                            onEditClick = {
-                                // TODO: Реализуй логику редактирования
-                                Log.d("DayEventsPage", "Edit requested for AllDay event: ${event.id}")
-                                // viewModel.navigateToEditScreen(event.id) // Пример
-                                expandedAllDayEventId = null // Схлопываем после клика на редактирование
+                            onEditClick = { // Переименовал колбэк
+                                viewModel.requestEditEvent(event) // Вызываем оригинальный onEditRequest
+//                        expandedEventId = null // Схлопываем после действия
                             },
                             // modifier = Modifier.padding(vertical = 2.dp) // Небольшой отступ между AllDayEventItem, если нужно
                         )

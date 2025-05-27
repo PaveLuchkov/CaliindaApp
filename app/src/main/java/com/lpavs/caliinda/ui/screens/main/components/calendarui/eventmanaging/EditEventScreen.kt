@@ -128,8 +128,6 @@ fun EditEventScreen(
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
 
-
-    // Функция formatEventTimesForSaving (остается такой же, как в CreateEventScreen)
     fun formatEventTimesForSaving(
         state: EventDateTimeState,
         timeZoneId: String? // Теперь может быть null
@@ -154,29 +152,24 @@ fun EditEventScreen(
             )
             Pair(startDateStr, endDateStr)
         } else {
-            // Для событий со временем используем ISO с оффсетом
             if (timeZoneId == null) {
                 Log.e("CreateEvent", "Cannot format timed event without TimeZone ID!")
                 return Pair(null, null) // Не можем форматировать без таймзоны
             }
             // validateInput уже проверил, что startTime и endTime не null
-            val startTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(
+            val startTimeNaiveIso = DateTimeUtils.formatLocalDateTimeToNaiveIsoString(
                 state.startDate,
-                state.startTime!!,
-                false,
-                timeZoneId
+                state.startTime
             )
-            val endTimeIso = DateTimeUtils.formatDateTimeToIsoWithOffset(
+            val endTimeNaiveIso = DateTimeUtils.formatLocalDateTimeToNaiveIsoString(
                 state.endDate,
-                state.endTime!!,
-                false,
-                timeZoneId
+                state.endTime
             )
             Log.d(
                 "CreateEvent",
-                "Formatting Timed: Start DateTime=$startTimeIso, End DateTime=$endTimeIso"
+                "Formatting Timed: Start DateTime=$startTimeNaiveIso, End DateTime=$endTimeNaiveIso"
             )
-            Pair(startTimeIso, endTimeIso)
+            Pair(startTimeNaiveIso, endTimeNaiveIso)
         }
     }
 
@@ -215,7 +208,6 @@ fun EditEventScreen(
         }
     }
 
-    // --- Функция СОХРАНЕНИЯ ИЗМЕНЕНИЙ ---
     val onSaveClick: () -> Unit = saveLambda@{
         generalError = null
         if (validateInput()) {
@@ -672,7 +664,6 @@ fun EditEventScreen(
     }
 } // End Scaffold
 
-// Можно разместить в том же файле или в утилитах
 fun parseCalendarEventToDateTimeState(
     event: CalendarEvent,
     userTimeZoneId: String, // Текущая таймзона пользователя для корректного отображения
