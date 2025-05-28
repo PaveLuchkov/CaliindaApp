@@ -215,11 +215,11 @@ fun EditEventScreen(
             if (startStr == null || endStr == null) { /* ... обработка ошибки ... */ return@saveLambda }
 
             // --- Формирование RRULE (код идентичен CreateEventScreen) ---
-            var baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
+            val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
             var finalRecurrenceRule: String? = null
 
             if (baseRule != null) {
-                var ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
+                val ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
 
                 // Добавляем BYDAY, если нужно
                 if (baseRule == RecurrenceOption.Weekly.rruleValue && eventDateTimeState.selectedWeekdays.isNotEmpty()) {
@@ -277,9 +277,6 @@ fun EditEventScreen(
                 finalRecurrenceRule = ruleParts.joinToString(";")
             }
             // -----------------------------------------------------------
-            val recurrenceForApi: List<String>? = finalRecurrenceRule?.let { rule ->
-                listOf("RRULE:$rule") // Оборачиваем в список и добавляем RRULE:
-            }
 
             // --- Формируем объект UpdateEventApiRequest только с измененными полями ---
             val updateRequest = buildUpdateEventApiRequest(
@@ -290,21 +287,19 @@ fun EditEventScreen(
                 currentDateTimeState = eventDateTimeState,
                 formattedStartStr = startStr,
                 formattedEndStr = endStr,
-                currentRecurrenceForApi = recurrenceForApi,
-                userTimeZoneIdForTimed = userTimeZoneId // Передаем таймзону для timed событий
+                finalRRuleStringFromUi = finalRecurrenceRule,
+                userTimeZoneIdForTimed = userTimeZoneId,
+                selectedUpdateMode = selectedUpdateMode
             )
 
-            val noFieldChanges = updateRequest == null
-            val recurrenceChanged = finalRecurrenceRule != eventToEdit.recurrenceRule
-
-            if (noFieldChanges && !recurrenceChanged) {
+            if (updateRequest == null) {
                 Toast.makeText(context, "Нет изменений для сохранения", Toast.LENGTH_SHORT).show()
                 onDismiss()
                 return@saveLambda
             }
 
             viewModel.confirmEventUpdate(
-                updatedEventData = updateRequest ?: UpdateEventApiRequest(),
+                updatedEventData = updateRequest,
                 modeFromUi = selectedUpdateMode
             )
         } else {
@@ -766,7 +761,7 @@ fun parseCalendarEventToDateTimeState(
             }
         }
         // Если FREQ не найден, но есть другие части, ставим какой-то дефолт или оставляем null
-        if (recurrenceOption == null && isRecurring) {
+        if (recurrenceOption == null) {
             // Это может быть кастомное правило, которое твои RecurrenceOption не покрывают.
             // Либо ошибка парсинга. Для простоты, можно не устанавливать recurrenceOption.
             Log.w("ParseToState", "Could not map FREQ from RRULE: $rruleString to known RecurrenceOption")
@@ -803,7 +798,6 @@ fun parseCalendarEventToDateTimeState(
     )
 }
 
-// В том же файле или утилитах
 fun buildUpdateEventApiRequest(
     originalEvent: CalendarEvent,
     currentSummary: String,
@@ -812,8 +806,9 @@ fun buildUpdateEventApiRequest(
     currentDateTimeState: EventDateTimeState,
     formattedStartStr: String,
     formattedEndStr: String,
-    currentRecurrenceForApi: List<String>?,
-    userTimeZoneIdForTimed: String
+    finalRRuleStringFromUi: String?,
+    userTimeZoneIdForTimed: String,
+    selectedUpdateMode: ClientEventUpdateMode
 ): UpdateEventApiRequest? {
     var hasChanges = false
 
@@ -824,7 +819,7 @@ fun buildUpdateEventApiRequest(
     var startTimeUpdate: String? = null
     var endTimeUpdate: String? = null
     var isAllDayUpdate: Boolean? = null
-    var timeZoneIdUpdate: String? = null
+    var timeZoneIdUpdate: String? = null // Инициализируем как null
 
     if (currentDateTimeState.isAllDay != originalEvent.isAllDay) {
         isAllDayUpdate = currentDateTimeState.isAllDay
@@ -840,22 +835,52 @@ fun buildUpdateEventApiRequest(
         hasChanges = true
     }
 
-    if (!currentDateTimeState.isAllDay && userTimeZoneIdForTimed.isNotBlank()) {
-        if (isAllDayUpdate != null || startTimeUpdate != null || endTimeUpdate != null) {
-            timeZoneIdUpdate = userTimeZoneIdForTimed
+    // Логика для timeZoneId: отправляем, если итоговое событие timed и есть изменения во времени/типе, или если isAllDay изменилось на false
+    if (!currentDateTimeState.isAllDay) { // Если ИТОГОВОЕ состояние - timed
+        if (userTimeZoneIdForTimed.isNotBlank()) {
+            // Отправляем таймзону, если:
+            // 1. Тип isAllDay изменился на timed (isAllDayUpdate стал false)
+            // 2. Или если само время (start/end) изменилось для timed события (и isAllDayUpdate null, т.е. не менялся с timed)
+            if (isAllDayUpdate == false || (isAllDayUpdate == null && (startTimeUpdate != null || endTimeUpdate != null))) {
+                timeZoneIdUpdate = userTimeZoneIdForTimed
+                // hasChanges уже будет true, если startTimeUpdate/endTimeUpdate/isAllDayUpdate не null
+                // Если timeZoneId - единственное изменение (маловероятно без изменения времени),
+                // то hasChanges нужно было бы выставить. Но обычно это идет вместе с другими изменениями.
+                // Для простоты, если только таймзона меняется, а даты/флаги нет, это изменение может быть не учтено как hasChanges,
+                // но timeZoneIdUpdate будет установлен.
+            }
         }
     }
+    var recurrenceForApiRequest: List<String>? = null // Это значение пойдет в UpdateEventApiRequest
+    val originalRRuleString = originalEvent.recurrenceRule?.takeIf { it.isNotBlank() }
+    val currentRRuleString = finalRRuleStringFromUi?.takeIf { it.isNotBlank() }
 
-    var recurrenceUpdate: List<String>? = null
-    val originalRecurrenceAsApiList: List<String>? = originalEvent.recurrenceRule
-        ?.takeIf { it.isNotBlank() }
-        ?.let { listOf("RRULE:$it") }
+    if (currentRRuleString != originalRRuleString) {
+        hasChanges = true // Отмечаем, что есть изменения
 
-    if (currentRecurrenceForApi != originalRecurrenceAsApiList) {
-        recurrenceUpdate = currentRecurrenceForApi
+        if (currentRRuleString != null) {
+            recurrenceForApiRequest = listOf("RRULE:$currentRRuleString")
+        } else {
+            recurrenceForApiRequest = emptyList()
+        }
+    }
+    if (selectedUpdateMode == ClientEventUpdateMode.SINGLE_INSTANCE && recurrenceForApiRequest != null) {
+        Log.w("BuildUpdateRequest", "Recurrence data was calculated but will be ignored for SINGLE_INSTANCE update mode.")
+        recurrenceForApiRequest = null
     }
 
-    if (!hasChanges && recurrenceUpdate == null) return null
+    val noPrimaryFieldChanges = summaryUpdate == null &&
+            descriptionUpdate == null &&
+            locationUpdate == null &&
+            startTimeUpdate == null &&
+            endTimeUpdate == null &&
+            isAllDayUpdate == null &&
+            timeZoneIdUpdate == null // Учитываем и timeZoneIdUpdate
+
+    if (noPrimaryFieldChanges && recurrenceForApiRequest == null) {
+        Log.d("BuildUpdateRequest", "No actual changes to save after considering all fields and update mode.")
+        return null
+    }
 
     return UpdateEventApiRequest(
         summary = summaryUpdate,
@@ -865,6 +890,6 @@ fun buildUpdateEventApiRequest(
         endTime = endTimeUpdate,
         isAllDay = isAllDayUpdate,
         timeZoneId = timeZoneIdUpdate,
-        recurrence = recurrenceUpdate
+        recurrence = recurrenceForApiRequest
     )
 }

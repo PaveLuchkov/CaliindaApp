@@ -176,7 +176,6 @@ class CalendarDataManager @Inject constructor(
                     // Маппим только отфильтрованные entity
                     EventMapper.mapToDomain(filteredEntity, zoneId.toString()) // Используем актуальный zoneId
                 } // Конец mapNotNull
-            // --- Конец логики из ViewModel ---
         } // Конец combine
             .catch { e ->
                 Log.e(TAG, "Error processing events Flow for date $date", e)
@@ -380,7 +379,6 @@ class CalendarDataManager @Inject constructor(
     ) {
         if (_updateEventResult.value is UpdateEventResult.Loading) {
             Log.w(TAG, "updateEvent called while another update is in progress for ID: $eventId. Ignoring.")
-            // Можно вернуть предыдущий результат или специфическую ошибку, если это suspend функция, возвращающая результат
             return
         }
         _updateEventResult.value = UpdateEventResult.Loading
@@ -393,10 +391,9 @@ class CalendarDataManager @Inject constructor(
             return
         }
 
-        val url = "$backendBaseUrl/calendar/events/$eventId?update_mode=${mode.value}" // Добавляем mode как query параметр
-
+        val url = "$backendBaseUrl/calendar/events/$eventId?update_mode=${mode.value}"
         val requestBodyJson = try {
-            Gson().toJson(updateData) // Или kotlinx.serialization: Json.encodeToString(updateData)
+            Gson().toJson(updateData)
         } catch (e: Exception) {
             Log.e(TAG, "Error serializing updateData to JSON for event $eventId", e)
             _updateEventResult.value = UpdateEventResult.Error("Ошибка подготовки данных для обновления.")
@@ -418,15 +415,11 @@ class CalendarDataManager @Inject constructor(
                 val responseBody = response.body?.string()
                 if (responseBody != null) {
                     try {
-                        // Парсим ответ бэкенда (предполагаем, что он соответствует UpdateEventResponse на бэке)
-                        val responseObject = JSONObject(responseBody) // Или Gson().fromJson(...)
-                        val newEventId = responseObject.optString("eventId", eventId) // Берем новый ID или старый
+                        val responseObject = JSONObject(responseBody)
+                        val newEventId = responseObject.optString("eventId", eventId)
                         Log.i(TAG, "Event $eventId successfully updated on backend (Mode: ${mode.value}). New/Confirmed ID: $newEventId")
 
-                        // После успешного обновления на бэкенде, нужно обновить данные локально.
-                        // Самый надежный способ - полностью перезапросить диапазон, т.к. свойства могли измениться.
-                        // Особенно если изменилось время, событие могло "переехать" на другой день.
-                        refreshDate(currentVisibleDate.value) // Принудительно обновляем текущий видимый диапазон
+                        refreshDate(currentVisibleDate.value)
 
                         _updateEventResult.value = UpdateEventResult.Success(newEventId)
                     } catch (e: JSONException) {
@@ -471,13 +464,9 @@ class CalendarDataManager @Inject constructor(
         Log.d(TAG, "refreshDate: Previous activeFetchJob cancelled (if existed).")
         // --------------------------
 
-        // Launching within the existing suspend fun's context might be okay,
-        // or launch a new job and store it. Let's launch and store for consistency.
         val refreshJob = managerScope.launch { // Launch separately
             Log.d(TAG, "refreshDate: New coroutine launched for fetchAndStoreDateRange($date). Job: ${coroutineContext[Job]}")
             try {
-                // Note: Using replace=true for manual refresh might be more robust
-                // to clear out any potentially inconsistent state for that specific day.
                 fetchAndStoreDateRange(date, date, true) // Consider replace=true
             } catch (ce: CancellationException) {
                 Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} cancelled during refresh for $date: ${ce.message}")
@@ -550,11 +539,8 @@ class CalendarDataManager @Inject constructor(
         endDate: LocalDate,
         replaceLoadedRange: Boolean
     ) {
-        // Эта функция вызывается из корутины, обычно работающей на ioDispatcher (через ensureDateRangeLoadedAround)
 
         // --- 1. ПОЛУЧЕНИЕ ТОКЕНА (ОТМЕНЯЕМАЯ ЧАСТЬ) ---
-        // Эта часть должна быть вне NonCancellable. Если корутина будет отменена здесь,
-        // мы не будем начинать дорогостоящий сетевой запрос.
         var freshToken: String? = null
         var attempts = 0
         val maxAttempts = 3
@@ -572,8 +558,6 @@ class CalendarDataManager @Inject constructor(
                 }
             } catch (e: CancellationException) {
                 Log.i(TAG, "FADR: Token acquisition explicitly CANCELLED for $startDate to $endDate. Job: ${coroutineContext[Job]}")
-                // Если отменили здесь, _rangeNetworkState еще не был установлен в Loading для этого вызова.
-                // Просто перебрасываем исключение, чтобы родительская корутина (activeFetchJob) корректно завершилась как отмененная.
                 throw e
             }
         }
@@ -588,9 +572,6 @@ class CalendarDataManager @Inject constructor(
         Log.d(TAG, "FADR: Token acquired for $startDate to $endDate.")
 
         // --- 2. УСТАНОВКА СОСТОЯНИЯ ЗАГРУЗКИ И НАЧАЛО НЕОТМЕНЯЕМОЙ ОПЕРАЦИИ ---
-        // Устанавливаем состояние Loading *ПЕРЕД* входом в NonCancellable блок.
-        // Если корутина будет отменена между этой строкой и началом NonCancellable блока,
-        // то блок `finally` должен будет обработать это и сбросить состояние Loading.
         _rangeNetworkState.value = EventNetworkState.Loading
         Log.i(TAG, "FADR: Set state to Loading for $startDate to $endDate. About to enter NonCancellable. Job: ${coroutineContext[Job]}")
 

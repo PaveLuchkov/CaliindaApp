@@ -57,35 +57,26 @@ class MainViewModel @Inject constructor(
     // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
     val currentTime: StateFlow<Instant> = timeTicker.currentTime
 
-    // Состояния Аутентификации
-    val authState: StateFlow<AuthState> = authManager.authState
-
     // Состояния Календаря
     val currentVisibleDate: StateFlow<LocalDate> = calendarDataManager.currentVisibleDate
-    val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = calendarDataManager.loadedDateRange
     val rangeNetworkState: StateFlow<EventNetworkState> = calendarDataManager.rangeNetworkState
     val createEventResult: StateFlow<CreateEventResult> = calendarDataManager.createEventResult
-    val deleteEventResult: StateFlow<DeleteEventResult> = calendarDataManager.deleteEventResult
     val updateEventResult: StateFlow<UpdateEventResult> = calendarDataManager.updateEventResult
 
     // Состояния AI
     val aiState: StateFlow<AiVisualizerState> = aiInteractionManager.aiState
     val aiMessage: StateFlow<String?> = aiInteractionManager.aiMessage // Сообщение от AI (Asking/Result)
-    val isAiRotating: StateFlow<Boolean> = aiInteractionManager.aiState.map {
-        it == AiVisualizerState.LISTENING || it == AiVisualizerState.THINKING
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // Состояния Настроек
     val timeZone: StateFlow<String> = settingsRepository.timeZoneFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
 
     val botTemperState: StateFlow<String> = settingsRepository.botTemperFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "") // Пустая строка или осмысленный дефолт
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     init {
-        // --- НАБЛЮДЕНИЕ ЗА СОСТОЯНИЯМИ МЕНЕДЖЕРОВ ДЛЯ ОБНОВЛЕНИЯ ГЛАВНОГО UI СОСТОЯНИЯ ---
         observeAuthState()
-        observeAiState() // Наблюдаем и за AI для обновления isLoading и message
+        observeAiState()
         observeCalendarNetworkState()
         observeCreateEventResult()
         observeDeleteEventResult()
@@ -461,19 +452,39 @@ class MainViewModel @Inject constructor(
      * Вызывается из UI, когда пользователь инициирует редактирование события.
      */
     fun requestEditEvent(event: CalendarEvent) {
-        val isRecurring = event.recurringEventId != null || event.originalStartTime != null
+        // Проверку isRecurring можно улучшить, если event.recurrenceRule тоже что-то значит
+        val isAlreadyRecurring = event.recurringEventId != null ||
+                event.originalStartTime != null ||
+                (event.recurrenceRule != null && event.recurrenceRule.isNotEmpty()) // Проверяем, что правило не пустое
+
         _uiState.update {
             it.copy(
-                eventBeingEdited = event, // Сохраняем оригинал для предзаполнения формы и для update API
-                showRecurringEditOptionsDialog = isRecurring, // Если повторяющееся, сначала показываем выбор режима
-                showEditEventDialog = !isRecurring, // Если одиночное, сразу показываем форму редактирования
-                selectedUpdateMode = if (!isRecurring) ClientEventUpdateMode.SINGLE_INSTANCE else it.selectedUpdateMode,
+                eventBeingEdited = event,
+                showRecurringEditOptionsDialog = isAlreadyRecurring,
+                showEditEventDialog = !isAlreadyRecurring,
+                // Если событие УЖЕ повторяющееся, то selectedUpdateMode будет выбран в диалоге.
+                // Если событие НЕ повторяющееся, то для него логично использовать режим,
+                // который позволит и просто обновить его, и превратить в повторяющееся.
+                // Режим "вся серия" (ALL_EVENTS) подходит для этого.
+                // Если оно останется одиночным, Google обновит одиночное. Если станет серией, Google создаст серию.
+                selectedUpdateMode = if (!isAlreadyRecurring) {
+                    ClientEventUpdateMode.ALL_IN_SERIES // <<< ИЗМЕНЕНИЕ ЗДЕСЬ (или ваш эквивалент для "всей серии")
+                } else {
+                    // Для уже повторяющихся событий, selectedUpdateMode будет определен позже,
+                    // когда пользователь выберет опцию в showRecurringEditOptionsDialog.
+                    // Можно оставить текущее значение или сбросить в дефолтное для повторяющихся.
+                    // Безопаснее оставить текущее или установить значение по умолчанию, которое ожидает диалог.
+                    // Если it.selectedUpdateMode уже содержит осмысленный выбор для повторяющегося события,
+                    // можно его оставить, иначе - установить дефолт, например, SINGLE_INSTANCE,
+                    // а диалог его переопределит.
+                    // Но раз showRecurringEditOptionsDialog=true, то onRecurringEditOptionSelected его все равно выставит.
+                    // Для чистоты, можно поставить какой-то начальный для диалога, если предыдущее значение нерелевантно.
+                    it.selectedUpdateMode // или ClientEventUpdateMode.SINGLE_INSTANCE как временный перед диалогом
+                },
                 editOperationError = null
-                // Сбрасываем состояние формы редактирования, если оно хранится в UiState
-                // editFormState = EditEventFormState(summary = event.summary, ...)
             )
         }
-        Log.d(TAG, "Requested edit for event ID: ${event.id}, isRecurring: $isRecurring")
+        Log.d(TAG, "Requested edit for event ID: ${event.id}, isAlreadyRecurring: $isAlreadyRecurring, initial selectedUpdateMode for form: ${_uiState.value.selectedUpdateMode}")
     }
 
     /**
