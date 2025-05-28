@@ -25,8 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonGroupScope
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -59,7 +65,13 @@ import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EventListItem(
     event: CalendarEvent,
@@ -122,6 +134,7 @@ fun EventListItem(
         isNextEvent -> transitionColorCard// Слегка выделяем следующее (пример)
         else -> colorScheme.primaryContainer // Обычный фон
     }
+    val numButtons = 3
 
     val cardTextColor = when {
         isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
@@ -215,12 +228,23 @@ fun EventListItem(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = timeFormatter(event),
-                                color = cardTextColor,
-                                style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                                maxLines = 1
-                            )
+                            Row {
+                                Text(
+                                    text = timeFormatter(event),
+                                    color = cardTextColor,
+                                    style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                event.location?.let {
+                                    Text(
+                                        text = it,
+                                        color = cardTextColor,
+                                        style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                                        maxLines = 1
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -243,31 +267,55 @@ fun EventListItem(
                     horizontalArrangement = Arrangement.End, // Кнопки справа
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    FilledIconButton(
+                        onClick = {},
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(
+                                IconButtonDefaults.smallContainerSize(
+                                    IconButtonDefaults.IconButtonWidthOption.Narrow
+                                )
+                            ),
+                        shape = IconButtonDefaults.smallRoundShape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = "info",
+                        )
+                    }
+//                    Spacer(modifier = Modifier.width(4.dp))
                     Button(
                         onClick = {
                             onEditClickFromList()
                         },
                         contentPadding = PaddingValues(horizontal = 12.dp)
                     ) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Редактировать", modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("Edit") // Или локализованная строка
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onDeleteClickFromList()
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp)
+//                    Spacer(modifier = Modifier.width(4.dp))
+                    FilledIconButton(
+                        onClick = {onDeleteClickFromList()},
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(
+                                IconButtonDefaults.smallContainerSize(
+                                    IconButtonDefaults.IconButtonWidthOption.Narrow
+                                )
+                            ),
+                        shape = IconButtonDefaults.smallRoundShape
                     ) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Delete",
+                        )
                     }
                 }
             } // Конец AnimatedVisibility
         }
     } // Конец Column (контент + кнопки)
 } // Конец корневого Box
-
 
 @Composable
 fun AllDayEventItem(
