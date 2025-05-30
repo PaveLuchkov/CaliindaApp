@@ -54,6 +54,8 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
+    private var initialAuthCheckCompletedAndProcessed = false
+
     // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
     val currentTime: StateFlow<Instant> = timeTicker.currentTime
 

@@ -7,7 +7,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -340,7 +342,7 @@ fun EditEventScreen(
             val isNotCompactState =
                 targetSheetValue == SheetValue.Expanded
 
-            // Define icon sizes for different states
+        // Define icon sizes for different states
 
             val size = if (!isNotCompactState) defaultSize else expandedSize
 

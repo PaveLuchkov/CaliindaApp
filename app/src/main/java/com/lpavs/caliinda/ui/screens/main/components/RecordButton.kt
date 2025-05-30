@@ -101,7 +101,7 @@ fun RecordButton(
         "RecordButton",
         "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${uiState.isListening}"
     )
-        LargeFloatingActionButton(
+    FloatingActionButton(
             onClick = {
                 // Если нужно простое нажатие для запроса разрешения, если его нет
                 if (!uiState.isPermissionGranted && isInteractionEnabled) {
@@ -109,7 +109,6 @@ fun RecordButton(
                 }
                 Log.d("RecordButton", "FAB onClick triggered (handled permission request if needed)")
             },
-            shape = MaterialShapes.Cookie4Sided.toShape(),
             containerColor = animatedBackgroundColor,
             contentColor = animatedContentColor,
             modifier = modifier
@@ -185,7 +184,8 @@ fun RecordButton(
                         )
                     } else {
                         // Стандартная форма FAB обычно CircleShape, но оставим RoundedCornerShape, как было
-                        MaterialShapes.Cookie4Sided.toShape() // Используем стандартную форму FAB
+                        FloatingActionButtonDefaults.shape
+//                        MaterialShapes.Cookie4Sided.toShape() // Используем стандартную форму FAB
                     }
                 )
                 .graphicsLayer { // Масштабируем и вращаем весь Box

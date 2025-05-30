@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,6 +56,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.util.DateTimeFormatterUtil
@@ -75,7 +77,14 @@ fun CustomEventDetailsDialog(
     val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId) {
         { event -> DateTimeFormatterUtil.formatEventDetailsTime(context, event, currentTimeZoneId) }
     }
-
+    val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
+    val isCurrent = remember(currentTime, event.startTime, event.endTime) {
+        val start = parseToInstant(event.startTime, currentTimeZoneId)
+        val end = parseToInstant(event.endTime, currentTimeZoneId)
+        start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(
+            end
+        )
+    }
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
@@ -89,9 +98,10 @@ fun CustomEventDetailsDialog(
                 .fillMaxWidth(0.9f)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(25.dp),
-            color = colorScheme.primaryContainer,
+            color = if (!isCurrent) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
             tonalElevation = 8.dp
         ) {
+            val onCardText = if (!isCurrent) colorScheme.onPrimaryContainer else colorScheme.onTertiaryContainer
             Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -102,8 +112,8 @@ fun CustomEventDetailsDialog(
                         .rotate(75f)
                         .offset(y = (-50).dp, x = 50.dp)
                         .clip(MaterialShapes.Cookie7Sided.toShape())
-                        .border(width = 2.dp, color = colorScheme.onPrimaryContainer.copy(alpha = 0.2f), shape = MaterialShapes.Cookie7Sided.toShape())
-                        .background(colorScheme.onPrimaryContainer.copy(alpha = 0f))
+                        .border(width = 2.dp, color = onCardText.copy(alpha = 0.2f), shape = MaterialShapes.Cookie7Sided.toShape())
+                        .background(onCardText.copy(alpha = 0f))
 
                 ) {
                 }
@@ -115,13 +125,13 @@ fun CustomEventDetailsDialog(
                     Text(
                         text = event.summary,
                         style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = colorScheme.onPrimaryContainer
+                        color = onCardText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Row {
                         Text(
                             text = timeFormatterLambda(event),
-                            color = colorScheme.onPrimaryContainer,
+                            color = onCardText,
                             style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
                             maxLines = 2
                         )
@@ -132,20 +142,20 @@ fun CustomEventDetailsDialog(
                         Text(
                             text = event.description,
                             style = typography.bodyMedium,
-                            color = colorScheme.onPrimaryContainer
+                            color = onCardText
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     if (!event.location.isNullOrBlank()) {
-                        DetailRow(Icons.Filled.LocationOn, event.location)
+                        DetailRow(Icons.Filled.LocationOn, event.location, color = onCardText)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     if (!event.recurrenceRule.isNullOrEmpty()) {
                         DetailRow(
                             Icons.Filled.Repeat,
-                            formatRRule(event.recurrenceRule, zoneIdString = currentTimeZoneId)
+                            formatRRule(event.recurrenceRule, zoneIdString = currentTimeZoneId), color = onCardText
                         )
                     }
                     Spacer(modifier = Modifier.height(20.dp))
@@ -190,7 +200,7 @@ fun CustomEventDetailsDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DetailRow(icon: ImageVector, value: String) {
+private fun DetailRow(icon: ImageVector, value: String, color: Color) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(
             imageVector = icon,
@@ -200,7 +210,7 @@ private fun DetailRow(icon: ImageVector, value: String) {
         Text(
             text = value,
             style = typography.bodyLarge,
-            color = colorScheme.onPrimaryContainer
+            color = color
         )
         Spacer(modifier = Modifier.height(8.dp))
     }

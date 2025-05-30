@@ -107,7 +107,7 @@ fun BottomBar(
         if (!it) {
             HorizontalFloatingToolbar(
                 expanded = expanded,
-                colors = vibrantColors,
+//                colors = vibrantColors,
                 floatingActionButton = {
                     FloatingActionButton(
                         onClick = onSendClick,
@@ -148,7 +148,7 @@ fun BottomBar(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Transparent,
                             unfocusedBorderColor = Color.Transparent,
-                            focusedTextColor = colorScheme.onSecondaryContainer,
+//                            focusedTextColor = colorScheme.onSecondaryContainer,
                         ),
                         singleLine = true,
                     )
@@ -157,7 +157,7 @@ fun BottomBar(
         } else {
             HorizontalFloatingToolbar(
                 expanded = expanded,
-                colors = vibrantColors,
+//                colors = vibrantColors,
                 floatingActionButton = {
                     RecordButton(
                         uiState = uiState, // Передаем стейт
@@ -166,7 +166,6 @@ fun BottomBar(
                         onUpdatePermissionResult = onUpdatePermissionResult,
                     )
                 },
-                expandedShadowElevation = 0.dp,
                 content = {
                     IconButton(
                         onClick = onCreateEventClick,
