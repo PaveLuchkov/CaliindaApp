@@ -1,9 +1,11 @@
 package com.lpavs.caliinda.ui.screens.main
 
 import android.Manifest
+import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -36,13 +38,26 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.Status
+import com.google.android.gms.tasks.Tasks
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CreateEventScreen
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CustomEventDetailsDialog
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.EditEventScreen
@@ -129,6 +144,27 @@ fun MainScreen(
             context, Manifest.permission.RECORD_AUDIO
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         viewModel.updatePermissionStatus(hasPermission)
+    }
+
+    val signInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { intent ->
+                val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
+                viewModel.handleSignInResult(task)
+            } ?: run {
+                // Обработка случая, когда intent равен null, если это возможно
+                Log.e("SignInLauncher", "Sign-in result data is null")
+                viewModel.handleSignInResult(Tasks.forException(ApiException(Status(
+                    CommonStatusCodes.ERROR, "Sign-in data is null"))))
+            }
+        } else {
+            // Пользователь отменил вход или произошла ошибка на стороне Google Sign-In UI
+            Log.w("SignInLauncher", "Sign-in failed or cancelled by user. Result code: ${result.resultCode}")
+            // Можно сообщить ViewModel, что попытка входа не удалась из-за отмены пользователем
+            // mainViewModel.handleSignInCancelledByUser() // Если нужен такой метод
+        }
     }
 
     if (uiState.showRecurringEditOptionsDialog && uiState.eventBeingEdited != null) {
@@ -248,7 +284,9 @@ fun MainScreen(
                 onUpdatePermissionResult = { granted -> viewModel.updatePermissionStatus(granted) }, // Передаем лямбду для обновления разрешений
                 isTextInputVisible = isTextInputVisible,
                 viewModel,
-                modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = -ScreenOffset),
                 onCreateEventClick = {
                     selectedDateForSheet = currentVisibleDate // Use current visible date from Pager
                     showCreateEventSheet = true
@@ -385,7 +423,50 @@ fun MainScreen(
             viewModel = viewModel
         )
     }
-    LaunchedEffect(sheetState.isVisible) {
+    if (uiState.showSignInRequiredDialog) {
+
+        Dialog( //TODO сделать покрасивше
+            onDismissRequest = { viewModel.onSignInRequiredDialogDismissed() },
+            properties = DialogProperties(
+                dismissOnClickOutside = true, // Закрывать по клику вне диалога
+                dismissOnBackPress = true,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Surface(
+                color = colorScheme.tertiaryContainer,
+                shape = MaterialShapes.Cookie7Sided.toShape(),
+                shadowElevation = 8.dp,
+                modifier = Modifier.size(400.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                val expandedSize = ButtonDefaults.LargeContainerHeight
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.onSignInRequiredDialogConfirmed()
+                            signInLauncher.launch(viewModel.getSignInIntent())
+                        },
+                        colors = ButtonColors(contentColor = colorScheme.onTertiary, containerColor = colorScheme.tertiary, disabledContentColor = colorScheme.inverseSurface, disabledContainerColor = colorScheme.inverseSurface),
+                        modifier = Modifier.heightIn(expandedSize),
+                        contentPadding = ButtonDefaults.contentPaddingFor(expandedSize)
+                    ) {
+                            Text(
+                                text = "Google Log In",
+                                style = ButtonDefaults.textStyleFor(expandedSize)
+                            )
+                    }
+                }
+            }
+        }
+    }
+                    LaunchedEffect(sheetState.isVisible) {
         if (!sheetState.isVisible && showCreateEventSheet) {
             showCreateEventSheet = false
         }

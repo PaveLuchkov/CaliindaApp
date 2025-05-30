@@ -76,6 +76,7 @@ class AuthManager @Inject constructor(
                 val idToken = account?.idToken
                 val serverAuthCode = account?.serverAuthCode
                 val userEmail = account?.email
+                val displayName = account?.displayName
 
                 Log.i(TAG, "Sign-In Success! Email: $userEmail")
                 Log.d(TAG, "ID Token received: ${idToken != null}")
@@ -85,9 +86,11 @@ class AuthManager @Inject constructor(
                     currentIdToken = idToken // Сохраняем токен
                     _authState.update {
                         it.copy(
-                            isLoading = true, // Начинаем обмен с бэкендом
-                            authError = null,
-                            userEmail = userEmail // Можно показать email сразу
+                            isSignedIn = true,
+                            userEmail = userEmail,
+                            displayName = displayName,
+                            isLoading = false,
+                            authError = null
                         )
                     }
 

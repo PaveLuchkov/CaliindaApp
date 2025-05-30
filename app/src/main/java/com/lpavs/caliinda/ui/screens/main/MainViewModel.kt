@@ -88,23 +88,63 @@ class MainViewModel @Inject constructor(
     // --- НАБЛЮДАТЕЛИ (вынесены из init для чистоты) ---
     private fun observeAuthState() {
         viewModelScope.launch {
-            authManager.authState.map { it.isSignedIn }.distinctUntilChanged().collect { isSignedIn ->
-                val auth = authManager.authState.value
-                val previousState = _uiState.value
+            // Собираем весь AuthState, чтобы иметь доступ ко всем его полям
+            authManager.authState.collect { auth ->
+                val previousUiState = _uiState.value
+                var shouldShowSignInDialog = previousUiState.showSignInRequiredDialog
+
+                if (!initialAuthCheckCompletedAndProcessed && !auth.isLoading) {
+                    // Это первая полная (не isLoading) информация о состоянии авторизации
+                    initialAuthCheckCompletedAndProcessed = true
+                    if (!auth.isSignedIn && auth.authError == null) {
+                        // Silent sign-in не удался (нет явной ошибки, просто не вошел)
+                        // Это соответствует вашему логу "SIGN_IN_REQUIRED"
+                        Log.d(TAG, "Initial Auth: Not signed in, no explicit error. Triggering sign-in dialog.")
+                        shouldShowSignInDialog = true
+                    }
+                }
+
+                // Если пользователь успешно вошел (возможно, после показа диалога), скрываем диалог
+                if (auth.isSignedIn && shouldShowSignInDialog) {
+                    shouldShowSignInDialog = false
+                }
+
+                // Если пользователь вышел (auth.isSignedIn стало false), а до этого был внутри
+                // и диалог "требуется вход" не показывался (т.е. это не silent-fail),
+                // то мы не должны снова показывать диалог "требуется вход".
+                // Это обрабатывается тем, что shouldShowSignInDialog не меняется на true в этом случае.
+
                 _uiState.update { currentUiState ->
                     currentUiState.copy(
                         isSignedIn = auth.isSignedIn,
                         userEmail = auth.userEmail,
-                        displayName = auth.displayName,
+                        displayName = auth.displayName, // Убедитесь, что AuthState это предоставляет
                         showAuthError = auth.authError,
-                        isLoading = calculateIsLoading(authLoading = auth.isLoading), // Обновляем только этот источник
-                        message = if (auth.isSignedIn != previousState.isSignedIn || auth.authError != null) null else currentUiState.message
+                        isLoading = calculateIsLoading(authLoading = auth.isLoading), // Передаем текущий auth.isLoading
+                        // Сбрасываем общее сообщение, если изменился статус входа, ошибка или видимость диалога
+                        message = if (auth.isSignedIn != previousUiState.isSignedIn ||
+                            auth.authError != null ||
+                            shouldShowSignInDialog != previousUiState.showSignInRequiredDialog) {
+                            null
+                        } else {
+                            currentUiState.message
+                        },
+                        showSignInRequiredDialog = shouldShowSignInDialog
                     )
                 }
-                if (isSignedIn) {
+
+                if (auth.isSignedIn) {
                     Log.d(TAG, "Auth observer: User is signed in. Triggering calendar check.")
-                    // Инициируем проверку календаря при подтверждении входа
                     calendarDataManager.setCurrentVisibleDate(calendarDataManager.currentVisibleDate.value, forceRefresh = true)
+                } else {
+                    // Пользователь не вошел. Если это не случай "требуется вход", то просто не вошел.
+                    // Данные календаря и так не загрузятся из-за проверки в CalendarDataManager.
+                    // Можно дополнительно очистить локальные данные календаря, если необходимо.
+                    // TODO calendarDataManager.clearLocalDataOnSignOut() // Пример
+                    if (!shouldShowSignInDialog && previousUiState.isSignedIn) {
+                        // Это был явный выход пользователя, а не silent fail
+                        Log.d(TAG, "Auth observer: User has signed out.")
+                    }
                 }
             }
         }
@@ -287,8 +327,29 @@ class MainViewModel @Inject constructor(
     // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
     fun getSignInIntent(): Intent = authManager.getSignInIntent()
     fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) = authManager.handleSignInResult(completedTask)
-    fun signOut() = authManager.signOut()
+    fun signOut() {
+        // Перед выходом, если диалог "требуется вход" был активен, его нужно скрыть
+        if (_uiState.value.showSignInRequiredDialog) {
+            _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        }
+        authManager.signOut()
+    }
     fun clearAuthError() = authManager.clearAuthError()
+
+    fun onSignInRequiredDialogConfirmed() {
+        // Пользователь нажал "Войти" в диалоге "требуется вход"
+        _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        // UI должен будет вызвать getSignInIntent() и запустить Activity for result.
+        // ViewModel здесь просто скрывает диалог.
+    }
+
+    fun onSignInRequiredDialogDismissed() {
+        // Пользователь нажал "Отмена" или закрыл диалог "требуется вход"
+        _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        // Можно здесь дополнительно обновить uiState.message, если хотите
+        // _uiState.update { it.copy(message = "Вход отменен. Функционал ограничен.") }
+        Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
+    }
 
     // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
     fun onVisibleDateChanged(newDate: LocalDate) = calendarDataManager.setCurrentVisibleDate(newDate)

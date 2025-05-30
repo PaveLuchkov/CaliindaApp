@@ -25,6 +25,7 @@ data class MainUiState(
     val editOperationError: String? = null,
     val eventForDetailedView: CalendarEvent? = null,
     val showEventDetailedView: Boolean = false,
+    val showSignInRequiredDialog: Boolean = false,
 )
 
 data class CalendarEvent(
