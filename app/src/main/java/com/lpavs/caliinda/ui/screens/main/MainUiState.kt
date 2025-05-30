@@ -18,11 +18,13 @@ data class MainUiState(
     val showDeleteConfirmationDialog: Boolean = false,
     val showRecurringDeleteOptionsDialog: Boolean = false,
     val deleteOperationError: String? = null,
-    val eventBeingEdited: CalendarEvent? = null, // Событие, которое сейчас редактируется (оригинальные данные)
-    val showRecurringEditOptionsDialog: Boolean = false, // Показать диалог выбора режима редактирования для повторяющихся
-    val showEditEventDialog: Boolean = false, // Показать основной диалог/экран редактирования
+    val eventBeingEdited: CalendarEvent? = null,
+    val showRecurringEditOptionsDialog: Boolean = false,
+    val showEditEventDialog: Boolean = false,
     val selectedUpdateMode: ClientEventUpdateMode? = null,
-    val editOperationError: String? = null, // Ошибка, специфичная для операции обновления
+    val editOperationError: String? = null,
+    val eventForDetailedView: CalendarEvent? = null,
+    val showEventDetailedView: Boolean = false,
 )
 
 data class CalendarEvent(

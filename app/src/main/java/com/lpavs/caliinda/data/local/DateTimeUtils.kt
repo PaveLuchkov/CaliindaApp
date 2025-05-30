@@ -29,7 +29,6 @@ object DateTimeUtils {
         } catch (_: DateTimeParseException) {
             try {
                 // Попытка 2: Как LocalDateTime (строка содержит дату и время, но без смещения/зоны)
-                // Применяем выбранный пользователем часовой пояс для получения Instant (UTC)
                 LocalDateTime.parse(dateTimeString).atZone(zoneId).toInstant()
             } catch (_: DateTimeParseException) {
                 try {

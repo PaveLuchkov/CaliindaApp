@@ -176,39 +176,30 @@ class MainViewModel @Inject constructor(
                     val updatedState = when (result) {
                         is DeleteEventResult.Success -> {
                             Log.i(TAG, "Event deletion successful (observed in VM).")
-                            // Можно добавить сообщение об успехе в message, если нужно
-                            // Сбрасываем ID и ошибку
                             currentState.copy(
-                                eventToDeleteId = null, // Убираем ID, т.к. операция завершена
+                                eventToDeleteId = null,
                                 deleteOperationError = null,
-                                // message = "Событие удалено" // Опционально
                             )
                         }
                         is DeleteEventResult.Error -> {
                             Log.e(TAG, "Event deletion failed (observed in VM): ${result.message}")
-                            // Показываем специфическую ошибку удаления
                             currentState.copy(
-                                eventToDeleteId = null, // Убираем ID, т.к. операция завершена
+                                eventToDeleteId = null,
                                 deleteOperationError = result.message,
-                                showDeleteConfirmationDialog = false // Скрываем диалог, если он был открыт и произошла ошибка
+                                showDeleteConfirmationDialog = false
                             )
                         }
                         is DeleteEventResult.Loading -> {
-                            // Состояние загрузки обрабатывается в calculateIsLoading
-                            // Сбрасываем ошибку на время загрузки
                             currentState.copy(deleteOperationError = null)
                         }
                         is DeleteEventResult.Idle -> {
-                            // Если состояние стало Idle, значит результат обработан
-                            // Сбрасываем ошибку, если она была
                             if (currentState.deleteOperationError != null) {
                                 currentState.copy(deleteOperationError = null)
                             } else {
-                                currentState // Не меняем, если не нужно
+                                currentState
                             }
                         }
                     }
-                    // Обновляем isLoading независимо от результата, так как он зависит от всех операций
                     updatedState.copy(isLoading = calculateIsLoading())
                 }
                 if (result is DeleteEventResult.Success || result is DeleteEventResult.Error) {
@@ -239,8 +230,6 @@ class MainViewModel @Inject constructor(
                         is UpdateEventResult.Error -> {
                             Log.e(TAG, "Event update failed (observed in VM): ${result.message}")
                             currentState.copy(
-                                // eventBeingEdited оставляем, чтобы пользователь мог исправить ошибку в форме
-                                // showEditEventDialog тоже оставляем открытым
                                 editOperationError = result.message
                             )
                         }
@@ -289,7 +278,7 @@ class MainViewModel @Inject constructor(
         val deletingEvent = deleteEventState is DeleteEventResult.Loading
         val updatingEvent = updateEventState is UpdateEventResult.Loading
         val aiThinking = aiState == AiVisualizerState.THINKING
-        // Комбинируем все источники загрузки
+
         return authLoading || calendarLoading || creatingEvent || aiThinking || deletingEvent || updatingEvent
     }
 
@@ -362,15 +351,13 @@ class MainViewModel @Inject constructor(
      */
     fun requestDeleteConfirmation(event: CalendarEvent) {
         _uiState.update {
-            // --- ПРОВЕРЬ ЭТУ ЛОГИКУ ВНИМАТЕЛЬНО ---
             val isActuallyRecurring = event.recurringEventId != null || event.originalStartTime != null
-            // ---------------------------------------
             Log.d(TAG, "requestDeleteConfirmation for event: ${event.id}, summary: '${event.summary}', isAllDay: ${event.isAllDay}, recurringId: ${event.recurringEventId}, originalStart: ${event.originalStartTime}, calculatedIsRecurring: $isActuallyRecurring")
 
             it.copy(
                 eventPendingDeletion = event,
                 showDeleteConfirmationDialog = !isActuallyRecurring, // Показываем простой диалог, если НЕ повторяющееся
-                showRecurringDeleteOptionsDialog = isActuallyRecurring, // Показываем диалог с опциями, если ПОВТОРЯЮЩЕЕСЯ
+                showRecurringDeleteOptionsDialog = isActuallyRecurring,
                 deleteOperationError = null
             )
         }
@@ -422,9 +409,7 @@ class MainViewModel @Inject constructor(
         val idForBackendCall: String
         if (mode == ApiDeleteEventMode.INSTANCE_ONLY) {
             idForBackendCall = eventToDelete.id // Должен быть ID экземпляра
-        } else { // ALL_IN_SERIES (через DEFAULT на бэке)
-            // Если у нас есть recurringEventId, это ID мастер-события.
-            // Если нет, то eventToDelete.id - это либо одиночное, либо уже ID мастер-события.
+        } else {
             idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
         }
 
@@ -442,9 +427,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun clearGeneralError() {
-        // Сбрасываем только generalError, не трогая authError
         _uiState.update { it.copy(showGeneralError = null) }
-        // Возможно, стоит сбросить и ошибку сети календаря?
         calendarDataManager.clearNetworkError() // Опционально
     }
 
@@ -452,34 +435,19 @@ class MainViewModel @Inject constructor(
      * Вызывается из UI, когда пользователь инициирует редактирование события.
      */
     fun requestEditEvent(event: CalendarEvent) {
-        // Проверку isRecurring можно улучшить, если event.recurrenceRule тоже что-то значит
         val isAlreadyRecurring = event.recurringEventId != null ||
                 event.originalStartTime != null ||
-                (event.recurrenceRule != null && event.recurrenceRule.isNotEmpty()) // Проверяем, что правило не пустое
+                !event.recurrenceRule.isNullOrEmpty()
 
         _uiState.update {
             it.copy(
                 eventBeingEdited = event,
                 showRecurringEditOptionsDialog = isAlreadyRecurring,
                 showEditEventDialog = !isAlreadyRecurring,
-                // Если событие УЖЕ повторяющееся, то selectedUpdateMode будет выбран в диалоге.
-                // Если событие НЕ повторяющееся, то для него логично использовать режим,
-                // который позволит и просто обновить его, и превратить в повторяющееся.
-                // Режим "вся серия" (ALL_EVENTS) подходит для этого.
-                // Если оно останется одиночным, Google обновит одиночное. Если станет серией, Google создаст серию.
                 selectedUpdateMode = if (!isAlreadyRecurring) {
-                    ClientEventUpdateMode.ALL_IN_SERIES // <<< ИЗМЕНЕНИЕ ЗДЕСЬ (или ваш эквивалент для "всей серии")
+                    ClientEventUpdateMode.ALL_IN_SERIES
                 } else {
-                    // Для уже повторяющихся событий, selectedUpdateMode будет определен позже,
-                    // когда пользователь выберет опцию в showRecurringEditOptionsDialog.
-                    // Можно оставить текущее значение или сбросить в дефолтное для повторяющихся.
-                    // Безопаснее оставить текущее или установить значение по умолчанию, которое ожидает диалог.
-                    // Если it.selectedUpdateMode уже содержит осмысленный выбор для повторяющегося события,
-                    // можно его оставить, иначе - установить дефолт, например, SINGLE_INSTANCE,
-                    // а диалог его переопределит.
-                    // Но раз showRecurringEditOptionsDialog=true, то onRecurringEditOptionSelected его все равно выставит.
-                    // Для чистоты, можно поставить какой-то начальный для диалога, если предыдущее значение нерелевантно.
-                    it.selectedUpdateMode // или ClientEventUpdateMode.SINGLE_INSTANCE как временный перед диалогом
+                    it.selectedUpdateMode
                 },
                 editOperationError = null
             )
@@ -498,8 +466,6 @@ class MainViewModel @Inject constructor(
             return
         }
 
-        // Независимо от 'choice', currentEvent (если это экземпляр с мастером)
-        // теперь должен иметь 'recurrenceRule', полученный от бэкенда.
         Log.d(TAG, "Recurring edit mode selected: $choice for event: ${currentEvent.id}. Current RRULE in event: ${currentEvent.recurrenceRule}")
 
         _uiState.update {
@@ -507,7 +473,6 @@ class MainViewModel @Inject constructor(
                 showRecurringEditOptionsDialog = false,
                 showEditEventDialog = true,
                 selectedUpdateMode = choice
-                // eventBeingEdited остается тем же, так как он уже "обогащен"
             )
         }
     }
@@ -531,18 +496,14 @@ class MainViewModel @Inject constructor(
     /**
      * Вызывается из UI (формы/диалога редактирования) для сохранения изменений.
      * @param updatedEventData Данные, введенные пользователем в форме.
-     * @param mode Режим обновления (особенно важен для повторяющихся, выбирается заранее).
+     * @param modeFromUi Режим обновления (особенно важен для повторяющихся, выбирается заранее).
      *             Если событие одиночное, mode обычно SINGLE_INSTANCE или можно передать специальное значение,
      *             которое бэкенд поймет как "не повторяющееся".
      *             Но так как update_mode на бэке обязательный, всегда передаем режим.
      */
     fun confirmEventUpdate(
-        updatedEventData: UpdateEventApiRequest, // Модель с опциональными полями для API
-        // Режим должен быть определен до вызова этой функции (например, сохранен в UiState или передан)
-        // Для одиночных событий можно по умолчанию использовать SINGLE_INSTANCE,
-        // т.к. для них это не имеет особого значения, API применит изменения к этому ID.
-        // Для повторяющихся - режим уже должен быть выбран пользователем.
-        modeFromUi: ClientEventUpdateMode // Режим, выбранный пользователем (или дефолтный для одиночных)
+        updatedEventData: UpdateEventApiRequest,
+        modeFromUi: ClientEventUpdateMode
     ) {
         val originalEvent = _uiState.value.eventBeingEdited
         if (originalEvent == null) {
@@ -561,7 +522,6 @@ class MainViewModel @Inject constructor(
                 updateData = updatedEventData,
                 mode = modeFromUi
             )
-            // Результат (успех/ошибка) будет обработан в observeUpdateEventResult
         }
     }
 
@@ -575,6 +535,30 @@ class MainViewModel @Inject constructor(
     fun consumeUpdateEventResult() {
         calendarDataManager.consumeUpdateEventResult()
     }
+
+    /**
+     * Вызывается из UI, когда пользователь хочет посмотреть детали события.
+     * Устанавливает событие для просмотра и флаг для отображения UI.
+     */
+    fun requestEventDetails(event: CalendarEvent) {
+        _uiState.update { currentState ->
+            currentState.copy(eventForDetailedView = event, showEventDetailedView = true)
+        }
+        Log.d(TAG, "Requested event details for event ID: ${event.id}")
+    }
+
+    /**
+     * Вызывается из UI, когда пользователь закрывает детальный просмотр события.
+     * Сбрасывает событие и флаг.
+     */
+    fun cancelEventDetails() {
+        _uiState.update { currentState ->
+            currentState.copy(eventForDetailedView = null, showEventDetailedView = false)
+        }
+        Log.d(TAG, "Cancelled event details view.")
+    }
+
+
     // --- LIFECYCLE ---
     override fun onCleared() {
         super.onCleared()

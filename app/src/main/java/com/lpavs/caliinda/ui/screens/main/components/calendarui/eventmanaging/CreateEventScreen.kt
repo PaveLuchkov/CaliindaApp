@@ -208,11 +208,11 @@ fun CreateEventScreen(
                 )
                 return@saveLambda
             }
-            var baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
+            val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
             var finalRecurrenceRule: String? = null
 
             if (baseRule != null) {
-                var ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
+                val ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
 
                 // Добавляем BYDAY, если нужно
                 if (baseRule == RecurrenceOption.Weekly.rruleValue && eventDateTimeState.selectedWeekdays.isNotEmpty()) {
@@ -236,17 +236,10 @@ fun CreateEventScreen(
                 when (eventDateTimeState.recurrenceEndType) {
                     RecurrenceEndType.DATE -> {
                         eventDateTimeState.recurrenceEndDate?.let { endDate ->
-                            // Форматируем дату окончания в UTC (конец дня)
-                            // Важно: UNTIL включает указанный момент. Часто берут конец дня.
-                            // Для простоты возьмем начало следующего дня и отформатируем.
-                            // Или, как в примере Google, T000000Z - начало дня UTC.
-                            // Используем конец дня даты окончания в системной таймзоне и конвертируем в UTC
+
                             val systemZone = ZoneId.systemDefault()
                             val endOfDay = endDate.atTime(LocalTime.MAX).atZone(systemZone)
-                            // Google часто использует T000000Z на *следующий* день, что эквивалентно концу дня
-                            // val endDateTimeUtc = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC)
 
-                            // Более точный подход: конец дня в системной таймзоне -> UTC
                             val endDateTimeUtc = endDate.atTime(23, 59, 59).atZone(systemZone)
                                 .withZoneSameInstant(ZoneOffset.UTC)
 
@@ -301,7 +294,7 @@ fun CreateEventScreen(
                         .togetherWith(ExitTransition.None)
                         .using(SizeTransform(
                             clip = false, // false - чтобы контент не обрезался во время анимации размера
-                            sizeAnimationSpec = { initialSize, targetSize ->
+                            sizeAnimationSpec = { _, _ ->
                                 // Используем spring для более "живой" анимации размера
                                 spring(
                                     dampingRatio = Spring.DampingRatioLowBouncy, // Попробуйте LowBouncy или MediumBouncy
@@ -309,7 +302,7 @@ fun CreateEventScreen(
                                 )
                             }
                         )
-                        )// clip = false is good if button doesn't need clipping
+                        )
                 },
                 label = "SaveButtonAnimation"
             ) { targetSheetValue ->
@@ -318,8 +311,6 @@ fun CreateEventScreen(
 
                 val isNotCompactState =
                     targetSheetValue == SheetValue.Expanded
-
-                // Define icon sizes for different states
 
                 val size = if (!isNotCompactState) defaultSize else expandedSize
 
@@ -337,8 +328,6 @@ fun CreateEventScreen(
                             contentDescription = "Сохранить", // Consider using stringResource here too
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)) // Animated icon size
                         )
-//                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size))) // Or use animated spacerWidth
-//                        Text(stringResource(R.string.save), style = ButtonDefaults.textStyleFor(size)) // Ensure R.string.save exists
                     }
                 }
             }
@@ -351,8 +340,6 @@ fun CreateEventScreen(
                 .padding(horizontal = 16.dp) // Горизонтальные отступы для контента
                 .fillMaxWidth(),
         ) {
-            // BackgroundShapes здесь может быть не нужен или потребует адаптации
-            // BackgroundShapes(BackgroundShapeContext.EventCreation)
             AdaptiveContainer {
                 EventNameSection(
                     summary = summary,

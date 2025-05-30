@@ -28,9 +28,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroupScope
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -43,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-// import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -65,8 +61,6 @@ import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 
@@ -83,9 +77,9 @@ fun EventListItem(
     targetHeightFromList: Dp,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
+    onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
     onEditClickFromList: () -> Unit,
-    // -----------------------------------
     modifier: Modifier = Modifier,
     currentTimeZoneId: String
 ) {
@@ -134,7 +128,6 @@ fun EventListItem(
         isNextEvent -> transitionColorCard// Слегка выделяем следующее (пример)
         else -> colorScheme.primaryContainer // Обычный фон
     }
-    val numButtons = 3
 
     val cardTextColor = when {
         isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
@@ -268,7 +261,8 @@ fun EventListItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledIconButton(
-                        onClick = {},
+                        onClick = { onDetailsClickFromList()
+                            onToggleExpand()},
                         modifier = Modifier
                             .minimumInteractiveComponentSize()
                             .size(
@@ -324,6 +318,7 @@ fun AllDayEventItem(
     onToggleExpand: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
+    onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier // Добавил modifier
 ) {
     val cardBackground = colorScheme.tertiary
@@ -378,8 +373,22 @@ fun AllDayEventItem(
                 ) {
                     Button(
                         onClick = {
+                            onDetailsClick()
+                            onToggleExpand()
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorScheme.onTertiary,
+                            contentColor = colorScheme.tertiary
+                        )
+                    ) {
+                        Icon(Icons.Filled.Info, contentDescription = "Information", modifier = Modifier.size(ButtonDefaults.IconSize))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
                             onEditClick()
-                            onToggleExpand() // Опционально: схлопывать после клика
+//                            onToggleExpand() // Опционально: схлопывать после клика
                         },
                         contentPadding = PaddingValues(horizontal = 12.dp),
                         // Можно настроить цвета кнопок, чтобы они лучше смотрелись на tertiary фоне
@@ -403,9 +412,6 @@ fun AllDayEventItem(
                         )
                     ) {
                         Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
-                        // Можно убрать текст, если нужна только иконка для компактности
-                        // Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                        // Text("Delete")
                     }
                 }
             }
@@ -464,7 +470,7 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
     val coercedRadiusSeed = radiusSeed.coerceIn(cuid.ShapeRadiusSeedMin, cuid.ShapeMaxRadius)
 
     val angleSeed = (abs(hashCode) / 5 - 99).mod(cuid.ShapeRotationMaxDegrees)
-    val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees).toFloat()
+    val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees)
 
     return GeneratedShapeParams(
         numVertices = numVertices,

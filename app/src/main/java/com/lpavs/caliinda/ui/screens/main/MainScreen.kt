@@ -44,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CreateEventScreen
+import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CustomEventDetailsDialog
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.EditEventScreen
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringEventEditOptionsDialog
 
@@ -53,13 +54,12 @@ import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
-    onNavigateToSettings: () -> Unit,
-    navController: NavHostController
+    onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
     val snackbarHostState = remember { SnackbarHostState() }
-    var isTextInputVisible by remember { mutableStateOf(false) }
+    val isTextInputVisible by remember { mutableStateOf(false) }
     val aiState by viewModel.aiState.collectAsState()
     val aiMessage by viewModel.aiMessage.collectAsState()
     val context = LocalContext.current
@@ -68,7 +68,7 @@ fun MainScreen(
     val initialPageIndex = remember { Int.MAX_VALUE / 2 }
     val pagerState = rememberPagerState(
         initialPage = initialPageIndex,
-        pageCount = { Int.MAX_VALUE } // Передаем лямбду, возвращающую "бесконечное" количество страниц
+        pageCount = { Int.MAX_VALUE }
     )
     val currentVisibleDate by viewModel.currentVisibleDate.collectAsStateWithLifecycle()
     val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
@@ -354,7 +354,7 @@ fun MainScreen(
                     scope.launch { editSheetState.hide() }.invokeOnCompletion {
                         if (!editSheetState.isVisible) {
                             showEditEventSheet = false
-                            viewModel.cancelEditEvent() // Сообщаем ViewModel, что редактирование отменено
+                            viewModel.cancelEditEvent()
                         }
                     }
                 },
@@ -364,29 +364,26 @@ fun MainScreen(
                 EditEventScreen(
                     viewModel = viewModel,
                     eventToEdit = eventToEdit,
-                    selectedUpdateMode = mode, // <--- ПЕРЕДАЕМ РЕЖИМ
+                    selectedUpdateMode = mode,
                     onDismiss = {
                         scope.launch { editSheetState.hide() }.invokeOnCompletion {
                             if (!editSheetState.isVisible) {
                                 showEditEventSheet = false
-                                viewModel.cancelEditEvent() // Сообщаем ViewModel
+                                viewModel.cancelEditEvent()
                             }
                         }
                     },
                     currentSheetValue = editSheetState.currentValue
                 )
             }
-        } else {
-            // Если eventToEdit или mode вдруг null, хотя showEditEventSheet=true,
-            // это ошибка состояния, скрываем лист.
-            if (showEditEventSheet) { // Предотвращаем рекурсию, если mode был null и вызвал cancelEdit
-                LaunchedEffect(Unit) { // Запускаем только один раз при такой ситуации
-                    Log.e("MainScreen", "Inconsistent state for showing EditEventSheet. Hiding.")
-                    showEditEventSheet = false
-                    viewModel.cancelEditEvent()
-                }
-            }
         }
+    }
+    if (uiState.showEventDetailedView && uiState.eventForDetailedView != null) {
+        CustomEventDetailsDialog(
+            event = uiState.eventForDetailedView!!, // Передаем событие
+            onDismissRequest = { viewModel.cancelEventDetails() },
+            viewModel = viewModel
+        )
     }
     LaunchedEffect(sheetState.isVisible) {
         if (!sheetState.isVisible && showCreateEventSheet) {

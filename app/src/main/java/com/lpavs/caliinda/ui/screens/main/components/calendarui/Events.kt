@@ -6,7 +6,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -26,8 +25,6 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
@@ -41,12 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.CalendarUiDefaults
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
@@ -54,16 +48,12 @@ import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringEventDeleteOptionsDialog
 import java.time.Instant
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import com.lpavs.caliinda.ui.theme.LocalFixedAccentColors
 import com.lpavs.caliinda.util.DateTimeFormatterUtil
 import kotlinx.coroutines.launch
 import java.time.Duration
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import com.lpavs.caliinda.R
 
 data class GeneratedShapeParams(
@@ -84,9 +74,9 @@ fun EventsList(
     currentTimeZoneId: String,
     listState: LazyListState,
     nextStartTime: Instant?,
-    modifier: Modifier = Modifier,
     onDeleteRequest: (CalendarEvent) -> Unit,
     onEditRequest: (CalendarEvent) -> Unit,
+    onDetailsRequest: (CalendarEvent) -> Unit,
 ) {
     val transitionWindowDurationMillis = remember { // Запоминаем длительность окна в мс
         Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()
@@ -234,20 +224,21 @@ fun EventsList(
                     isCurrentEvent = isCurrent,
                     isNextEvent = isNext,
                     proximityRatio = proximityRatio,
-                    // --- ПЕРЕДАЕМ НОВЫЕ ПАРАМЕТРЫ ---
-                    isMicroEventFromList = isMicroEvent, // Переименовал, чтобы не конфликтовать с внутренним в EventListItem
-                    targetHeightFromList = animatedHeight, // Передаем анимированную высоту
+                    isMicroEventFromList = isMicroEvent,
+                    targetHeightFromList = animatedHeight,
                     isExpanded = isExpanded,
                     onToggleExpand = {
                         expandedEventId = if (isExpanded) null else event.id
                     },
                     onDeleteClickFromList = {
-                        onDeleteRequest(event) // Вызываем оригинальный onDeleteRequest
+                        onDeleteRequest(event)
+                    },
+                    onEditClickFromList = {
+                        onEditRequest(event)
 //                        expandedEventId = null // Схлопываем после действия
                     },
-                    onEditClickFromList = { // Переименовал колбэк
-                        onEditRequest(event) // Вызываем оригинальный onEditRequest
-//                        expandedEventId = null // Схлопываем после действия
+                    onDetailsClickFromList = {
+                        onDetailsRequest(event)
                     },
                     // --------------------------------
                     modifier = Modifier
@@ -348,7 +339,6 @@ fun DayEventsPage(
             .fillMaxSize())
         {
             Spacer(modifier = Modifier.height(3.dp))
-            // TODO СДЕЛАТЬ ТОЖЕ УДАЛЕНИЕ РЕДАКТИРОВАНИЕ (но выход кнопок по центру)
             if (allDayEvents.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовка даты
                 Column(
@@ -366,6 +356,10 @@ fun DayEventsPage(
                             },
                             onDeleteClick = {
                                 viewModel.requestDeleteConfirmation(event)
+                                // expandedAllDayEventId = null // Схлопываем после запроса на удаление
+                            },
+                            onDetailsClick = {
+                                viewModel.requestEventDetails(event)
                                 // expandedAllDayEventId = null // Схлопываем после запроса на удаление
                             },
                             onEditClick = { // Переименовал колбэк
@@ -395,9 +389,7 @@ fun DayEventsPage(
                     // --- Убедись, что имена параметров соответствуют определению EventsList ---
                     onDeleteRequest = viewModel::requestDeleteConfirmation,
                     onEditRequest = viewModel::requestEditEvent,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    onDetailsRequest = viewModel::requestEventDetails,
                     currentTimeZoneId = currentTimeZoneId
                 )
             } else if (allDayEvents.isEmpty()) {

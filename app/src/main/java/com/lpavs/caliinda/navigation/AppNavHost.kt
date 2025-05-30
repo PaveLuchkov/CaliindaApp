@@ -58,8 +58,7 @@ fun AppNavHost(
                 viewModel = viewModel,
                 onNavigateToSettings = {
                     navController.navigate(NavRoutes.Settings.route)
-                },
-                navController = navController
+                }
             )
 
         }

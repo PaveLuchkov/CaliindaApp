@@ -46,8 +46,8 @@ val suggestedEventNames = listOf(
 fun EventNameSection(
     summary: String,
     summaryError: String?,
-    onSummaryChange: (String) -> Unit, // Callback for summary changes
-    onSummaryErrorChange: (String?) -> Unit, // Callback for summaryError changes
+    onSummaryChange: (String) -> Unit,
+    onSummaryErrorChange: (String?) -> Unit,
     isLoading: Boolean
 ){
     val chips = remember { suggestedEventNames }
@@ -64,6 +64,6 @@ fun EventNameSection(
         enabled = !isLoading,
     )
     ChipsRow(chips = chips, onChipClick = { clickedChip ->
-        onSummaryChange(clickedChip) // Call the callback here
-    })
+        onSummaryChange(clickedChip)
+    }, enabled = !isLoading)
 }

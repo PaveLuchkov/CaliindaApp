@@ -68,7 +68,8 @@ fun CustomOutlinedTextField(
 @Composable
 fun ChipsRow(
     chips: List<SugNameChips>,
-    onChipClick: (String) -> Unit
+    onChipClick: (String) -> Unit,
+    enabled: Boolean
 ) {
     LazyRow(
         modifier = Modifier
@@ -81,7 +82,8 @@ fun ChipsRow(
             SuggestionChip(
                 onClick = { onChipClick(chip.fullText) },
                 label = { Text(chip.name) },
-                modifier = Modifier.height(35.dp)
+                modifier = Modifier.height(35.dp),
+                enabled = enabled
             )
         }
     }
