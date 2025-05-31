@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.caliindar"
+    namespace = "com.lpavs.caliinda"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.caliindar"
+        applicationId = "com.lpavs.caliinda"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

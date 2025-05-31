@@ -5,8 +5,11 @@
     <string name="date_start">Start date</string>
     <string name="date_end">End date</string>
     <string name="date_single">Date</string>
+    <string name="location">Location</string>
+    <string name="description">Description</string>
     <string name="all_day">All day</string>
     <string name="one_day">One day</string>
+
     <string name="recurrence_event">Repeat</string> <!-- Заменит ваш val recEvent -->
     <string name="recurrence_ends">Ending</string>
     <string name="recurrence_end_never">Never</string>
@@ -15,11 +18,52 @@
     <string name="recurrence_occurrences">repetitions</string>
     <string name="recurrence_end_date_field">Date ending</string>
     <string name="recurrence_count_field">Count repetitions</string>
+    <!-- Строки для секции повторения в описании -->
+    <string name="recurrence_repeats">Repeats</string>
+    <string name="recurrence_daily_lower">daily</string>
+    <string name="recurrence_weekly_lower">weekly</string>
+    <string name="recurrence_monthly_lower">monthly</string>
+    <string name="recurrence_yearly_lower">yearly</string>
+
+    <!-- Days of the week -->
+    <string name="day_monday">Monday</string>
+    <string name="day_tuesday">Tuesday</string>
+    <string name="day_wednesday">Wednesday</string>
+    <string name="day_thursday">Thursday</string>
+    <string name="day_friday">Friday</string>
+    <string name="day_saturday">Saturday</string>
+    <string name="day_sunday">Sunday</string>
+
+    <!-- Suffixes / modifiers -->
+    <string name="recurrence_on_days">on %1$s</string> <!-- e.g. "on Monday, Wednesday" -->
+    <string name="recurrence_until">until %1$s</string> <!-- e.g. "until June 30, 2025" -->
+    <string name="recurrence_count">%1$d time(s)</string> <!-- e.g. "10 time(s)" -->
+    <string name="recurrence_interval">every %1$d %2$s</string> <!-- e.g. "every 2 weeks" -->
+    <string name="recurrence_on_day_of_month">on day %1$d</string> <!-- e.g. "on day 15" -->
+    <string name="recurrence_in_months">in %1$s</string> <!-- e.g. "in January, February" -->
+    <string name="recurrence_unknown">Repeats</string> <!-- fallback -->
+
+    <!-- Months if needed -->
+    <string name="month_january">January</string>
+    <string name="month_february">February</string>
+    <string name="month_march">March</string>
+    <string name="month_april">April</string>
+    <string name="month_may">May</string>
+    <string name="month_june">June</string>
+    <string name="month_july">July</string>
+    <string name="month_august">August</string>
+    <string name="month_september">September</string>
+    <string name="month_october">October</string>
+    <string name="month_november">November</string>
+    <string name="month_december">December</string>
 
     <string name="delete_confirmation_message">Are you sure you want to delete this event? This action cannot be undone.</string>
     <string name="delete_conf">Delete confirmation</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="save">Save</string>
+
+    <string name="no_events">No events</string>
 
     <!-- Строки для секции повторения -->
     <string name="recurrence_settings_title">Recurrence</string> <!-- Заменит ваш val -->
