@@ -15,6 +15,7 @@
     <string name="error_account_check">Kontoverifizierungsfehler: %1$s</string>
     <string name="logout_success">Sie wurden erfolgreich abgemeldet</string>
     <string name="account">Konto</string>
+    <string name="log_to_continue">Melden Sie sich mit Google an, um Ihren neuen KI-Kalender zu erkunden</string>
 
     <string name="pick_time">Uhrzeit auswählen</string>
     <string name="pick_date">Datum auswählen</string>

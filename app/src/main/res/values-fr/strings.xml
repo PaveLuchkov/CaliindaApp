@@ -15,6 +15,7 @@
     <string name="error_account_check">Erreur de vérification du compte : %1$s</string>
     <string name="logout_success">Vous êtes déconnecté avec succès</string>
     <string name="account">Compte</string>
+    <string name="log_to_continue">Connectez-vous avec Google pour explorer votre nouveau calendrier IA</string>
 
     <string name="pick_time">Choisir une heure</string>
     <string name="pick_date">Choisir une date</string>

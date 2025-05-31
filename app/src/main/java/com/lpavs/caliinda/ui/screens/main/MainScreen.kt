@@ -146,27 +146,6 @@ fun MainScreen(
         viewModel.updatePermissionStatus(hasPermission)
     }
 
-    val signInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.let { intent ->
-                val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-                viewModel.handleSignInResult(task)
-            } ?: run {
-                // Обработка случая, когда intent равен null, если это возможно
-                Log.e("SignInLauncher", "Sign-in result data is null")
-                viewModel.handleSignInResult(Tasks.forException(ApiException(Status(
-                    CommonStatusCodes.ERROR, "Sign-in data is null"))))
-            }
-        } else {
-            // Пользователь отменил вход или произошла ошибка на стороне Google Sign-In UI
-            Log.w("SignInLauncher", "Sign-in failed or cancelled by user. Result code: ${result.resultCode}")
-            // Можно сообщить ViewModel, что попытка входа не удалась из-за отмены пользователем
-            // mainViewModel.handleSignInCancelledByUser() // Если нужен такой метод
-        }
-    }
-
     if (uiState.showRecurringEditOptionsDialog && uiState.eventBeingEdited != null) {
         RecurringEventEditOptionsDialog( // Вам нужно создать этот Composable
             eventName = uiState.eventBeingEdited!!.summary,
@@ -424,49 +403,10 @@ fun MainScreen(
         )
     }
     if (uiState.showSignInRequiredDialog) {
-
-        Dialog( //TODO сделать покрасивше
-            onDismissRequest = { viewModel.onSignInRequiredDialogDismissed() },
-            properties = DialogProperties(
-                dismissOnClickOutside = true, // Закрывать по клику вне диалога
-                dismissOnBackPress = true,
-                usePlatformDefaultWidth = false
-            )
-        ) {
-            Surface(
-                color = colorScheme.tertiaryContainer,
-                shape = MaterialShapes.Cookie7Sided.toShape(),
-                shadowElevation = 8.dp,
-                modifier = Modifier.size(400.dp),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                val expandedSize = ButtonDefaults.LargeContainerHeight
-                    Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            viewModel.onSignInRequiredDialogConfirmed()
-                            signInLauncher.launch(viewModel.getSignInIntent())
-                        },
-                        colors = ButtonColors(contentColor = colorScheme.onTertiary, containerColor = colorScheme.tertiary, disabledContentColor = colorScheme.inverseSurface, disabledContainerColor = colorScheme.inverseSurface),
-                        modifier = Modifier.heightIn(expandedSize),
-                        contentPadding = ButtonDefaults.contentPaddingFor(expandedSize)
-                    ) {
-                            Text(
-                                text = stringResource(R.string.google_login),
-                                style = ButtonDefaults.textStyleFor(expandedSize)
-                            )
-                    }
-                }
-            }
-        }
+        LogInScreenDialog(onDismissRequest = {viewModel.onSignInRequiredDialogDismissed()}, viewModel=viewModel)
     }
-                    LaunchedEffect(sheetState.isVisible) {
+
+    LaunchedEffect(sheetState.isVisible) {
         if (!sheetState.isVisible && showCreateEventSheet) {
             showCreateEventSheet = false
         }

@@ -14,6 +14,7 @@
     <string name="error_account_check">Account verification error: %1$s</string>
     <string name="logout_success">You logged out successfully</string>
     <string name="account">Account</string>
+    <string name="log_to_continue">Log in with Google to explore your new AI calendar</string>
 
     <string name="pick_time">Pick a Time</string>
     <string name="pick_date">Pick a Date</string>

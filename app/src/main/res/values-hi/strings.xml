@@ -15,7 +15,7 @@
     <string name="error_account_check">खाता सत्यापन त्रुटि: %1$s</string>
     <string name="logout_success">आप सफलतापूर्वक लॉग आउट हो गए</string>
     <string name="account">खाता</string>
-
+    <string name="log_to_continue">Google से लॉग इन करके अपने नए AI कैलेंडर को एक्सप्लोर करें</string>
     <string name="pick_time">समय चुनें</string>
     <string name="pick_date">दिनांक चुनें</string>
     <string name="time">समय</string>

@@ -15,6 +15,7 @@
     <string name="error_account_check">Ошибка проверки аккаунта: %1$s</string>
     <string name="logout_success">Вы успешно вышли</string>
     <string name="account">Аккаунт</string>
+    <string name="log_to_continue">Войдите в Google, чтобы пользоваться своим новым ИИ-календарем</string>
 
     <string name="pick_time">Выбрать время</string>
     <string name="pick_date">Выбрать дату</string>
