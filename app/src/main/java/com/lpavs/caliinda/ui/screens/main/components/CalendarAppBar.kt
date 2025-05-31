@@ -47,20 +47,21 @@ fun CalendarAppBar(
     onNavigateToSettings: () -> Unit,
     onGoToTodayClick: () -> Unit,
     onTitleClick: () -> Unit,
-    date: LocalDate // date теперь будет targetState для AnimatedContent
+    date: LocalDate
 ) {
     val isToday = date == LocalDate.now()
     val headerBackgroundColor = if (isToday) {
-        colorScheme.tertiary// Today's color
+        colorScheme.tertiary
     } else {
-        colorScheme.secondary // Other dates' color
+        colorScheme.secondary
     }
     val headerTextColor = if (isToday) {
-        colorScheme.onTertiary // Today's text color
+        colorScheme.onTertiary
     } else {
-        colorScheme.onSecondary// Other dates' text color
+        colorScheme.onSecondary
     }
     val currentLocale = LocalConfiguration.current.getLocales().get(0)
+    val formatterWithShortDay = DateTimeFormatter.ofPattern("E, d MMMM yyyy", currentLocale)
     CenterAlignedTopAppBar(
         title = {
             Box(
@@ -73,8 +74,7 @@ fun CalendarAppBar(
 
             ){
                 Text(
-                    // TODO: ЗАМЕНИТЬ ОТОБРАЖЕНИЕ ВРЕМЕНИ НА ЛОКАЛЬ
-                    text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", currentLocale)),
+                    text = date.format(formatterWithShortDay),
                     style = typography.titleLarge,
                     fontWeight = FontWeight.Medium,
                     color = headerTextColor,

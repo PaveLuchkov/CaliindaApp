@@ -5,86 +5,23 @@ import android.util.Log
 import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.util.Locale
-import android.text.format.DateFormat // <-- Импорт для проверки системной настройки
+import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
-import java.time.ZoneOffset
+import java.util.Locale
 
 object  DateTimeFormatterUtil {
-    private val TAG = "CalendarDataManager"
-    fun formatEventTimeForDisplay(
-        isoString: String?,
-        isAllDayEvent: Boolean,
-        pattern: String = "HH:mm"
-    ): String {
-        if (isAllDayEvent) return "Весь день" // Главное изменение - проверяем флаг
-        if (isoString.isNullOrBlank()) return "--:--"
-
-        return try {
-            val offsetDateTime = OffsetDateTime.parse(isoString)
-            val localZoneId = ZoneId.systemDefault()
-            val localDateTime = offsetDateTime.atZoneSameInstant(localZoneId)
-            val formatter = DateTimeFormatter.ofPattern(pattern, Locale("ru"))
-            localDateTime.format(formatter)
-        } catch (e: DateTimeParseException) {
-            Log.e(TAG, "Error parsing non-all-day time string: $isoString", e)
-            "Ошибка времени" // Ошибки парсинга для НЕ all-day событий - это проблема
-        } catch (e: Exception) {
-            Log.e(TAG, "Error formatting time for display: $isoString", e)
-            "Ошибка времени"
-        }
-    }
-
-    fun formatDisplayDate(isoTimeString: String?): String { // Переименуем для ясности
-        if (isoTimeString.isNullOrBlank()) return "Дата не указана"
-
-        return try {
-            val temporalAccessor: java.time.temporal.TemporalAccessor = try {
-                OffsetDateTime.parse(isoTimeString)
-            } catch (e: DateTimeParseException) {
-                LocalDate.parse(isoTimeString)
-            }
-            val localZoneId = ZoneId.systemDefault()
-            val formatter = DateTimeFormatter.ofPattern("d MMMM", Locale("ru"))
-
-            when (temporalAccessor) {
-                is OffsetDateTime -> temporalAccessor.atZoneSameInstant(localZoneId)
-                    .format(formatter)
-
-                is LocalDate -> temporalAccessor.format(formatter)
-                is LocalDateTime -> temporalAccessor.atZone(localZoneId).format(formatter)
-                else -> {
-                    Log.w(
-                        TAG,
-                        "Unsupported TemporalAccessor type in formatDisplayDate: ${temporalAccessor::class.java}"
-                    )
-                    "Неверный формат даты"
-                }
-            }
-
-        } catch (e: DateTimeParseException) {
-            Log.e(TAG, "Error parsing date string for display date: $isoTimeString", e)
-            "Ошибка даты"
-        } catch (e: Exception) {
-            Log.e(TAG, "Error formatting display date: $isoTimeString", e)
-            "Ошибка даты"
-        }
-    }
-
     fun formatEventListTime(
         context: Context,
         event: CalendarEvent,
         zoneIdString: String
     ): String {
-        if (event.isAllDay) return "Весь день"
+        if (event.isAllDay) return R.string.all_day.toString()
 
         val zoneId = try {
             ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
@@ -142,7 +79,8 @@ object  DateTimeFormatterUtil {
     fun formatEventDetailsTime(
         context: Context,
         event: CalendarEvent,
-        zoneIdString: String
+        zoneIdString: String,
+        locale: Locale
     ): String {
         val zoneId = try {
             ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
@@ -192,7 +130,7 @@ object  DateTimeFormatterUtil {
             if (instant == null) return ""
             return try {
                 val localDate = instant.atZone(zoneId).toLocalDate()
-                val formatter = DateTimeFormatter.ofPattern("d MMMM", Locale("ru"))
+                val formatter = DateTimeFormatter.ofPattern("d MMMM", locale)
                 localDate.format(formatter)
             } catch (e: Exception) {
                 Log.e("FormatDate", "Error formatting date: $instant", e)
@@ -220,7 +158,6 @@ object  DateTimeFormatterUtil {
     @Composable
     fun formatRRule(
         rrule: String,
-        locale: Locale = Locale("ru"),
         zoneIdString: String
     ): String {
         val zoneId = try {
@@ -228,6 +165,7 @@ object  DateTimeFormatterUtil {
         } catch (_: Exception) {
             ZoneId.systemDefault()
         }
+        val currentLocale = LocalConfiguration.current.getLocales().get(0)
 
         val parts = rrule
             .removePrefix("RRULE:")
@@ -267,7 +205,7 @@ object  DateTimeFormatterUtil {
             until?.let {
                 val formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
                 val date = LocalDateTime.parse(it, formatter).atZone(zoneId).toLocalDate()
-                date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale))
+                date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", currentLocale))
             }
         } catch (_: Exception) {
             null
