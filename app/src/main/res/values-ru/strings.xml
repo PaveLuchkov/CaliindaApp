@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caliinda</string>
+    <string name="type_message">Сообщение</string>
+    <string name="no_events">Нет событий</string>
+    <string name="cancel">Отмена</string>
+    <string name="save">Сохранить</string>
+    <string name="back">Назад</string>
+    <string name="delete">Удалить</string>
+
+    <string name="google_login">Войти через Google</string>
+    <string name="login">Войти</string>
+    <string name="logout">Выйти</string>
+    <string name="loginplease">Аккаунт Google</string>
+    <string name="error_account_check">Ошибка проверки аккаунта: %1$s</string>
+    <string name="logout_success">Вы успешно вышли</string>
+    <string name="account">Аккаунт</string>
+    <string name="log_to_continue">Войдите в Google, чтобы пользоваться своим новым ИИ-календарем</string>
+
+    <string name="pick_time">Выбрать время</string>
+    <string name="pick_date">Выбрать дату</string>
+    <string name="time">Время</string>
+
+    <string name="event_name">Название события</string>
+    <string name="time_start">Время начала</string>
+    <string name="time_end">Время окончания</string>
+    <string name="date_start">Дата начала</string>
+    <string name="date_end">Дата окончания</string>
+    <string name="date_single">Дата</string>
+    <string name="location">Местоположение</string>
+    <string name="description">Описание</string>
+    <string name="all_day">Весь день</string>
+    <string name="one_day">Один день</string>
+
+    <string name="recurrence_event">Повторять</string>
+    <string name="recurrence_settings_title">Повторение</string>
+    <string name="recurrence_rule_label">Правило</string>
+    <string name="recurrence_none">Не повторять</string>
+    <string name="recurrence_daily">Ежедневно</string>
+    <string name="recurrence_weekly">Еженедельно</string>
+    <string name="recurrence_monthly">Ежемесячно</string>
+    <string name="recurrence_yearly">Ежегодно</string>
+
+    <string name="recurrence_ends">Окончание</string>
+    <string name="recurrence_end_never">Никогда</string>
+    <string name="recurrence_end_date">Дата</string>
+    <string name="recurrence_end_count">Количество</string>
+    <string name="recurrence_occurrences">повторений</string>
+    <string name="recurrence_end_date_field">Дата окончания</string>
+    <string name="recurrence_count_field">Количество повторений</string>
+
+    <string name="recurrence_repeats">Повторяется</string>
+    <string name="recurrence_daily_lower">ежедневно</string>
+    <string name="recurrence_weekly_lower">еженедельно</string>
+    <string name="recurrence_monthly_lower">ежемесячно</string>
+    <string name="recurrence_yearly_lower">ежегодно</string>
+    <string name="recurrence_on_days">по %1$s</string>
+    <string name="recurrence_until">до %1$s</string>
+    <string name="recurrence_count">%1$d раз(а)</string>
+    <string name="recurrence_interval">каждые %1$d %2$s</string>
+    <string name="recurrence_on_day_of_month">в %1$d день месяца</string>
+    <string name="recurrence_in_months">в %1$s</string>
+    <string name="recurrence_unknown">Повторяется</string>
+
+    <string name="day_monday">Понедельник</string>
+    <string name="day_tuesday">Вторник</string>
+    <string name="day_wednesday">Среда</string>
+    <string name="day_thursday">Четверг</string>
+    <string name="day_friday">Пятница</string>
+    <string name="day_saturday">Суббота</string>
+    <string name="day_sunday">Воскресенье</string>
+
+    <string name="month_january">Январь</string>
+    <string name="month_february">Февраль</string>
+    <string name="month_march">Март</string>
+    <string name="month_april">Апрель</string>
+    <string name="month_may">Май</string>
+    <string name="month_june">Июнь</string>
+    <string name="month_july">Июль</string>
+    <string name="month_august">Август</string>
+    <string name="month_september">Сентябрь</string>
+    <string name="month_october">Октябрь</string>
+    <string name="month_november">Ноябрь</string>
+    <string name="month_december">Декабрь</string>
+
+    <string name="delete_conf">Подтверждение удаления</string>
+    <string name="delete_confirmation_message">Вы уверены, что хотите удалить это событие? Это действие невозможно отменить.</string>
+    <string name="delete_recurring_event_title">Удалить повторяющееся событие</string>
+    <string name="delete_recurring_event_prompt">Событие "%1$s" является частью серии. Как вы хотите его удалить?</string>
+    <string name="delete_single_instance">Удалить только это событие</string>
+    <string name="delete_all_in_series">Удалить всю серию</string>
+
+    <string name="edit_recurring_event_title">Изменить повторяющееся событие</string>
+    <string name="edit_recurring_event_prompt">Как вы хотите изменить "%1$s"?</string>
+    <string name="edit_single_instance">Только это событие</string>
+    <string name="edit_all_in_series">Все события в серии</string>
+    <string name="edit_this_and_following">Это и последующие события</string>
+
+    <string name="error_end_date_before_start">Дата окончания не может быть раньше даты начала</string>
+    <string name="error_start_time_missing">Укажите время начала</string>
+    <string name="error_end_time_missing">Укажите время окончания</string>
+    <string name="error_end_time_not_after_start">Время окончания должно быть после времени начала</string>
+    <string name="error_check_input_data">Пожалуйста, проверьте введенные данные</string>
+    <string name="no_changes_to_save">Нет изменений для сохранения</string>
+    <string name="error_summary_cannot_be_empty">Название не может быть пустым</string>
+    <string name="error_specify_start_and_end_time">Укажите время начала и окончания</string>
+    <string name="error_failed_to_format_datetime">Не удалось отформатировать дату/время для отправки</string>
+    <string name="event_updated_successfully">Событие успешно обновлено</string>
+
+    <string name="settings">Настройки</string>
+    <string name="time_zone">Часовой пояс</string>
+    <string name="time_zone_save">Часовой пояс сохранен: %1$s</string>
+    <string name="time_format">Время и формат</string>
+    <string name="terms">Условия</string>
+    <string name="terms_of_use">Условия использования</string>
+
+    <string name="ai">ИИ</string>
+    <string name="aisettings">Настройки ИИ</string>
+    <string name="temper_ai">Характер ассистента</string>
+    <string name="temper_example">напр.: будь милым и скромным</string>
+    <string name="temper_saved">Настройки характера сохранены</string>
+
+    <string name="suggested_event_test">Тест</string>
+    <string name="suggested_event_test_full">Тестовое событие</string>
+    <string name="suggested_event_work">Работа</string>
+    <string name="suggested_event_work_full">💼 Работа</string>
+    <string name="suggested_event_dinner">Ужин</string>
+    <string name="suggested_event_dinner_full">🍽️ Ужин</string>
+    <string name="suggested_event_meeting">Встреча</string>
+    <string name="suggested_event_meeting_full">🤝 Встреча</string>
+    <string name="suggested_event_coffee">Кофе</string>
+    <string name="suggested_event_coffee_full">☕ Кофе-брейк</string>
+    <string name="suggested_event_lunch">Обед</string>
+    <string name="suggested_event_lunch_full">🥪 Обед</string>
+    <string name="suggested_event_shopping">Покупки</string>
+    <string name="suggested_event_shopping_full">🛍️ Покупки</string>
+    <string name="suggested_event_appointment">Прием</string>
+    <string name="suggested_event_appointment_full">📅 Прием</string>
+    <string name="suggested_event_travel">Путешествие</string>
+    <string name="suggested_event_travel_full">✈️ Путешествие</string>
+    <string name="suggested_event_party">Вечеринка</string>
+    <string name="suggested_event_party_full">🎉 Вечеринка</string>
+    <string name="suggested_event_movie">Фильм</string>
+    <string name="suggested_event_movie_full">🎬 Вечер кино</string>
+    <string name="suggested_event_study">Учеба</string>
+    <string name="suggested_event_study_full">📚 Учеба</string>
+    <string name="suggested_event_gym">Спортзал</string>
+    <string name="suggested_event_gym_full">🏋️‍♀️ Поход в спортзал</string>
+    <string name="suggested_event_relax">Отдых</string>
+    <string name="suggested_event_relax_full">🧘 Отдых</string>
+    <string name="suggested_event_reading">Чтение</string>
+    <string name="suggested_event_reading_full">📖 Время для чтения</string>
+    <string name="suggested_event_cleaning">Уборка</string>
+    <string name="suggested_event_cleaning_full">🧹 Уборка дома</string>
+    <string name="suggested_event_cooking">Готовка</string>
+    <string name="suggested_event_cooking_full">🍳 Приготовление еды</string>
+    <string name="suggested_event_walking">Прогулка</string>
+    <string name="suggested_event_walking_full">🚶 Прогулка</string>
+    <string name="suggested_event_hobby">Хобби</string>
+    <string name="suggested_event_hobby_full">🎨 Время для хобби</string>
+    <string name="suggested_event_date">Свидание</string>
+    <string name="suggested_event_date_full">❤️ Свидание</string>
+    <string name="suggested_event_doctor">Врач</string>
+    <string name="suggested_event_doctor_full">🩺 Прием у врача</string>
+    <string name="suggested_event_birthday">День рождения</string>
+    <string name="suggested_event_birthday_full">🎂 День рождения</string>
+    <string name="suggested_event_project">Проект</string>
+    <string name="suggested_event_project_full">💻 Работа над проектом</string>
+    <string name="suggested_event_presentation">Презентация</string>
+    <string name="suggested_event_presentation_full">🗣️ Презентация</string>
+    <string name="suggested_event_call">Звонок</string>
+    <string name="suggested_event_call_full">📞 Телефонный звонок</string>
+    <string name="suggested_event_errand">Поручение</string>
+    <string name="suggested_event_errand_full">🏃 Выполнение поручения</string>
+    <string name="suggested_event_relax_bath">Расслабление</string>
+    <string name="suggested_event_relax_bath_full">🛀 Время для расслабления</string>
+    <string name="suggested_event_sleep">Сон</string>
+    <string name="suggested_event_sleep_full">😴 Время сна</string>
+    <string name="suggested_event_breakfast">Завтрак</string>
+    <string name="suggested_event_breakfast_full">🍳 Завтрак</string>
+    <string name="suggested_event_pet">Питомец</string>
+    <string name="suggested_event_pet_full">🦮 Выгул питомца</string>
+
+</resources>

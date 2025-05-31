@@ -157,16 +157,16 @@ fun CreateEventScreen(
 
     // --- Логика валидации ---
     fun validateInput(): Boolean {
-        summaryError = if (summary.isBlank()) "Название не может быть пустым" else null
+        summaryError = if (summary.isBlank()) R.string.error_summary_cannot_be_empty.toString() else null
         validationError = null
         val state = eventDateTimeState
         if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
-            validationError = "Укажите время начала и конца"
+            validationError = R.string.error_specify_start_and_end_time.toString()
             return false
         }
         val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZoneId)
         if (testStartTimeStr == null || testEndTimeStr == null) {
-            validationError = "Не удалось сформировать дату/время для отправки"
+            validationError = R.string.error_failed_to_format_datetime.toString()
             return false
         }
         return summaryError == null && validationError == null
@@ -177,7 +177,7 @@ fun CreateEventScreen(
         isLoading = createEventState is CreateEventResult.Loading
         when (val result = createEventState) {
             is CreateEventResult.Success -> {
-                Toast.makeText(context, "Событие успешно создано", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
                 viewModel.consumeCreateEventResult()
                 onDismiss()
             }
@@ -201,7 +201,7 @@ fun CreateEventScreen(
             val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
 
             if (startStr == null || endStr == null) {
-                validationError = "Ошибка форматирования даты/времени."
+                validationError = R.string.error_failed_to_format_datetime.toString()
                 Log.e(
                     "CreateEvent",
                     "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId"
@@ -276,7 +276,7 @@ fun CreateEventScreen(
                 recurrenceRule = finalRecurrenceRule
             )
         } else {
-            Toast.makeText(context, "Проверьте введенные данные", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -374,7 +374,7 @@ fun CreateEventScreen(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Описание") },
+                    label = { Text(stringResource(R.string.description)) },
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     maxLines = 4,
                     enabled = !isLoading,
@@ -383,7 +383,7 @@ fun CreateEventScreen(
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Местоположение") },
+                    label = { Text(stringResource(R.string.location)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !isLoading,
@@ -391,7 +391,7 @@ fun CreateEventScreen(
                 )
             }
             generalError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
             Spacer(modifier = Modifier.height(16.dp)) // Отступ перед кнопкой сохранения
         } // End Scrollable Column
@@ -433,7 +433,7 @@ fun CreateEventScreen(
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showStartDatePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showStartDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -473,7 +473,7 @@ fun CreateEventScreen(
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showStartTimePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showStartTimePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             TimePicker(state = timePickerState) // Вставляем сам пикер
@@ -520,7 +520,7 @@ fun CreateEventScreen(
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showEndDatePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showEndDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -551,7 +551,7 @@ fun CreateEventScreen(
                     ) {
                         Toast.makeText(
                             context,
-                            "Время конца должно быть после времени начала",
+                            R.string.error_end_date_before_start,
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
@@ -563,7 +563,7 @@ fun CreateEventScreen(
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showEndTimePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showEndTimePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             TimePicker(state = timePickerState)
@@ -615,7 +615,7 @@ fun CreateEventScreen(
             dismissButton = {
                 TextButton(onClick = {
                     showRecurrenceEndDatePicker = false
-                }) { Text("Cancel") }
+                }) { Text(stringResource(R.string.cancel)) }
             }
             // --- ИСПОЛЬЗУЕМ ИМЕНОВАННЫЙ ПАРАМЕТР content ---
         ) { // Начало лямбды для content

@@ -13,6 +13,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
+import com.lpavs.caliinda.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -191,7 +192,7 @@ class AuthManager @Inject constructor(
                 Log.e(TAG, "Error during Google sign out", e)
                 // Все равно выполняем внутренний выход
             } finally {
-                signOutInternally("Вы успешно вышли.") // Всегда сбрасываем состояние
+                signOutInternally(R.string.logout_success.toString()) // Всегда сбрасываем состояние
             }
         }
     }
@@ -235,7 +236,7 @@ class AuthManager @Inject constructor(
                 signOutInternally(null) // Считаем не вошедшим
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking initial auth state", e)
-                signOutInternally("Ошибка проверки аккаунта: ${e.message}") // Считаем не вошедшим
+                signOutInternally("Account verification error: ${e.message}") // Считаем не вошедшим
             } finally {
                 // Убедимся что isLoading сброшен в любом случае
                 if (_authState.value.isLoading) {

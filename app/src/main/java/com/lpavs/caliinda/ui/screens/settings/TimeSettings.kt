@@ -33,8 +33,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import kotlinx.coroutines.launch
@@ -66,7 +68,7 @@ fun TimeSettingsScreen(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -94,7 +96,7 @@ fun TimeSettingsScreen(
                         readOnly = true, // Меню только для чтения
                         value = selectedTimeZoneId, // Показываем выбранный ID
                         onValueChange = {}, // Пустой обработчик, т.к. readOnly
-                        label = { Text("Часовой пояс") }, // Используй Text() для label
+                        label = { Text(stringResource(R.string.time_zone)) }, // Используй Text() для label
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier
                             .menuAnchor(type = PrimaryEditable, enabled = true) // Исправлено
@@ -115,7 +117,7 @@ fun TimeSettingsScreen(
                                     expanded = false // Закрываем меню
                                     scope.launch {
                                         viewModel.updateTimeZoneSetting(timeZoneId) // Сохраняем выбор
-                                        snackbarHostState.showSnackbar("Часовой пояс сохранён: $timeZoneId")
+                                        snackbarHostState.showSnackbar("Time zone saved")
                                     }
                                 }
                             )
@@ -124,17 +126,17 @@ fun TimeSettingsScreen(
                 }
             }
             Spacer(modifier = Modifier.height(10.dp)) // Используй константу
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius)) // Константа
-                    .background(color = colorScheme.surfaceContainer) // Тема
-                    .padding(16.dp)
-            ) {
-                Column {
-                    Text("Другие настройки будут здесь.")
-                }
-            }
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius)) // Константа
+//                    .background(color = colorScheme.surfaceContainer) // Тема
+//                    .padding(16.dp)
+//            ) {
+//                Column {
+//                    Text("Другие настройки будут здесь.")
+//                }
+//            }
         }
     }
 }

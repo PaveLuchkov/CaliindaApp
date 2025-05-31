@@ -1,5 +1,26 @@
 <resources>
     <string name="app_name">Caliinda</string>
+    <string name="type_message">Type message</string>
+    <string name="no_events">No events</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+
+    <string name="google_login">Google log in</string>
+    <string name="login">Log In</string>
+    <string name="logout">Log Out</string>
+    <string name="loginplease">Google Account</string>
+    <string name="error_account_check">Account verification error: %1$s</string>
+    <string name="logout_success">You logged out successfully</string>
+    <string name="account">Account</string>
+    <string name="log_to_continue">Log in with Google to explore your new AI calendar</string>
+
+    <string name="pick_time">Pick a Time</string>
+    <string name="pick_date">Pick a Date</string>
+    <string name="time">Time</string>
+
+    <string name="event_name">Event Name</string>
     <string name="time_start">Start time</string>
     <string name="time_end">End time</string>
     <string name="date_start">Start date</string>
@@ -10,7 +31,15 @@
     <string name="all_day">All day</string>
     <string name="one_day">One day</string>
 
-    <string name="recurrence_event">Repeat</string> <!-- Заменит ваш val recEvent -->
+    <string name="recurrence_event">Repeat</string>
+    <string name="recurrence_settings_title">Recurrence</string>
+    <string name="recurrence_rule_label">Rule</string>
+    <string name="recurrence_none">Do not repeat</string>
+    <string name="recurrence_daily">Daily</string>
+    <string name="recurrence_weekly">Weekly</string>
+    <string name="recurrence_monthly">Monthly</string>
+    <string name="recurrence_yearly">Yearly</string>
+
     <string name="recurrence_ends">Ending</string>
     <string name="recurrence_end_never">Never</string>
     <string name="recurrence_end_date">Date</string>
@@ -18,14 +47,20 @@
     <string name="recurrence_occurrences">repetitions</string>
     <string name="recurrence_end_date_field">Date ending</string>
     <string name="recurrence_count_field">Count repetitions</string>
-    <!-- Строки для секции повторения в описании -->
+
     <string name="recurrence_repeats">Repeats</string>
     <string name="recurrence_daily_lower">daily</string>
     <string name="recurrence_weekly_lower">weekly</string>
     <string name="recurrence_monthly_lower">monthly</string>
     <string name="recurrence_yearly_lower">yearly</string>
+    <string name="recurrence_on_days">on %1$s</string>
+    <string name="recurrence_until">until %1$s</string>
+    <string name="recurrence_count">%1$d time(s)</string>
+    <string name="recurrence_interval">every %1$d %2$s</string>
+    <string name="recurrence_on_day_of_month">on day %1$d</string>
+    <string name="recurrence_in_months">in %1$s</string>
+    <string name="recurrence_unknown">Repeats</string>
 
-    <!-- Days of the week -->
     <string name="day_monday">Monday</string>
     <string name="day_tuesday">Tuesday</string>
     <string name="day_wednesday">Wednesday</string>
@@ -34,16 +69,6 @@
     <string name="day_saturday">Saturday</string>
     <string name="day_sunday">Sunday</string>
 
-    <!-- Suffixes / modifiers -->
-    <string name="recurrence_on_days">on %1$s</string> <!-- e.g. "on Monday, Wednesday" -->
-    <string name="recurrence_until">until %1$s</string> <!-- e.g. "until June 30, 2025" -->
-    <string name="recurrence_count">%1$d time(s)</string> <!-- e.g. "10 time(s)" -->
-    <string name="recurrence_interval">every %1$d %2$s</string> <!-- e.g. "every 2 weeks" -->
-    <string name="recurrence_on_day_of_month">on day %1$d</string> <!-- e.g. "on day 15" -->
-    <string name="recurrence_in_months">in %1$s</string> <!-- e.g. "in January, February" -->
-    <string name="recurrence_unknown">Repeats</string> <!-- fallback -->
-
-    <!-- Months if needed -->
     <string name="month_january">January</string>
     <string name="month_february">February</string>
     <string name="month_march">March</string>
@@ -57,27 +82,101 @@
     <string name="month_november">November</string>
     <string name="month_december">December</string>
 
-    <string name="delete_confirmation_message">Are you sure you want to delete this event? This action cannot be undone.</string>
     <string name="delete_conf">Delete confirmation</string>
-    <string name="cancel">Cancel</string>
-    <string name="delete">Delete</string>
-    <string name="save">Save</string>
+    <string name="delete_confirmation_message">Are you sure you want to delete this event? This action cannot be undone.</string>
+    <string name="delete_recurring_event_title">Delete recurring event</string>
+    <string name="delete_recurring_event_prompt">The event "%1$s" is part of a series. How would you like to delete it?</string>
+    <string name="delete_single_instance">Delete only this event</string>
+    <string name="delete_all_in_series">Delete the entire series</string>
 
-    <string name="no_events">No events</string>
+    <string name="edit_recurring_event_title">Edit recurring event</string>
+    <string name="edit_recurring_event_prompt">How would you like to edit "%1$s"?</string>
+    <string name="edit_single_instance">Only this event</string>
+    <string name="edit_all_in_series">All events in the series</string>
+    <string name="edit_this_and_following">This and following events</string>
 
-    <!-- Строки для секции повторения -->
-    <string name="recurrence_settings_title">Recurrence</string> <!-- Заменит ваш val -->
-    <string name="recurrence_rule_label">Rule</string> <!-- Заменит ваш val -->
-    <string name="recurrence_none">Do not repeat</string>
-    <string name="recurrence_daily">Daily</string>
-    <string name="recurrence_weekly">Weekly</string>
-    <string name="recurrence_monthly">Monthly</string>
-    <string name="recurrence_yearly">Yearly</string>
-
-    <!-- Строки для ошибок и кнопок (если нужны) -->
     <string name="error_end_date_before_start">End date cannot be before start date</string>
     <string name="error_start_time_missing">Specify the start time</string>
     <string name="error_end_time_missing">Specify the end time</string>
     <string name="error_end_time_not_after_start">End time must be after start time</string>
+    <string name="error_check_input_data">Please check the entered data</string>
+    <string name="no_changes_to_save">No changes to save</string>
+    <string name="error_summary_cannot_be_empty">Title cannot be empty</string>
+    <string name="error_specify_start_and_end_time">Specify start and end time</string>
+    <string name="error_failed_to_format_datetime">Failed to format date/time for submission</string>
+    <string name="event_updated_successfully">Event updated successfully</string>
 
+    <string name="settings">Settings</string>
+    <string name="time_zone">Time zone</string>
+    <string name="time_zone_save">Time Zone saved: %1$s</string>
+    <string name="time_format">Time &amp; Format</string>
+    <string name="terms">Terms</string>
+    <string name="terms_of_use">Terms of use</string>
+
+    <string name="ai">AI</string>
+    <string name="aisettings">AI Settings</string>
+    <string name="temper_ai">Temper of Assistant</string>
+    <string name="temper_example">e.g.: be sweet and humble</string>
+    <string name="temper_saved">Temper setting saved</string>
+
+    <string name="suggested_event_test">Test</string>
+    <string name="suggested_event_test_full">Testing EVENT</string>
+    <string name="suggested_event_work">Work</string>
+    <string name="suggested_event_work_full">💼 Working</string>
+    <string name="suggested_event_dinner">Dinner</string>
+    <string name="suggested_event_dinner_full">🍽️ Dinner</string>
+    <string name="suggested_event_meeting">Meeting</string>
+    <string name="suggested_event_meeting_full">🤝 Meeting</string>
+    <string name="suggested_event_coffee">Coffee</string>
+    <string name="suggested_event_coffee_full">☕ Coffee Break</string>
+    <string name="suggested_event_lunch">Lunch</string>
+    <string name="suggested_event_lunch_full">🥪 Lunch Break</string>
+    <string name="suggested_event_shopping">Shopping</string>
+    <string name="suggested_event_shopping_full">🛍️ Shopping</string>
+    <string name="suggested_event_appointment">Appointment</string>
+    <string name="suggested_event_appointment_full">📅 Appointment</string>
+    <string name="suggested_event_travel">Travel</string>
+    <string name="suggested_event_travel_full">✈️ Traveling</string>
+    <string name="suggested_event_party">Party</string>
+    <string name="suggested_event_party_full">🎉 Party</string>
+    <string name="suggested_event_movie">Movie</string>
+    <string name="suggested_event_movie_full">🎬 Movie Night</string>
+    <string name="suggested_event_study">Study</string>
+    <string name="suggested_event_study_full">📚 Studying</string>
+    <string name="suggested_event_gym">Gym</string>
+    <string name="suggested_event_gym_full">🏋️‍♀️ Going to the Gym</string>
+    <string name="suggested_event_relax">Relax</string>
+    <string name="suggested_event_relax_full">🧘 Relaxing</string>
+    <string name="suggested_event_reading">Reading</string>
+    <string name="suggested_event_reading_full">📖 Reading Time</string>
+    <string name="suggested_event_cleaning">Cleaning</string>
+    <string name="suggested_event_cleaning_full">🧹 Cleaning the House</string>
+    <string name="suggested_event_cooking">Cooking</string>
+    <string name="suggested_event_cooking_full">🍳 Cooking a Meal</string>
+    <string name="suggested_event_walking">Walking</string>
+    <string name="suggested_event_walking_full">🚶 Walking</string>
+    <string name="suggested_event_hobby">Hobby</string>
+    <string name="suggested_event_hobby_full">🎨 Hobby Time</string>
+    <string name="suggested_event_date">Date</string>
+    <string name="suggested_event_date_full">❤️ Date Night</string>
+    <string name="suggested_event_doctor">Doctor</string>
+    <string name="suggested_event_doctor_full">🩺 Doctor Appointment</string>
+    <string name="suggested_event_birthday">Birthday</string>
+    <string name="suggested_event_birthday_full">🎂 Birthday</string>
+    <string name="suggested_event_project">Project</string>
+    <string name="suggested_event_project_full">💻 Working on a Project</string>
+    <string name="suggested_event_presentation">Presentation</string>
+    <string name="suggested_event_presentation_full">🗣️ Presentation</string>
+    <string name="suggested_event_call">Call</string>
+    <string name="suggested_event_call_full">📞 Phone Call</string>
+    <string name="suggested_event_errand">Errand</string>
+    <string name="suggested_event_errand_full">🏃 Errand</string>
+    <string name="suggested_event_relax_bath">Relax</string>
+    <string name="suggested_event_relax_bath_full">🛀 Relax Time</string>
+    <string name="suggested_event_sleep">Sleep</string>
+    <string name="suggested_event_sleep_full">😴 Sleep time</string>
+    <string name="suggested_event_breakfast">Breakfast</string>
+    <string name="suggested_event_breakfast_full">🍳 Breakfast</string>
+    <string name="suggested_event_pet">Pet</string>
+    <string name="suggested_event_pet_full">🦮 Walking the pet</string>
 </resources>

@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,6 +64,9 @@ import kotlin.math.abs
 import kotlin.math.exp
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -83,7 +87,7 @@ fun EventListItem(
     modifier: Modifier = Modifier,
     currentTimeZoneId: String
 ) {
-    val eventDurationMinutes = remember(event.startTime, event.endTime) {
+    val eventDurationMinutes = remember(event.startTime, event.endTime, currentTimeZoneId) {
         val start = parseToInstant(event.startTime, currentTimeZoneId)
         val end = parseToInstant(event.endTime, currentTimeZoneId)
         if (start != null && end != null && end.isAfter(start)) {
@@ -92,6 +96,7 @@ fun EventListItem(
             0L
         }
     }
+    val haptic = LocalHapticFeedback.current
 
     val shapeParams = remember(event.id) {
         generateShapeParams(event.id) // Use helper
@@ -147,7 +152,15 @@ fun EventListItem(
             .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
             .background(cardBackground)
             .height(targetHeightFromList)
-            .clickable { onToggleExpand() }
+            .pointerInput(event.id) {
+                detectTapGestures(
+                    onTap = { onToggleExpand() },
+                    onLongPress = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onDetailsClickFromList()
+                    }
+                )
+            }
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
@@ -170,21 +183,27 @@ fun EventListItem(
                     val shadowColor = Color.Black.copy(alpha = 0.3f) // Переместил
 
                     Box( // Тень
-                        modifier = Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd) // Позиционирование звезды
                             .graphicsLayer(
                                 translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
                                 translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
                                 rotationZ = rotationAngle
-                            ).requiredSize(starContainerSize).clip(clip2Star)
+                            )
+                            .requiredSize(starContainerSize)
+                            .clip(clip2Star)
                             .background(shadowColor)
                     )
                     Box( // Основная фигура
-                        modifier = Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd) // Позиционирование звезды
                             .graphicsLayer(
                                 translationX = with(density) { starOffsetX.toPx() },
                                 translationY = with(density) { starOffsetY.toPx() },
                                 rotationZ = rotationAngle
-                            ).requiredSize(starContainerSize).clip(clipStar)
+                            )
+                            .requiredSize(starContainerSize)
+                            .clip(clipStar)
                             .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha))
                     )
                 }
@@ -321,15 +340,24 @@ fun AllDayEventItem(
     onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier // Добавил modifier
 ) {
-    val cardBackground = colorScheme.tertiary
-    val cardTextColor = colorScheme.onTertiary
+    val cardBackground = colorScheme.tertiaryContainer
+    val cardTextColor = colorScheme.onTertiaryContainer
+    val haptic = LocalHapticFeedback.current
 
-    Box( // Внешний Box для кликабельности, фона и формы
-        modifier = modifier // Используем переданный modifier
+    Box(
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(cuid.EventItemCornerRadius)) // Используем радиус как у обычных событий для консистентности
             .background(cardBackground)
-            .clickable { onToggleExpand() }
+            .pointerInput(event.id) {
+                detectTapGestures(
+                    onTap = { onToggleExpand() },
+                    onLongPress = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onDetailsClick()
+                    }
+                )
+            }
     ) {
         Column(
             modifier = Modifier

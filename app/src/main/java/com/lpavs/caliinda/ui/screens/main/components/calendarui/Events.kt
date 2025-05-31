@@ -172,7 +172,7 @@ fun EventsList(
                     label = "eventItemHeightAnimation"
                 )
 
-                val isCurrent = remember(currentTime, event.startTime, event.endTime) {
+                val isCurrent = remember(currentTime, event.startTime, event.endTime, currentTimeZoneId) {
                     val start = parseToInstant(event.startTime, currentTimeZoneId)
                     val end = parseToInstant(event.endTime, currentTimeZoneId)
                     start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(
@@ -181,7 +181,7 @@ fun EventsList(
                 }
 
 
-                val isNext = remember(event.startTime, nextStartTime) {
+                val isNext = remember(event.startTime, nextStartTime, currentTimeZoneId) {
                     // isNext вычисляется ТОЛЬКО если nextStartTime не null (т.е. мы на сегодня и следующее событие есть)
                     if (nextStartTime == null) false
                     else {
@@ -190,7 +190,7 @@ fun EventsList(
                     }
                 }
 
-                val proximityRatio = remember(currentTime, event.startTime, isToday) {
+                val proximityRatio = remember(currentTime, event.startTime, isToday, currentTimeZoneId, transitionWindowDurationMillis) {
                     // Коэффициент рассчитывается только для СЕГОДНЯ и для БУДУЩИХ событий
                     if (!isToday) {
                         0f // Не сегодня - нет перехода
@@ -228,7 +228,11 @@ fun EventsList(
                     targetHeightFromList = animatedHeight,
                     isExpanded = isExpanded,
                     onToggleExpand = {
-                        expandedEventId = if (isExpanded) null else event.id
+                        expandedEventId = if (expandedEventId == event.id) {
+                            null
+                        } else {
+                            event.id
+                        }
                     },
                     onDeleteClickFromList = {
                         onDeleteRequest(event)
@@ -352,7 +356,11 @@ fun DayEventsPage(
                             event = event,
                             isExpanded = isExpanded,
                             onToggleExpand = {
-                                expandedAllDayEventId = if (isExpanded) null else event.id
+                                expandedAllDayEventId = if (expandedAllDayEventId == event.id) {
+                                    null
+                                } else {
+                                    event.id
+                                }
                             },
                             onDeleteClick = {
                                 viewModel.requestDeleteConfirmation(event)

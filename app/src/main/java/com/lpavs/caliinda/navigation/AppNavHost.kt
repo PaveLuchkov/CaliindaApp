@@ -205,7 +205,6 @@ fun AppNavHost(
             }
         ) {
             TermsOfUseScreen(
-                viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 title = "Terms of Use"
             )

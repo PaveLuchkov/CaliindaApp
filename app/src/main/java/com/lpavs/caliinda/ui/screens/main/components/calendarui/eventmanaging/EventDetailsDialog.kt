@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -74,8 +75,9 @@ fun CustomEventDetailsDialog(
 ) {
     val context = LocalContext.current
     val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
-    val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId) {
-        { event -> DateTimeFormatterUtil.formatEventDetailsTime(context, event, currentTimeZoneId) }
+    val currentLocale = LocalConfiguration.current.getLocales().get(0)
+    val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId, currentLocale) {
+        { event -> DateTimeFormatterUtil.formatEventDetailsTime(context, event, currentTimeZoneId, currentLocale) }
     }
     val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
     val isCurrent = remember(currentTime, event.startTime, event.endTime) {
