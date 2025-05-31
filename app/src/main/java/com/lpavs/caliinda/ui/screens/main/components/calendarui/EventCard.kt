@@ -321,11 +321,11 @@ fun AllDayEventItem(
     onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier // Добавил modifier
 ) {
-    val cardBackground = colorScheme.tertiary
-    val cardTextColor = colorScheme.onTertiary
+    val cardBackground = colorScheme.tertiaryContainer
+    val cardTextColor = colorScheme.onTertiaryContainer
 
-    Box( // Внешний Box для кликабельности, фона и формы
-        modifier = modifier // Используем переданный modifier
+    Box(
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(cuid.EventItemCornerRadius)) // Используем радиус как у обычных событий для консистентности
             .background(cardBackground)

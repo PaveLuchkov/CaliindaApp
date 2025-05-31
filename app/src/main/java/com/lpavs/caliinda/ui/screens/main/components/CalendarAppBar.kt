@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,6 +60,7 @@ fun CalendarAppBar(
     } else {
         colorScheme.onSecondary// Other dates' text color
     }
+    val currentLocale = LocalConfiguration.current.getLocales().get(0)
     CenterAlignedTopAppBar(
         title = {
             Box(
@@ -72,7 +74,7 @@ fun CalendarAppBar(
             ){
                 Text(
                     // TODO: ЗАМЕНИТЬ ОТОБРАЖЕНИЕ ВРЕМЕНИ НА ЛОКАЛЬ
-                    text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))),
+                    text = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", currentLocale)),
                     style = typography.titleLarge,
                     fontWeight = FontWeight.Medium,
                     color = headerTextColor,

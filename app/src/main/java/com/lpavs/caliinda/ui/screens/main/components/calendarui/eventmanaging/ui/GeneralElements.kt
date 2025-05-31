@@ -76,7 +76,7 @@ fun AdaptiveContainer(
 
 @Composable
 fun TimePickerDialog(
-    title: String = "Выберите время",
+    title: String = stringResource(R.string.pick_time),
     onDismissRequest: () -> Unit,
     confirmButton: @Composable (() -> Unit),
     dismissButton: @Composable (() -> Unit)? = null,
@@ -142,21 +142,21 @@ fun RecurringEventDeleteOptionsDialog(
     onDismiss: () -> Unit,
     onOptionSelected: (RecurringDeleteChoice) -> Unit
 ) {
-    var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) } // По умолчанию выбираем первый вариант
+    var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
     val radioOptions = listOf(
-        RecurringDeleteChoice.SINGLE_INSTANCE to "Удалить только это событие", // stringResource(R.string.delete_single_instance)
-        RecurringDeleteChoice.ALL_IN_SERIES to "Удалить всю серию" // stringResource(R.string.delete_all_in_series)
+        RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
+        RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series)
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = "Удалить повторяющееся событие") // stringResource(R.string.delete_recurring_event_title)
+            Text(text = stringResource(R.string.delete_recurring_event_title))
         },
         text = {
-            Column(modifier = Modifier.selectableGroup()) { // Важно для доступности
+            Column(modifier = Modifier.selectableGroup()) {
                 Text(
-                    text = "Событие \"$eventName\" является частью серии. Как вы хотите его удалить?", // stringResource(R.string.delete_recurring_event_prompt, eventName)
+                    text = stringResource(R.string.delete_recurring_event_prompt, eventName),
                     style = typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -170,15 +170,15 @@ fun RecurringEventDeleteOptionsDialog(
                                 onClick = { selectedOption = option },
                                 role = Role.RadioButton
                             )
-                            .padding(vertical = 8.dp), // Увеличим область клика
+                            .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
                             selected = (option == selectedOption),
-                            onClick = null, // null, так как selectable обрабатывает клик
+                            onClick = null,
                             colors = RadioButtonDefaults.colors(
                                 selectedColor = if (option == RecurringDeleteChoice.ALL_IN_SERIES && selectedOption == option) {
-                                    colorScheme.error // Красный, если выбрана опасная опция
+                                    colorScheme.error
                                 } else {
                                     colorScheme.primary
                                 }
@@ -189,7 +189,7 @@ fun RecurringEventDeleteOptionsDialog(
                             text = label,
                             style = typography.bodyLarge,
                             color = if (option == RecurringDeleteChoice.ALL_IN_SERIES) {
-                                colorScheme.error // Текст "Удалить всю серию" всегда красный
+                                colorScheme.error
                             } else {
                                 LocalContentColor.current
                             }
@@ -205,7 +205,6 @@ fun RecurringEventDeleteOptionsDialog(
                     onDismiss() // Закрываем диалог после подтверждения
                 },
                 colors = ButtonDefaults.buttonColors(
-                    // Сделаем кнопку "Удалить" красной, если выбрана опция "Удалить всю серию"
                     containerColor = if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
                         colorScheme.error
                     } else {
@@ -218,33 +217,32 @@ fun RecurringEventDeleteOptionsDialog(
                     }
                 )
             ) {
-                Text(stringResource(R.string.delete)) // stringResource(R.string.delete_action)
+                Text(stringResource(R.string.delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel)) // stringResource(R.string.cancel)
+                Text(stringResource(R.string.cancel))
             }
         }
     )
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class) // Для компонентов Material 3 внутри диалога
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecurringEventEditOptionsDialog(
     eventName: String,
     onDismiss: () -> Unit,
     onOptionSelected: (ClientEventUpdateMode) -> Unit,
     modifier: Modifier = Modifier,
-    properties: DialogProperties = DialogProperties() // Можно передавать кастомные свойства, если нужно
+    properties: DialogProperties = DialogProperties()
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier.widthIn(min = 280.dp, max = 560.dp), // Рекомендации по ширине диалогов M3
         properties = properties,
     ) {
-        // Обертка для Material 3 стилей (фон, форма, elevation)
         Surface(
             shape = shapes.extraLarge, // Стандартная форма для диалогов M3
             color = colorScheme.surface, // Цвет фона диалога
@@ -253,21 +251,17 @@ fun RecurringEventEditOptionsDialog(
         ) {
             Column(
                 modifier = Modifier
-                    // Замени DialogDefaults.внутренниеОтступы на правильное имя, если оно другое
-                    // или просто Modifier.padding(all = 24.dp)
                     .padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp) // Явные отступы
             ) {
-                // Заголовок
                 Text(
-                    text = "Редактировать повторяющееся событие",
-                    style = typography.headlineSmall, // Стиль заголовка M3
+                    text = stringResource(R.string.edit_recurring_event_title),
+                    style = typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Текст с именем события
                 Text(
-                    text = "Как вы хотите отредактировать \"$eventName\"?",
-                    style = typography.bodyMedium, // Стиль основного текста M3
+                    text = stringResource(R.string.edit_recurring_event_prompt, eventName),
+                    style = typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
@@ -277,7 +271,7 @@ fun RecurringEventEditOptionsDialog(
                     onClick = { onOptionSelected(ClientEventUpdateMode.SINGLE_INSTANCE) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Только это событие")
+                    Text(stringResource(R.string.edit_single_instance))
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -287,29 +281,29 @@ fun RecurringEventEditOptionsDialog(
                     onClick = { onOptionSelected(ClientEventUpdateMode.ALL_IN_SERIES) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Все события в серии")
+                    Text(stringResource(R.string.edit_all_in_series))
                 }
 
                 // Опционально: "Это и последующие", если поддерживается
                 // Spacer(modifier = Modifier.height(8.dp))
                 // TextButton(
-                //     onClick = { onOptionSelected(ClientEventUpdateMode.THIS_AND_FOLLOWING) },
-                //     modifier = Modifier.fillMaxWidth()
-                // ) {
-                //     Text("Это и последующие события")
-                // }
+                //    onClick = { onOptionSelected(ClientEventUpdateMode.THIS_AND_FOLLOWING) },
+                //    modifier = Modifier.fillMaxWidth()
+                //) {
+                //    Text(stringResource(R.string.edit_this_and_following))
+                //}
 
-                Spacer(modifier = Modifier.height(24.dp)) // Отступ перед кнопкой "Отмена"
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Кнопка "Отмена"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End // Выравниваем кнопку "Отмена" вправо
+                    horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(
                         onClick = onDismiss
                     ) {
-                        Text("Отмена")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             }

@@ -34,9 +34,11 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import com.lpavs.caliinda.R
 
 
 @ExperimentalMaterial3ExpressiveApi
@@ -134,7 +136,8 @@ fun BottomBar(
                         value = textFieldValue,
                         onValueChange = onTextChanged,
                         modifier = Modifier.width(200.dp),
-                        placeholder = { Text("Type message") },
+                        placeholder = { Text(stringResource(R.string.type_message)) },
+                        maxLines = 1,
                         keyboardOptions = KeyboardOptions.Default.copy(
                             imeAction = ImeAction.Send
                         ),

@@ -25,7 +25,9 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import com.lpavs.caliinda.ui.theme.Typography
@@ -37,7 +39,7 @@ fun GoogleAccountSection(
    onSignInClick: () -> Unit,
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val email = uiState.userEmail ?: "Google account"
+    val email = uiState.userEmail ?: stringResource(R.string.loginplease)
     val displayName = uiState.displayName ?: email.substringBefore("@")
     val cornerRadius = cuid.SettingsItemCornerRadius
     Box(
@@ -64,7 +66,7 @@ fun GoogleAccountSection(
             ){
                 Icon(Icons.Rounded.AccountCircle,
                     tint=colorScheme.onPrimaryContainer,
-                    contentDescription = "Account")
+                    contentDescription = stringResource(R.string.account) )
             }
            Spacer(modifier = Modifier.width(16.dp))
            Text(text = displayName, style = Typography.bodyLarge)
@@ -80,14 +82,14 @@ fun GoogleAccountSection(
                            onClick = onSignInClick, // Вызываем лямбду
                        //    enabled = !uiState.isLoading // Блокируем кнопку во время входа
                        ) {
-                           Text("Log-in")
+                           Text(stringResource(R.string.login) )
                        }
                    } else {
                        Button(
                            onClick = { viewModel.signOut() },
                            enabled = !uiState.isLoading
                        ) {
-                           Text("Log Out")
+                           Text(stringResource(R.string.logout))
                        }
                    }
                }

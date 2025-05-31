@@ -349,7 +349,7 @@ fun MainScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Отмена") // Используем Text из M3
+                    Text(stringResource(R.string.cancel)) // Используем Text из M3
                 }
             }
         ) {
@@ -458,7 +458,7 @@ fun MainScreen(
                         contentPadding = ButtonDefaults.contentPaddingFor(expandedSize)
                     ) {
                             Text(
-                                text = "Google Log In",
+                                text = stringResource(R.string.google_login),
                                 style = ButtonDefaults.textStyleFor(expandedSize)
                             )
                     }

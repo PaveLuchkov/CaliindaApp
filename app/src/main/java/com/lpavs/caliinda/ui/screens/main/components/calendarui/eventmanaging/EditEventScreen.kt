@@ -7,13 +7,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,14 +26,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
@@ -59,7 +52,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
 import com.lpavs.caliinda.data.local.DateTimeUtils
@@ -86,10 +81,10 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun EditEventScreen(
     viewModel: MainViewModel,
-    eventToEdit: CalendarEvent, // Оригинальное событие для предзаполнения
-    selectedUpdateMode: ClientEventUpdateMode, // Режим обновления, выбранный пользователем
+    eventToEdit: CalendarEvent,
+    selectedUpdateMode: ClientEventUpdateMode,
     onDismiss: () -> Unit,
-    currentSheetValue: SheetValue // Если используется в BottomSheet
+    currentSheetValue: SheetValue
 ) {
     // --- Получаем оригинальные данные и парсим их для состояния формы ---
     val userTimeZoneId by viewModel.timeZone.collectAsState() // Нужен для парсинга времени
@@ -178,16 +173,16 @@ fun EditEventScreen(
 
     // Функция validateInput (остается такой же или с небольшими адаптациями)
     fun validateInput(): Boolean {
-        summaryError = if (summary.isBlank()) "Название не может быть пустым" else null
+        summaryError = if (summary.isBlank()) R.string.error_summary_cannot_be_empty.toString() else null
         validationError = null
         val state = eventDateTimeState
         if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
-            validationError = "Укажите время начала и конца"
+            validationError = R.string.error_specify_start_and_end_time.toString()
             return false
         }
         val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZoneId)
         if (testStartTimeStr == null || testEndTimeStr == null) {
-            validationError = "Не удалось сформировать дату/время для отправки"
+            validationError = R.string.error_failed_to_format_datetime.toString()
             return false
         }
         return summaryError == null && validationError == null
@@ -198,7 +193,7 @@ fun EditEventScreen(
         isLoading = updateEventState is UpdateEventResult.Loading
         when (val result = updateEventState) {
             is UpdateEventResult.Success -> {
-                Toast.makeText(context, "Событие успешно обновлено", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
                 viewModel.consumeUpdateEventResult() // Используем новый consume
                 onDismiss()
             }
@@ -207,7 +202,7 @@ fun EditEventScreen(
                 viewModel.consumeUpdateEventResult()
             }
             is UpdateEventResult.Loading -> generalError = null
-            is UpdateEventResult.Idle -> { /* Сброс generalError, если нужно */ }
+            is UpdateEventResult.Idle -> {  }
         }
     }
 
@@ -215,14 +210,14 @@ fun EditEventScreen(
         generalError = null
         if (validateInput()) {
             val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
-            if (startStr == null || endStr == null) { /* ... обработка ошибки ... */ return@saveLambda }
+            if (startStr == null || endStr == null) { return@saveLambda }
 
             // --- Формирование RRULE (код идентичен CreateEventScreen) ---
             val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
             var finalRecurrenceRule: String? = null
 
             if (baseRule != null) {
-                val ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
+                val ruleParts = mutableListOf(baseRule)
 
                 // Добавляем BYDAY, если нужно
                 if (baseRule == RecurrenceOption.Weekly.rruleValue && eventDateTimeState.selectedWeekdays.isNotEmpty()) {
@@ -296,7 +291,7 @@ fun EditEventScreen(
             )
 
             if (updateRequest == null) {
-                Toast.makeText(context, "Нет изменений для сохранения", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.no_changes_to_save, Toast.LENGTH_SHORT).show()
                 onDismiss()
                 return@saveLambda
             }
@@ -306,7 +301,7 @@ fun EditEventScreen(
                 modeFromUi = selectedUpdateMode
             )
         } else {
-            Toast.makeText(context, "Проверьте введенные данные", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
         }
     } // Конец onSaveClick
 
@@ -357,7 +352,7 @@ fun EditEventScreen(
                 } else {
                     Icon(
                         imageVector = Icons.Filled.Check,
-                        contentDescription = "Сохранить", // Consider using stringResource here too
+                        contentDescription = stringResource(R.string.save), // Consider using stringResource here too
                         modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)) // Animated icon size
                     )
 //                        Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size))) // Or use animated spacerWidth
@@ -409,7 +404,7 @@ fun EditEventScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Описание") },
+                label = { Text(stringResource(R.string.description)) },
                 modifier = Modifier.fillMaxWidth().height(100.dp),
                 maxLines = 4,
                 enabled = !isLoading,
@@ -418,7 +413,7 @@ fun EditEventScreen(
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
-                label = { Text("Местоположение") },
+                label = { Text(stringResource(R.string.location)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 enabled = !isLoading,
@@ -468,7 +463,7 @@ fun EditEventScreen(
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showStartDatePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showStartDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -508,7 +503,7 @@ fun EditEventScreen(
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showStartTimePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showStartTimePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             TimePicker(state = timePickerState) // Вставляем сам пикер
@@ -555,7 +550,7 @@ fun EditEventScreen(
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showEndDatePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showEndDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -586,7 +581,7 @@ fun EditEventScreen(
                     ) {
                         Toast.makeText(
                             context,
-                            "Время конца должно быть после времени начала",
+                            R.string.error_end_time_not_after_start,
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
@@ -598,7 +593,7 @@ fun EditEventScreen(
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showEndTimePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showEndTimePicker = false }) { Text(stringResource(R.string.cancel)) }
             }
         ) {
             TimePicker(state = timePickerState)
@@ -650,7 +645,7 @@ fun EditEventScreen(
             dismissButton = {
                 TextButton(onClick = {
                     showRecurrenceEndDatePicker = false
-                }) { Text("Cancel") }
+                }) { Text(stringResource(R.string.cancel)) }
             }
             // --- ИСПОЛЬЗУЕМ ИМЕНОВАННЫЙ ПАРАМЕТР content ---
         ) { // Начало лямбды для content

@@ -39,9 +39,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import kotlinx.coroutines.launch
@@ -62,10 +64,10 @@ fun AISettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("AI Settings") },
+                title = { Text(stringResource(R.string.aisettings)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -88,7 +90,7 @@ fun AISettingsScreen(
             ) {
                 Column {
                     Text(
-                        "Temper of AI",
+                        stringResource(R.string.temper_ai),
                         style = typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -98,7 +100,7 @@ fun AISettingsScreen(
                         OutlinedTextField(
                             value = temperInputState,
                             onValueChange = { temperInputState = it },
-                            placeholder = { "e.g.: be sweet and humble" },
+                            placeholder = { Text(stringResource(R.string.temper_example)) },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp),
@@ -116,7 +118,7 @@ fun AISettingsScreen(
                                 if (temperInputState != currentTemper) {
                                     viewModel.updateBotTemperSetting(temperInputState)
                                     scope.launch {
-                                        snackbarHostState.showSnackbar("Настройка поведения сохранена")
+                                        snackbarHostState.showSnackbar(R.string.temper_saved.toString())
                                     }
                                 }
                             },
@@ -127,7 +129,7 @@ fun AISettingsScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.Check,
-                                            contentDescription = "Save",
+                                            contentDescription = stringResource(R.string.save),
                                             modifier = Modifier.size(24.dp) // размер иконки внутри
                                         )
                                         }

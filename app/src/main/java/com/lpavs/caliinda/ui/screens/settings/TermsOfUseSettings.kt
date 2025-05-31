@@ -16,13 +16,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TermsOfUseScreen(
-    viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
     title: String
 ) {
@@ -36,7 +37,8 @@ fun TermsOfUseScreen(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)
+                        )
                     }
                 }
             )
@@ -49,7 +51,7 @@ fun TermsOfUseScreen(
                 .fillMaxWidth() // Занимаем всю ширину
         ) {
             // TODO: когда будут готовы вставить как-то
-            Text("ЗДЕСЬ ЕЩЕ НИЧЕГО НЕТ)")
+//            Text("ЗДЕСЬ ЕЩЕ НИЧЕГО НЕТ)")
         }
     }
 }
