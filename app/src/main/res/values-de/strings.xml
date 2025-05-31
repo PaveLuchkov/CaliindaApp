@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caliinda</string>
+    <string name="type_message">Nachricht eingeben</string>
+    <string name="no_events">Keine Ereignisse</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="save">Speichern</string>
+    <string name="back">Zurück</string>
+    <string name="delete">Löschen</string>
+
+    <string name="google_login">Google Login</string>
+    <string name="login">Anmelden</string>
+    <string name="logout">Abmelden</string>
+    <string name="loginplease">Google-Konto</string>
+    <string name="error_account_check">Kontoverifizierungsfehler: %1$s</string>
+    <string name="logout_success">Sie wurden erfolgreich abgemeldet</string>
+    <string name="account">Konto</string>
+
+    <string name="pick_time">Uhrzeit auswählen</string>
+    <string name="pick_date">Datum auswählen</string>
+    <string name="time">Uhrzeit</string>
+
+    <string name="event_name">Ereignisname</string>
+    <string name="time_start">Startzeit</string>
+    <string name="time_end">Endzeit</string>
+    <string name="date_start">Startdatum</string>
+    <string name="date_end">Enddatum</string>
+    <string name="date_single">Datum</string>
+    <string name="location">Ort</string>
+    <string name="description">Beschreibung</string>
+    <string name="all_day">Ganztägig</string>
+    <string name="one_day">Ein Tag</string>
+
+    <string name="recurrence_event">Wiederholen</string>
+    <string name="recurrence_settings_title">Wiederholung</string>
+    <string name="recurrence_rule_label">Regel</string>
+    <string name="recurrence_none">Nicht wiederholen</string>
+    <string name="recurrence_daily">Täglich</string>
+    <string name="recurrence_weekly">Wöchentlich</string>
+    <string name="recurrence_monthly">Monatlich</string>
+    <string name="recurrence_yearly">Jährlich</string>
+
+    <string name="recurrence_ends">Ende</string>
+    <string name="recurrence_end_never">Nie</string>
+    <string name="recurrence_end_date">Datum</string>
+    <string name="recurrence_end_count">Anzahl</string>
+    <string name="recurrence_occurrences">Wiederholungen</string>
+    <string name="recurrence_end_date_field">Enddatum</string>
+    <string name="recurrence_count_field">Anzahl Wiederholungen</string>
+
+    <string name="recurrence_repeats">Wiederholt sich</string>
+    <string name="recurrence_daily_lower">täglich</string>
+    <string name="recurrence_weekly_lower">wöchentlich</string>
+    <string name="recurrence_monthly_lower">monatlich</string>
+    <string name="recurrence_yearly_lower">jährlich</string>
+    <string name="recurrence_on_days">am %1$s</string>
+    <string name="recurrence_until">bis %1$s</string>
+    <string name="recurrence_count">%1$d Mal</string>
+    <string name="recurrence_interval">alle %1$d %2$s</string>
+    <string name="recurrence_on_day_of_month">am %1$d. Tag des Monats</string>
+    <string name="recurrence_in_months">im %1$s</string>
+    <string name="recurrence_unknown">Wiederholt sich</string>
+
+    <string name="day_monday">Montag</string>
+    <string name="day_tuesday">Dienstag</string>
+    <string name="day_wednesday">Mittwoch</string>
+    <string name="day_thursday">Donnerstag</string>
+    <string name="day_friday">Freitag</string>
+    <string name="day_saturday">Samstag</string>
+    <string name="day_sunday">Sonntag</string>
+
+    <string name="month_january">Januar</string>
+    <string name="month_february">Februar</string>
+    <string name="month_march">März</string>
+    <string name="month_april">April</string>
+    <string name="month_may">Mai</string>
+    <string name="month_june">Juni</string>
+    <string name="month_july">Juli</string>
+    <string name="month_august">August</string>
+    <string name="month_september">September</string>
+    <string name="month_october">Oktober</string>
+    <string name="month_november">November</string>
+    <string name="month_december">Dezember</string>
+
+    <string name="delete_conf">Löschbestätigung</string>
+    <string name="delete_confirmation_message">Möchten Sie dieses Ereignis wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="delete_recurring_event_title">Wiederkehrendes Ereignis löschen</string>
+    <string name="delete_recurring_event_prompt">Das Ereignis "%1$s" ist Teil einer Serie. Wie möchten Sie es löschen?</string>
+    <string name="delete_single_instance">Nur dieses Ereignis löschen</string>
+    <string name="delete_all_in_series">Die gesamte Serie löschen</string>
+
+    <string name="edit_recurring_event_title">Wiederkehrendes Ereignis bearbeiten</string>
+    <string name="edit_recurring_event_prompt">Wie möchten Sie "%1$s" bearbeiten?</string>
+    <string name="edit_single_instance">Nur dieses Ereignis</string>
+    <string name="edit_all_in_series">Alle Ereignisse in der Serie</string>
+    <string name="edit_this_and_following">Dieses und folgende Ereignisse</string>
+
+    <string name="error_end_date_before_start">Enddatum kann nicht vor Startdatum liegen</string>
+    <string name="error_start_time_missing">Startzeit angeben</string>
+    <string name="error_end_time_missing">Endzeit angeben</string>
+    <string name="error_end_time_not_after_start">Endzeit muss nach Startzeit liegen</string>
+    <string name="error_check_input_data">Bitte überprüfen Sie die eingegebenen Daten</string>
+    <string name="no_changes_to_save">Keine Änderungen zum Speichern</string>
+    <string name="error_summary_cannot_be_empty">Titel darf nicht leer sein</string>
+    <string name="error_specify_start_and_end_time">Start- und Endzeit angeben</string>
+    <string name="error_failed_to_format_datetime">Datum/Uhrzeit konnte nicht für die Übermittlung formatiert werden</string>
+    <string name="event_updated_successfully">Ereignis erfolgreich aktualisiert</string>
+
+    <string name="settings">Einstellungen</string>
+    <string name="time_zone">Zeitzone</string>
+    <string name="time_zone_save">Zeitzone gespeichert: %1$s</string>
+    <string name="time_format">Zeit &amp; Format</string>
+    <string name="terms">Bedingungen</string>
+    <string name="terms_of_use">Nutzungsbedingungen</string>
+
+    <string name="ai">KI</string>
+    <string name="aisettings">KI-Einstellungen</string>
+    <string name="temper_ai">Charakter des Assistenten</string>
+    <string name="temper_example">z.B.: Sei lieb und bescheiden</string>
+    <string name="temper_saved">Charaktereinstellung gespeichert</string>
+
+    <string name="suggested_event_test">Test</string>
+    <string name="suggested_event_test_full">Test-Ereignis</string>
+    <string name="suggested_event_work">Arbeit</string>
+    <string name="suggested_event_work_full">💼 Arbeiten</string>
+    <string name="suggested_event_dinner">Abendessen</string>
+    <string name="suggested_event_dinner_full">🍽️ Abendessen</string>
+    <string name="suggested_event_meeting">Treffen</string>
+    <string name="suggested_event_meeting_full">🤝 Treffen</string>
+    <string name="suggested_event_coffee">Kaffee</string>
+    <string name="suggested_event_coffee_full">☕ Kaffeepause</string>
+    <string name="suggested_event_lunch">Mittagessen</string>
+    <string name="suggested_event_lunch_full">🥪 Mittagspause</string>
+    <string name="suggested_event_shopping">Einkaufen</string>
+    <string name="suggested_event_shopping_full">🛍️ Einkaufen</string>
+    <string name="suggested_event_appointment">Termin</string>
+    <string name="suggested_event_appointment_full">📅 Termin</string>
+    <string name="suggested_event_travel">Reise</string>
+    <string name="suggested_event_travel_full">✈️ Reisen</string>
+    <string name="suggested_event_party">Party</string>
+    <string name="suggested_event_party_full">🎉 Party</string>
+    <string name="suggested_event_movie">Film</string>
+    <string name="suggested_event_movie_full">🎬 Filmabend</string>
+    <string name="suggested_event_study">Lernen</string>
+    <string name="suggested_event_study_full">📚 Lernen</string>
+    <string name="suggested_event_gym">Fitnessstudio</string>
+    <string name="suggested_event_gym_full">🏋️‍♀️ Ins Fitnessstudio gehen</string>
+    <string name="suggested_event_relax">Entspannen</string>
+    <string name="suggested_event_relax_full">🧘 Entspannen</string>
+    <string name="suggested_event_reading">Lesen</string>
+    <string name="suggested_event_reading_full">📖 Lesezeit</string>
+    <string name="suggested_event_cleaning">Putzen</string>
+    <string name="suggested_event_cleaning_full">🧹 Haus putzen</string>
+    <string name="suggested_event_cooking">Kochen</string>
+    <string name="suggested_event_cooking_full">🍳 Eine Mahlzeit kochen</string>
+    <string name="suggested_event_walking">Spaziergang</string>
+    <string name="suggested_event_walking_full">🚶 Spazierengehen</string>
+    <string name="suggested_event_hobby">Hobby</string>
+    <string name="suggested_event_hobby_full">🎨 Hobbyzeit</string>
+    <string name="suggested_event_date">Date</string>
+    <string name="suggested_event_date_full">❤️ Date Night</string>
+    <string name="suggested_event_doctor">Arzt</string>
+    <string name="suggested_event_doctor_full">🩺 Arzttermin</string>
+    <string name="suggested_event_birthday">Geburtstag</string>
+    <string name="suggested_event_birthday_full">🎂 Geburtstag</string>
+    <string name="suggested_event_project">Projekt</string>
+    <string name="suggested_event_project_full">💻 An einem Projekt arbeiten</string>
+    <string name="suggested_event_presentation">Präsentation</string>
+    <string name="suggested_event_presentation_full">🗣️ Präsentation</string>
+    <string name="suggested_event_call">Anruf</string>
+    <string name="suggested_event_call_full">📞 Telefonanruf</string>
+    <string name="suggested_event_errand">Besorgung</string>
+    <string name="suggested_event_errand_full">🏃 Besorgung machen</string>
+    <string name="suggested_event_relax_bath">Entspannen</string>
+    <string name="suggested_event_relax_bath_full">🛀 Entspannungszeit</string>
+    <string name="suggested_event_sleep">Schlaf</string>
+    <string name="suggested_event_sleep_full">😴 Schlafenszeit</string>
+    <string name="suggested_event_breakfast">Frühstück</string>
+    <string name="suggested_event_breakfast_full">🍳 Frühstück</string>
+    <string name="suggested_event_pet">Haustier</string>
+    <string name="suggested_event_pet_full">🦮 Haustier ausführen</string>
+</resources>

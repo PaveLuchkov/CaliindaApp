@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caliinda</string>
+    <string name="type_message">संदेश टाइप करें</string>
+    <string name="no_events">कोई इवेंट नहीं</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="save">सहेजें</string>
+    <string name="back">वापस</string>
+    <string name="delete">मिटाएँ</string>
+
+    <string name="google_login">गूगल लॉगिन</string>
+    <string name="login">लॉग इन करें</string>
+    <string name="logout">लॉग आउट करें</string>
+    <string name="loginplease">गूगल खाता</string>
+    <string name="error_account_check">खाता सत्यापन त्रुटि: %1$s</string>
+    <string name="logout_success">आप सफलतापूर्वक लॉग आउट हो गए</string>
+    <string name="account">खाता</string>
+
+    <string name="pick_time">समय चुनें</string>
+    <string name="pick_date">दिनांक चुनें</string>
+    <string name="time">समय</string>
+
+    <string name="event_name">इवेंट का नाम</string>
+    <string name="time_start">प्रारंभ समय</string>
+    <string name="time_end">अंतिम समय</string>
+    <string name="date_start">प्रारंभ तिथि</string>
+    <string name="date_end">अंतिम तिथि</string>
+    <string name="date_single">दिनांक</string>
+    <string name="location">स्थान</string>
+    <string name="description">विवरण</string>
+    <string name="all_day">पूरा दिन</string>
+    <string name="one_day">एक दिन</string>
+
+    <string name="recurrence_event">दोहराएँ</string>
+    <string name="recurrence_settings_title">पुनरावृत्ति</string>
+    <string name="recurrence_rule_label">नियम</string>
+    <string name="recurrence_none">दोहराएँ नहीं</string>
+    <string name="recurrence_daily">दैनिक</string>
+    <string name="recurrence_weekly">साप्ताहिक</string>
+    <string name="recurrence_monthly">मासिक</string>
+    <string name="recurrence_yearly">वार्षिक</string>
+
+    <string name="recurrence_ends">समाप्ति</string>
+    <string name="recurrence_end_never">कभी नहीं</string>
+    <string name="recurrence_end_date">दिनांक</string>
+    <string name="recurrence_end_count">गिनती</string>
+    <string name="recurrence_occurrences">पुनरावृत्ति</string>
+    <string name="recurrence_end_date_field">समाप्ति तिथि</string>
+    <string name="recurrence_count_field">पुनरावृत्ति की गिनती</string>
+
+    <string name="recurrence_repeats">दोहराता है</string>
+    <string name="recurrence_daily_lower">दैनिक</string>
+    <string name="recurrence_weekly_lower">साप्ताहिक</string>
+    <string name="recurrence_monthly_lower">मासिक</string>
+    <string name="recurrence_yearly_lower">वार्षिक</string>
+    <string name="recurrence_on_days">%1$s पर</string>
+    <string name="recurrence_until">%1$s तक</string>
+    <string name="recurrence_count">%1$d बार</string>
+    <string name="recurrence_interval">हर %1$d %2$s</string>
+    <string name="recurrence_on_day_of_month">%1$d तारीख को</string>
+    <string name="recurrence_in_months">%1$s में</string>
+    <string name="recurrence_unknown">दोहराता है</string>
+
+    <string name="day_monday">सोमवार</string>
+    <string name="day_tuesday">मंगलवार</string>
+    <string name="day_wednesday">बुधवार</string>
+    <string name="day_thursday">गुरुवार</string>
+    <string name="day_friday">शुक्रवार</string>
+    <string name="day_saturday">शनिवार</string>
+    <string name="day_sunday">रविवार</string>
+
+    <string name="month_january">जनवरी</string>
+    <string name="month_february">फरवरी</string>
+    <string name="month_march">मार्च</string>
+    <string name="month_april">अप्रैल</string>
+    <string name="month_may">मई</string>
+    <string name="month_june">जून</string>
+    <string name="month_july">जुलाई</string>
+    <string name="month_august">अगस्त</string>
+    <string name="month_september">सितंबर</string>
+    <string name="month_october">अक्टूबर</string>
+    <string name="month_november">नवंबर</string>
+    <string name="month_december">दिसंबर</string>
+
+    <string name="delete_conf">पुष्टि हटाएँ</string>
+    <string name="delete_confirmation_message">क्या आप वाकई इस इवेंट को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।</string>
+    <string name="delete_recurring_event_title">पुनरावर्ती इवेंट हटाएँ</string>
+    <string name="delete_recurring_event_prompt">इवेंट "%1$s" एक श्रृंखला का हिस्सा है। आप इसे कैसे हटाना चाहेंगे?</string>
+    <string name="delete_single_instance">केवल इस इवेंट को हटाएँ</string>
+    <string name="delete_all_in_series">पूरी श्रृंखला हटाएँ</string>
+
+    <string name="edit_recurring_event_title">पुनरावर्ती इवेंट संपादित करें</string>
+    <string name="edit_recurring_event_prompt">आप "%1$s" को कैसे संपादित करना चाहेंगे?</string>
+    <string name="edit_single_instance">केवल यह इवेंट</string>
+    <string name="edit_all_in_series">श्रृंखला के सभी इवेंट</string>
+    <string name="edit_this_and_following">यह और आने वाले इवेंट</string>
+
+    <string name="error_end_date_before_start">अंतिम तिथि प्रारंभ तिथि से पहले नहीं हो सकती</string>
+    <string name="error_start_time_missing">प्रारंभ समय निर्दिष्ट करें</string>
+    <string name="error_end_time_missing">अंतिम समय निर्दिष्ट करें</string>
+    <string name="error_end_time_not_after_start">अंतिम समय प्रारंभ समय के बाद होना चाहिए</string>
+    <string name="error_check_input_data">कृपया दर्ज किया गया डेटा जांचें</string>
+    <string name="no_changes_to_save">सहेजने के लिए कोई बदलाव नहीं</string>
+    <string name="error_summary_cannot_be_empty">शीर्षक खाली नहीं हो सकता</string>
+    <string name="error_specify_start_and_end_time">प्रारंभ और अंतिम समय निर्दिष्ट करें</string>
+    <string name="error_failed_to_format_datetime">सबमिशन के लिए दिनांक/समय प्रारूपित करने में विफल</string>
+    <string name="event_updated_successfully">इवेंट सफलतापूर्वक अपडेट किया गया</string>
+
+    <string name="settings">सेटिंग्स</string>
+    <string name="time_zone">समय क्षेत्र</string>
+    <string name="time_zone_save">समय क्षेत्र सहेजा गया: %1$s</string>
+    <string name="time_format">समय और प्रारूप</string>
+    <string name="terms">शर्तें</string>
+    <string name="terms_of_use">उपयोग की शर्तें</string>
+
+    <string name="ai">एआई</string>
+    <string name="aisettings">एआई सेटिंग्स</string>
+    <string name="temper_ai">सहायक का स्वभाव</string>
+    <string name="temper_example">उदाहरण: मधुर और विनम्र रहें</string>
+    <string name="temper_saved">स्वभाव सेटिंग सहेजी गई</string>
+
+    <string name="suggested_event_test">टेस्ट</string>
+    <string name="suggested_event_test_full">इवेंट का परीक्षण</string>
+    <string name="suggested_event_work">काम</string>
+    <string name="suggested_event_work_full">💼 काम कर रहा हूँ</string>
+    <string name="suggested_event_dinner">रात का खाना</string>
+    <string name="suggested_event_dinner_full">🍽️ रात का खाना</string>
+    <string name="suggested_event_meeting">मीटिंग</string>
+    <string name="suggested_event_meeting_full">🤝 मीटिंग</string>
+    <string name="suggested_event_coffee">कॉफी</string>
+    <string name="suggested_event_coffee_full">☕ कॉफी ब्रेक</string>
+    <string name="suggested_event_lunch">दोपहर का भोजन</string>
+    <string name="suggested_event_lunch_full">🥪 दोपहर का भोजन</string>
+    <string name="suggested_event_shopping">खरीदारी</string>
+    <string name="suggested_event_shopping_full">🛍️ खरीदारी</string>
+    <string name="suggested_event_appointment">अपॉइंटमेंट</string>
+    <string name="suggested_event_appointment_full">📅 अपॉइंटमेंट</string>
+    <string name="suggested_event_travel">यात्रा</string>
+    <string name="suggested_event_travel_full">✈️ यात्रा कर रहा हूँ</string>
+    <string name="suggested_event_party">पार्टी</string>
+    <string name="suggested_event_party_full">🎉 पार्टी</string>
+    <string name="suggested_event_movie">फिल्म</string>
+    <string name="suggested_event_movie_full">🎬 मूवी नाइट</string>
+    <string name="suggested_event_study">अध्ययन</string>
+    <string name="suggested_event_study_full">📚 अध्ययन कर रहा हूँ</string>
+    <string name="suggested_event_gym">जिम</string>
+    <string name="suggested_event_gym_full">🏋️‍♀️ जिम जा रहा हूँ</string>
+    <string name="suggested_event_relax">आराम करें</string>
+    <string name="suggested_event_relax_full">🧘 आराम कर रहा हूँ</string>
+    <string name="suggested_event_reading">पढ़ना</string>
+    <string name="suggested_event_reading_full">📖 पढ़ने का समय</string>
+    <string name="suggested_event_cleaning">सफाई</string>
+    <string name="suggested_event_cleaning_full">🧹 घर की सफाई</string>
+    <string name="suggested_event_cooking">खाना पकाना</string>
+    <string name="suggested_event_cooking_full">🍳 भोजन बनाना</string>
+    <string name="suggested_event_walking">चलना</string>
+    <string name="suggested_event_walking_full">🚶 चल रहा हूँ</string>
+    <string name="suggested_event_hobby">शौक</string>
+    <string name="suggested_event_hobby_full">🎨 शौक का समय</string>
+    <string name="suggested_event_date">डेट</string>
+    <string name="suggested_event_date_full">❤️ डेट नाइट</string>
+    <string name="suggested_event_doctor">डॉक्टर</string>
+    <string name="suggested_event_doctor_full">🩺 डॉक्टर अपॉइंटमेंट</string>
+    <string name="suggested_event_birthday">जन्मदिन</string>
+    <string name="suggested_event_birthday_full">🎂 जन्मदिन</string>
+    <string name="suggested_event_project">प्रोजेक्ट</string>
+    <string name="suggested_event_project_full">💻 प्रोजेक्ट पर काम कर रहा हूँ</string>
+    <string name="suggested_event_presentation">प्रस्तुति</string>
+    <string name="suggested_event_presentation_full">🗣️ प्रस्तुति</string>
+    <string name="suggested_event_call">कॉल</string>
+    <string name="suggested_event_call_full">📞 फोन कॉल</string>
+    <string name="suggested_event_errand">काम</string>
+    <string name="suggested_event_errand_full">🏃 काम</string>
+    <string name="suggested_event_relax_bath">आराम करें</string>
+    <string name="suggested_event_relax_bath_full">🛀 आराम का समय</string>
+    <string name="suggested_event_sleep">नींद</string>
+    <string name="suggested_event_sleep_full">😴 सोने का समय</string>
+    <string name="suggested_event_breakfast">नाश्ता</string>
+    <string name="suggested_event_breakfast_full">🍳 नाश्ता</string>
+    <string name="suggested_event_pet">पालतू जानवर</string>
+    <string name="suggested_event_pet_full">🦮 पालतू जानवर को टहलाना</string>
+</resources>
