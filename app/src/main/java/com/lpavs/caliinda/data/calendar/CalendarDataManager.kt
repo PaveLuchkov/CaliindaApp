@@ -455,26 +455,30 @@ class CalendarDataManager @Inject constructor(
 
 
     /** Принудительно обновляет данные для указанной даты */
-    suspend fun refreshDate(date: LocalDate) {
-        Log.d(TAG, "Manual refresh triggered for date: $date")
+    suspend fun refreshDate(centerDateToRefreshAround: LocalDate) {
+        Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
 
         // --- Explicit Cancellation ---
-        activeFetchJob?.cancel(CancellationException("Manual refresh triggered for $date"))
+        activeFetchJob?.cancel(CancellationException("Manual refresh triggered for $centerDateToRefreshAround"))
         Log.d(TAG, "refreshDate: Previous activeFetchJob cancelled (if existed).")
         // --------------------------
+// TODO подумать может можно не две недели вокруг перезагружать
+        val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(INITIAL_LOAD_DAYS_AROUND)
+        val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(INITIAL_LOAD_DAYS_AROUND)
+        Log.d(TAG, "refreshDate: Target refresh range is [$targetRefreshRangeStart .. $targetRefreshRangeEnd]")
+
 
         val refreshJob = managerScope.launch { // Launch separately
-            Log.d(TAG, "refreshDate: New coroutine launched for fetchAndStoreDateRange($date). Job: ${coroutineContext[Job]}")
+            Log.d(TAG, "refreshDate: New coroutine launched for fetchAndStoreDateRange. Job: ${coroutineContext[Job]}")
             try {
-                fetchAndStoreDateRange(date, date, true) // Consider replace=true
+                fetchAndStoreDateRange(targetRefreshRangeStart, targetRefreshRangeEnd, true) // Consider replace=true
             } catch (ce: CancellationException) {
-                Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} cancelled during refresh for $date: ${ce.message}")
+                Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} cancelled during refresh for $centerDateToRefreshAround: ${ce.message}")
                 throw ce
             } catch (e: Exception) {
-                Log.e(TAG, "refreshDate: Error during fetchAndStoreDateRange for $date", e)
-                // Update network state?
+                Log.e(TAG, "refreshDate: Error during fetchAndStoreDateRange for $centerDateToRefreshAround", e)
             } finally {
-                Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} finished for $date")
+                Log.d(TAG, "refreshDate: Job ${coroutineContext[Job]} finished for $centerDateToRefreshAround")
             }
         }
         activeFetchJob = refreshJob // Assign the new job as the active one
