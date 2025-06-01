@@ -64,11 +64,10 @@ class CalendarDataManager @Inject constructor(
 
     // --- Константы ---
     companion object {
-        const val PREFETCH_DAYS_FORWARD = 5
-        const val PREFETCH_DAYS_BACKWARD = 3
-        const val TRIGGER_PREFETCH_THRESHOLD_FORWARD = 2
-        const val TRIGGER_PREFETCH_THRESHOLD_BACKWARD = 1
-        const val JUMP_DETECTION_BUFFER_DAYS = 10
+        const val INITIAL_LOAD_DAYS_AROUND = 7L
+        const val TRIGGER_PREFETCH_THRESHOLD = 2L
+        const val EXPAND_CHUNK_DAYS = 14L
+        const val JUMP_DETECTION_BUFFER_DAYS = 10L
     }
 
     // --- Внутренние состояния ---
@@ -497,47 +496,61 @@ class CalendarDataManager @Inject constructor(
     /** Проверяет, нужно ли загружать/расширять диапазон дат */
     internal suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) = withContext(ioDispatcher) { // В IO
         val currentlyLoaded = _loadedDateRange.value
-        val idealTargetRange = centerDate.minusDays(PREFETCH_DAYS_BACKWARD.toLong())..centerDate.plusDays(PREFETCH_DAYS_FORWARD.toLong())
-        Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, ideal=$idealTargetRange")
+        val initialOrJumpTargetRange = centerDate.minusDays(INITIAL_LOAD_DAYS_AROUND)..centerDate.plusDays(
+            INITIAL_LOAD_DAYS_AROUND)
+        Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, initialOrJumpTarget=$initialOrJumpTargetRange")
 
         if (forceLoad) {
-            Log.i(TAG, "Force load requested for $centerDate. Fetching ideal range: $idealTargetRange and replacing.")
-            fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true)
+            Log.i(TAG, "Force load requested for $centerDate. Fetching range: $initialOrJumpTargetRange")
+            fetchAndStoreDateRange(initialOrJumpTargetRange.start, initialOrJumpTargetRange.endInclusive, true)
             return@withContext
         }
 
-        Log.d(TAG, "ensureDateRangeLoadedAround: Proceeding with standard checks/fetch for $centerDate (forceLoad=false)")
         if (currentlyLoaded == null) {
-            Log.i(TAG, "Initial load: $idealTargetRange")
-            fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true)
+            Log.i(TAG, "Initial load for $centerDate. Fetching range: $initialOrJumpTargetRange")
+            fetchAndStoreDateRange(initialOrJumpTargetRange.start, initialOrJumpTargetRange.endInclusive, true)
         } else {
-            val isJump = centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS.toLong()) ||
-                    centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS.toLong())
+            val isJump = centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS) ||
+                    centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS)
 
             if (isJump) {
-                Log.i(TAG, "Jump detected! Loading new range: $idealTargetRange")
-                fetchAndStoreDateRange(idealTargetRange.start, idealTargetRange.endInclusive, true)
+                Log.i(TAG, "Jump detected for $centerDate. Fetching new range: $initialOrJumpTargetRange")
+                fetchAndStoreDateRange(initialOrJumpTargetRange.start, initialOrJumpTargetRange.endInclusive, true)
             } else {
-                val needsForwardPrefetch = centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD_FORWARD.toLong())
-                val needsBackwardPrefetch = centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD_BACKWARD.toLong())
+                var rangeToFetchDeltaStart: LocalDate? = null
+                var rangeToFetchDeltaEnd: LocalDate? = null
 
-                if (needsForwardPrefetch || needsBackwardPrefetch) {
-                    Log.i(TAG, "Prefetch needed. Forward=$needsForwardPrefetch, Backward=$needsBackwardPrefetch.")
-                    val rangeToLoad = currentlyLoaded.union(idealTargetRange)
-                    Log.d(TAG, "Expanding range to: $rangeToLoad")
-                    fetchAndStoreDateRange(rangeToLoad.start, rangeToLoad.endInclusive, false)
+                if (centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD)) {
+                    rangeToFetchDeltaStart = currentlyLoaded.endInclusive.plusDays(1)
+                    rangeToFetchDeltaEnd = rangeToFetchDeltaStart.plusDays(EXPAND_CHUNK_DAYS - 1)
+                    Log.i(TAG, "Forward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
+                }
+                else if (centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD)) {
+                    rangeToFetchDeltaEnd = currentlyLoaded.start.minusDays(1)
+                    rangeToFetchDeltaStart = rangeToFetchDeltaEnd.minusDays(EXPAND_CHUNK_DAYS - 1)
+                    Log.i(TAG, "Backward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
+                }
+
+                if (rangeToFetchDeltaStart != null && rangeToFetchDeltaEnd != null) {
+                fetchAndStoreDateRange(rangeToFetchDeltaStart, rangeToFetchDeltaEnd, false)
                 } else {
-                    // Log.d(TAG, "No load needed. Center $centerDate is within loaded range $currentlyLoaded.")
+                    Log.d(TAG, "No delta load needed for $centerDate. It is comfortably within $currentlyLoaded.")
                 }
             }
         }
     }
 
-    /** Загружает данные для диапазона дат с бэкенда и сохраняет в БД */
+    /**
+     * Загружает данные для диапазона дат с бэкенда и сохраняет в БД.
+     * @param startDate Начало диапазона для запроса к бэкенду (может быть дельта).
+     * @param endDate Конец диапазона для запроса к бэкенду (может быть дельта).
+     * @param replaceWholeLoadedRangeWithThis true - если _loadedDateRange должен быть полностью заменен на [startDate].[endDate].
+     *                                       false - если [startDate..endDate] это дельта и ее нужно объединить с текущим _loadedDateRange.
+     */
     private suspend fun fetchAndStoreDateRange(
         startDate: LocalDate,
         endDate: LocalDate,
-        replaceLoadedRange: Boolean
+        replaceWholeLoadedRangeWithThis: Boolean
     ) {
 
         // --- 1. ПОЛУЧЕНИЕ ТОКЕНА (ОТМЕНЯЕМАЯ ЧАСТЬ) ---
@@ -613,14 +626,14 @@ class CalendarDataManager @Inject constructor(
                         Log.w(TAG, "[NC] Empty response body for range $startDate to $endDate.")
                         // saveEventsToDb - suspend функция, но она вызовется в NonCancellable контексте
                         saveEventsToDb(emptyList(), startDate, endDate)
-                        updateLoadedRange(startDate..endDate, replaceLoadedRange) // Не suspend
+                        updateLoadedRange(startDate..endDate, replaceWholeLoadedRangeWithThis) // Не suspend
                         _rangeNetworkState.value = EventNetworkState.Idle // Успех (пустой ответ)
                         Log.i(TAG, "[NC] Successfully processed EMPTY response for $startDate to $endDate.")
                     } else {
                         Log.i(TAG,"[NC] Range received from network for $startDate to $endDate. Size: ${responseBodyString.length}")
                         val networkEvents = parseEventsResponse(responseBodyString) // Не suspend
                         saveEventsToDb(networkEvents, startDate, endDate) // Suspend, но в NonCancellable
-                        updateLoadedRange(startDate..endDate, replaceLoadedRange) // Не suspend
+                        updateLoadedRange(startDate..endDate, replaceWholeLoadedRangeWithThis) // Не suspend
                         _rangeNetworkState.value = EventNetworkState.Idle // Успех
                         Log.i(TAG, "[NC] Successfully processed NON-EMPTY response for $startDate to $endDate.")
                     }
