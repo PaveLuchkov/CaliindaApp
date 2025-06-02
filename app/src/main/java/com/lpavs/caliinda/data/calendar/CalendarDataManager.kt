@@ -65,6 +65,7 @@ class CalendarDataManager @Inject constructor(
     // --- Константы ---
     companion object {
         const val INITIAL_LOAD_DAYS_AROUND = 7L
+        const val UPDATE_LOAD_DAYS_AROUND = 5L
         const val TRIGGER_PREFETCH_THRESHOLD = 2L
         const val EXPAND_CHUNK_DAYS = 14L
         const val JUMP_DETECTION_BUFFER_DAYS = 10L
@@ -463,8 +464,8 @@ class CalendarDataManager @Inject constructor(
         Log.d(TAG, "refreshDate: Previous activeFetchJob cancelled (if existed).")
         // --------------------------
 // TODO подумать может можно не две недели вокруг перезагружать
-        val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(INITIAL_LOAD_DAYS_AROUND)
-        val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(INITIAL_LOAD_DAYS_AROUND)
+        val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(UPDATE_LOAD_DAYS_AROUND)
+        val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(UPDATE_LOAD_DAYS_AROUND)
         Log.d(TAG, "refreshDate: Target refresh range is [$targetRefreshRangeStart .. $targetRefreshRangeEnd]")
 
 

@@ -5,8 +5,11 @@ import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +40,8 @@ import java.time.temporal.ChronoUnit
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
@@ -98,6 +103,17 @@ fun MainScreen(
     )
     val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
     val isListening = uiState.isListening
+
+// --- НОВОЕ: Настройка flingBehavior ---
+    val customFlingBehavior = PagerDefaults.flingBehavior(
+        state = pagerState,
+        //---
+        snapPositionalThreshold = 0.2f,
+        // ---
+        snapAnimationSpec = spring(
+            stiffness = Spring.StiffnessLow, // По умолчанию Spring.StiffnessMediumLow
+        )
+    )
 
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = false // Чтобы лист либо полностью открыт, либо закрыт
@@ -221,7 +237,8 @@ fun MainScreen(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 // Добавим key, чтобы помочь Pager различать страницы при изменениях
-                key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() }
+                key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() },
+                flingBehavior = customFlingBehavior
             ) { pageIndex ->
                 // Рассчитываем дату для текущей страницы
                 val pageDate = remember(pageIndex) {
