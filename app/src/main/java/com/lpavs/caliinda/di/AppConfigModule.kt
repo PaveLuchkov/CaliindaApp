@@ -1,11 +1,11 @@
 package com.lpavs.caliinda.di
 
+import com.lpavs.caliinda.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import com.lpavs.caliinda.BuildConfig
 
 @Module
 @InstallIn(SingletonComponent::class) // Предоставляем как синглтоны на уровне приложения

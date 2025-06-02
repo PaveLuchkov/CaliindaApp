@@ -1,18 +1,18 @@
 package com.lpavs.caliinda.di
 
+import android.content.Context
+import androidx.room.Room
+import com.lpavs.caliinda.data.local.AppDatabase
+import com.lpavs.caliinda.data.local.EventDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-import android.content.Context
-import androidx.room.Room
-import com.lpavs.caliinda.data.local.AppDatabase
-import com.lpavs.caliinda.data.local.EventDao
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 
 @Module

@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.annotation.WorkerThread
-import com.lpavs.caliinda.di.BackendUrl
-import com.lpavs.caliinda.di.WebClientId
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -14,6 +12,8 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.di.BackendUrl
+import com.lpavs.caliinda.di.WebClientId
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

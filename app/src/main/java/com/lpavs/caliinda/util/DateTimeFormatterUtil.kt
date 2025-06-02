@@ -1,18 +1,18 @@
 package com.lpavs.caliinda.util
 
 import android.content.Context
+import android.text.format.DateFormat
 import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import android.text.format.DateFormat
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
-import com.lpavs.caliinda.R
 import java.util.Locale
 
 object  DateTimeFormatterUtil {

@@ -10,19 +10,15 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.lpavs.caliinda.ui.screens.settings.SettingsScreen
 import com.lpavs.caliinda.ui.screens.main.MainScreen
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.CreateEventScreen
 import com.lpavs.caliinda.ui.screens.settings.AISettingsScreen
+import com.lpavs.caliinda.ui.screens.settings.SettingsScreen
 import com.lpavs.caliinda.ui.screens.settings.TermsOfUseScreen
 import com.lpavs.caliinda.ui.screens.settings.TimeSettingsScreen
-import java.time.LocalDate
 
 @Composable
 fun AppNavHost(
