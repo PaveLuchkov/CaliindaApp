@@ -34,6 +34,17 @@
     <string name="event_created">Event created successfully</string>
     <string name="error">Error</string>
 
+    <string name="speech_recognizer_error_audio">Audio error</string>
+    <string name="speech_recognizer_error_client">Client error</string>
+    <string name="speech_recognizer_error_insufficient_permissions">Insufficient audio recording permissions</string>
+    <string name="speech_recognizer_error_network">Network error during recognition</string>
+    <string name="speech_recognizer_error_network_timeout">Network timeout during recognition</string>
+    <string name="speech_recognizer_error_no_match">No speech recognized</string>
+    <string name="speech_recognizer_error_recognizer_busy">Speech recognizer is busy</string>
+    <string name="speech_recognizer_error_server">Server error during recognition</string>
+    <string name="speech_recognizer_error_speech_timeout">Speech input timed out</string>
+    <string name="speech_recognizer_error_unknown">Unknown recognition error: %1$d</string>
+
     <string name="recurrence_event">Repeat</string>
     <string name="recurrence_settings_title">Recurrence</string>
     <string name="recurrence_rule_label">Rule</string>

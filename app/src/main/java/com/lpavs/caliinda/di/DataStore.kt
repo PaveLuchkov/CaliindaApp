@@ -19,17 +19,13 @@ val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(na
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
 
-    @Provides
-    @Singleton
-    fun provideSettingsDataStore(@ApplicationContext appContext: Context): DataStore<Preferences> {
-        return appContext.settingsDataStore
-    }
+  @Provides
+  @Singleton
+  fun provideSettingsDataStore(@ApplicationContext appContext: Context): DataStore<Preferences> {
+    return appContext.settingsDataStore
+  }
 }
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class BackendUrl
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class BackendUrl
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class WebClientId
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class WebClientId

@@ -43,83 +43,75 @@ fun CalendarAppBar(
     onTitleClick: () -> Unit,
     date: LocalDate
 ) {
-    val isToday = date == LocalDate.now()
-    val headerBackgroundColor = if (isToday) {
+  val isToday = date == LocalDate.now()
+  val headerBackgroundColor =
+      if (isToday) {
         colorScheme.tertiary
-    } else {
+      } else {
         colorScheme.secondary
-    }
-    val headerTextColor = if (isToday) {
+      }
+  val headerTextColor =
+      if (isToday) {
         colorScheme.onTertiary
-    } else {
+      } else {
         colorScheme.onSecondary
-    }
-    val currentLocale = LocalConfiguration.current.getLocales().get(0)
-    val formatterWithShortDay = DateTimeFormatter.ofPattern("E, d MMMM yyyy", currentLocale)
-    CenterAlignedTopAppBar(
-        title = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
+      }
+  val currentLocale = LocalConfiguration.current.getLocales().get(0)
+  val formatterWithShortDay = DateTimeFormatter.ofPattern("E, d MMMM yyyy", currentLocale)
+  CenterAlignedTopAppBar(
+      title = {
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(25.dp))
                     .background(color = headerBackgroundColor)
                     .clickable(onClick = onTitleClick),
-
-            ){
-                Text(
-                    text = date.format(formatterWithShortDay),
-                    style = typography.titleLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = headerTextColor,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .fillMaxWidth(),// Больше отступы
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                )
-            }
-        },
-        navigationIcon = {
-            FilledIconButton(
-                onClick = onGoToTodayClick,
-                modifier = Modifier
-                    .minimumInteractiveComponentSize()
+        ) {
+          Text(
+              text = date.format(formatterWithShortDay),
+              style = typography.titleLarge,
+              fontWeight = FontWeight.Medium,
+              color = headerTextColor,
+              modifier =
+                  Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                      .fillMaxWidth(), // Больше отступы
+              textAlign = TextAlign.Center,
+              fontSize = 16.sp,
+          )
+        }
+      },
+      navigationIcon = {
+        FilledIconButton(
+            onClick = onGoToTodayClick,
+            modifier =
+                Modifier.minimumInteractiveComponentSize()
                     .size(
                         IconButtonDefaults.smallContainerSize(
-                            IconButtonDefaults.IconButtonWidthOption.Wide
-                        )
-                    ),
-                shape = IconButtonDefaults.smallRoundShape
-            ) {
+                            IconButtonDefaults.IconButtonWidthOption.Wide)),
+            shape = IconButtonDefaults.smallRoundShape) {
+              Icon(
+                  Icons.Filled.Today,
+                  contentDescription = "Перейти к сегодня",
+              )
+            }
+      },
+      actions = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          FilledIconButton(
+              onClick = onNavigateToSettings,
+              modifier =
+                  Modifier.minimumInteractiveComponentSize()
+                      .size(
+                          IconButtonDefaults.smallContainerSize(
+                              IconButtonDefaults.IconButtonWidthOption.Wide)),
+              shape = IconButtonDefaults.smallRoundShape) {
                 Icon(
-                    Icons.Filled.Today,
-                    contentDescription = "Перейти к сегодня",
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Настройки",
                 )
-            }
-        },
-        actions = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FilledIconButton(
-                    onClick = onNavigateToSettings,
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .size(
-                            IconButtonDefaults.smallContainerSize(
-                                IconButtonDefaults.IconButtonWidthOption.Wide
-                            )
-                        ),
-                    shape = IconButtonDefaults.smallRoundShape
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Настройки",
-                    )
-                }
-            }
-        },
-        colors = topAppBarColors(
-            containerColor = Color.Transparent
-        )
-    )
+              }
+        }
+      },
+      colors = topAppBarColors(containerColor = Color.Transparent))
 }

@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
     entities = [CalendarEventEntity::class],
     version = 4, // Увеличивай версию при изменении схемы
     exportSchema = false // Установи true и укажи путь для схем в production
-)
+    )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun eventDao(): EventDao
+  abstract fun eventDao(): EventDao
 }

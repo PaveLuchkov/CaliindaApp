@@ -37,6 +37,7 @@ data class CalendarEvent(
     val location: String? = null,
     val isAllDay: Boolean = false,
     val recurringEventId: String? = null, // ID "мастер-события", если это экземпляр
-    val originalStartTime: String? = null, // Для измененных экземпляров, их оригинальное время начала
+    val originalStartTime: String? =
+        null, // Для измененных экземпляров, их оригинальное время начала
     val recurrenceRule: String? = null
 )

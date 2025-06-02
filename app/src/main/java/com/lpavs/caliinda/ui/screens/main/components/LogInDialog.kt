@@ -54,119 +54,108 @@ fun LogInScreenDialog(
     onDismissRequest: () -> Unit,
     viewModel: MainViewModel,
 ) {
-    val signInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.let { intent ->
+  val signInLauncher =
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+              result.data?.let { intent ->
                 val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
                 viewModel.handleSignInResult(task)
-            } ?: run {
-                // Обработка случая, когда intent равен null, если это возможно
-                Log.e("SignInLauncher", "Sign-in result data is null")
-                viewModel.handleSignInResult(
-                    Tasks.forException(
-                        ApiException(
-                            Status(
-                    CommonStatusCodes.ERROR, "Sign-in data is null")
-                        )
-                    ))
+              }
+                  ?: run {
+                    // Обработка случая, когда intent равен null, если это возможно
+                    Log.e("SignInLauncher", "Sign-in result data is null")
+                    viewModel.handleSignInResult(
+                        Tasks.forException(
+                            ApiException(Status(CommonStatusCodes.ERROR, "Sign-in data is null"))))
+                  }
+            } else {
+              // Пользователь отменил вход или произошла ошибка на стороне Google Sign-In UI
+              Log.w(
+                  "SignInLauncher",
+                  "Sign-in failed or cancelled by user. Result code: ${result.resultCode}")
+              // Можно сообщить ViewModel, что попытка входа не удалась из-за отмены пользователем
+              // mainViewModel.handleSignInCancelledByUser() // Если нужен такой метод
             }
-        } else {
-            // Пользователь отменил вход или произошла ошибка на стороне Google Sign-In UI
-            Log.w("SignInLauncher", "Sign-in failed or cancelled by user. Result code: ${result.resultCode}")
-            // Можно сообщить ViewModel, что попытка входа не удалась из-за отмены пользователем
-            // mainViewModel.handleSignInCancelledByUser() // Если нужен такой метод
-        }
-    }
+          }
 
-    Dialog(
-        onDismissRequest = { onDismissRequest() }, // ,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = false
-        )
-    ) {
+  Dialog(
+      onDismissRequest = { onDismissRequest() }, // ,
+      properties =
+          DialogProperties(
+              dismissOnBackPress = true,
+              dismissOnClickOutside = true,
+              usePlatformDefaultWidth = false)) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .wrapContentHeight(),
+            modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
             shape = RoundedCornerShape(25.dp),
-            color =  colorScheme.primaryContainer,
-            tonalElevation = 8.dp
-        ) {
-            val onDialog = colorScheme.onPrimaryContainer
-            Box(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            color = colorScheme.primaryContainer,
+            tonalElevation = 8.dp) {
+              val onDialog = colorScheme.onPrimaryContainer
+              Box(modifier = Modifier.fillMaxWidth()) {
                 val shape1 = MaterialShapes.Flower.toShape()
                 val shape2 = MaterialShapes.Cookie12Sided.toShape()
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(250.dp)
-                        .rotate(75f)
-                        .offset(y = (-50).dp, x = 50.dp)
-                        .clip(shape1)
-                        .border(width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
-                        .background(onDialog.copy(alpha = 0f))
-                )
+                    modifier =
+                        Modifier.align(Alignment.BottomEnd)
+                            .size(250.dp)
+                            .rotate(75f)
+                            .offset(y = (-50).dp, x = 50.dp)
+                            .clip(shape1)
+                            .border(
+                                width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
+                            .background(onDialog.copy(alpha = 0f)))
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .size(250.dp)
-                        .offset(y = (-100).dp, x = (-80).dp)
-                        .rotate(30f)
-                        .clip(shape2)
-                        .border(width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape2)
-                        .background(onDialog.copy(alpha = 0f))
-                )
+                    modifier =
+                        Modifier.align(Alignment.TopStart)
+                            .size(250.dp)
+                            .offset(y = (-100).dp, x = (-80).dp)
+                            .rotate(30f)
+                            .clip(shape2)
+                            .border(
+                                width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape2)
+                            .background(onDialog.copy(alpha = 0f)))
                 Column(
-                    modifier = Modifier
-                        .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 12.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = onDialog
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = stringResource(R.string.log_to_continue),
-                        style = typography.labelMedium  .copy(fontWeight = FontWeight.SemiBold),
-                        color = onDialog
-                    )
-                    Spacer(modifier = Modifier.height(50.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        val expandedSize = ButtonDefaults.MediumContainerHeight
-                        Button(
-                            onClick = {
-                                viewModel.onSignInRequiredDialogConfirmed()
-                                signInLauncher.launch(viewModel.getSignInIntent())
-                            },
-                            colors = ButtonColors(contentColor = colorScheme.onTertiary, containerColor = colorScheme.tertiary, disabledContentColor = colorScheme.inverseSurface, disabledContainerColor = colorScheme.inverseSurface),
-                            modifier = Modifier.heightIn(expandedSize),
-                            contentPadding = ButtonDefaults.contentPaddingFor(expandedSize)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.google_login),
-                                style = ButtonDefaults.textStyleFor(expandedSize)
-                            )
-                        }
+                    modifier =
+                        Modifier.padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 12.dp),
+                    horizontalAlignment = Alignment.Start) {
+                      Text(
+                          text = stringResource(R.string.app_name),
+                          style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
+                          color = onDialog)
+                      Spacer(modifier = Modifier.height(2.dp))
+                      Text(
+                          text = stringResource(R.string.log_to_continue),
+                          style = typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                          color = onDialog)
+                      Spacer(modifier = Modifier.height(50.dp))
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          verticalAlignment = Alignment.Bottom,
+                          horizontalArrangement = Arrangement.Center) {
+                            val expandedSize = ButtonDefaults.MediumContainerHeight
+                            Button(
+                                onClick = {
+                                  viewModel.onSignInRequiredDialogConfirmed()
+                                  signInLauncher.launch(viewModel.getSignInIntent())
+                                },
+                                colors =
+                                    ButtonColors(
+                                        contentColor = colorScheme.onTertiary,
+                                        containerColor = colorScheme.tertiary,
+                                        disabledContentColor = colorScheme.inverseSurface,
+                                        disabledContainerColor = colorScheme.inverseSurface),
+                                modifier = Modifier.heightIn(expandedSize),
+                                contentPadding = ButtonDefaults.contentPaddingFor(expandedSize)) {
+                                  Text(
+                                      text = stringResource(R.string.google_login),
+                                      style = ButtonDefaults.textStyleFor(expandedSize))
+                                }
+                          }
                     }
-                }
+              }
             }
-        }
-    }
+      }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun IconAndTextButtonGroupScreenPreview() {
-}
+@Preview(showBackground = true) @Composable fun IconAndTextButtonGroupScreenPreview() {}

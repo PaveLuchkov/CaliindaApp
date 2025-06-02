@@ -54,88 +54,73 @@ fun AISettingsScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    val currentTemper by viewModel.botTemperState.collectAsStateWithLifecycle()
-    var temperInputState by remember(currentTemper) { mutableStateOf(currentTemper) }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val scope = rememberCoroutineScope()
+  val snackbarHostState = remember { SnackbarHostState() }
+  val currentTemper by viewModel.botTemperState.collectAsStateWithLifecycle()
+  var temperInputState by remember(currentTemper) { mutableStateOf(currentTemper) }
+  val keyboardController = LocalSoftwareKeyboardController.current
+  val scope = rememberCoroutineScope()
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.aisettings)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+  Scaffold(
+      snackbarHost = { SnackbarHost(snackbarHostState) },
+      topBar = {
+        TopAppBar(
+            title = { Text(stringResource(R.string.aisettings)) },
+            navigationIcon = {
+              IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back))
+              }
+            })
+      }) { paddingValues ->
         Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(16.dp) // Дополнительные отступы для контента
-                .fillMaxWidth() // Занимаем всю ширину
-        ) {
-
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius))
-                    .background(color= colorScheme.surfaceContainer)
-                    .padding(16.dp)
+            modifier =
+                Modifier.padding(paddingValues)
+                    .padding(16.dp) // Дополнительные отступы для контента
+                    .fillMaxWidth() // Занимаем всю ширину
             ) {
-                Column {
-                    Text(
-                        stringResource(R.string.temper_ai),
-                        style = typography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+              Box(
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius))
+                          .background(color = colorScheme.surfaceContainer)
+                          .padding(16.dp)) {
+                    Column {
+                      Text(stringResource(R.string.temper_ai), style = typography.titleMedium)
+                      Spacer(modifier = Modifier.height(8.dp))
+                      Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = temperInputState,
                             onValueChange = { temperInputState = it },
                             placeholder = { Text(stringResource(R.string.temper_example)) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp),
+                            modifier = Modifier.weight(1f).padding(end = 8.dp),
                             maxLines = 5,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    keyboardController?.hide()
-                                }
-                            ),
-                            shape = RoundedCornerShape(cuid.SettingsItemCornerRadius)
-                        )
+                            keyboardActions =
+                                KeyboardActions(onDone = { keyboardController?.hide() }),
+                            shape = RoundedCornerShape(cuid.SettingsItemCornerRadius))
                         Button(
                             onClick = {
-                                if (temperInputState != currentTemper) {
-                                    viewModel.updateBotTemperSetting(temperInputState)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(R.string.temper_saved.toString())
-                                    }
+                              if (temperInputState != currentTemper) {
+                                viewModel.updateBotTemperSetting(temperInputState)
+                                scope.launch {
+                                  snackbarHostState.showSnackbar(R.string.temper_saved.toString())
                                 }
+                              }
                             },
-                                    enabled = temperInputState != currentTemper,
-                                    shape = CircleShape,
-                                    modifier = Modifier.size(48.dp),
-                                    contentPadding = PaddingValues(0.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Check,
-                                            contentDescription = stringResource(R.string.save),
-                                            modifier = Modifier.size(24.dp) // размер иконки внутри
-                                        )
-                                        }
+                            enabled = temperInputState != currentTemper,
+                            shape = CircleShape,
+                            modifier = Modifier.size(48.dp),
+                            contentPadding = PaddingValues(0.dp)) {
+                              Icon(
+                                  imageVector = Icons.Rounded.Check,
+                                  contentDescription = stringResource(R.string.save),
+                                  modifier = Modifier.size(24.dp) // размер иконки внутри
+                                  )
+                            }
+                      }
                     }
-                }
+                  }
             }
-        }
-    }
+      }
 }

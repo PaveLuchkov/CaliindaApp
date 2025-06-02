@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.data.auth
 
-
 /*
 @ExperimentalCoroutinesApi // Для использования тестовых диспетчеров и runTest
 class AuthManagerTest {
