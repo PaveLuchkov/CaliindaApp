@@ -1,14 +1,18 @@
 package com.lpavs.caliinda.data.repo
 import android.util.Log
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.time.ZoneId
 
 @Singleton
 class SettingsRepository @Inject constructor(
