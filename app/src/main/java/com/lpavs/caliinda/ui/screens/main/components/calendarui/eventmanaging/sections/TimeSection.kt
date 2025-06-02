@@ -106,7 +106,6 @@ sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: St
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventDateTimePicker(
     modifier: Modifier = Modifier,
@@ -156,18 +155,15 @@ fun EventDateTimePicker(
     LaunchedEffect(state.isAllDay) {
         if (isAllDay != state.isAllDay) {
             isAllDay = state.isAllDay
-            // Пересчитаем isOneDay на всякий случай, т.к. логика могла поменяться
-            isOneDay = state.startDate == state.endDate
+            // isOneDay = state.startDate == state.endDate
         }
     }
     // --- Эффект для валидации и оповещения об изменениях ---
     // Зависимости теперь включают isAllDay и isOneDay
     LaunchedEffect(state.startDate, state.endDate) {
-        val derivedOneDay = state.startDate == state.endDate
-        if (isOneDay != derivedOneDay) {
-            isOneDay = derivedOneDay
-            if (derivedOneDay && !isAllDay && state.startTime != null && state.endTime != null && !state.startTime.isBefore(state.endTime)) {
-            }
+        val actualIsOneDay = state.startDate == state.endDate
+        if (isOneDay != actualIsOneDay) {
+            isOneDay = actualIsOneDay
         }
     }
 
@@ -192,8 +188,6 @@ fun EventDateTimePicker(
         }
     }
 
-    // --- Общая ошибка даты/времени ---
-    // --- Поля ввода Даты/Времени (логика отображения изменена) ---
     Column(
         modifier = modifier
     ) {
@@ -206,40 +200,61 @@ fun EventDateTimePicker(
         ) {
             // --- Чип "All Day" ---
             FilterChip(
-                selected = isAllDay, // Use internal flag for display
+                selected = isAllDay,
                 onClick = {
                     val newIsAllDay = !isAllDay
-                    isAllDay = newIsAllDay // Update internal flag FIRST for animation trigger
+                    // isAllDay обновится через LaunchedEffect(state.isAllDay)
+                    // onStateChange вызовет рекомпозицию и эффект сработает
 
-                    // Prepare the new external state based on the change
-                    val newState = if (newIsAllDay) {
-                        state.copy(
+                    val newState: EventDateTimeState
+                    if (newIsAllDay) {
+                        newState = state.copy(
                             isAllDay = true,
                             startTime = null,
                             endTime = null
                         )
                     } else {
                         // Turning All Day OFF
-                        val defaultStartTime = state.startTime // Try to keep existing
+                        val defaultStartTime = state.startTime
                             ?: LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-                        // Check internal isOneDay flag *after* it might have been toggled
-                        val currentIsOneDay = state.startDate == state.endDate // Check actual state dates
 
-                        val defaultEndTime = if (currentIsOneDay) {
-                            (state.endTime ?: defaultStartTime.plusHours(1)).withNano(0)
-                        } else {
-                            (state.endTime ?: defaultStartTime).withNano(0)
-                        }
-                        val finalEndTime = if (currentIsOneDay && !defaultStartTime.isBefore(defaultEndTime)) {
-                            defaultStartTime.plusHours(1).withNano(0)
-                        } else {
-                            defaultEndTime
+                        var newEndTime = state.endTime
+                        var newEndDate = state.endDate // Начинаем с текущей даты конца
+
+                        // Если событие было однодневным (или даты совпадали до этого изменения)
+                        if (state.startDate == state.endDate) {
+                            // Если endTime не было или оно было некорректным для однодневного
+                            if (newEndTime == null || !defaultStartTime.isBefore(newEndTime)) {
+                                newEndTime = defaultStartTime.plusHours(1)
+                            }
+                            if (newEndTime != null) {
+                                newEndTime = newEndTime.withNano(0)
+                            }
+
+                            // Если после установки endTime оно оказалось раньше startTime (переход через полночь)
+                            if (newEndTime != null) {
+                                if (newEndTime.isBefore(defaultStartTime)) {
+                                    newEndDate = state.startDate.plusDays(1)
+                                }
+                            }
+                        } else { // Событие было многодневным
+                            if (newEndTime == null) { // Если endTime не было
+                                // Для многодневного, если время конца не установлено, можно сделать его равным времени начала
+                                // или на час позже, на той же endDate.
+                                newEndTime = defaultStartTime.plusHours(1) // или defaultStartTime
+                            }
+                            if (newEndTime != null) {
+                                newEndTime = newEndTime.withNano(0)
+                            }
+                            // newEndDate уже state.endDate (т.е. многодневное)
+                            // Валидатор проверит, что startTime на startDate не позже endTime на newEndDate
                         }
 
-                        state.copy(
+                        newState = state.copy(
                             isAllDay = false,
                             startTime = defaultStartTime,
-                            endTime = finalEndTime
+                            endTime = newEndTime,
+                            endDate = newEndDate // Обновленная дата конца
                         )
                     }
                     onStateChange(newState)
@@ -250,27 +265,43 @@ fun EventDateTimePicker(
 
             // --- Чип "One Day" ---
             FilterChip(
-                selected = isOneDay, // Use internal flag for display
+                selected = isOneDay,
                 onClick = {
-                    val newIsOneDay = !isOneDay
-                    isOneDay = newIsOneDay // Update internal flag FIRST for animation trigger
+                    val currentActualIsOneDay = state.startDate == state.endDate
+                    val targetIsOneDay = !currentActualIsOneDay // Целевое состояние для "One Day"
 
-                    // Prepare the new external state
-                    val newState = if (newIsOneDay) {
-                        // If turning One Day ON, ensure end date matches start date
-                        state.copy(endDate = state.startDate)
+                    var newEndDateCandidate = state.endDate
+                    var newEndTimeCandidate = state.endTime
+
+                    if (targetIsOneDay) {
+                        // Включаем "One Day": endDate делаем равным startDate
+                        newEndDateCandidate = state.startDate
+
+                        if (!state.isAllDay && state.startTime != null) {
+                            val currentStartTime = state.startTime
+                            // Если endTime не задано или (на одной дате) endTime раньше или равно startTime,
+                            // корректируем endTime.
+                            if (newEndTimeCandidate == null || !currentStartTime.isBefore(newEndTimeCandidate)) {
+                                newEndTimeCandidate = currentStartTime.plusHours(1).withNano(0)
+                                // Если добавление часа привело к переходу через полночь (endTime раньше startTime)
+                                if (newEndTimeCandidate.isBefore(currentStartTime)) {
+                                    newEndTimeCandidate = LocalTime.of(23, 59, 0, 0) // Устанавливаем на конец текущего дня
+                                }
+                            }
+                        }
                     } else {
-                        // If turning One Day OFF, the user needs to pick an end date.
-                        // We don't automatically set an end date here.
-                        // We might need to adjust time logic if isAllDay is false.
-                        // For now, just reflect the potential date structure change.
-                        // If the user intended a range, they'll pick endDate later.
-                        // If they were already in range mode, this doesn't change the dates.
-                        state.copy() // Keep dates as they are for now
+                        // Выключаем "One Day": делаем событие потенциально многодневным.
+                        // Если событие было однодневным, устанавливаем endDate на следующий день.
+                        // endTime (newEndTimeCandidate) остается state.endTime (валидно для следующего дня).
+                        if (currentActualIsOneDay) {
+                            newEndDateCandidate = state.startDate.plusDays(1)
+                        }
+                        // Если событие уже было многодневным, endDate и endTime не меняются.
                     }
-                    onStateChange(newState)
+                    onStateChange(state.copy(endDate = newEndDateCandidate, endTime = newEndTimeCandidate))
                 },
                 label = { Text(oneDay) },
+                // Чип "One Day" доступен всегда (кроме isLoading), т.к. управляет равенством дат независимо от "All Day".
                 enabled = !isLoading
             )
 
@@ -611,7 +642,7 @@ private fun FilterChipForOption(
         } else null
     )
 }
-
+/*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterChipForFrequencyOption(
@@ -652,4 +683,4 @@ private fun FilterChipForFrequencyOption(
             null
         } else null
     )
-}
+}*/
