@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.ai.AiInteractionManager
 import com.lpavs.caliinda.data.ai.model.AiVisualizerState
 import com.lpavs.caliinda.data.auth.AuthManager
@@ -81,6 +82,8 @@ class MainViewModel @Inject constructor(
         observeDeleteEventResult()
         observeUpdateEventResult()
     }
+
+    private val eventCreatedMessage: String = context.getString(R.string.event_created) // Получаем строку один раз
 
     // --- НАБЛЮДАТЕЛИ (вынесены из init для чистоты) ---
     private fun observeAuthState() {
@@ -195,7 +198,11 @@ class MainViewModel @Inject constructor(
                         is CreateEventResult.Error -> result.message
                         is CreateEventResult.Idle -> {
                             val prevMsg = currentUiState.message
-                            if (prevMsg == "Событие успешно создано"  || prevMsg?.contains("Ошибка") == true ) null else prevMsg
+                            if (prevMsg == eventCreatedMessage || prevMsg?.contains(context.getString(R.string.error)) == true) { // Пример для "Ошибка"
+                                null
+                            } else {
+                                prevMsg
+                            }
                         }
                         is CreateEventResult.Loading -> currentUiState.message
                     }
