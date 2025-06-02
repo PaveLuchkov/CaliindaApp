@@ -10,33 +10,55 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.runtime.*
-import androidx.compose.material3.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.data.local.DateTimeUtils
-import com.lpavs.caliinda.ui.common.BackgroundShapeContext
-import com.lpavs.caliinda.ui.common.BackgroundShapes
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimePicker
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
@@ -375,7 +397,9 @@ fun CreateEventScreen(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text(stringResource(R.string.description)) },
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
                     maxLines = 4,
                     enabled = !isLoading,
                     shape = RoundedCornerShape(25.dp)
@@ -571,12 +595,12 @@ fun CreateEventScreen(
     }
     if (showRecurrenceEndDatePicker) {
         // Рассчитываем начальную дату для пикера
+        //
         val initialSelectedDateMillis = eventDateTimeState.recurrenceEndDate
             ?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
             ?: eventDateTimeState.startDate.plusMonths(1) // По умолчанию через месяц от старта
                 .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        // Состояние DatePicker'а
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = initialSelectedDateMillis,
             selectableDates = object : SelectableDates {
@@ -592,7 +616,6 @@ fun CreateEventScreen(
                 }
             }
         )
-        // Создаем DatePickerDialog с правильной сигнатурой
         DatePickerDialog(
             onDismissRequest = { showRecurrenceEndDatePicker = false },
             confirmButton = {
@@ -622,7 +645,7 @@ fun CreateEventScreen(
             DatePicker(state = datePickerState) // Передаем DatePicker как контент
         } // Конец лямбды для content
     }
-} // End Scaffold
+}
 
 
 
