@@ -2,7 +2,7 @@ package com.lpavs.caliinda.data.calendar
 
 import android.util.Log
 import com.google.gson.Gson
-import com.lpavs.caliinda.data.auth.AuthManager // Нужен для токена
+import com.lpavs.caliinda.data.auth.AuthManager
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.data.local.EventDao
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
@@ -17,7 +17,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
