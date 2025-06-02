@@ -112,11 +112,20 @@ fun CreateEventScreen(
     val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
     var eventDateTimeState by remember {
+        val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
+        val defaultEndTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0)
+        var effectiveEndDate = initialDate
+
+        // Если время конца раньше времени начала (например, startTime=23:00, endTime=00:00),
+        // это означает переход через полночь, так что endDate должен быть на следующий день.
+        if (defaultEndTime.isBefore(defaultStartTime)) {
+            effectiveEndDate = initialDate.plusDays(1)
+        }
         mutableStateOf(
             EventDateTimeState(
                 startDate = initialDate,
                 startTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0),
-                endDate = initialDate,
+                endDate = effectiveEndDate,
                 endTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0),
                 isAllDay = false,
                 selectedWeekdays = emptySet(),
@@ -566,24 +575,32 @@ fun CreateEventScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val selectedTime =
-                        LocalTime.of(timePickerState.hour, timePickerState.minute)
-                            .withNano(0)
+                        LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
+
+                    var newFinalEndDate = currentDateTimeState.endDate
+                    val newFinalEndTime = selectedTime
+
                     // Проверка: если даты одинаковые, время конца не может быть раньше или равно времени начала
                     if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
                         currentDateTimeState.startTime != null &&
-                        !currentDateTimeState.startTime.isBefore(selectedTime) // Если startTime НЕ раньше selectedTime (т.е. >=)
+                        selectedTime.isBefore(currentDateTimeState.startTime)
                     ) {
-                        Toast.makeText(
-                            context,
-                            R.string.error_end_date_before_start,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        // Обновляем состояние через copy
-                        eventDateTimeState =
-                            currentDateTimeState.copy(endTime = selectedTime)
-                        showEndTimePicker = false
+                        // Устанавливаем дату конца на следующий день
+                        newFinalEndDate = currentDateTimeState.startDate.plusDays(1)
+                        // Флаг isOneDay в EventDateTimePicker автоматически обновится,
+                        // так как startDate и newFinalEndDate станут разными.
+                        // Сообщение об ошибке здесь не нужно, так как мы исправляем ситуацию.
                     }
+                    // В противном случае (многодневное событие или время выбрано корректно для однодневного),
+                    // просто устанавливаем выбранное время.
+                    // Валидация (например, endDate < startDate или endTime < startTime на одной дате для многодневного)
+                    // будет обработана в LaunchedEffect внутри EventDateTimePicker.
+
+                    eventDateTimeState = currentDateTimeState.copy(
+                        endTime = newFinalEndTime,
+                        endDate = newFinalEndDate // Обновляем и дату конца, если она изменилась
+                    )
+                    showEndTimePicker = false
                 }) { Text("OK") }
             },
             dismissButton = {
