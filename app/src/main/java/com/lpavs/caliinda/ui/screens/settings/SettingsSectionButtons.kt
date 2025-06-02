@@ -32,106 +32,78 @@ import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import com.lpavs.caliinda.ui.theme.Typography
 
-
 @Composable
 fun GoogleAccountSection(
-   viewModel: MainViewModel,
-   onSignInClick: () -> Unit,
-){
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val email = uiState.userEmail ?: stringResource(R.string.loginplease)
-    val displayName = uiState.displayName ?: email.substringBefore("@")
-    val cornerRadius = cuid.SettingsItemCornerRadius
-    Box(
-        modifier = Modifier
-
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(color= colorScheme.surfaceContainer)
-            .height(60.dp)
-
-    ) {
+    viewModel: MainViewModel,
+    onSignInClick: () -> Unit,
+) {
+  val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+  val email = uiState.userEmail ?: stringResource(R.string.loginplease)
+  val displayName = uiState.displayName ?: email.substringBefore("@")
+  val cornerRadius = cuid.SettingsItemCornerRadius
+  Box(
+      modifier =
+          Modifier.fillMaxWidth()
+              .clip(RoundedCornerShape(cornerRadius))
+              .background(color = colorScheme.surfaceContainer)
+              .height(60.dp)) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(40.dp)
-                    .background(color= colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ){
-                Icon(Icons.Rounded.AccountCircle,
-                    tint=colorScheme.onPrimaryContainer,
-                    contentDescription = stringResource(R.string.account) )
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+              Box(
+                  modifier =
+                      Modifier.clip(CircleShape)
+                          .size(40.dp)
+                          .background(color = colorScheme.primaryContainer),
+                  contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Rounded.AccountCircle,
+                        tint = colorScheme.onPrimaryContainer,
+                        contentDescription = stringResource(R.string.account))
+                  }
+              Spacer(modifier = Modifier.width(16.dp))
+              Text(text = displayName, style = Typography.bodyLarge)
+              Spacer(Modifier.weight(1f))
+              Box(modifier = Modifier.padding(6.dp)) {
+                Box() {
+                  if (!uiState.isSignedIn) {
+                    Button(
+                        onClick = onSignInClick, // Вызываем лямбду
+                        //    enabled = !uiState.isLoading // Блокируем кнопку во время входа
+                    ) {
+                      Text(stringResource(R.string.login))
+                    }
+                  } else {
+                    Button(onClick = { viewModel.signOut() }, enabled = !uiState.isLoading) {
+                      Text(stringResource(R.string.logout))
+                    }
+                  }
+                }
+              }
             }
-           Spacer(modifier = Modifier.width(16.dp))
-           Text(text = displayName, style = Typography.bodyLarge)
-           Spacer(Modifier.weight(1f))
-           Box(
-               modifier = Modifier
-                   .padding(6.dp)
-           ){
-
-               Box() {
-                   if (!uiState.isSignedIn) {
-                       Button(
-                           onClick = onSignInClick, // Вызываем лямбду
-                       //    enabled = !uiState.isLoading // Блокируем кнопку во время входа
-                       ) {
-                           Text(stringResource(R.string.login) )
-                       }
-                   } else {
-                       Button(
-                           onClick = { viewModel.signOut() },
-                           enabled = !uiState.isLoading
-                       ) {
-                           Text(stringResource(R.string.logout))
-                       }
-                   }
-               }
-
-           }
-        }
-
-    }
+      }
 }
 
 @Composable
-fun SettingsItem(
-    icon: @Composable () -> Unit,
-    title: String,
-    onClick: () -> Unit
-){
-    val cornerRadius = cuid.SettingsItemCornerRadius
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(color= colorScheme.surfaceContainer)
-            .height(60.dp)
-            .clickable(onClick = onClick)
-
-    ) {
+fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Unit) {
+  val cornerRadius = cuid.SettingsItemCornerRadius
+  Box(
+      modifier =
+          Modifier.fillMaxWidth()
+              .clip(RoundedCornerShape(cornerRadius))
+              .background(color = colorScheme.surfaceContainer)
+              .height(60.dp)
+              .clickable(onClick = onClick)) {
         Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 16.dp)
-                .clip(CircleShape)
-                .size(40.dp)
-                .background(color = colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            icon()
-        }
-        Text(
-            text = title,
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.Center)
-        )
-    }
+            modifier =
+                Modifier.align(Alignment.CenterStart)
+                    .padding(start = 16.dp)
+                    .clip(CircleShape)
+                    .size(40.dp)
+                    .background(color = colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center) {
+              icon()
+            }
+        Text(text = title, modifier = Modifier.padding(16.dp).align(Alignment.Center))
+      }
 }

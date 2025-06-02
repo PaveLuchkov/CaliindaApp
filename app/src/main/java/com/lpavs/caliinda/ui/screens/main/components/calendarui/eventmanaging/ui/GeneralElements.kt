@@ -48,30 +48,22 @@ import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 
 /**
- * Content
-[AdaptiveContainer] - container for any content.
-[TimePickerDialog] - timepicker
-[DeleteConfirmationDialog] - delete confirmation dialog
- **/
-
-
+ * Content [AdaptiveContainer] - container for any content. [TimePickerDialog] - timepicker
+ * [DeleteConfirmationDialog] - delete confirmation dialog
+ */
 @Composable
-fun AdaptiveContainer(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val cornerRadius = cuid.SettingsItemCornerRadius
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(color = colorScheme.surfaceContainerLow)
-            .padding(cuid.ContainerPadding)
-            .then(modifier),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        content = content
-    )
+fun AdaptiveContainer(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+  val cornerRadius = cuid.SettingsItemCornerRadius
+  Column(
+      modifier =
+          Modifier.fillMaxWidth()
+              .clip(RoundedCornerShape(cornerRadius))
+              .background(color = colorScheme.surfaceContainerLow)
+              .padding(cuid.ContainerPadding)
+              .then(modifier),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center,
+      content = content)
 }
 
 @Composable
@@ -82,59 +74,42 @@ fun TimePickerDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(title) },
-        text = {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                content()
-            }
-        },
-        confirmButton = confirmButton,
-        dismissButton = dismissButton
-    )
+  AlertDialog(
+      onDismissRequest = onDismissRequest,
+      title = { Text(title) },
+      text = {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { content() }
+      },
+      confirmButton = confirmButton,
+      dismissButton = dismissButton)
 }
 
 @Composable
-fun DeleteConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(R.string.delete_conf))
-        },
-        text = {
-            Text(text = stringResource(R.string.delete_confirmation_message))
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm()
-                },
-                colors = ButtonDefaults.buttonColors(
+fun DeleteConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+  AlertDialog(
+      onDismissRequest = onDismiss,
+      title = { Text(text = stringResource(R.string.delete_conf)) },
+      text = { Text(text = stringResource(R.string.delete_confirmation_message)) },
+      confirmButton = {
+        Button(
+            onClick = { onConfirm() },
+            colors =
+                ButtonDefaults.buttonColors(
                     // Сделаем кнопку "Удалить" красной, если выбрана опция "Удалить всю серию"
                     containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary
-            )) {
-                Text(
-                    text = stringResource(R.string.delete)
-                )
+                    contentColor = colorScheme.onPrimary)) {
+              Text(text = stringResource(R.string.delete))
             }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text(text = stringResource(R.string.cancel))
-            }
-        }
-    )
+      },
+      dismissButton = {
+        TextButton(onClick = onDismiss) { Text(text = stringResource(R.string.cancel)) }
+      })
 }
 
-enum class RecurringDeleteChoice { SINGLE_INSTANCE, ALL_IN_SERIES }
-
+enum class RecurringDeleteChoice {
+  SINGLE_INSTANCE,
+  ALL_IN_SERIES
+}
 
 @Composable
 fun RecurringEventDeleteOptionsDialog(
@@ -142,92 +117,82 @@ fun RecurringEventDeleteOptionsDialog(
     onDismiss: () -> Unit,
     onOptionSelected: (RecurringDeleteChoice) -> Unit
 ) {
-    var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
-    val radioOptions = listOf(
-        RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
-        RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series)
-    )
+  var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
+  val radioOptions =
+      listOf(
+          RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
+          RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series))
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(R.string.delete_recurring_event_title))
-        },
-        text = {
-            Column(modifier = Modifier.selectableGroup()) {
-                Text(
-                    text = stringResource(R.string.delete_recurring_event_prompt, eventName),
-                    style = typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+  AlertDialog(
+      onDismissRequest = onDismiss,
+      title = { Text(text = stringResource(R.string.delete_recurring_event_title)) },
+      text = {
+        Column(modifier = Modifier.selectableGroup()) {
+          Text(
+              text = stringResource(R.string.delete_recurring_event_prompt, eventName),
+              style = typography.bodyMedium,
+              modifier = Modifier.padding(bottom = 16.dp))
 
-                radioOptions.forEach { (option, label) ->
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = (option == selectedOption),
-                                onClick = { selectedOption = option },
-                                role = Role.RadioButton
-                            )
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = (option == selectedOption),
-                            onClick = null,
-                            colors = RadioButtonDefaults.colors(
-                                selectedColor = if (option == RecurringDeleteChoice.ALL_IN_SERIES && selectedOption == option) {
+          radioOptions.forEach { (option, label) ->
+            Row(
+                Modifier.fillMaxWidth()
+                    .selectable(
+                        selected = (option == selectedOption),
+                        onClick = { selectedOption = option },
+                        role = Role.RadioButton)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                  RadioButton(
+                      selected = (option == selectedOption),
+                      onClick = null,
+                      colors =
+                          RadioButtonDefaults.colors(
+                              selectedColor =
+                                  if (option == RecurringDeleteChoice.ALL_IN_SERIES &&
+                                      selectedOption == option) {
                                     colorScheme.error
-                                } else {
+                                  } else {
                                     colorScheme.primary
-                                }
-                            )
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = label,
-                            style = typography.bodyLarge,
-                            color = if (option == RecurringDeleteChoice.ALL_IN_SERIES) {
-                                colorScheme.error
-                            } else {
-                                LocalContentColor.current
-                            }
-                        )
-                    }
+                                  }))
+                  Spacer(Modifier.width(8.dp))
+                  Text(
+                      text = label,
+                      style = typography.bodyLarge,
+                      color =
+                          if (option == RecurringDeleteChoice.ALL_IN_SERIES) {
+                            colorScheme.error
+                          } else {
+                            LocalContentColor.current
+                          })
                 }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onOptionSelected(selectedOption)
-                    onDismiss() // Закрываем диалог после подтверждения
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
-                        colorScheme.error
-                    } else {
-                        colorScheme.primary
-                    },
-                    contentColor = if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
-                        colorScheme.onError
-                    } else {
-                        colorScheme.onPrimary
-                    }
-                )
-            ) {
-                Text(stringResource(R.string.delete))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+          }
         }
-    )
+      },
+      confirmButton = {
+        Button(
+            onClick = {
+              onOptionSelected(selectedOption)
+              onDismiss() // Закрываем диалог после подтверждения
+            },
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
+                          colorScheme.error
+                        } else {
+                          colorScheme.primary
+                        },
+                    contentColor =
+                        if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
+                          colorScheme.onError
+                        } else {
+                          colorScheme.onPrimary
+                        })) {
+              Text(stringResource(R.string.delete))
+            }
+      },
+      dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -238,75 +203,65 @@ fun RecurringEventEditOptionsDialog(
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties()
 ) {
-    BasicAlertDialog(
-        onDismissRequest = onDismiss,
-        modifier = modifier.widthIn(min = 280.dp, max = 560.dp), // Рекомендации по ширине диалогов M3
-        properties = properties,
-    ) {
-        Surface(
-            shape = shapes.extraLarge, // Стандартная форма для диалогов M3
-            color = colorScheme.surface, // Цвет фона диалога
-            tonalElevation = Elevation, // Стандартная тень для диалогов
-            modifier = Modifier.wrapContentSize() // Чтобы Surface обернул контент
+  BasicAlertDialog(
+      onDismissRequest = onDismiss,
+      modifier = modifier.widthIn(min = 280.dp, max = 560.dp), // Рекомендации по ширине диалогов M3
+      properties = properties,
+  ) {
+    Surface(
+        shape = shapes.extraLarge, // Стандартная форма для диалогов M3
+        color = colorScheme.surface, // Цвет фона диалога
+        tonalElevation = Elevation, // Стандартная тень для диалогов
+        modifier = Modifier.wrapContentSize() // Чтобы Surface обернул контент
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp) // Явные отступы
-            ) {
+          Column(
+              modifier =
+                  Modifier.padding(
+                      top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp) // Явные отступы
+              ) {
                 Text(
                     text = stringResource(R.string.edit_recurring_event_title),
                     style = typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                    modifier = Modifier.padding(bottom = 16.dp))
 
                 Text(
                     text = stringResource(R.string.edit_recurring_event_prompt, eventName),
                     style = typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
+                    modifier = Modifier.padding(bottom = 24.dp))
 
                 // Опции выбора (кнопки)
                 // Кнопка "Только это событие"
                 TextButton(
                     onClick = { onOptionSelected(ClientEventUpdateMode.SINGLE_INSTANCE) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.edit_single_instance))
-                }
+                    modifier = Modifier.fillMaxWidth()) {
+                      Text(stringResource(R.string.edit_single_instance))
+                    }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Кнопка "Все события в серии"
                 TextButton(
                     onClick = { onOptionSelected(ClientEventUpdateMode.ALL_IN_SERIES) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.edit_all_in_series))
-                }
+                    modifier = Modifier.fillMaxWidth()) {
+                      Text(stringResource(R.string.edit_all_in_series))
+                    }
 
                 // Опционально: "Это и последующие", если поддерживается
                 // Spacer(modifier = Modifier.height(8.dp))
                 // TextButton(
                 //    onClick = { onOptionSelected(ClientEventUpdateMode.THIS_AND_FOLLOWING) },
                 //    modifier = Modifier.fillMaxWidth()
-                //) {
+                // ) {
                 //    Text(stringResource(R.string.edit_this_and_following))
-                //}
+                // }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Кнопка "Отмена"
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = onDismiss
-                    ) {
-                        Text(stringResource(R.string.cancel))
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                  TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 }
-            }
+              }
         }
-    }
+  }
 }

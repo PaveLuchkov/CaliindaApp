@@ -67,7 +67,6 @@ import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
 
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EventListItem(
@@ -86,247 +85,252 @@ fun EventListItem(
     modifier: Modifier = Modifier,
     currentTimeZoneId: String
 ) {
-    val eventDurationMinutes = remember(event.startTime, event.endTime, currentTimeZoneId) {
+  val eventDurationMinutes =
+      remember(event.startTime, event.endTime, currentTimeZoneId) {
         val start = parseToInstant(event.startTime, currentTimeZoneId)
         val end = parseToInstant(event.endTime, currentTimeZoneId)
         if (start != null && end != null && end.isAfter(start)) {
-            Duration.between(start, end).toMinutes()
+          Duration.between(start, end).toMinutes()
         } else {
-            0L
+          0L
         }
-    }
-    val haptic = LocalHapticFeedback.current
+      }
+  val haptic = LocalHapticFeedback.current
 
-    val shapeParams = remember(event.id) {
+  val shapeParams =
+      remember(event.id) {
         generateShapeParams(event.id) // Use helper
-    }
+      }
 
-    val starShape = remember(shapeParams.numVertices, shapeParams.radiusSeed) {
+  val starShape =
+      remember(shapeParams.numVertices, shapeParams.radiusSeed) {
         RoundedPolygon.star(
             numVerticesPerRadius = shapeParams.numVertices,
             radius = shapeParams.radiusSeed,
             innerRadius = cuid.SHAPEINNERRADIUS,
-            rounding = CornerRounding(cuid.ShapeCornerRounding)
-        )
-    }
-    val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
-    val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+            rounding = CornerRounding(cuid.ShapeCornerRounding))
+      }
+  val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+  val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
 
-    val starContainerSize = remember(eventDurationMinutes, isMicroEventFromList) {
+  val starContainerSize =
+      remember(eventDurationMinutes, isMicroEventFromList) {
         if (isMicroEventFromList || eventDurationMinutes <= 0L) 0.dp
         else calculateShapeContainerSize(eventDurationMinutes)
-    }
+      }
 
+  // Compute the transitionColor
+  val transitionColorCard =
+      colorScheme.primaryContainer.transitionTo(colorScheme.tertiaryContainer, proximityRatio)
+  val transitionColorText =
+      colorScheme.onPrimaryContainer.transitionTo(colorScheme.onTertiaryContainer, proximityRatio)
+  val darkerShadowColor = Color.Black
 
-    // Compute the transitionColor
-    val transitionColorCard = colorScheme.primaryContainer.transitionTo(colorScheme.tertiaryContainer, proximityRatio)
-    val transitionColorText = colorScheme.onPrimaryContainer.transitionTo(colorScheme.onTertiaryContainer, proximityRatio)
-    val darkerShadowColor = Color.Black
+  // --- Параметры текущего события (получаем isCurrentEvent) ---
+  //   val fixedColors = LocalFixedAccentColors.current
 
-    // --- Параметры текущего события (получаем isCurrentEvent) ---
- //   val fixedColors = LocalFixedAccentColors.current
-
-    val cardElevation = if (isCurrentEvent) cuid.CurrentEventElevation else 0.dp
-    val cardBackground = when {
+  val cardElevation = if (isCurrentEvent) cuid.CurrentEventElevation else 0.dp
+  val cardBackground =
+      when {
         isCurrentEvent -> colorScheme.tertiaryContainer // Выделяем текущее
-        isNextEvent -> transitionColorCard// Слегка выделяем следующее (пример)
+        isNextEvent -> transitionColorCard // Слегка выделяем следующее (пример)
         else -> colorScheme.primaryContainer // Обычный фон
-    }
+      }
 
-    val cardTextColor = when {
+  val cardTextColor =
+      when {
         isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
-        isNextEvent -> transitionColorText// Слегка выделяем следующее (пример)
+        isNextEvent -> transitionColorText // Слегка выделяем следующее (пример)
         else -> colorScheme.onPrimaryContainer // Обычный фон
-    }
-    // --- Композиция UI ---
-    Box( // Корневой Box для тени, фона, высоты и кликабельности
-        modifier = modifier
-            .shadow(
-                elevation = cardElevation,
-                shape = RoundedCornerShape(cuid.EventItemCornerRadius),
-                clip = false,
-                ambientColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent,
-                spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent
-            )
-            .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-            .background(cardBackground)
-            .height(targetHeightFromList)
-            .pointerInput(event.id) {
+      }
+  // --- Композиция UI ---
+  Box( // Корневой Box для тени, фона, высоты и кликабельности
+      modifier =
+          modifier
+              .shadow(
+                  elevation = cardElevation,
+                  shape = RoundedCornerShape(cuid.EventItemCornerRadius),
+                  clip = false,
+                  ambientColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent,
+                  spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)
+              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
+              .background(cardBackground)
+              .height(targetHeightFromList)
+              .pointerInput(event.id) {
                 detectTapGestures(
                     onTap = { onToggleExpand() },
                     onLongPress = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onDetailsClickFromList()
-                    }
-                )
-            }
-    ) {
+                      haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                      onDetailsClickFromList()
+                    })
+              }) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f) // Занимает все место, ОСТАВЛЯЯ место для кнопок снизу
-                    .fillMaxWidth()
-                    // Внутренние отступы для текста и звезды
-                    .padding(
-                        horizontal = cuid.ItemHorizontalPadding,
-                        vertical = if (isMicroEventFromList) cuid.MicroItemContentVerticalPadding else cuid.StandardItemContentVerticalPadding
-                    ),
-                // Выравнивание контента можно оставить TopStart или изменить на Center, если нужно
-                contentAlignment = Alignment.TopStart
-            ) {
+          Box(
+              modifier =
+                  Modifier.weight(1f) // Занимает все место, ОСТАВЛЯЯ место для кнопок снизу
+                      .fillMaxWidth()
+                      // Внутренние отступы для текста и звезды
+                      .padding(
+                          horizontal = cuid.ItemHorizontalPadding,
+                          vertical =
+                              if (isMicroEventFromList) cuid.MicroItemContentVerticalPadding
+                              else cuid.StandardItemContentVerticalPadding),
+              // Выравнивание контента можно оставить TopStart или изменить на Center, если нужно
+              contentAlignment = Alignment.TopStart) {
                 if (!isMicroEventFromList && starContainerSize > 0.dp) {
-                    val density = LocalDensity.current
-                    val starOffsetY = starContainerSize * shapeParams.offestParam
-                    val starOffsetX = starContainerSize * -shapeParams.offestParam
-                    val rotationAngle = shapeParams.rotationAngle
-                    val shadowColor = Color.Black.copy(alpha = 0.3f) // Переместил
+                  val density = LocalDensity.current
+                  val starOffsetY = starContainerSize * shapeParams.offestParam
+                  val starOffsetX = starContainerSize * -shapeParams.offestParam
+                  val rotationAngle = shapeParams.rotationAngle
+                  val shadowColor = Color.Black.copy(alpha = 0.3f) // Переместил
 
-                    Box( // Тень
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd) // Позиционирование звезды
-                            .graphicsLayer(
-                                translationX = with(density) { (starOffsetX + shapeParams.shadowOffsetXSeed).toPx() },
-                                translationY = with(density) { (starOffsetY - shapeParams.shadowOffsetYSeed).toPx() },
-                                rotationZ = rotationAngle
-                            )
-                            .requiredSize(starContainerSize)
-                            .clip(clip2Star)
-                            .background(shadowColor)
-                    )
-                    Box( // Основная фигура
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd) // Позиционирование звезды
-                            .graphicsLayer(
-                                translationX = with(density) { starOffsetX.toPx() },
-                                translationY = with(density) { starOffsetY.toPx() },
-                                rotationZ = rotationAngle
-                            )
-                            .requiredSize(starContainerSize)
-                            .clip(clipStar)
-                            .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha))
-                    )
+                  Box( // Тень
+                      modifier =
+                          Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                              .graphicsLayer(
+                                  translationX =
+                                      with(density) {
+                                        (starOffsetX + shapeParams.shadowOffsetXSeed).toPx()
+                                      },
+                                  translationY =
+                                      with(density) {
+                                        (starOffsetY - shapeParams.shadowOffsetYSeed).toPx()
+                                      },
+                                  rotationZ = rotationAngle)
+                              .requiredSize(starContainerSize)
+                              .clip(clip2Star)
+                              .background(shadowColor))
+                  Box( // Основная фигура
+                      modifier =
+                          Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                              .graphicsLayer(
+                                  translationX = with(density) { starOffsetX.toPx() },
+                                  translationY = with(density) { starOffsetY.toPx() },
+                                  rotationZ = rotationAngle)
+                              .requiredSize(starContainerSize)
+                              .clip(clipStar)
+                              .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha)))
                 }
-                    if (isMicroEventFromList) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = event.summary,
-                                color = cardTextColor,
-                                style = typography.titleLarge.copy(fontWeight = FontWeight.Medium),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                            Spacer(modifier = Modifier.width(cuid.HeaderBottomSpacing))
-                            Text(
-                                text = timeFormatter(event),
-                                color = cardTextColor,
-                                style = typography.labelMedium,
-                                maxLines = 1
-                            )
-                        }
-                    } else {
-                        Column(
-                            verticalArrangement = Arrangement.Top
-                        ) {
-                            Text(
-                                text = event.summary,
-                                color = cardTextColor,
-                                style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Row {
-                                Text(
-                                    text = timeFormatter(event),
-                                    color = cardTextColor,
-                                    style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                                    maxLines = 1
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                event.location?.let {
-                                    Text(
-                                        text = it,
-                                        color = cardTextColor,
-                                        style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
+                if (isMicroEventFromList) {
+                  Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = event.summary,
+                            color = cardTextColor,
+                            style = typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false))
+                        Spacer(modifier = Modifier.width(cuid.HeaderBottomSpacing))
+                        Text(
+                            text = timeFormatter(event),
+                            color = cardTextColor,
+                            style = typography.labelMedium,
+                            maxLines = 1)
+                      }
+                } else {
+                  Column(verticalArrangement = Arrangement.Top) {
+                    Text(
+                        text = event.summary,
+                        color = cardTextColor,
+                        style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row {
+                      Text(
+                          text = timeFormatter(event),
+                          color = cardTextColor,
+                          style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                          maxLines = 1)
+                      Spacer(modifier = Modifier.width(8.dp))
+                      event.location?.let {
+                        Text(
+                            text = it,
+                            color = cardTextColor,
+                            style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                            maxLines = 1)
+                      }
                     }
+                  }
                 }
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) + // Задержка для fadeIn может быть синхронизирована или убрана, если expandVertically начинается сразу
-                        expandVertically(
-                            animationSpec = tween(durationMillis = 250, delayMillis = 50), // Согласуй длительности с animateDpAsState
-                            expandFrom = Alignment.Top // Кнопки появляются снизу, значит расширяются от своего верхнего края вниз
-                        ),
-                exit = shrinkVertically(
-                    animationSpec = tween(durationMillis = 250),
-                    shrinkTowards = Alignment.Top // Схлопываются к своему верхнему краю
-                ) + fadeOut(animationSpec = tween(durationMillis = 150))
-            ) {
+              }
+          AnimatedVisibility(
+              visible = isExpanded,
+              enter =
+                  fadeIn(
+                      animationSpec =
+                          tween(
+                              durationMillis = 150,
+                              delayMillis =
+                                  100)) + // Задержка для fadeIn может быть синхронизирована или
+                                          // убрана, если expandVertically начинается сразу
+                      expandVertically(
+                          animationSpec =
+                              tween(
+                                  durationMillis = 250,
+                                  delayMillis = 50), // Согласуй длительности с animateDpAsState
+                          expandFrom =
+                              Alignment
+                                  .Top // Кнопки появляются снизу, значит расширяются от своего
+                                       // верхнего края вниз
+                          ),
+              exit =
+                  shrinkVertically(
+                      animationSpec = tween(durationMillis = 250),
+                      shrinkTowards = Alignment.Top // Схлопываются к своему верхнему краю
+                      ) + fadeOut(animationSpec = tween(durationMillis = 150))) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp), // Отступы для ряда кнопок
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                horizontal = cuid.ItemHorizontalPadding,
+                                vertical = 4.dp), // Отступы для ряда кнопок
                     horizontalArrangement = Arrangement.End, // Кнопки справа
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FilledIconButton(
-                        onClick = { onDetailsClickFromList()
-                            onToggleExpand()},
-                        modifier = Modifier
-                            .minimumInteractiveComponentSize()
-                            .size(
-                                IconButtonDefaults.smallContainerSize(
-                                    IconButtonDefaults.IconButtonWidthOption.Narrow
-                                )
-                            ),
-                        shape = IconButtonDefaults.smallRoundShape
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Info,
-                            contentDescription = "info",
-                        )
+                    verticalAlignment = Alignment.CenterVertically) {
+                      FilledIconButton(
+                          onClick = {
+                            onDetailsClickFromList()
+                            onToggleExpand()
+                          },
+                          modifier =
+                              Modifier.minimumInteractiveComponentSize()
+                                  .size(
+                                      IconButtonDefaults.smallContainerSize(
+                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
+                          shape = IconButtonDefaults.smallRoundShape) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = "info",
+                            )
+                          }
+                      //                    Spacer(modifier = Modifier.width(4.dp))
+                      Button(
+                          onClick = { onEditClickFromList() },
+                          contentPadding = PaddingValues(horizontal = 12.dp)) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Edit") // Или локализованная строка
+                          }
+                      //                    Spacer(modifier = Modifier.width(4.dp))
+                      FilledIconButton(
+                          onClick = { onDeleteClickFromList() },
+                          modifier =
+                              Modifier.minimumInteractiveComponentSize()
+                                  .size(
+                                      IconButtonDefaults.smallContainerSize(
+                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
+                          shape = IconButtonDefaults.smallRoundShape) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Delete",
+                            )
+                          }
                     }
-//                    Spacer(modifier = Modifier.width(4.dp))
-                    Button(
-                        onClick = {
-                            onEditClickFromList()
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp)
-                    ) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
-                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                        Text("Edit") // Или локализованная строка
-                    }
-//                    Spacer(modifier = Modifier.width(4.dp))
-                    FilledIconButton(
-                        onClick = {onDeleteClickFromList()},
-                        modifier = Modifier
-                            .minimumInteractiveComponentSize()
-                            .size(
-                                IconButtonDefaults.smallContainerSize(
-                                    IconButtonDefaults.IconButtonWidthOption.Narrow
-                                )
-                            ),
-                        shape = IconButtonDefaults.smallRoundShape
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Delete",
-                        )
-                    }
-                }
-            } // Конец AnimatedVisibility
+              } // Конец AnimatedVisibility
         }
-    } // Конец Column (контент + кнопки)
+      } // Конец Column (контент + кнопки)
 } // Конец корневого Box
 
 @Composable
@@ -339,184 +343,194 @@ fun AllDayEventItem(
     onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier // Добавил modifier
 ) {
-    val cardBackground = colorScheme.tertiaryContainer
-    val cardTextColor = colorScheme.onTertiaryContainer
-    val haptic = LocalHapticFeedback.current
+  val cardBackground = colorScheme.tertiaryContainer
+  val cardTextColor = colorScheme.onTertiaryContainer
+  val haptic = LocalHapticFeedback.current
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(cuid.EventItemCornerRadius)) // Используем радиус как у обычных событий для консистентности
-            .background(cardBackground)
-            .pointerInput(event.id) {
+  Box(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .clip(
+                  RoundedCornerShape(
+                      cuid
+                          .EventItemCornerRadius)) // Используем радиус как у обычных событий для
+                                                   // консистентности
+              .background(cardBackground)
+              .pointerInput(event.id) {
                 detectTapGestures(
                     onTap = { onToggleExpand() },
                     onLongPress = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onDetailsClick()
-                    }
-                )
-            }
-    ) {
+                      haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                      onDetailsClick()
+                    })
+              }) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding( // Внутренние отступы для контента
-                    horizontal = CalendarUiDefaults.AllDayItemPadding,
-                    vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding
-                )
-        ) {
-            Text(
-                text = event.summary,
-                style = typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = cardTextColor,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 3.dp), // Небольшой вертикальный отступ для самого текста
-            )
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding( // Внутренние отступы для контента
+                        horizontal = CalendarUiDefaults.AllDayItemPadding,
+                        vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
+              Text(
+                  text = event.summary,
+                  style = typography.bodyLarge,
+                  fontWeight = FontWeight.Medium,
+                  color = cardTextColor,
+                  textAlign = TextAlign.Center,
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .padding(
+                              vertical = 3.dp), // Небольшой вертикальный отступ для самого текста
+              )
 
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
-                        expandVertically(
-                            animationSpec = tween(durationMillis = 250, delayMillis = 50),
-                            expandFrom = Alignment.Top
-                        ),
-                exit = shrinkVertically(
-                    animationSpec = tween(durationMillis = 250),
-                    shrinkTowards = Alignment.Top
-                ) + fadeOut(animationSpec = tween(durationMillis = 150))
-            ) {
-                // Добавляем небольшой отступ сверху перед кнопками, если они видны
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp), // Отступы для ряда кнопок
-                    horizontalArrangement = Arrangement.Center, // Кнопки справа
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button(
-                        onClick = {
-                            onDetailsClick()
-                            onToggleExpand()
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorScheme.onTertiary,
-                            contentColor = colorScheme.tertiary
-                        )
-                    ) {
-                        Icon(Icons.Filled.Info, contentDescription = "Information", modifier = Modifier.size(ButtonDefaults.IconSize))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onEditClick()
-//                            onToggleExpand() // Опционально: схлопывать после клика
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        // Можно настроить цвета кнопок, чтобы они лучше смотрелись на tertiary фоне
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorScheme.onTertiary,
-                            contentColor = colorScheme.tertiary
-                        )
-                    ) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Редактировать", modifier = Modifier.size(ButtonDefaults.IconSize))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onDeleteClick()
-                            // onToggleExpand() // Опционально: схлопывать после клика
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorScheme.onTertiary,
-                            contentColor = colorScheme.tertiary
-                        )
-                    ) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Удалить", modifier = Modifier.size(ButtonDefaults.IconSize))
-                    }
-                }
+              AnimatedVisibility(
+                  visible = isExpanded,
+                  enter =
+                      fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                          expandVertically(
+                              animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                              expandFrom = Alignment.Top),
+                  exit =
+                      shrinkVertically(
+                          animationSpec = tween(durationMillis = 250),
+                          shrinkTowards = Alignment.Top) +
+                          fadeOut(animationSpec = tween(durationMillis = 150))) {
+                    // Добавляем небольшой отступ сверху перед кнопками, если они видны
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(vertical = 4.dp), // Отступы для ряда кнопок
+                        horizontalArrangement = Arrangement.Center, // Кнопки справа
+                        verticalAlignment = Alignment.CenterVertically) {
+                          Button(
+                              onClick = {
+                                onDetailsClick()
+                                onToggleExpand()
+                              },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = colorScheme.onTertiary,
+                                      contentColor = colorScheme.tertiary)) {
+                                Icon(
+                                    Icons.Filled.Info,
+                                    contentDescription = "Information",
+                                    modifier = Modifier.size(ButtonDefaults.IconSize))
+                              }
+                          Spacer(modifier = Modifier.width(8.dp))
+                          Button(
+                              onClick = {
+                                onEditClick()
+                                //                            onToggleExpand() // Опционально:
+                                // схлопывать после клика
+                              },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              // Можно настроить цвета кнопок, чтобы они лучше смотрелись на
+                              // tertiary фоне
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = colorScheme.onTertiary,
+                                      contentColor = colorScheme.tertiary)) {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = "Редактировать",
+                                    modifier = Modifier.size(ButtonDefaults.IconSize))
+                              }
+                          Spacer(modifier = Modifier.width(8.dp))
+                          Button(
+                              onClick = {
+                                onDeleteClick()
+                                // onToggleExpand() // Опционально: схлопывать после клика
+                              },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = colorScheme.onTertiary,
+                                      contentColor = colorScheme.tertiary)) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = "Удалить",
+                                    modifier = Modifier.size(ButtonDefaults.IconSize))
+                              }
+                        }
+                  }
             }
-        }
-    }
+      }
 }
 
 fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
-    return if (isMicroEvent) {
-        cuid.MicroEventHeight
-    } else {
-        val minHeight = cuid.MinEventHeight
-        val maxHeight = cuid.MaxEventHeight
-        val durationDouble = durationMinutes.toDouble()
-        val heightRange = maxHeight - minHeight
-
-        // Sigmoid calculation
-        val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
-        val k = cuid.HeightSigmoidSteepness
-        val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
-
-        val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
-        calculatedHeight.coerceIn(minHeight, maxHeight)
-    }
-}
-
-fun calculateShapeContainerSize(durationMinutes: Long): Dp {
-    val minStarContainerSize = cuid.MinStarContainerSize
-    val maxStarContainerSize = cuid.MaxStarContainerSize
+  return if (isMicroEvent) {
+    cuid.MicroEventHeight
+  } else {
+    val minHeight = cuid.MinEventHeight
+    val maxHeight = cuid.MaxEventHeight
     val durationDouble = durationMinutes.toDouble()
-    val heightRange = maxStarContainerSize - minStarContainerSize
+    val heightRange = maxHeight - minHeight
 
+    // Sigmoid calculation
     val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
     val k = cuid.HeightSigmoidSteepness
     val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
 
-    val calculatedHeight = minStarContainerSize + (heightRange * sigmoidOutput.toFloat())
-    return calculatedHeight.coerceIn(minStarContainerSize, maxStarContainerSize)
+    val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
+    calculatedHeight.coerceIn(minHeight, maxHeight)
+  }
+}
 
+fun calculateShapeContainerSize(durationMinutes: Long): Dp {
+  val minStarContainerSize = cuid.MinStarContainerSize
+  val maxStarContainerSize = cuid.MaxStarContainerSize
+  val durationDouble = durationMinutes.toDouble()
+  val heightRange = maxStarContainerSize - minStarContainerSize
+
+  val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
+  val k = cuid.HeightSigmoidSteepness
+  val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
+
+  val calculatedHeight = minStarContainerSize + (heightRange * sigmoidOutput.toFloat())
+  return calculatedHeight.coerceIn(minStarContainerSize, maxStarContainerSize)
 }
 
 fun generateShapeParams(eventId: String): GeneratedShapeParams {
-    val hashCode = eventId.hashCode()
-    val absHashCode = abs(hashCode)
+  val hashCode = eventId.hashCode()
+  val absHashCode = abs(hashCode)
 
-    val numVertices = (absHashCode % cuid.ShapeMaxVerticesDelta) + cuid.ShapeMinVertices
+  val numVertices = (absHashCode % cuid.ShapeMaxVerticesDelta) + cuid.ShapeMinVertices
 
-    // Use different simple transformations of the hash for variety
-    val shadowOffsetXSeed = absHashCode % cuid.ShapeShadowOffsetXMaxModulo
-    val shadowOffsetYSeed = absHashCode % cuid.ShapeShadowOffsetYMaxModulo + cuid.ShapeShadowOffsetYMin
+  // Use different simple transformations of the hash for variety
+  val shadowOffsetXSeed = absHashCode % cuid.ShapeShadowOffsetXMaxModulo
+  val shadowOffsetYSeed =
+      absHashCode % cuid.ShapeShadowOffsetYMaxModulo + cuid.ShapeShadowOffsetYMin
 
-    val offsetParam = (absHashCode % 4 + 1) * cuid.ShapeOffsetParamMultiplier
+  val offsetParam = (absHashCode % 4 + 1) * cuid.ShapeOffsetParamMultiplier
 
-    val radiusBaseHash = absHashCode / 3 + 42
-    val radiusSeed = ((radiusBaseHash % cuid.ShapeRadiusSeedRangeModulo) * cuid.ShapeRadiusSeedRange) + cuid.ShapeRadiusSeedMin
-    val coercedRadiusSeed = radiusSeed.coerceIn(cuid.ShapeRadiusSeedMin, cuid.ShapeMaxRadius)
+  val radiusBaseHash = absHashCode / 3 + 42
+  val radiusSeed =
+      ((radiusBaseHash % cuid.ShapeRadiusSeedRangeModulo) * cuid.ShapeRadiusSeedRange) +
+          cuid.ShapeRadiusSeedMin
+  val coercedRadiusSeed = radiusSeed.coerceIn(cuid.ShapeRadiusSeedMin, cuid.ShapeMaxRadius)
 
-    val angleSeed = (abs(hashCode) / 5 - 99).mod(cuid.ShapeRotationMaxDegrees)
-    val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees)
+  val angleSeed = (abs(hashCode) / 5 - 99).mod(cuid.ShapeRotationMaxDegrees)
+  val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees)
 
-    return GeneratedShapeParams(
-        numVertices = numVertices,
-        radiusSeed = coercedRadiusSeed,
-        rotationAngle = rotationAngle,
-        shadowOffsetXSeed = shadowOffsetXSeed.dp, // Convert to Dp here
-        shadowOffsetYSeed = shadowOffsetYSeed.dp, // Convert to Dp here
-        offestParam = offsetParam
-    )
+  return GeneratedShapeParams(
+      numVertices = numVertices,
+      radiusSeed = coercedRadiusSeed,
+      rotationAngle = rotationAngle,
+      shadowOffsetXSeed = shadowOffsetXSeed.dp, // Convert to Dp here
+      shadowOffsetYSeed = shadowOffsetYSeed.dp, // Convert to Dp here
+      offestParam = offsetParam)
 }
 
 fun Color.transitionTo(target: Color, factor: Float): Color {
-    val startHsl = FloatArray(3)
-    val targetHsl = FloatArray(3)
-    ColorUtils.colorToHSL(this.toArgb(), startHsl)
-    ColorUtils.colorToHSL(target.toArgb(), targetHsl)
-    val h = startHsl[0] + (targetHsl[0] - startHsl[0]) * factor
-    val s = startHsl[1] + (targetHsl[1] - startHsl[1]) * factor
-    val l = startHsl[2] + (targetHsl[2] - startHsl[2]) * factor
-    val newHsl = floatArrayOf(h,s,l)
-    return Color(ColorUtils.HSLToColor(newHsl))
+  val startHsl = FloatArray(3)
+  val targetHsl = FloatArray(3)
+  ColorUtils.colorToHSL(this.toArgb(), startHsl)
+  ColorUtils.colorToHSL(target.toArgb(), targetHsl)
+  val h = startHsl[0] + (targetHsl[0] - startHsl[0]) * factor
+  val s = startHsl[1] + (targetHsl[1] - startHsl[1]) * factor
+  val l = startHsl[2] + (targetHsl[2] - startHsl[2]) * factor
+  val newHsl = floatArrayOf(h, s, l)
+  return Color(ColorUtils.HSLToColor(newHsl))
 }

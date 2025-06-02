@@ -63,148 +63,129 @@ fun CustomEventDetailsDialog(
     onDismissRequest: () -> Unit,
     viewModel: MainViewModel,
 ) {
-    val context = LocalContext.current
-    val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
-    val currentLocale = LocalConfiguration.current.getLocales().get(0)
-    val timeFormatterLambda: (CalendarEvent) -> String = remember(viewModel, currentTimeZoneId, currentLocale) {
-        { event -> DateTimeFormatterUtil.formatEventDetailsTime(context, event, currentTimeZoneId, currentLocale) }
-    }
-    val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
-    val isCurrent = remember(currentTime, event.startTime, event.endTime) {
+  val context = LocalContext.current
+  val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
+  val currentLocale = LocalConfiguration.current.getLocales().get(0)
+  val timeFormatterLambda: (CalendarEvent) -> String =
+      remember(viewModel, currentTimeZoneId, currentLocale) {
+        { event ->
+          DateTimeFormatterUtil.formatEventDetailsTime(
+              context, event, currentTimeZoneId, currentLocale)
+        }
+      }
+  val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
+  val isCurrent =
+      remember(currentTime, event.startTime, event.endTime) {
         val start = parseToInstant(event.startTime, currentTimeZoneId)
         val end = parseToInstant(event.endTime, currentTimeZoneId)
-        start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(
-            end
-        )
-    }
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = false
-        )
-    ) {
+        start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
+      }
+  Dialog(
+      onDismissRequest = onDismissRequest,
+      properties =
+          DialogProperties(
+              dismissOnBackPress = true,
+              dismissOnClickOutside = true,
+              usePlatformDefaultWidth = false)) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .wrapContentHeight(),
+            modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
             shape = RoundedCornerShape(25.dp),
             color = if (!isCurrent) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
-            tonalElevation = 8.dp
-        ) {
-            val onCardText = if (!isCurrent) colorScheme.onPrimaryContainer else colorScheme.onTertiaryContainer
-            Box(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            tonalElevation = 8.dp) {
+              val onCardText =
+                  if (!isCurrent) colorScheme.onPrimaryContainer
+                  else colorScheme.onTertiaryContainer
+              Box(modifier = Modifier.fillMaxWidth()) {
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(250.dp)
-                        .rotate(75f)
-                        .offset(y = (-50).dp, x = 50.dp)
-                        .clip(MaterialShapes.Cookie7Sided.toShape())
-                        .border(width = 2.dp, color = onCardText.copy(alpha = 0.2f), shape = MaterialShapes.Cookie7Sided.toShape())
-                        .background(onCardText.copy(alpha = 0f))
+                    modifier =
+                        Modifier.align(Alignment.BottomEnd)
+                            .size(250.dp)
+                            .rotate(75f)
+                            .offset(y = (-50).dp, x = 50.dp)
+                            .clip(MaterialShapes.Cookie7Sided.toShape())
+                            .border(
+                                width = 2.dp,
+                                color = onCardText.copy(alpha = 0.2f),
+                                shape = MaterialShapes.Cookie7Sided.toShape())
+                            .background(onCardText.copy(alpha = 0f))) {}
 
-                ) {
-                }
                 Column(
-                    modifier = Modifier
-                        .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 12.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = event.summary,
-                        style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = onCardText
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row {
+                    modifier =
+                        Modifier.padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 12.dp),
+                    horizontalAlignment = Alignment.Start) {
+                      Text(
+                          text = event.summary,
+                          style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
+                          color = onCardText)
+                      Spacer(modifier = Modifier.height(2.dp))
+                      Row {
                         Text(
                             text = timeFormatterLambda(event),
                             color = onCardText,
                             style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
-                            maxLines = 2
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
+                            maxLines = 2)
+                      }
+                      Spacer(modifier = Modifier.height(16.dp))
 
-                    if (!event.description.isNullOrBlank()) {
+                      if (!event.description.isNullOrBlank()) {
                         Text(
                             text = event.description,
                             style = typography.bodyMedium,
-                            color = onCardText
-                        )
+                            color = onCardText)
                         Spacer(modifier = Modifier.height(16.dp))
-                    }
+                      }
 
-                    if (!event.location.isNullOrBlank()) {
+                      if (!event.location.isNullOrBlank()) {
                         DetailRow(Icons.Filled.LocationOn, event.location, color = onCardText)
                         Spacer(modifier = Modifier.height(16.dp))
-                    }
+                      }
 
-                    if (!event.recurrenceRule.isNullOrEmpty()) {
+                      if (!event.recurrenceRule.isNullOrEmpty()) {
                         DetailRow(
                             Icons.Filled.Repeat,
-                            formatRRule(event.recurrenceRule, zoneIdString = currentTimeZoneId), color = onCardText
-                        )
+                            formatRRule(event.recurrenceRule, zoneIdString = currentTimeZoneId),
+                            color = onCardText)
+                      }
+                      Spacer(modifier = Modifier.height(20.dp))
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.End) {
+                            Button(
+                                onClick = { viewModel.requestEditEvent(event) },
+                                contentPadding = PaddingValues(horizontal = 12.dp)) {
+                                  Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                  Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                                  Text("Edit") // Или локализованная строка
+                                }
+                            //                    Spacer(modifier = Modifier.width(4.dp))
+                            FilledIconButton(
+                                onClick = { viewModel.requestDeleteConfirmation(event) },
+                                modifier =
+                                    Modifier.minimumInteractiveComponentSize()
+                                        .size(
+                                            IconButtonDefaults.smallContainerSize(
+                                                IconButtonDefaults.IconButtonWidthOption.Narrow)),
+                                shape = IconButtonDefaults.smallRoundShape) {
+                                  Icon(
+                                      imageVector = Icons.Filled.Delete,
+                                      contentDescription = "Delete",
+                                  )
+                                }
+                          }
                     }
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Button(
-                            onClick = {
-                                viewModel.requestEditEvent(event)
-                            },
-                            contentPadding = PaddingValues(horizontal = 12.dp)
-                        ) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Edit")
-                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Edit") // Или локализованная строка
-                        }
-//                    Spacer(modifier = Modifier.width(4.dp))
-                        FilledIconButton(
-                            onClick = { viewModel.requestDeleteConfirmation(event) },
-                            modifier = Modifier
-                                .minimumInteractiveComponentSize()
-                                .size(
-                                    IconButtonDefaults.smallContainerSize(
-                                        IconButtonDefaults.IconButtonWidthOption.Narrow
-                                    )
-                                ),
-                            shape = IconButtonDefaults.smallRoundShape
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = "Delete",
-                            )
-                        }
-                    }
-                }
+              }
             }
-        }
-    }
+      }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailRow(icon: ImageVector, value: String, color: Color) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = "Описание иконки"
-        )
-        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-        Text(
-            text = value,
-            style = typography.bodyLarge,
-            color = color
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-    }
+  Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Icon(imageVector = icon, contentDescription = "Описание иконки")
+    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+    Text(text = value, style = typography.bodyLarge, color = color)
+    Spacer(modifier = Modifier.height(8.dp))
+  }
 }
-

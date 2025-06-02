@@ -42,49 +42,39 @@ fun CustomOutlinedTextField(
     isError: Boolean = false,
     supportingText: (@Composable () -> Unit)? = null
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(text = label, textAlign = TextAlign.Center) },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(cuid.ContainerCornerRadius),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = colorScheme.surfaceContainerLow,
-            unfocusedContainerColor = colorScheme.surfaceContainerLow,
-        ),
-        keyboardOptions = keyboardOptions,
-        textStyle = typography.headlineMedium.copy(textAlign = TextAlign.Center),
-        enabled = enabled,
-        singleLine = true,
-        isError = isError,
-        supportingText = supportingText
-    )
+  OutlinedTextField(
+      value = value,
+      onValueChange = onValueChange,
+      label = { Text(text = label, textAlign = TextAlign.Center) },
+      modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
+      shape = RoundedCornerShape(cuid.ContainerCornerRadius),
+      colors =
+          OutlinedTextFieldDefaults.colors(
+              focusedContainerColor = colorScheme.surfaceContainerLow,
+              unfocusedContainerColor = colorScheme.surfaceContainerLow,
+          ),
+      keyboardOptions = keyboardOptions,
+      textStyle = typography.headlineMedium.copy(textAlign = TextAlign.Center),
+      enabled = enabled,
+      singleLine = true,
+      isError = isError,
+      supportingText = supportingText)
 }
 
 @Composable
-fun ChipsRow(
-    chips: List<SugNameChips>,
-    onChipClick: (String) -> Unit,
-    enabled: Boolean
-) {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 10.dp)
-    ) {
+fun ChipsRow(chips: List<SugNameChips>, onChipClick: (String) -> Unit, enabled: Boolean) {
+  LazyRow(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      contentPadding = PaddingValues(horizontal = 10.dp)) {
         items(chips, key = { it.name }) { chip ->
-            SuggestionChip(
-                onClick = { onChipClick(chip.fullText) },
-                label = { Text(chip.name) },
-                modifier = Modifier.height(35.dp),
-                enabled = enabled
-            )
+          SuggestionChip(
+              onClick = { onChipClick(chip.fullText) },
+              label = { Text(chip.name) },
+              modifier = Modifier.height(35.dp),
+              enabled = enabled)
         }
-    }
+      }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,15 +89,14 @@ internal fun DatePickerField(
     modifier: Modifier = Modifier,
     textAlign: TextAlign = TextAlign.Start
 ) {
-    ClickableTextField(
-        value = date?.format(dateFormatter) ?: "",
-        label = label,
-        isError = isError,
-        isLoading = isLoading,
-        onClick = onClick,
-        modifier = modifier,
-        textAlign = textAlign
-    )
+  ClickableTextField(
+      value = date?.format(dateFormatter) ?: "",
+      label = label,
+      isError = isError,
+      isLoading = isLoading,
+      onClick = onClick,
+      modifier = modifier,
+      textAlign = textAlign)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,14 +110,13 @@ internal fun TimePickerField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ClickableTextField(
-        value = time?.format(timeFormatter) ?: "--:--",
-        label = label,
-        isError = isError,
-        isLoading = isLoading,
-        onClick = onClick,
-        modifier = modifier
-    )
+  ClickableTextField(
+      value = time?.format(timeFormatter) ?: "--:--",
+      label = label,
+      isError = isError,
+      isLoading = isLoading,
+      onClick = onClick,
+      modifier = modifier)
 }
 
 // Общий Composable для кликабельного текстового поля (паттерн с оверлеем)
@@ -143,27 +131,28 @@ private fun ClickableTextField(
     modifier: Modifier = Modifier,
     textAlign: TextAlign = TextAlign.Start
 ) {
-    Box(modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {}, // Не изменяется напрямую
-            readOnly = true,
-            label = { Text(label) },
-            modifier = Modifier.fillMaxWidth(),
-            isError = isError,
-            enabled = !isLoading,
-            shape = RoundedCornerShape(cuid.ContainerCornerRadius)
-        )
-        // Прозрачный Оверлей для клика
-        Box(
-            modifier = Modifier
-                .matchParentSize() // Занимает все место родителя
+  Box(modifier = modifier) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = {}, // Не изменяется напрямую
+        readOnly = true,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        isError = isError,
+        enabled = !isLoading,
+        shape = RoundedCornerShape(cuid.ContainerCornerRadius))
+    // Прозрачный Оверлей для клика
+    Box(
+        modifier =
+            Modifier.matchParentSize() // Занимает все место родителя
                 .clickable(
                     enabled = !isLoading,
                     onClick = onClick,
                     indication = null, // Можно убрать стандартную рябь
-                    interactionSource = remember { MutableInteractionSource() } // Для обработки состояний нажатия оверлея, если нужно
-                )
-        )
-    }
+                    interactionSource =
+                        remember {
+                          MutableInteractionSource()
+                        } // Для обработки состояний нажатия оверлея, если нужно
+                    ))
+  }
 }
