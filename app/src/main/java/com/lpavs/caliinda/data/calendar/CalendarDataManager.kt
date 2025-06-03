@@ -92,7 +92,6 @@ constructor(
 
   // --- Публичные StateFlow для ViewModel ---
   val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
-  val loadedDateRange: StateFlow<ClosedRange<LocalDate>?> = _loadedDateRange.asStateFlow()
   val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
   val createEventResult: StateFlow<CreateEventResult> = _createEventResult.asStateFlow()
   val updateEventResult: StateFlow<UpdateEventResult> = _updateEventResult.asStateFlow()
@@ -110,7 +109,7 @@ constructor(
 
     // Only proceed if date is different OR range is not loaded yet
     val needsDateUpdate = newDate != _currentVisibleDate.value
-    val needsRangeCheck = _loadedDateRange.value == null || forceRefresh || needsDateUpdate
+
     if (!needsDateUpdate && !forceRefresh && _loadedDateRange.value != null) {
       Log.d(
           TAG,
@@ -157,7 +156,7 @@ constructor(
                   TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} finished for $newDate")
             }
           }
-      Log.d(TAG, "setCurrentVisibleDate: Assigned new activeFetchJob: ${activeFetchJob}")
+      Log.d(TAG, "setCurrentVisibleDate: Assigned new activeFetchJob: $activeFetchJob")
     } else {
       // Пользователь не вошел - не запускаем загрузку
       Log.w(
@@ -218,7 +217,7 @@ constructor(
             } // Конец combine
         .catch { e ->
           Log.e(TAG, "Error processing events Flow for date $date", e)
-          emit(emptyList<CalendarEvent>())
+          emit(emptyList())
         }
         .flowOn(ioDispatcher) // Выполняем combine, filter, map, catch на IO потоке
   }
@@ -265,7 +264,7 @@ constructor(
                 // Таймзона нужна бэкенду для формирования запроса к Google
                 if (!isAllDay && timeZoneId != null) {
                   put("timeZoneId", timeZoneId) // Отправляем ID таймзоны
-                } else if (!isAllDay && timeZoneId == null) {
+                } else {
                   Log.w(TAG, "Sending timed event without timeZoneId to backend!")
                   // Бэкенд должен будет обработать этот случай или вернуть ошибку
                 }
@@ -478,9 +477,8 @@ constructor(
                 TAG,
                 "Event $eventId successfully updated on backend (Mode: ${mode.value}). New/Confirmed ID: $newEventId")
 
-            refreshDate(currentVisibleDate.value)
-
             _updateEventResult.value = UpdateEventResult.Success(newEventId)
+              refreshDate(currentVisibleDate.value)
           } catch (e: JSONException) {
             Log.e(TAG, "Error parsing successful update response for event $eventId", e)
             _updateEventResult.value =
@@ -557,7 +555,7 @@ constructor(
           }
         }
     activeFetchJob = refreshJob // Assign the new job as the active one
-    Log.d(TAG, "refreshDate: Assigned new activeFetchJob: ${activeFetchJob}")
+    Log.d(TAG, "refreshDate: Assigned new activeFetchJob: $activeFetchJob")
     refreshJob
         .join() // Wait for the refresh job to complete if refreshDate needs to be blocking? Or
                 // remove join() if not.
@@ -575,7 +573,7 @@ constructor(
   // --- Приватные/внутренние методы ---
 
   /** Проверяет, нужно ли загружать/расширять диапазон дат */
-  internal suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) =
+  private suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) =
       withContext(ioDispatcher) { // В IO
         val currentlyLoaded = _loadedDateRange.value
         val initialOrJumpTargetRange =
@@ -975,12 +973,7 @@ constructor(
     }
   }
 
-  // --- Утилиты для диапазонов дат ---
-  private fun ClosedRange<LocalDate>.containsRange(other: ClosedRange<LocalDate>): Boolean {
-    return this.start <= other.start && this.endInclusive >= other.endInclusive
-  }
-
-  private fun ClosedRange<LocalDate>.union(other: ClosedRange<LocalDate>): ClosedRange<LocalDate> {
+    private fun ClosedRange<LocalDate>.union(other: ClosedRange<LocalDate>): ClosedRange<LocalDate> {
     val newStart = minOf(this.start, other.start)
     val newEnd = maxOf(this.endInclusive, other.endInclusive)
     return newStart..newEnd
