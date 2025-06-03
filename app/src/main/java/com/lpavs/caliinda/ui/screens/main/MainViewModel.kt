@@ -520,22 +520,14 @@ constructor(
         when (choice) {
           RecurringDeleteChoice.SINGLE_INSTANCE -> ApiDeleteEventMode.INSTANCE_ONLY
           RecurringDeleteChoice.ALL_IN_SERIES ->
-              ApiDeleteEventMode.DEFAULT // Бэкенд обработает это как удаление всей серии
+              ApiDeleteEventMode.DEFAULT
         }
 
-    // Для INSTANCE_ONLY, ID должен быть ID экземпляра.
-    // Для ALL_IN_SERIES, Google API обычно сам разбирается, если передать ID экземпляра,
-    // но безопаснее передать ID мастер-события, если он известен (eventToDelete.recurringEventId).
-    // Однако, если eventToDelete.id УЖЕ является ID мастер-события (т.е. recurringEventId == null,
-    // но событие по своей природе повторяющееся),
-    // то eventToDelete.id и есть то, что нужно для удаления всей серии.
-
-    val idForBackendCall: String
-    if (mode == ApiDeleteEventMode.INSTANCE_ONLY) {
-      idForBackendCall = eventToDelete.id // Должен быть ID экземпляра
-    } else {
-      idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
-    }
+      val idForBackendCall: String = if (mode == ApiDeleteEventMode.INSTANCE_ONLY) {
+            eventToDelete.id
+        } else {
+            eventToDelete.recurringEventId ?: eventToDelete.id
+        }
 
     Log.d(TAG, "Confirming recurring delete. Event ID for backend: $idForBackendCall, Mode: $mode")
     viewModelScope.launch { calendarDataManager.deleteEvent(idForBackendCall, mode) }

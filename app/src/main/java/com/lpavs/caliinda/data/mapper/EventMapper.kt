@@ -16,7 +16,6 @@ object EventMapper {
     try {
       // 1. Используем поле isAllDay из CalendarEvent (самый надежный способ)
       val isAllDayEvent = event.isAllDay // <--- Читаем поле
-
       // 2. Парсим startTime с учетом часового пояса
       val startTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)
 
