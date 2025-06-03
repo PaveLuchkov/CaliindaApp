@@ -120,6 +120,21 @@
     <string name="error_failed_to_format_datetime">Failed to format date/time for submission</string>
     <string name="event_updated_successfully">Event updated successfully</string>
 
+    <string name="error_summary_empty">Summary cannot be empty</string>
+    <string name="error_start_end_time_required">Start and end times must be specified</string>
+    <string name="error_authentication">Authentication error</string>
+    <string name="error_data_preparation">Data preparation error</string>
+    <string name="error_network">Network error</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_sync_local_delete_failed">Sync error: Event processed on server but not deleted locally.</string>
+    <string name="error_update_data_preparation">Error preparing update data.</string>
+    <string name="error_update_server_response">Server response error after update.</string>
+    <string name="error_update_empty_response">Empty server response after update.</string>
+    <string name="error_json_parsing">JSON parsing error</string>
+    <string name="error_server">Server error</string>
+    <string name="error_server_code_format">Server error (%d)</string>
+    <string name="event_no_title">No title</string>
+
     <string name="settings">Settings</string>
     <string name="time_zone">Time zone</string>
     <string name="time_zone_save">Time Zone saved: %1$s</string>
