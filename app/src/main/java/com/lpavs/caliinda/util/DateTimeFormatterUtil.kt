@@ -151,7 +151,7 @@ object DateTimeFormatterUtil {
         if (formatDate(startInstant) == formatDate(endInstant)) {
           "${formatTime(startInstant)} - ${formatTime(endInstant)}\n${formatDate(endInstant)}"
         } else {
-          "${formatDate(endInstant)} ${formatTime(startInstant)} - ${formatTime(endInstant)} ${formatDate(endInstant)}"
+          "${formatDate(startInstant)} ${formatTime(startInstant)} - ${formatTime(endInstant)} ${formatDate(endInstant)}"
         }
       }
 
