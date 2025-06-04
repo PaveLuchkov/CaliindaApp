@@ -22,7 +22,6 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
   private object PreferencesKeys {
     val BOT_TEMPER = stringPreferencesKey("bot_temper")
     val TIME_ZONE = stringPreferencesKey("time_zone")
-    val USE_12_HOUR_FORMAT = booleanPreferencesKey("use_12_hour_format")
   }
 
   val botTemperFlow: Flow<String> =
