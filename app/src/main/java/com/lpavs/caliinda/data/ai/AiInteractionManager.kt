@@ -15,12 +15,6 @@ import com.lpavs.caliinda.di.BackendUrl
 import com.lpavs.caliinda.di.IoDispatcher
 import com.lpavs.caliinda.di.MainDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.IOException
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -38,6 +32,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.IOException
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.util.Locale
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class AiInteractionManager

@@ -24,10 +24,6 @@ import com.lpavs.caliinda.di.ITimeTicker
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +32,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel

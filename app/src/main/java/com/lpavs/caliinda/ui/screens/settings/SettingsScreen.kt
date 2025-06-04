@@ -13,12 +13,14 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -86,7 +88,8 @@ fun SettingsScreen(
                         contentDescription = stringResource(R.string.ai))
                   },
                   title = stringResource(R.string.aisettings),
-                  onClick = onNavigateToAISettings)
+                  onClick = onNavigateToAISettings,
+            shape = MaterialShapes.Clover4Leaf.toShape())
 
               Spacer(modifier = Modifier.height(10.dp))
 
@@ -98,7 +101,8 @@ fun SettingsScreen(
                         contentDescription = stringResource(R.string.time))
                   },
                   title = stringResource(R.string.time_format),
-                  onClick = onNavigateToTimeSettings)
+                  onClick = onNavigateToTimeSettings,
+                  shape = MaterialShapes.Pill.toShape())
 
               Spacer(modifier = Modifier.height(10.dp))
 
@@ -110,7 +114,8 @@ fun SettingsScreen(
                         contentDescription = stringResource(R.string.terms))
                   },
                   title = stringResource(R.string.terms_of_use),
-                  onClick = onNavigateToTermsOfuse)
+                  onClick = onNavigateToTermsOfuse,
+                  shape = MaterialShapes.Bun.toShape())
             }
       }
 }

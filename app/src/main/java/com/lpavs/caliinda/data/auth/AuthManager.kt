@@ -15,10 +15,8 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.di.BackendUrl
 import com.lpavs.caliinda.di.WebClientId
+import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.IOException
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,7 +32,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import dagger.Lazy
+import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class AuthManager

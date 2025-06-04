@@ -14,16 +14,6 @@ import com.lpavs.caliinda.di.BackendUrl
 import com.lpavs.caliinda.di.IoDispatcher
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.IOException
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -48,6 +38,16 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.IOException
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.coroutineContext
 
 enum class ApiDeleteEventMode(val value: String) {
   DEFAULT("default"), // Поведение по умолчанию (обычно вся серия для мастер-события)

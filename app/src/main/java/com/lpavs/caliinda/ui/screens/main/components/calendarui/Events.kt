@@ -51,10 +51,10 @@ import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.DeleteConfirmationDialog
 import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.util.DateTimeFormatterUtil
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
-import kotlinx.coroutines.launch
 
 data class GeneratedShapeParams(
     val numVertices: Int,
