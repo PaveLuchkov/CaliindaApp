@@ -66,4 +66,10 @@ interface EventDao {
       "DELETE FROM calendar_events WHERE id = :eventId") // Убедись, что поле ID в твоей Entity
                                                          // называется 'id'
   suspend fun deleteEventById(eventId: String)
+
+    /**
+     * Удаляет все данные календаря из локальной базы данных.
+     */
+    @Query("DELETE FROM calendar_events")
+    suspend fun deleteAllEvents()
 }

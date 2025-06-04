@@ -982,6 +982,26 @@ constructor(
         }
     }
 
+    /**
+     * Очищает все локальные данные о событиях в БД.
+     * Вызывается при выходе пользователя из системы.
+     */
+    suspend fun clearLocalDataOnSignOut() {
+        Log.i(TAG, "Starting local database clear on sign out...")
+        try {
+            withContext(ioDispatcher) {
+                eventDao.deleteAllEvents()
+                Log.i(TAG, "Local database cleared successfully.")
+            }
+            // Сбрасываем также внутреннее состояние загруженного диапазона.
+            _loadedDateRange.value = null
+            Log.d(TAG, "Reset _loadedDateRange state.")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear local database on sign out", e)
+        }
+    }
+
     private fun ClosedRange<LocalDate>.union(other: ClosedRange<LocalDate>): ClosedRange<LocalDate> {
     val newStart = minOf(this.start, other.start)
     val newEnd = maxOf(this.endInclusive, other.endInclusive)
