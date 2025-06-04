@@ -8,7 +8,7 @@ data class CalendarEventEntity(
     @PrimaryKey val id: String, // Google Calendar Event ID (естественный ключ)
     val summary: String,
     val startTimeMillis: Long, // Время начала в миллисекундах UTC
-    val endTimeMillis: Long,   // Время конца в миллисекундах UTC
+    val endTimeMillis: Long, // Время конца в миллисекундах UTC
     val description: String?,
     val location: String?,
     val isAllDay: Boolean = false,

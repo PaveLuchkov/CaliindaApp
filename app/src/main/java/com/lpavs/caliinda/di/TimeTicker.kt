@@ -18,37 +18,37 @@ import javax.inject.Singleton
 
 // Интерфейс для удобства тестирования (опционально, но хорошая практика)
 interface ITimeTicker {
-    val currentTime: StateFlow<Instant>
+  val currentTime: StateFlow<Instant>
 }
 
 @Singleton
 class TimeTicker @Inject constructor() : ITimeTicker { // @Inject constructor для Hilt
 
-    private val tickerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+  private val tickerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    override val currentTime: StateFlow<Instant> = flow {
-        while (true) {
-            emit(Instant.now())
-            delay(60000L)
-        }
-    }.stateIn(
-        scope = tickerScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = Instant.now()
-    )
+  override val currentTime: StateFlow<Instant> =
+      flow {
+            while (true) {
+              emit(Instant.now())
+              delay(60000L)
+            }
+          }
+          .stateIn(
+              scope = tickerScope,
+              started = SharingStarted.WhileSubscribed(5000),
+              initialValue = Instant.now())
 }
-
 
 @Module
 @InstallIn(SingletonComponent::class) // Устанавливаем в компонент приложения
 abstract class TimeTickerModule {
 
-    // Используем @Binds для предоставления реализации интерфейса
-    // Hilt знает, как создать TimeTicker (@Inject constructor),
-    // и свяжет запрос ITimeTicker с экземпляром TimeTicker.
-    @Binds
-    @Singleton // Убедимся, что связывание тоже синглтонное
-    abstract fun bindTimeTicker(
-        timeTicker: TimeTicker // Реализация
-    ): ITimeTicker // Интерфейс
+  // Используем @Binds для предоставления реализации интерфейса
+  // Hilt знает, как создать TimeTicker (@Inject constructor),
+  // и свяжет запрос ITimeTicker с экземпляром TimeTicker.
+  @Binds
+  @Singleton // Убедимся, что связывание тоже синглтонное
+  abstract fun bindTimeTicker(
+      timeTicker: TimeTicker // Реализация
+  ): ITimeTicker // Интерфейс
 }

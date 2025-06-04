@@ -1,7 +1,10 @@
 package com.lpavs.caliinda.ui.common
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -27,147 +30,124 @@ import kotlin.math.max
 import kotlin.random.Random
 
 enum class BackgroundShapeContext {
-    Main,
-    EventCreation
+  Main,
+  EventCreation
 }
 
 @Composable
 fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Main) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-        //    .graphicsLayer(alpha = 0.5f) // Можно сделать полупрозрачным, если нужно
-    ) {
+  Box(
+      modifier = Modifier.fillMaxSize()
+      //    .graphicsLayer(alpha = 0.5f) // Можно сделать полупрозрачным, если нужно
+      ) {
         // Используем when для выбора фигур в зависимости от контекста
         when (context) {
-            BackgroundShapeContext.Main -> {
+          BackgroundShapeContext.Main -> {
 
-                val starShape = remember {
-                    RoundedPolygon.star(17, rounding = CornerRounding(0.95f))
-                }
-                val clipStar = remember(starShape) {
-                    RoundedPolygonShape(polygon = starShape)
-                }
-                val star2Shape = remember {
-                    RoundedPolygon.star(4, rounding = CornerRounding(0.4f), radius = 2f)
-                }
-                val clip2Star = remember(star2Shape) {
-                    RoundedPolygonShape(polygon = star2Shape)
-                }
-                val starContainerSize = 300.dp
-                val star2ContainerSize = 200.dp
+            val starShape = remember { RoundedPolygon.star(17, rounding = CornerRounding(0.95f)) }
+            val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+            val star2Shape = remember {
+              RoundedPolygon.star(4, rounding = CornerRounding(0.4f), radius = 2f)
+            }
+            val clip2Star = remember(star2Shape) { RoundedPolygonShape(polygon = star2Shape) }
+            val starContainerSize = 300.dp
+            val star2ContainerSize = 200.dp
 
-                // Фигура 1 (звезда 17)
-                Box(
-                    modifier = Modifier
-                        .size(starContainerSize)
+            // Фигура 1 (звезда 17)
+            Box(
+                modifier =
+                    Modifier.size(starContainerSize)
                         .align(Alignment.TopEnd)
-                        .offset(
-                            x = starContainerSize * 0.2f,
-                            y = -starContainerSize * 0.1f
-                        )
+                        .offset(x = starContainerSize * 0.2f, y = -starContainerSize * 0.1f)
                         .graphicsLayer {
-                            shadowElevation = 16.dp.toPx()
-                            shape = clipStar
-                            alpha = 0.99f // Оставляем для надежности
+                          shadowElevation = 16.dp.toPx()
+                          shape = clipStar
+                          alpha = 0.99f // Оставляем для надежности
                         }
                         .clip(clipStar)
-                        .background(colorScheme.surfaceVariant)
-                )
+                        .background(colorScheme.surfaceVariant))
 
-                // Фигура 2 (звезда 4)
-                Box(
-                    modifier = Modifier
-                        .size(star2ContainerSize)
+            // Фигура 2 (звезда 4)
+            Box(
+                modifier =
+                    Modifier.size(star2ContainerSize)
                         .align(Alignment.TopStart)
                         .offset(
                             x = -star2ContainerSize * 0.4f,
                             y = star2ContainerSize * 1.5f // Позиция относительно TopStart
-                        )
+                            )
                         .graphicsLayer {
-                            shadowElevation = 6.dp.toPx()
-                            shape = clip2Star
+                          shadowElevation = 6.dp.toPx()
+                          shape = clip2Star
                         }
                         .clip(clip2Star)
-                        .background(colorScheme.surfaceVariant)
-                )
+                        .background(colorScheme.surfaceVariant))
+          }
+
+          BackgroundShapeContext.EventCreation -> {
+            val starShape = remember { RoundedPolygon.star(3, rounding = CornerRounding(0.2f)) }
+            val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+            val star2Shape = remember {
+              RoundedPolygon.star(5, rounding = CornerRounding(0.4f), radius = 2f)
             }
+            val clip2Star = remember(star2Shape) { RoundedPolygonShape(polygon = star2Shape) }
+            val starContainerSize = 200.dp
+            val star2ContainerSize = 300.dp
 
-            BackgroundShapeContext.EventCreation -> {
-                val starShape = remember {
-                    RoundedPolygon.star(3, rounding = CornerRounding(0.2f))
-                }
-                val clipStar = remember(starShape) {
-                    RoundedPolygonShape(polygon = starShape)
-                }
-                val star2Shape = remember {
-                    RoundedPolygon.star(5, rounding = CornerRounding(0.4f), radius = 2f)
-                }
-                val clip2Star = remember(star2Shape) {
-                    RoundedPolygonShape(polygon = star2Shape)
-                }
-                val starContainerSize = 200.dp
-                val star2ContainerSize = 300.dp
-
-                // Фигура 1 (звезда 17)
-                Box(
-                    modifier = Modifier
-                        .size(starContainerSize)
+            // Фигура 1 (звезда 17)
+            Box(
+                modifier =
+                    Modifier.size(starContainerSize)
                         .align(Alignment.TopEnd)
-                        .offset(
-                            x = starContainerSize * 0.2f,
-                            y = -starContainerSize * 0.1f
-                        )
+                        .offset(x = starContainerSize * 0.2f, y = -starContainerSize * 0.1f)
                         .graphicsLayer {
-                            shape = clipStar
-                            alpha = 0.99f // Оставляем для надежности
+                          shape = clipStar
+                          alpha = 0.99f // Оставляем для надежности
                         }
                         .clip(clipStar)
-                        .background(colorScheme.surfaceVariant)
-                )
+                        .background(colorScheme.surfaceVariant))
 
-                // Фигура 2 (звезда 4)
-                Box(
-                    modifier = Modifier
-                        .size(star2ContainerSize)
+            // Фигура 2 (звезда 4)
+            Box(
+                modifier =
+                    Modifier.size(star2ContainerSize)
                         .align(Alignment.TopStart)
                         .offset(
                             x = -star2ContainerSize * 0.4f,
                             y = star2ContainerSize * 2f // Позиция относительно TopStart
-                        )
-                        .graphicsLayer {
-                            shape = clip2Star
-                        }
+                            )
+                        .graphicsLayer { shape = clip2Star }
                         .clip(clip2Star)
-                        .background(colorScheme.surfaceVariant)
-                )
-            }
+                        .background(colorScheme.surfaceVariant))
+          }
         }
-    }
+      }
 }
 
 fun RoundedPolygon.getBounds() = calculateBounds().let { Rect(it[0], it[1], it[2], it[3]) }
+
 class RoundedPolygonShape(
     private val polygon: RoundedPolygon,
     private var matrix: Matrix = Matrix()
 ) : Shape {
-    private var path = Path()
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        path.rewind()
-        path = polygon.toPath().asComposePath()
-        matrix.reset()
-        val bounds = polygon.getBounds()
-        val maxDimension = max(bounds.width, bounds.height)
-        matrix.scale(size.width / maxDimension, size.height / maxDimension)
-        matrix.translate(-bounds.left, -bounds.top)
+  private var path = Path()
 
-        path.transform(matrix)
-        return Outline.Generic(path)
-    }
+  override fun createOutline(
+      size: Size,
+      layoutDirection: LayoutDirection,
+      density: Density
+  ): Outline {
+    path.rewind()
+    path = polygon.toPath().asComposePath()
+    matrix.reset()
+    val bounds = polygon.getBounds()
+    val maxDimension = max(bounds.width, bounds.height)
+    matrix.scale(size.width / maxDimension, size.height / maxDimension)
+    matrix.translate(-bounds.left, -bounds.top)
+
+    path.transform(matrix)
+    return Outline.Generic(path)
+  }
 }
 
 fun createRandomShape(
@@ -176,5 +156,5 @@ fun createRandomShape(
     rounding: CornerRounding = CornerRounding(Random.nextFloat() * 0.7f),
     radius: Float = Random.nextFloat() * 10f
 ): RoundedPolygon {
-    return RoundedPolygon(numVertices = vertices, radius = radius, rounding = rounding)
+  return RoundedPolygon(numVertices = vertices, radius = radius, rounding = rounding)
 }

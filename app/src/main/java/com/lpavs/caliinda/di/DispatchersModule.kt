@@ -10,26 +10,18 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 
 // Квалификатор для IO Dispatcher
-@Retention(AnnotationRetention.BINARY)
-@Qualifier
-annotation class IoDispatcher
+@Retention(AnnotationRetention.BINARY) @Qualifier annotation class IoDispatcher
 
-@Retention(AnnotationRetention.BINARY)
-@Qualifier
-annotation class MainDispatcher
+@Retention(AnnotationRetention.BINARY) @Qualifier annotation class MainDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DispatchersModule {
 
-    @Provides
-    @Singleton
-    @IoDispatcher
-    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+  @Provides @Singleton @IoDispatcher fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
-    @Provides
-    @Singleton
-    @MainDispatcher
-    fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
+  @Provides
+  @Singleton
+  @MainDispatcher
+  fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
 }
-

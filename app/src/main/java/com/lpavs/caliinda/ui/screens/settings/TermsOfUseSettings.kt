@@ -19,39 +19,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TermsOfUseScreen(
-    onNavigateBack: () -> Unit,
-    title: String
-) {
-    // Используем переданный viewModel
-    val snackbarHostState = remember { SnackbarHostState() }
+fun TermsOfUseScreen(onNavigateBack: () -> Unit, title: String) {
+  // Используем переданный viewModel
+  val snackbarHostState = remember { SnackbarHostState() }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+  Scaffold(
+      snackbarHost = { SnackbarHost(snackbarHostState) },
+      topBar = {
+        TopAppBar(
+            title = { Text(title) },
+            navigationIcon = {
+              IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back))
+              }
+            })
+      }) { paddingValues ->
         Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(16.dp) // Дополнительные отступы для контента
-                .fillMaxWidth() // Занимаем всю ширину
-        ) {
-            // TODO: когда будут готовы вставить как-то
-//            Text("ЗДЕСЬ ЕЩЕ НИЧЕГО НЕТ)")
-        }
-    }
+            modifier =
+                Modifier.padding(paddingValues)
+                    .padding(16.dp) // Дополнительные отступы для контента
+                    .fillMaxWidth() // Занимаем всю ширину
+            ) {
+              // TODO: когда будут готовы вставить как-то
+              //            Text("ЗДЕСЬ ЕЩЕ НИЧЕГО НЕТ)")
+            }
+      }
 }

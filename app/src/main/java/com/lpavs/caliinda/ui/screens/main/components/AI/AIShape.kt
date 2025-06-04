@@ -21,32 +21,32 @@ private const val STAR_INNER_RADIUS_RATIO = 0.4f // Example value, adjust as nee
 
 // A shape specifically for the AI Visualizer Star
 object AiStarShape : Shape {
-    // Cache the polygon to avoid recreating it constantly
-    private val starPolygon = RoundedPolygon.star(
-        numVerticesPerRadius = STAR_VERTICES,
-        innerRadius = STAR_INNER_RADIUS_RATIO, // Adjust if needed
-        rounding = STAR_ROUNDING
-    )
-    private val matrix = Matrix()
+  // Cache the polygon to avoid recreating it constantly
+  private val starPolygon =
+      RoundedPolygon.star(
+          numVerticesPerRadius = STAR_VERTICES,
+          innerRadius = STAR_INNER_RADIUS_RATIO, // Adjust if needed
+          rounding = STAR_ROUNDING)
+  private val matrix = Matrix()
 
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        // The RoundedPolygon is defined in a normalized space (e.g., radius 1)
-        // We need to scale and center it within the requested Size.
-        matrix.reset()
-        // Scale to fit the smaller dimension, maintaining aspect ratio
-        val scale = minOf(size.width, size.height) / 2f
-        matrix.scale(scale, scale)
-        // Translate to center
-        matrix.translate(size.width / (2f * scale), size.height / (2f * scale))
+  override fun createOutline(
+      size: Size,
+      layoutDirection: LayoutDirection,
+      density: Density
+  ): Outline {
+    // The RoundedPolygon is defined in a normalized space (e.g., radius 1)
+    // We need to scale and center it within the requested Size.
+    matrix.reset()
+    // Scale to fit the smaller dimension, maintaining aspect ratio
+    val scale = minOf(size.width, size.height) / 2f
+    matrix.scale(scale, scale)
+    // Translate to center
+    matrix.translate(size.width / (2f * scale), size.height / (2f * scale))
 
-        // Generate the path and transform it
-        val path = starPolygon.toPath().asComposePath() // Use the cached polygon
-        path.transform(matrix)
+    // Generate the path and transform it
+    val path = starPolygon.toPath().asComposePath() // Use the cached polygon
+    path.transform(matrix)
 
-        return Outline.Generic(path)
-    }
+    return Outline.Generic(path)
+  }
 }
