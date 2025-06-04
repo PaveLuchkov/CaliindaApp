@@ -124,7 +124,8 @@ constructor(
           currentUiState.copy(
               isSignedIn = auth.isSignedIn,
               userEmail = auth.userEmail,
-              displayName = auth.displayName, // Убедитесь, что AuthState это предоставляет
+              displayName = auth.displayName,
+              photo = auth.photoUrl,
               showAuthError = auth.authError,
               isLoading =
                   calculateIsLoading(

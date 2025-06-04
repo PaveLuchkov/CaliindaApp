@@ -1,6 +1,8 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
 agp = "8.10.0"
+coilCompose = "3.2.0"
+coilNetworkOkhttp = "3.2.0"
 coreTesting = "2.2.0"
 credentialsPlayServicesAuth = "1.5.0"
 datastorePreferences = "1.1.6"
@@ -54,6 +56,8 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomver" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomver" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomver" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
 dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompilerVersion" }
 google-api-client-android = { module = "com.google.api-client:google-api-client-android", version.ref = "googleApiClientAndroid" }
 google-api-services-calendar = { module = "com.google.apis:google-api-services-calendar", version.ref = "googleApiServicesCalendar" }

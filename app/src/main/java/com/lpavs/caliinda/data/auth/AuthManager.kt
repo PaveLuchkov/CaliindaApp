@@ -84,6 +84,7 @@ constructor(
         val serverAuthCode = account?.serverAuthCode
         val userEmail = account?.email
         val displayName = account?.displayName
+        val photo = account?.photoUrl
 
         Log.i(TAG, "Sign-In Success! Email: $userEmail")
         Log.d(TAG, "ID Token received: ${idToken != null}")
@@ -96,6 +97,7 @@ constructor(
                 isSignedIn = true,
                 userEmail = userEmail,
                 displayName = displayName,
+              photoUrl = photo,
                 isLoading = false,
                 authError = null)
           }
@@ -149,6 +151,8 @@ constructor(
                 it.copy(
                     isSignedIn = true,
                     userEmail = account.email,
+                  displayName = account.displayName,
+                  photoUrl = account.photoUrl,
                     isLoading = false,
                     authError = null)
               }
@@ -212,15 +216,16 @@ constructor(
         val account = googleSignInClient.silentSignIn().await()
         val idToken = account?.idToken
         val userEmail = account?.email
+        val displayName = account?.displayName
+        val photo = account?.photoUrl
 
         if (idToken != null && userEmail != null) {
           Log.i(TAG, "Silent sign-in success on init for: $userEmail")
           currentIdToken = idToken
           _authState.update {
             AuthState( // Полностью перезаписываем состояние
-                isSignedIn = true, userEmail = userEmail, isLoading = false, authError = null)
+                isSignedIn = true, userEmail = userEmail, isLoading = false, authError = null, displayName = displayName, photoUrl = photo)
           }
-          // НЕ НУЖНО снова вызывать sendAuthInfoToBackend здесь
         } else {
           Log.i(TAG, "Silent sign-in did not return a valid account/token on init.")
           signOutInternally(null) // Просто сбрасываем в неавторизованное состояние без ошибки
