@@ -150,7 +150,6 @@ constructor(
           // Пользователь не вошел. Если это не случай "требуется вход", то просто не вошел.
           // Данные календаря и так не загрузятся из-за проверки в CalendarDataManager.
           // Можно дополнительно очистить локальные данные календаря, если необходимо.
-          // TODO calendarDataManager.clearLocalDataOnSignOut() // Пример
           if (!shouldShowSignInDialog && previousUiState.isSignedIn) {
             // Это был явный выход пользователя, а не silent fail
             Log.d(TAG, "Auth observer: User has signed out.")

@@ -48,11 +48,11 @@ object DatabaseModule {
   @Singleton // Гарантирует один экземпляр базы данных
   fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
     return Room.databaseBuilder(
-            appContext, AppDatabase::class.java, "caliindar_database" // Имя файла БД
-            )
+        appContext, AppDatabase::class.java, "caliindar_database" // Имя файла БД
+    )
         // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
         // Но для production нужно реализовать правильные миграции!
-        .fallbackToDestructiveMigration()
+        .fallbackToDestructiveMigration(false)
         .build()
   }
 

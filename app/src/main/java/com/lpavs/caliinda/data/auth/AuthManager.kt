@@ -12,6 +12,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.di.BackendUrl
 import com.lpavs.caliinda.di.WebClientId
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,6 +34,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import dagger.Lazy
 
 @Singleton
 class AuthManager
@@ -41,7 +43,8 @@ constructor(
     @ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
     @BackendUrl private val backendBaseUrl: String,
-    @WebClientId private val webClientId: String
+    @WebClientId private val webClientId: String,
+    private val calendarDataManager: Lazy<CalendarDataManager>
 ) {
   private val TAG = "AuthManager"
 
@@ -182,6 +185,8 @@ constructor(
       try {
         googleSignInClient.signOut().await() // Ждем завершения выхода из Google
         Log.i(TAG, "User signed out successfully from Google.")
+        // TODO удалить БД на выходе
+        calendarDataManager.get().clearLocalDataOnSignOut()
         // Опционально: Уведомить бэкенд о выходе (отдельный запрос)
         // revokeAccess() - если нужно отозвать доступ полностью
 
@@ -193,6 +198,7 @@ constructor(
       }
     }
   }
+
 
   fun clearAuthError() {
     _authState.update { it.copy(authError = null) }
