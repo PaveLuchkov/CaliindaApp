@@ -235,7 +235,7 @@ fun EventListItem(
                         text = event.summary,
                         color = cardTextColor,
                         style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
                     Row {
