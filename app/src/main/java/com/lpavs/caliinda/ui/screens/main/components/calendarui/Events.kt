@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -429,7 +430,7 @@ fun DayEventsPage(
         // Показываем сообщение "нет событий", только если НЕТ НИКАКИХ событий
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (isBusy && !isListening) {
-                LoadingIndicator()
+                LoadingIndicator(modifier = Modifier.size(80.dp))
             } else {
                 Box( // Корневой Box для тени, фона, высоты и кликабельности
                     modifier =
