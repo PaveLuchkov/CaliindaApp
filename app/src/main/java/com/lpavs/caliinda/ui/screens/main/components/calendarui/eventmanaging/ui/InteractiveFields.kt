@@ -30,7 +30,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomOutlinedTextField(
     value: String,
@@ -77,7 +76,6 @@ fun ChipsRow(chips: List<SugNameChips>, onChipClick: (String) -> Unit, enabled: 
       }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DatePickerField(
     label: String,
@@ -87,7 +85,6 @@ internal fun DatePickerField(
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    textAlign: TextAlign = TextAlign.Start
 ) {
   ClickableTextField(
       value = date?.format(dateFormatter) ?: "",
@@ -95,11 +92,9 @@ internal fun DatePickerField(
       isError = isError,
       isLoading = isLoading,
       onClick = onClick,
-      modifier = modifier,
-      textAlign = textAlign)
+      modifier = modifier)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TimePickerField(
     label: String,
@@ -120,7 +115,6 @@ internal fun TimePickerField(
 }
 
 // Общий Composable для кликабельного текстового поля (паттерн с оверлеем)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ClickableTextField(
     value: String,
@@ -129,7 +123,6 @@ private fun ClickableTextField(
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    textAlign: TextAlign = TextAlign.Start
 ) {
   Box(modifier = modifier) {
     OutlinedTextField(
@@ -155,4 +148,39 @@ private fun ClickableTextField(
                         } // Для обработки состояний нажатия оверлея, если нужно
                     ))
   }
+}
+
+@Composable
+private fun ModernClickableTextField(
+    value: String,
+    label: String,
+    isError: Boolean,
+    isLoading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start
+) {
+    Box(modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {}, // Не изменяется напрямую
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            isError = isError,
+            enabled = !isLoading,
+            shape = RoundedCornerShape(cuid.ContainerCornerRadius))
+        // Прозрачный Оверлей для клика
+        Box(
+            modifier =
+                Modifier.matchParentSize() // Занимает все место родителя
+                    .clickable(
+                        enabled = !isLoading,
+                        onClick = onClick,
+                        indication = null, // Можно убрать стандартную рябь
+                        interactionSource =
+                            remember {
+                                MutableInteractionSource()
+                            }
+                    ))
+    }
 }
