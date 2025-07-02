@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.ui.screens.main.components.calendarui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -37,12 +38,14 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -120,27 +123,32 @@ fun EventListItem(
       }
 
   // Compute the transitionColor
-  val transitionColorCard =
-      colorScheme.primaryContainer.transitionTo(colorScheme.tertiaryContainer, proximityRatio)
-  val transitionColorText =
-      colorScheme.onPrimaryContainer.transitionTo(colorScheme.onTertiaryContainer, proximityRatio)
+    val transitionColorCard = lerpOkLab(
+        start = colorScheme.primaryContainer,
+        stop = colorScheme.tertiaryContainer,
+        fraction = proximityRatio
+    )
   val darkerShadowColor = Color.Black
 
   // --- Параметры текущего события (получаем isCurrentEvent) ---
   //   val fixedColors = LocalFixedAccentColors.current
 
   val cardElevation = if (isCurrentEvent) cuid.CurrentEventElevation else 0.dp
-  val cardBackground =
+  val starBackground =
       when {
         isCurrentEvent -> colorScheme.tertiaryContainer // Выделяем текущее
         isNextEvent -> transitionColorCard // Слегка выделяем следующее (пример)
         else -> colorScheme.primaryContainer // Обычный фон
       }
+    val cardBackground by animateColorAsState(
+        if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
+        label = "card color"
+    )
 
-  val cardTextColor =
+
+    val cardTextColor =
       when {
         isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
-        isNextEvent -> transitionColorText // Слегка выделяем следующее (пример)
         else -> colorScheme.onPrimaryContainer // Обычный фон
       }
   // --- Композиция UI ---
@@ -209,7 +217,7 @@ fun EventListItem(
                                   rotationZ = rotationAngle)
                               .requiredSize(starContainerSize)
                               .clip(clipStar)
-                              .background(cardBackground.copy(alpha = cuid.ShapeMainAlpha)))
+                              .background(starBackground.copy(alpha = cuid.ShapeMainAlpha)))
                 }
                 if (isMicroEventFromList) {
                   Row(
@@ -298,14 +306,14 @@ fun EventListItem(
                               Modifier.minimumInteractiveComponentSize()
                                   .size(
                                       IconButtonDefaults.smallContainerSize(
-                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
+                                          IconButtonDefaults.IconButtonWidthOption.Uniform)),
                           shape = IconButtonDefaults.smallRoundShape) {
                             Icon(
                                 imageVector = Icons.Filled.Info,
                                 contentDescription = "info",
                             )
                           }
-                      //                    Spacer(modifier = Modifier.width(4.dp))
+                                          Spacer(modifier = Modifier.width(4.dp))
                       Button(
                           onClick = { onEditClickFromList() },
                           contentPadding = PaddingValues(horizontal = 12.dp)) {
@@ -523,14 +531,15 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
       offestParam = offsetParam)
 }
 
-fun Color.transitionTo(target: Color, factor: Float): Color {
-  val startHsl = FloatArray(3)
-  val targetHsl = FloatArray(3)
-  ColorUtils.colorToHSL(this.toArgb(), startHsl)
-  ColorUtils.colorToHSL(target.toArgb(), targetHsl)
-  val h = startHsl[0] + (targetHsl[0] - startHsl[0]) * factor
-  val s = startHsl[1] + (targetHsl[1] - startHsl[1]) * factor
-  val l = startHsl[2] + (targetHsl[2] - startHsl[2]) * factor
-  val newHsl = floatArrayOf(h, s, l)
-  return Color(ColorUtils.HSLToColor(newHsl))
+fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
+    val startOklab = start.convert(ColorSpaces.Oklab)
+    val stopOklab = stop.convert(ColorSpaces.Oklab)
+
+    val l = startOklab.component1() + (stopOklab.component1() - startOklab.component1()) * fraction
+    val a = startOklab.component2() + (stopOklab.component2() - startOklab.component2()) * fraction
+    val b = startOklab.component3() + (stopOklab.component3() - startOklab.component3()) * fraction
+    val alpha = startOklab.alpha + (stopOklab.alpha - startOklab.alpha) * fraction
+
+    return Color(l, a, b, alpha, ColorSpaces.Oklab).convert(ColorSpaces.Srgb)
 }
+
