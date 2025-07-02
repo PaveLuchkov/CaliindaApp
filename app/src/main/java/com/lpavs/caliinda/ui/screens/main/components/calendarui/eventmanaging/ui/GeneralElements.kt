@@ -58,7 +58,7 @@ fun AdaptiveContainer(modifier: Modifier = Modifier, content: @Composable Column
       modifier =
           Modifier.fillMaxWidth()
               .clip(RoundedCornerShape(cornerRadius))
-              .background(color = colorScheme.surfaceContainerLow)
+              .background(color = colorScheme.surfaceContainer)
               .padding(cuid.ContainerPadding)
               .then(modifier),
       horizontalAlignment = Alignment.CenterHorizontally,

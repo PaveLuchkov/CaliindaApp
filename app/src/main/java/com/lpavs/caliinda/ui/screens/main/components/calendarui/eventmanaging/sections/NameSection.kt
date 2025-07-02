@@ -20,6 +20,9 @@ fun getSuggestedEventNames(): List<SugNameChips> {
           context.getString(R.string.suggested_event_test),
           context.getString(R.string.suggested_event_test_full)),
       SugNameChips(
+          context.getString(R.string.suggested_event_project),
+          context.getString(R.string.suggested_event_project_full)),
+      SugNameChips(
           context.getString(R.string.suggested_event_work),
           context.getString(R.string.suggested_event_work_full)),
       SugNameChips(
@@ -82,9 +85,6 @@ fun getSuggestedEventNames(): List<SugNameChips> {
       SugNameChips(
           context.getString(R.string.suggested_event_birthday),
           context.getString(R.string.suggested_event_birthday_full)),
-      SugNameChips(
-          context.getString(R.string.suggested_event_project),
-          context.getString(R.string.suggested_event_project_full)),
       SugNameChips(
           context.getString(R.string.suggested_event_presentation),
           context.getString(R.string.suggested_event_presentation_full)),
