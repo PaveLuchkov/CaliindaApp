@@ -1,18 +1,24 @@
 package com.lpavs.caliinda.ui.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -34,6 +40,7 @@ enum class BackgroundShapeContext {
   EventCreation
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Main) {
   Box(
@@ -44,12 +51,8 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
         when (context) {
           BackgroundShapeContext.Main -> {
 
-            val starShape = remember { RoundedPolygon.star(17, rounding = CornerRounding(0.95f)) }
-            val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
-            val star2Shape = remember {
-              RoundedPolygon.star(4, rounding = CornerRounding(0.4f), radius = 2f)
-            }
-            val clip2Star = remember(star2Shape) { RoundedPolygonShape(polygon = star2Shape) }
+            val Clover4Leaf = MaterialShapes.Clover4Leaf.toShape()
+            val Cookie4Sided = MaterialShapes.Flower.toShape()
             val starContainerSize = 300.dp
             val star2ContainerSize = 200.dp
 
@@ -59,13 +62,10 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
                     Modifier.size(starContainerSize)
                         .align(Alignment.TopEnd)
                         .offset(x = starContainerSize * 0.2f, y = -starContainerSize * 0.1f)
-                        .graphicsLayer {
-                          shadowElevation = 16.dp.toPx()
-                          shape = clipStar
-                          alpha = 0.99f // Оставляем для надежности
-                        }
-                        .clip(clipStar)
-                        .background(colorScheme.surfaceVariant))
+                        .rotate(30f)
+                        .clip(Clover4Leaf)
+                        .background(color = Color.Transparent)
+                        .border(width = 2.dp, color = colorScheme.surfaceVariant, shape=Clover4Leaf))
 
             // Фигура 2 (звезда 4)
             Box(
@@ -76,11 +76,8 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
                             x = -star2ContainerSize * 0.4f,
                             y = star2ContainerSize * 1.5f // Позиция относительно TopStart
                             )
-                        .graphicsLayer {
-                          shadowElevation = 6.dp.toPx()
-                          shape = clip2Star
-                        }
-                        .clip(clip2Star)
+                        .rotate(80f)
+                        .clip(Cookie4Sided)
                         .background(colorScheme.surfaceVariant))
           }
 

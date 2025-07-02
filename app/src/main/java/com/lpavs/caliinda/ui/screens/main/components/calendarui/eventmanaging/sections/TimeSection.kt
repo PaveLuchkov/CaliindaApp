@@ -15,14 +15,17 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -405,41 +408,48 @@ fun EventDateTimePicker(
                         }
                         // Case: Only One Day
                         showOneDay -> {
-                          Row(
-                              Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                              Arrangement.spacedBy(8.dp),
-                              Alignment.Top) {
-                                TimePickerField(
-                                    timeStart,
-                                    state.startTime,
-                                    deviceTimeFormatter,
-                                    dateTimeError != null && state.startTime == null,
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+
+                            ) {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                                    Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+                                    Alignment.CenterVertically) {
+                                    TimePickerField(
+                                        timeStart,
+                                        state.startTime,
+                                        deviceTimeFormatter,
+                                        dateTimeError != null && state.startTime == null,
+                                        isLoading,
+                                        onRequestShowStartTimePicker,
+                                        Modifier.width(100.dp))
+                                    Box(modifier = Modifier.width(10.dp).height(1.dp).background(color = colorScheme.onBackground))
+                                    TimePickerField(
+                                        timeEnd,
+                                        state.endTime,
+                                        deviceTimeFormatter,
+                                        dateTimeError != null && state.endTime == null,
+                                        isLoading,
+                                        onRequestShowEndTimePicker,
+                                        Modifier.width(100.dp))
+                                }
+                                DatePickerField(
+                                    dateSingle,
+                                    state.startDate,
+                                    deviceDateFormatter,
+                                    dateTimeError != null,
                                     isLoading,
-                                    onRequestShowStartTimePicker,
-                                    Modifier.weight(1f))
-                                TimePickerField(
-                                    timeEnd,
-                                    state.endTime,
-                                    deviceTimeFormatter,
-                                    dateTimeError != null && state.endTime == null,
-                                    isLoading,
-                                    onRequestShowEndTimePicker,
-                                    Modifier.weight(1f))
-                              }
-                          DatePickerField(
-                              dateSingle,
-                              state.startDate,
-                              deviceDateFormatter,
-                              dateTimeError != null,
-                              isLoading,
-                              onRequestShowStartDatePicker,
-                              Modifier.fillMaxWidth().padding(horizontal = 50.dp))
+                                    onRequestShowStartDatePicker,
+                                    Modifier.width(218.dp))
+                            }
                         }
                         // Case: Neither (Full Range)
                         else -> {
                           Row(
                               Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                              Arrangement.spacedBy(8.dp),
+                              Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                               Alignment.Top) {
                                 TimePickerField(
                                     timeStart,
@@ -448,7 +458,7 @@ fun EventDateTimePicker(
                                     dateTimeError != null && state.startTime == null,
                                     isLoading,
                                     onRequestShowStartTimePicker,
-                                    Modifier.weight(0.5f))
+                                    Modifier.weight(1f))
                                 TimePickerField(
                                     timeEnd,
                                     state.endTime,
@@ -456,7 +466,7 @@ fun EventDateTimePicker(
                                     dateTimeError != null && state.endTime == null,
                                     isLoading,
                                     onRequestShowEndTimePicker,
-                                    Modifier.weight(0.5f))
+                                    Modifier.weight(1f))
                               }
                           Row(
                               Modifier.fillMaxWidth().padding(horizontal = 4.dp),
