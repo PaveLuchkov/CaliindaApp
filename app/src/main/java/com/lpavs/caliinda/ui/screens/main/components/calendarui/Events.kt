@@ -186,6 +186,12 @@ fun EventsList(
                           !currentTime.isBefore(start) &&
                           currentTime.isBefore(end)
                     }
+              val isPast =
+                  remember(currentTime, event.endTime, currentTimeZoneId) {
+                      val end = parseToInstant(event.endTime, currentTimeZoneId)
+                          end != null &&
+                          currentTime.isAfter(end)
+                  }
 
                 val isNext =
                     remember(event.startTime, nextStartTime, currentTimeZoneId) {
@@ -240,6 +246,7 @@ fun EventsList(
                     event = event,
                     timeFormatter = timeFormatter,
                     isCurrentEvent = isCurrent,
+                    isPastEvent = isPast,
                     isNextEvent = isNext,
                     proximityRatio = proximityRatio,
                     isMicroEventFromList = isMicroEvent,

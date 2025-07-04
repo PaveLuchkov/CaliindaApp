@@ -52,6 +52,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,21 +65,24 @@ import androidx.core.graphics.ColorUtils
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.common.RoundedPolygonShape
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.CalendarUiDefaults
 import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
+import com.lpavs.caliinda.ui.theme.Typography
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
 fun EventListItem(
     event: CalendarEvent,
     timeFormatter: (CalendarEvent) -> String,
     isCurrentEvent: Boolean,
+    isPastEvent: Boolean,
     isNextEvent: Boolean,
     proximityRatio: Float,
     isMicroEventFromList: Boolean,
@@ -151,6 +158,31 @@ fun EventListItem(
         isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
         else -> colorScheme.onPrimaryContainer // Обычный фон
       }
+    val textStyle = when{
+        !isMicroEventFromList -> if (isCurrentEvent) Typography.headlineSmallEmphasized else Typography.headlineSmall
+        else-> if (isCurrentEvent) Typography.bodyLargeEmphasized else Typography.bodyLarge
+    }
+    val cardFontFamily =
+        when {
+            isCurrentEvent -> FontFamily(
+            Font(
+                R.font.robotoflex_variable,
+                variationSettings = FontVariation.Settings(
+                    FontVariation.weight(700),
+                    FontVariation.grade(70),
+                    FontVariation.width(65f),
+                    FontVariation.slant(-5f),
+                )
+            ))
+            else -> FontFamily(
+                Font(
+                    R.font.robotoflex_variable,
+                    variationSettings = FontVariation.Settings(
+                        FontVariation.weight(600),
+                        FontVariation.width(100f),
+                    )
+                ))
+        }
   // --- Композиция UI ---
   Box( // Корневой Box для тени, фона, высоты и кликабельности
       modifier =
@@ -221,12 +253,13 @@ fun EventListItem(
                 }
                 if (isMicroEventFromList) {
                   Row(
-                      modifier = Modifier.fillMaxWidth(),
+                      modifier = Modifier.fillMaxSize(),
                       verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = event.summary,
                             color = cardTextColor,
-                            style = typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+                            style = textStyle,
+                            fontFamily = cardFontFamily,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false))
@@ -242,7 +275,8 @@ fun EventListItem(
                     Text(
                         text = event.summary,
                         color = cardTextColor,
-                        style = typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                        style = textStyle,
+                        fontFamily = cardFontFamily,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
