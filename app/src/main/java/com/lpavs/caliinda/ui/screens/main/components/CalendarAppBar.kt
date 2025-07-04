@@ -28,14 +28,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lpavs.caliinda.R
+import com.lpavs.caliinda.ui.theme.Typography
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalTextApi::class
+)
 @Composable
 fun CalendarAppBar(
     onNavigateToSettings: () -> Unit,
@@ -56,6 +64,29 @@ fun CalendarAppBar(
       } else {
         colorScheme.onSecondary
       }
+    val headerTextStyle = when{
+        isToday -> Typography.titleLargeEmphasized
+        else-> Typography.titleLarge
+    }
+    val headerFontFamily =
+        when {
+            isToday -> FontFamily(
+                Font(
+                    R.font.robotoflex_variable,
+                    variationSettings = FontVariation.Settings(
+                        FontVariation.weight(750),
+                    )
+                )
+            )
+            else -> FontFamily(
+                Font(
+                    R.font.robotoflex_variable,
+                    variationSettings = FontVariation.Settings(
+                        FontVariation.weight(600),
+                    )
+                )
+            )
+        }
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
   val formatterWithShortDay = DateTimeFormatter.ofPattern("E, d MMMM yyyy", currentLocale)
   CenterAlignedTopAppBar(
@@ -70,8 +101,8 @@ fun CalendarAppBar(
         ) {
           Text(
               text = date.format(formatterWithShortDay),
-              style = typography.titleLarge,
-              fontWeight = FontWeight.Medium,
+              style = headerTextStyle,
+              fontFamily = headerFontFamily,
               color = headerTextColor,
               modifier =
                   Modifier.padding(horizontal = 16.dp, vertical = 4.dp)

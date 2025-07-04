@@ -177,7 +177,7 @@ fun BottomBar(
               content = {
                 IconButton(
                     onClick = onCreateEventClick,
-                    // enabled = isKeyboardToggleEnabled TODO : enable after done
+                    // enabled = isKeyboardToggleEnabled
                 ) {
                   Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Create event")
                 }

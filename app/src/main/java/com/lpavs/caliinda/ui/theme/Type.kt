@@ -1,10 +1,14 @@
 package com.lpavs.caliinda.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.lpavs.caliinda.R
 
 // Set of Material typography styles to start with
 val Typography =
@@ -32,4 +36,12 @@ val Typography =
             letterSpacing = 0.5.sp
         )
         */
+        )
+
+@OptIn(ExperimentalTextApi::class)
+val displayLargeFontFamily =
+    FontFamily(
+        Font(
+            R.font.robotoflex_variable,
+            )
         )

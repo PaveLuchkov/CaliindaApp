@@ -189,7 +189,6 @@ constructor(
       try {
         googleSignInClient.signOut().await() // Ждем завершения выхода из Google
         Log.i(TAG, "User signed out successfully from Google.")
-        // TODO удалить БД на выходе
         calendarDataManager.get().clearLocalDataOnSignOut()
         // Опционально: Уведомить бэкенд о выходе (отдельный запрос)
         // revokeAccess() - если нужно отозвать доступ полностью

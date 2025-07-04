@@ -29,7 +29,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -86,6 +89,7 @@ constructor(
     const val JUMP_DETECTION_BUFFER_DAYS = 10L
   }
 
+
   // --- Внутренние состояния ---
   private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
   private val _loadedDateRange = MutableStateFlow<ClosedRange<LocalDate>?>(null)
@@ -93,6 +97,9 @@ constructor(
   private val _createEventResult = MutableStateFlow<CreateEventResult>(CreateEventResult.Idle)
   private val _deleteEventResult = MutableStateFlow<DeleteEventResult>(DeleteEventResult.Idle)
   private val _updateEventResult = MutableStateFlow<UpdateEventResult>(UpdateEventResult.Idle)
+    private var fetchJobHolder: JobHolder? = null
+    private val fetchJobMutex = Mutex()
+    private data class JobHolder(val job: Job, val requestedRange: ClosedRange<LocalDate>)
 
   // --- Публичные StateFlow для ViewModel ---
   val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
@@ -512,51 +519,30 @@ constructor(
 
   /** Принудительно обновляет данные для указанной даты */
   suspend fun refreshDate(centerDateToRefreshAround: LocalDate) {
-    Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
+      Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
 
-    // --- Explicit Cancellation ---
-    activeFetchJob?.cancel(
-        CancellationException("Manual refresh triggered for $centerDateToRefreshAround"))
-    Log.d(TAG, "refreshDate: Previous activeFetchJob cancelled (if existed).")
-    // --------------------------
-    // TODO подумать может можно не две недели вокруг перезагружать
-    val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(UPDATE_LOAD_DAYS_AROUND)
-    val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(UPDATE_LOAD_DAYS_AROUND)
-    Log.d(
-        TAG,
-        "refreshDate: Target refresh range is [$targetRefreshRangeStart .. $targetRefreshRangeEnd]")
+      // Отменяем любую текущую логику определения диапазона (activeFetchJob из setCurrentVisibleDate)
+      activeFetchJob?.cancel(CancellationException("Manual refresh triggered for $centerDateToRefreshAround"))
+      Log.d(TAG, "refreshDate: Previous activeFetchJob (ensure...) cancelled (if existed).")
 
-    val refreshJob =
-        managerScope.launch { // Launch separately
-          Log.d(
-              TAG,
-              "refreshDate: New coroutine launched for fetchAndStoreDateRange. Job: ${coroutineContext[Job]}")
-          try {
-            fetchAndStoreDateRange(
-                targetRefreshRangeStart, targetRefreshRangeEnd, true) // Consider replace=true
-          } catch (ce: CancellationException) {
-            Log.d(
-                TAG,
-                "refreshDate: Job ${coroutineContext[Job]} cancelled during refresh for $centerDateToRefreshAround: ${ce.message}")
-            throw ce
-          } catch (e: Exception) {
-            Log.e(
-                TAG,
-                "refreshDate: Error during fetchAndStoreDateRange for $centerDateToRefreshAround",
-                e)
-          } finally {
-            Log.d(
-                TAG,
-                "refreshDate: Job ${coroutineContext[Job]} finished for $centerDateToRefreshAround")
-          }
-        }
-    activeFetchJob = refreshJob // Assign the new job as the active one
-    Log.d(TAG, "refreshDate: Assigned new activeFetchJob: $activeFetchJob")
-    refreshJob
-        .join() // Wait for the refresh job to complete if refreshDate needs to be blocking? Or
-                // remove join() if not.
-    // If you remove join(), refreshDate returns immediately, and the refresh happens in the
-    // background.
+      // Определяем целевой диапазон для принудительного обновления
+      val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(UPDATE_LOAD_DAYS_AROUND)
+      val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(UPDATE_LOAD_DAYS_AROUND)
+      val targetRefreshRange = targetRefreshRangeStart..targetRefreshRangeEnd
+      Log.d(TAG, "refreshDate: Target refresh range is $targetRefreshRange")
+
+      // Принудительно отменяем текущую *сетевую* операцию, если она есть,
+      // так как это force refresh.
+      fetchJobMutex.withLock {
+          fetchJobHolder?.job?.cancel(CancellationException("Force refresh for $centerDateToRefreshAround"))
+          fetchJobHolder = null
+          Log.d(TAG, "refreshDate: Cancelled existing fetchJobHolder due to force refresh.")
+      }
+
+      // Запускаем новую загрузку через защищенный механизм. `replace = true` для refresh.
+      launchProtectedFetch(targetRefreshRange, true) // true для replaceWholeLoadedRange
+
+      // refreshDate теперь неблокирующий. ViewModel и UI должны реагировать на изменения _rangeNetworkState.
   }
 
   /** Сбрасывает состояние ошибки сети */
@@ -571,64 +557,61 @@ constructor(
   /** Проверяет, нужно ли загружать/расширять диапазон дат */
   private suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) =
       withContext(ioDispatcher) { // В IO
-        val currentlyLoaded = _loadedDateRange.value
-        val initialOrJumpTargetRange =
-            centerDate.minusDays(INITIAL_LOAD_DAYS_AROUND)..centerDate.plusDays(
-                    INITIAL_LOAD_DAYS_AROUND)
-        Log.d(
-            TAG,
-            "ensureDateRange: center=$centerDate, current=$currentlyLoaded, initialOrJumpTarget=$initialOrJumpTargetRange")
+          val currentlyLoaded = _loadedDateRange.value
+          val initialOrJumpTargetRange =
+              centerDate.minusDays(INITIAL_LOAD_DAYS_AROUND)..centerDate.plusDays(INITIAL_LOAD_DAYS_AROUND)
+          Log.d(TAG, "ensureDateRange: center=$centerDate, current=$currentlyLoaded, initialOrJumpTarget=$initialOrJumpTargetRange, forceLoad=$forceLoad")
 
-        if (forceLoad) {
-          Log.i(
-              TAG,
-              "Force load requested for $centerDate. Fetching range: $initialOrJumpTargetRange")
-          fetchAndStoreDateRange(
-              initialOrJumpTargetRange.start, initialOrJumpTargetRange.endInclusive, true)
-          return@withContext
-        }
-
-        if (currentlyLoaded == null) {
-          Log.i(TAG, "Initial load for $centerDate. Fetching range: $initialOrJumpTargetRange")
-          fetchAndStoreDateRange(
-              initialOrJumpTargetRange.start, initialOrJumpTargetRange.endInclusive, true)
-        } else {
-          val isJump =
-              centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS) ||
-                  centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS)
-
-          if (isJump) {
-            Log.i(
-                TAG, "Jump detected for $centerDate. Fetching new range: $initialOrJumpTargetRange")
-            fetchAndStoreDateRange(
-                initialOrJumpTargetRange.start, initialOrJumpTargetRange.endInclusive, true)
-          } else {
-            var rangeToFetchDeltaStart: LocalDate? = null
-            var rangeToFetchDeltaEnd: LocalDate? = null
-
-            if (centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD)) {
-              rangeToFetchDeltaStart = currentlyLoaded.endInclusive.plusDays(1)
-              rangeToFetchDeltaEnd = rangeToFetchDeltaStart.plusDays(EXPAND_CHUNK_DAYS - 1)
-              Log.i(
-                  TAG,
-                  "Forward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
-            } else if (centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD)) {
-              rangeToFetchDeltaEnd = currentlyLoaded.start.minusDays(1)
-              rangeToFetchDeltaStart = rangeToFetchDeltaEnd.minusDays(EXPAND_CHUNK_DAYS - 1)
-              Log.i(
-                  TAG,
-                  "Backward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
-            }
-
-            if (rangeToFetchDeltaStart != null && rangeToFetchDeltaEnd != null) {
-              fetchAndStoreDateRange(rangeToFetchDeltaStart, rangeToFetchDeltaEnd, false)
-            } else {
-              Log.d(
-                  TAG,
-                  "No delta load needed for $centerDate. It is comfortably within $currentlyLoaded.")
-            }
+          if (forceLoad) {
+              Log.i(TAG, "Force load requested for $centerDate. Fetching range: $initialOrJumpTargetRange")
+              // Принудительно отменяем текущую *сетевую* операцию, если она есть
+              fetchJobMutex.withLock {
+                  fetchJobHolder?.job?.cancel(CancellationException("Force load for $centerDate"))
+                  fetchJobHolder = null
+                  Log.d(TAG, "ensureDateRangeLoadedAround: Cancelled existing fetchJobHolder due to forceLoad.")
+              }
+              launchProtectedFetch(initialOrJumpTargetRange, true) // true для replaceWholeLoadedRange
+              return@withContext
           }
-        }
+
+          if (currentlyLoaded == null) {
+              Log.i(TAG, "Initial load for $centerDate. Fetching range: $initialOrJumpTargetRange")
+              launchProtectedFetch(initialOrJumpTargetRange, true) // true для replaceWholeLoadedRange
+          } else {
+              val isJump =
+                  centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS) ||
+                          centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS)
+
+              if (isJump) {
+                  Log.i(TAG, "Jump detected for $centerDate. Fetching new range: $initialOrJumpTargetRange")
+                  // При "прыжке" также можно отменить текущую загрузку, если она нерелевантна
+                  fetchJobMutex.withLock {
+                      fetchJobHolder?.job?.cancel(CancellationException("Jump detected for $centerDate"))
+                      fetchJobHolder = null
+                      Log.d(TAG, "ensureDateRangeLoadedAround: Cancelled existing fetchJobHolder due to jump.")
+                  }
+                  launchProtectedFetch(initialOrJumpTargetRange, true) // true для replaceWholeLoadedRange
+              } else {
+                  var rangeToFetchDeltaStart: LocalDate? = null
+                  var rangeToFetchDeltaEnd: LocalDate? = null
+
+                  if (centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD)) {
+                      rangeToFetchDeltaStart = currentlyLoaded.endInclusive.plusDays(1)
+                      rangeToFetchDeltaEnd = rangeToFetchDeltaStart.plusDays(EXPAND_CHUNK_DAYS - 1)
+                      Log.i(TAG, "Forward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
+                  } else if (centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD)) {
+                      rangeToFetchDeltaEnd = currentlyLoaded.start.minusDays(1)
+                      rangeToFetchDeltaStart = rangeToFetchDeltaEnd.minusDays(EXPAND_CHUNK_DAYS - 1)
+                      Log.i(TAG, "Backward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
+                  }
+
+                  if (rangeToFetchDeltaStart != null && rangeToFetchDeltaEnd != null) {
+                      launchProtectedFetch(rangeToFetchDeltaStart..rangeToFetchDeltaEnd, false) // false для replace (это дельта)
+                  } else {
+                      Log.d(TAG, "No delta load needed for $centerDate. It is comfortably within $currentlyLoaded.")
+                  }
+              }
+          }
       }
 
   /**
@@ -980,6 +963,81 @@ constructor(
             // Fallback to a simpler string resource if JSON parsing fails
             context.getString(R.string.error_server_code_format, code)
         }
+    }
+
+    private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replaceWholeLoadedRange: Boolean) {
+        // Эта функция сама по себе не suspend, она запускает корутину для управления.
+        // Вызывается из suspend функций (ensureDateRangeLoadedAround, refreshDate).
+        managerScope.launch { // Оберточная корутина для управления доступом и запуском основной работы
+            fetchJobMutex.withLock { // Защищаем доступ к fetchJobHolder и _rangeNetworkState
+                val currentActiveJobDetails = fetchJobHolder?.takeIf { it.job.isActive }
+
+                if (currentActiveJobDetails != null) {
+                    val currentlyFetchingRange = currentActiveJobDetails.requestedRange
+
+                    // 1. Если новый диапазон уже полностью покрывается текущей активной загрузкой
+                    if (rangeToFetch.start >= currentlyFetchingRange.start && rangeToFetch.endInclusive <= currentlyFetchingRange.endInclusive) {
+                        Log.d(TAG, "launchProtectedFetch: New range $rangeToFetch is covered by ongoing $currentlyFetchingRange. Skipping.")
+                        return@launch // Выход из managerScope.launch (оберточной корутины)
+                    }
+
+                    // 2. Если _rangeNetworkState.value == EventNetworkState.Loading, это значит,
+                    //    что currentActiveJobDetails.job активно что-то делает (сеть/БД).
+                    //    Даем ему завершиться. Следующий триггер (скролл/обновление)
+                    //    снова вызовет ensureDateRangeLoadedAround, и если диапазон все еще нужен, он будет загружен.
+                    if (_rangeNetworkState.value == EventNetworkState.Loading) {
+                        Log.d(TAG, "launchProtectedFetch: Network is already Loading (for $currentlyFetchingRange). New request for $rangeToFetch will be deferred. Skipping new launch.")
+                        return@launch
+                    }
+
+                    // 3. Если есть активная джоба (currentActiveJobDetails != null),
+                    //    но _rangeNetworkState.value НЕ Loading (например, Idle после ошибки или отмены до установки Loading),
+                    //    ИЛИ новый диапазон не покрывается текущим (проверка на это была выше, но для ясности).
+                    //    В этом случае, лучше отменить старую "зависшую" или нерелевантну джобу и начать новую.
+                    Log.d(TAG, "launchProtectedFetch: New range $rangeToFetch. Cancelling previous job (if any was active but not in Loading state) for $currentlyFetchingRange.")
+                    currentActiveJobDetails.job.cancel(CancellationException("Superseded by new fetch for $rangeToFetch"))
+                    // fetchJobHolder будет перезаписан ниже новой джобой.
+                }
+
+                // Если дошли сюда: либо не было активной/релевантной загрузки, либо предыдущая была отменена.
+                // Устанавливаем Loading ДО запуска новой джобы, чтобы другие вызовы это увидели.
+                _rangeNetworkState.value = EventNetworkState.Loading
+                Log.i(TAG, "launchProtectedFetch: Set _rangeNetworkState to Loading. Starting fetch for $rangeToFetch.")
+
+                val newActualFetchJob = managerScope.launch { // Это уже сама работающая джоба для FADR
+                    try {
+                        fetchAndStoreDateRange(rangeToFetch.start, rangeToFetch.endInclusive, replaceWholeLoadedRange)
+                    } catch (e: CancellationException) {
+                        Log.i(TAG, "launchProtectedFetch/newActualFetchJob: Fetch job for $rangeToFetch was cancelled.", e)
+                        // FADR.finally должен обработать _rangeNetworkState.
+                        throw e // Перебросить, чтобы Job завершился как cancelled.
+                    } catch (e: Exception) {
+                        Log.e(TAG, "launchProtectedFetch/newActualFetchJob: Exception in fetch job for $rangeToFetch", e)
+                        // FADR должен установить ошибку. Если нет, то здесь как fallback.
+                        if (_rangeNetworkState.value !is EventNetworkState.Error && _rangeNetworkState.value != EventNetworkState.Idle) {
+                            _rangeNetworkState.value = EventNetworkState.Error("FADR Error unhandled: ${e.message}")
+                        }
+                        // Не перебрасываем, чтобы Job завершился как completed (с ошибкой).
+                    } finally {
+                        // Этот finally для newActualFetchJob
+                        fetchJobMutex.withLock { // Синхронизация для очистки fetchJobHolder
+                            // Убедимся, что это та же джоба, которую мы отслеживали
+                            if (fetchJobHolder?.job == coroutineContext[Job]) {
+                                fetchJobHolder = null
+                                Log.d(TAG, "launchProtectedFetch (finally of newActualFetchJob): Cleared fetchJobHolder for $rangeToFetch.")
+                            }
+                        }
+                        // FADR.finally должен сбросить Loading в Idle/Error.
+                        // Дополнительная проверка на случай, если FADR не справился, а джоба завершилась.
+                        if (_rangeNetworkState.value == EventNetworkState.Loading && !coroutineContext.isActive) {
+                            Log.w(TAG, "launchProtectedFetch (finally of newActualFetchJob): Job for $rangeToFetch ended, but state is still Loading. Resetting to Idle.")
+                            _rangeNetworkState.value = EventNetworkState.Idle
+                        }
+                    }
+                }
+                fetchJobHolder = JobHolder(newActualFetchJob, rangeToFetch)
+            } // конец fetchJobMutex.withLock
+        } // конец managerScope.launch (обертка)
     }
 
     /**

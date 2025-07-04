@@ -357,8 +357,9 @@ fun CreateEventScreen(
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState())
-              .padding(horizontal = 16.dp) // Горизонтальные отступы для контента
+              .padding(horizontal = 16.dp, vertical = 4.dp) // Горизонтальные отступы для контента
               .fillMaxWidth(),
+      verticalArrangement = Arrangement.spacedBy(4.dp)
   ) {
     AdaptiveContainer {
       EventNameSection(

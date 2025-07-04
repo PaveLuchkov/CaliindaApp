@@ -237,7 +237,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
           horizontalAlignment = Alignment.CenterHorizontally,
       ) {
         if (isBusy && !isListening) {
-          LoadingIndicator()
+        //  LoadingIndicator()
         }
       }
       // --- Слой 3: AI Visualizer (рисуется поверх фона и списка) ---

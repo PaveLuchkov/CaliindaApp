@@ -18,11 +18,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
@@ -182,6 +186,12 @@ fun EventsList(
                           !currentTime.isBefore(start) &&
                           currentTime.isBefore(end)
                     }
+              val isPast =
+                  remember(currentTime, event.endTime, currentTimeZoneId) {
+                      val end = parseToInstant(event.endTime, currentTimeZoneId)
+                          end != null &&
+                          currentTime.isAfter(end)
+                  }
 
                 val isNext =
                     remember(event.startTime, nextStartTime, currentTimeZoneId) {
@@ -236,6 +246,7 @@ fun EventsList(
                     event = event,
                     timeFormatter = timeFormatter,
                     isCurrentEvent = isCurrent,
+                    isPastEvent = isPast,
                     isNextEvent = isNext,
                     proximityRatio = proximityRatio,
                     isMicroEventFromList = isMicroEvent,
@@ -268,6 +279,7 @@ fun EventsList(
   Box(modifier = Modifier.height(70.dp))
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DayEventsPage(
     date: LocalDate,
@@ -337,6 +349,9 @@ fun DayEventsPage(
 
   // --- СОЗДАЕМ И ЗАПОМИНАЕМ СОСТОЯНИЕ СПИСКА ---
   val listState = rememberLazyListState()
+    val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
+    val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
+    val isListening = uiState.isListening
 
   LaunchedEffect(targetScrollIndex, isToday) { // Запускаем, если изменился индекс или флаг isToday
     if (isToday && targetScrollIndex != -1) {
@@ -421,23 +436,27 @@ fun DayEventsPage(
       } else if (allDayEvents.isEmpty()) {
         // Показываем сообщение "нет событий", только если НЕТ НИКАКИХ событий
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-          Box( // Корневой Box для тени, фона, высоты и кликабельности
-              modifier =
-                  Modifier.shadow(
-                          elevation = 5.dp,
-                          shape = RoundedCornerShape(cuid.EventItemCornerRadius),
-                          clip = false,
-                      )
-                      .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-                      .background(color = colorScheme.secondaryContainer)
-                      .padding(16.dp),
-              contentAlignment = Alignment.Center // Центрируем сообщение
-              ) {
-                Text(
-                    stringResource(R.string.no_events),
-                    style = typography.bodyLarge,
-                    color = colorScheme.onSecondaryContainer)
-              }
+            if (isBusy && !isListening) {
+                LoadingIndicator(modifier = Modifier.size(80.dp))
+            } else {
+                Box( // Корневой Box для тени, фона, высоты и кликабельности
+                    modifier =
+                        Modifier.shadow(
+                            elevation = 5.dp,
+                            shape = RoundedCornerShape(cuid.EventItemCornerRadius),
+                            clip = false,
+                        )
+                            .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
+                            .background(color = colorScheme.secondaryContainer)
+                            .padding(16.dp),
+                    contentAlignment = Alignment.Center // Центрируем сообщение
+                ) {
+                    Text(
+                        stringResource(R.string.no_events),
+                        style = typography.bodyLarge,
+                        color = colorScheme.onSecondaryContainer)
+                }
+            }
         }
       } else {
         Spacer(modifier = Modifier.weight(1f))
