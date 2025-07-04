@@ -15,8 +15,6 @@ The core design lays in latest Material 3 Expressive from Google.
 
 ![GIF](previewfiles/gifpreview.gif)
 
-*(Upload your screenshot to a service like Imgur or directly to your GitHub repo and paste the link here.)*
-
 ---
 
 ### 🚀 Key Features
