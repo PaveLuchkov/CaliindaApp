@@ -3,6 +3,7 @@ package com.lpavs.caliinda.data.auth
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.credentials.ClearCredentialStateRequest
@@ -11,6 +12,8 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -19,7 +22,6 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
-import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.di.BackendUrl
 import com.lpavs.caliinda.di.WebClientId
@@ -39,11 +41,14 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
+
 
 @Singleton
 class AuthManager
@@ -133,7 +138,7 @@ constructor(
       .requestOfflineAccess(webClientId)
       .build()
     try {
-    val result = authorizationClient.authorize(authRequest).await()
+      val result = authorizationClient.authorize(authRequest).await()
       if (result.hasResolution()) {
         Log.d(TAG, "Authorization requires user consent.")
         _authState.update { it.copy(authorizationIntent = result.pendingIntent) }
@@ -209,13 +214,13 @@ constructor(
     }
   }
 
-  private fun checkInitialAuthState(){
+  private fun checkInitialAuthState() {
     managerScope.launch {
       _authState.update { it.copy(isLoading = true) }
       val googleIdOption = buildGoogleIdOption(filterByAuthorizedAccounts = true, autoSelect = true)
       val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
       try {
-      val result = credentialManager.getCredential(context, request)
+        val result = credentialManager.getCredential(context, request)
         Log.i(TAG, "Silent sign-in successful on init.")
         handleAuthenticationSuccess(result)
       } catch (e: GetCredentialException) {
@@ -227,6 +232,7 @@ constructor(
   }
 
   private fun signOutInternally(error: String?) {
+    clearBackendToken()
     pendingIdToken = null
     _authState.update {
       it.copy(
@@ -238,7 +244,10 @@ constructor(
     Log.i(TAG, "Internal sign out completed. Error: $error")
   }
 
-  private fun buildGoogleIdOption(filterByAuthorizedAccounts: Boolean, autoSelect: Boolean = false): GetGoogleIdOption {
+  private fun buildGoogleIdOption(
+    filterByAuthorizedAccounts: Boolean,
+    autoSelect: Boolean = false
+  ): GetGoogleIdOption {
     return GetGoogleIdOption.Builder()
       .setFilterByAuthorizedAccounts(filterByAuthorizedAccounts)
       .setServerClientId(webClientId)
@@ -259,42 +268,77 @@ constructor(
     _authState.update { it.copy(authorizationIntent = null) }
   }
 
+  @Suppress("DEPRECATION")
+  private val sharedPreferences: SharedPreferences by lazy {
+    val masterKey = MasterKey.Builder(context)
+      .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+      .build()
+
+    EncryptedSharedPreferences.create(
+      context,
+      "secret_shared_prefs",
+      masterKey,
+      EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+      EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+  }
+
+  private val BACKEND_TOKEN_KEY = "backend_auth_token"
+
   @WorkerThread
   private suspend fun sendAuthInfoToBackend(idToken: String, authCode: String): Boolean =
-      withContext(Dispatchers.IO) {
-        Log.i(TAG, "Sending Auth Info (JSON) to /auth/google/exchange")
-        val jsonObject =
-            JSONObject().apply {
-              put("id_token", idToken)
-              put("auth_code", authCode)
-            }
-        val requestBody =
-            jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-        val request =
-            Request.Builder().url("$backendBaseUrl/auth/google/exchange").post(requestBody).build()
+    withContext(Dispatchers.IO) {
+      Log.i(TAG, "Sending Auth Info (JSON) to /auth/google/exchange")
+      val jsonObject =
+        JSONObject().apply {
+          put("id_token", idToken)
+          put("auth_code", authCode)
+        }
+      val requestBody =
+        jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+      val request =
+        Request.Builder().url("$backendBaseUrl/auth/google/exchange").post(requestBody).build()
 
-        try {
-          okHttpClient.newCall(request).execute().use { response ->
-            val responseBodyString = response.body?.string()
-            if (!response.isSuccessful) {
-              Log.e(
-                  TAG,
-                  "Backend error exchanging code (JSON): ${response.code} - $responseBodyString")
+      try {
+        okHttpClient.newCall(request).execute().use { response ->
+          val responseBodyString = response.body?.string()
+          if (!response.isSuccessful) {
+            Log.e(TAG, "Backend error exchanging code: ${response.code} - $responseBodyString")
+            false
+          } else {
+            Log.i(TAG, "Backend successfully exchanged tokens. Response: $responseBodyString")
+            // ----- НОВАЯ ЛОГИКА: ИЗВЛЕКАЕМ И СОХРАНЯЕМ ТОКЕН -----
+            try {
+              val jsonResponse = JSONObject(responseBodyString)
+              val backendToken = jsonResponse.optString("token", null.toString())
+              run {
+                saveBackendToken(backendToken)
+                true // Успех
+              }
+            } catch (e: JSONException) {
+              Log.e(TAG, "Failed to parse backend token response.", e)
               false
-            } else {
-              Log.i(
-                  TAG,
-                  "Backend successfully exchanged tokens (JSON). Response: $responseBodyString")
-              true // Успех
             }
           }
-        } catch (e: IOException) {
-          Log.e(TAG, "Network error sending auth info (JSON)", e)
-          false // Неудача
-        } catch (e: Exception) {
-          Log.e(TAG, "Error processing backend response for auth exchange", e)
-          false // Неудача
         }
-        // Результат (true/false) будет использован в handleSignInResult
+      } catch (e: Exception) {
+        Log.e(TAG, "Error processing backend response for auth exchange", e)
+        false
       }
+    }
+  fun getBackendAuthToken(): String? {
+    val token = sharedPreferences.getString(BACKEND_TOKEN_KEY, null)
+    if (token == null) {
+      Log.w(TAG, "Backend token not found in storage.")
+    }
+    return token
+  }
+  private fun saveBackendToken(token: String) {
+    sharedPreferences.edit { putString(BACKEND_TOKEN_KEY, token) }
+    Log.d(TAG, "Backend token saved securely.")
+  }
+  private fun clearBackendToken() {
+    sharedPreferences.edit { remove(BACKEND_TOKEN_KEY) }
+    Log.d(TAG, "Backend token cleared.")
+  }
 }

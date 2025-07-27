@@ -241,7 +241,7 @@ constructor(
       _createEventResult.value = CreateEventResult.Loading
 
       // Получаем токен через AuthManager
-      val freshToken = authManager.getFreshIdToken()
+      val freshToken = authManager.getBackendAuthToken()
       if (freshToken == null) {
           Log.w(TAG, "Cannot create event: Failed to get fresh ID token.")
           _createEventResult.value = CreateEventResult.Error(context.getString(R.string.error_authentication))
@@ -355,7 +355,7 @@ constructor(
         _deleteEventResult.value = DeleteEventResult.Loading
         Log.i(TAG, "Attempting to delete event with ID: $eventId, mode: ${mode.value}")
 
-        val freshToken = authManager.getFreshIdToken()
+        val freshToken = authManager.getBackendAuthToken()
         if (freshToken == null) {
             Log.e(TAG, "Cannot delete event $eventId: Failed to get fresh ID token.")
             _deleteEventResult.value = DeleteEventResult.Error(context.getString(R.string.error_authentication))
@@ -440,7 +440,7 @@ constructor(
         _updateEventResult.value = UpdateEventResult.Loading
         Log.i(TAG, "Attempting to update event ID: $eventId, mode: ${mode.value}, data: $updateData")
 
-        val freshToken = authManager.getFreshIdToken()
+        val freshToken = authManager.getBackendAuthToken()
         if (freshToken == null) {
             Log.e(TAG, "Cannot update event $eventId: Failed to get fresh ID token.")
             _updateEventResult.value = UpdateEventResult.Error(context.getString(R.string.error_authentication))
@@ -651,7 +651,7 @@ constructor(
             attempts++
             try {
                 // authManager.getFreshIdToken() - это suspend функция, она может быть прервана отменой.
-                freshToken = authManager.getFreshIdToken()
+                freshToken = authManager.getBackendAuthToken()
                 if (freshToken == null && attempts < maxAttempts) {
                     Log.w(
                         TAG,
