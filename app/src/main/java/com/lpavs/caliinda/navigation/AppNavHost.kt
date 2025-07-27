@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.navigation
 
+import android.app.Activity
+import android.util.Log
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -9,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,9 +28,18 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     viewModel: MainViewModel,
-    onSignInClick: () -> Unit
 ) {
   val slideDuration = 300
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    val onSignInClick: () -> Unit = {
+        if (activity != null) {
+            viewModel.signIn(activity)
+        } else {
+            Log.e("AppNavHost", "Activity is null, cannot perform sign-in.")
+        }
+    }
   NavHost(
       navController = navController,
       startDestination = NavRoutes.Main.route, // Используем объект роута

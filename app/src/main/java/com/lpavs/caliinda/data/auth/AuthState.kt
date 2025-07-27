@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.data.auth
 
+import android.app.PendingIntent
 import android.net.Uri
 
 data class AuthState(
@@ -8,5 +9,6 @@ data class AuthState(
     val authError: String? = null,
     val isLoading: Boolean = false,
     val displayName: String? = null,
-    val photoUrl: Uri? = null
+    val photoUrl: Uri? = null,
+    val authorizationIntent: PendingIntent? = null
 )
