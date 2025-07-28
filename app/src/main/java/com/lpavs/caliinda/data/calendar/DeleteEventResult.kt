@@ -1,11 +1,11 @@
 package com.lpavs.caliinda.data.calendar
 
 sealed interface DeleteEventResult {
-  object Idle : DeleteEventResult // Начальное состояние или после обработки результата
+  object Idle : DeleteEventResult
 
-  object Loading : DeleteEventResult // Процесс удаления запущен
+  object Loading : DeleteEventResult
 
-  object Success : DeleteEventResult // Событие успешно удалено (и на бэке, и локально)
+  object Success : DeleteEventResult
 
-  data class Error(val message: String) : DeleteEventResult // Произошла ошибка
+  data class Error(val message: String) : DeleteEventResult
 }

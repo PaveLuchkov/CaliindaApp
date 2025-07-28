@@ -19,6 +19,7 @@ import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.data.calendar.DeleteEventResult
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
+import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.data.repo.SettingsRepository
 import com.lpavs.caliinda.di.ITimeTicker
@@ -35,7 +36,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -477,35 +482,85 @@ constructor(
     val eventToDelete = _uiState.value.eventPendingDeletion ?: return
     _uiState.update { it.copy(showDeleteConfirmationDialog = false, eventPendingDeletion = null) }
     viewModelScope.launch {
-      // Для одиночного события или если мы решаем удалить экземпляр как обычное событие (что
-      // сделает его исключением)
-      // или если это мастер и мы хотим удалить всю серию по умолчанию.
       calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.DEFAULT)
     }
   }
 
-  fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-    _uiState.update {
-      it.copy(showRecurringDeleteOptionsDialog = false, eventPendingDeletion = null)
-    }
+    fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
+        val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+        _uiState.update {
+            it.copy(showRecurringDeleteOptionsDialog = false, eventPendingDeletion = null)
+        }
 
-    val mode =
         when (choice) {
-          RecurringDeleteChoice.SINGLE_INSTANCE -> ApiDeleteEventMode.INSTANCE_ONLY
-          RecurringDeleteChoice.ALL_IN_SERIES ->
-              ApiDeleteEventMode.DEFAULT
+            RecurringDeleteChoice.SINGLE_INSTANCE -> {
+                viewModelScope.launch {
+                    calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.INSTANCE_ONLY)
+                }
+            }
+
+            RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
+                handleThisAndFollowingDelete(eventToDelete)
+            }
+
+            RecurringDeleteChoice.ALL_IN_SERIES -> {
+                val idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
+                viewModelScope.launch {
+                    calendarDataManager.deleteEvent(idForBackendCall, ApiDeleteEventMode.DEFAULT)
+                }
+            }
+        }
+    }
+    /**
+     * Обрабатывает удаление текущего и последующих событий.
+     * Это делается путем обновления мастер-события: в его правило повторения (RRULE)
+     * добавляется дата окончания (UNTIL), установленная на день до удаляемого экземпляра.
+     *
+     * @param eventInstance Экземпляр события, с которого начинается удаление.
+     */
+    private fun handleThisAndFollowingDelete(eventInstance: CalendarEvent) {
+        val originalRRule = eventInstance.recurrenceRule
+        if (originalRRule.isNullOrBlank()) {
+            Log.e(TAG, "Cannot perform 'this and following' delete: Event ${eventInstance.id} has no recurrence rule.")
+            _uiState.update { it.copy(showGeneralError = "Не удалось обновить серию: отсутствует правило повторения.") }
+            return
         }
 
-      val idForBackendCall: String = if (mode == ApiDeleteEventMode.INSTANCE_ONLY) {
-            eventToDelete.id
-        } else {
-            eventToDelete.recurringEventId ?: eventToDelete.id
+        val masterEventId = eventInstance.recurringEventId ?: eventInstance.id
+
+        val instanceStartDate: LocalDate = try {
+            if (eventInstance.isAllDay) {
+                LocalDate.parse(eventInstance.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
+            } else {
+                OffsetDateTime.parse(eventInstance.startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDate()
+            }
+        } catch (e: DateTimeParseException) {
+            Log.e(TAG, "Failed to parse event start time: ${eventInstance.startTime}", e)
+            _uiState.update { it.copy(showGeneralError = "Ошибка в дате события. Невозможно выполнить операцию.") }
+            return
         }
 
-    Log.d(TAG, "Confirming recurring delete. Event ID for backend: $idForBackendCall, Mode: $mode")
-    viewModelScope.launch { calendarDataManager.deleteEvent(idForBackendCall, mode) }
-  }
+        val newUntilDate = instanceStartDate.minusDays(1)
+        val untilString = newUntilDate.atTime(23, 59, 59).atZone(ZoneOffset.UTC)
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
+        val ruleParts = originalRRule.split(';').filterNot {
+            it.startsWith("UNTIL=") || it.startsWith("COUNT=")
+        }
+        val newRRuleString = "RRULE:" + ruleParts.joinToString(";") + ";UNTIL=$untilString"
+        val updateRequest = UpdateEventApiRequest(
+            recurrence = listOf(newRRuleString)
+        )
+
+        Log.d(TAG, "Updating master event $masterEventId to stop recurrence. New RRULE: $newRRuleString")
+
+        viewModelScope.launch {
+            calendarDataManager.updateEvent(
+                eventId = masterEventId,
+                updateData = updateRequest,
+                mode = ClientEventUpdateMode.ALL_IN_SERIES
+            )
+        }
+    }
 
   /** Вызывается из UI для сброса флага ошибки удаления после ее показа (например, в Snackbar). */
   fun clearDeleteError() {
@@ -610,12 +665,6 @@ constructor(
           mode = modeFromUi)
     }
   }
-
-  /** Сбрасывает ошибку операции редактирования. */
-  fun clearEditError() {
-    _uiState.update { it.copy(editOperationError = null) }
-  }
-
   fun consumeUpdateEventResult() {
     calendarDataManager.consumeUpdateEventResult()
   }

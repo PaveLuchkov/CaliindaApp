@@ -95,7 +95,6 @@ fun DeleteConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
             onClick = { onConfirm() },
             colors =
                 ButtonDefaults.buttonColors(
-                    // Сделаем кнопку "Удалить" красной, если выбрана опция "Удалить всю серию"
                     containerColor = colorScheme.primary,
                     contentColor = colorScheme.onPrimary)) {
               Text(text = stringResource(R.string.delete))
@@ -107,8 +106,9 @@ fun DeleteConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 enum class RecurringDeleteChoice {
-  SINGLE_INSTANCE,
-  ALL_IN_SERIES
+    SINGLE_INSTANCE,
+    THIS_AND_FOLLOWING,
+    ALL_IN_SERIES
 }
 
 @Composable
@@ -117,81 +117,90 @@ fun RecurringEventDeleteOptionsDialog(
     onDismiss: () -> Unit,
     onOptionSelected: (RecurringDeleteChoice) -> Unit
 ) {
-  var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
-  val radioOptions =
-      listOf(
-          RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
-          RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series))
+    var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
+    val radioOptions =
+        listOf(
+            RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
+            RecurringDeleteChoice.THIS_AND_FOLLOWING to stringResource(R.string.delete_this_and_following),
+            RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series))
 
-  AlertDialog(
-      onDismissRequest = onDismiss,
-      title = { Text(text = stringResource(R.string.delete_recurring_event_title)) },
-      text = {
-        Column(modifier = Modifier.selectableGroup()) {
-          Text(
-              text = stringResource(R.string.delete_recurring_event_prompt, eventName),
-              style = typography.bodyMedium,
-              modifier = Modifier.padding(bottom = 16.dp))
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.delete_recurring_event_title)) },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                Text(
+                    text = stringResource(R.string.delete_recurring_event_prompt, eventName),
+                    style = typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp))
 
-          radioOptions.forEach { (option, label) ->
-            Row(
-                Modifier.fillMaxWidth()
-                    .selectable(
-                        selected = (option == selectedOption),
-                        onClick = { selectedOption = option },
-                        role = Role.RadioButton)
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                  RadioButton(
-                      selected = (option == selectedOption),
-                      onClick = null,
-                      colors =
-                          RadioButtonDefaults.colors(
-                              selectedColor =
-                                  if (option == RecurringDeleteChoice.ALL_IN_SERIES &&
-                                      selectedOption == option) {
-                                    colorScheme.error
-                                  } else {
-                                    colorScheme.primary
-                                  }))
-                  Spacer(Modifier.width(8.dp))
-                  Text(
-                      text = label,
-                      style = typography.bodyLarge,
-                      color =
-                          if (option == RecurringDeleteChoice.ALL_IN_SERIES) {
-                            colorScheme.error
-                          } else {
-                            LocalContentColor.current
-                          })
+                radioOptions.forEach { (option, label) ->
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .selectable(
+                                selected = (option == selectedOption),
+                                onClick = { selectedOption = option },
+                                role = Role.RadioButton)
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = (option == selectedOption),
+                            onClick = null,
+                            colors =
+                                RadioButtonDefaults.colors(
+                                    selectedColor =
+                                        when (option) {
+                                            RecurringDeleteChoice.ALL_IN_SERIES -> {
+                                                if (selectedOption == option) colorScheme.error else colorScheme.primary
+                                            }
+                                            RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
+                                                if (selectedOption == option) colorScheme.tertiary else colorScheme.primary
+                                            }
+                                            else -> colorScheme.primary
+                                        }))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = typography.bodyLarge,
+                            color =
+                                when (option) {
+                                    RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
+                                    RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.tertiary
+                                    else -> LocalContentColor.current
+                                })
+                    }
                 }
-          }
-        }
-      },
-      confirmButton = {
-        Button(
-            onClick = {
-              onOptionSelected(selectedOption)
-              onDismiss() // Закрываем диалог после подтверждения
-            },
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
-                          colorScheme.error
-                        } else {
-                          colorScheme.primary
-                        },
-                    contentColor =
-                        if (selectedOption == RecurringDeleteChoice.ALL_IN_SERIES) {
-                          colorScheme.onError
-                        } else {
-                          colorScheme.onPrimary
-                        })) {
-              Text(stringResource(R.string.delete))
             }
-      },
-      dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onOptionSelected(selectedOption)
+                    onDismiss()
+                },
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor =
+                            when (selectedOption) {
+                                RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
+                                RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.tertiary
+                                else -> colorScheme.primary
+                            },
+                        contentColor =
+                            when (selectedOption) {
+                                RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.onError
+                                RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.onTertiary
+                                else -> colorScheme.onPrimary
+                            })) {
+                Text(
+                    text = when (selectedOption) {
+                        RecurringDeleteChoice.THIS_AND_FOLLOWING -> stringResource(R.string.stop_repeating)
+                        else -> stringResource(R.string.delete)
+                    }
+                )
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

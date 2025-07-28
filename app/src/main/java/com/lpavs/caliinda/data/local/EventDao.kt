@@ -50,10 +50,8 @@ interface EventDao {
       endRangeMillis: Long,
       newEvents: List<CalendarEventEntity>
   ) {
-    // Удаляем только те события, которые начинаются в этом диапазоне
-    deleteEventsForDateRange(startRangeMillis, endRangeMillis)
-    // Вставляем новые (или обновляем существующие, если их ID совпадут, благодаря REPLACE)
-    insertOrReplaceEvents(newEvents)
+      deleteEventsForDateRange(startRangeMillis, endRangeMillis)
+      insertOrReplaceEvents(newEvents)
   }
 
   /**
@@ -63,8 +61,7 @@ interface EventDao {
    *   event ID).
    */
   @Query(
-      "DELETE FROM calendar_events WHERE id = :eventId") // Убедись, что поле ID в твоей Entity
-                                                         // называется 'id'
+      "DELETE FROM calendar_events WHERE id = :eventId")
   suspend fun deleteEventById(eventId: String)
 
     /**

@@ -11,22 +11,21 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
-@InstallIn(SingletonComponent::class) // Говорим, что эта зависимость будет жить столько же, сколько приложение
+@InstallIn(SingletonComponent::class)
 object StorageModule {
 
     @Provides
-    @Singleton // Говорим, что должен быть только один экземпляр SharedPreferences на все приложение
+    @Singleton
     fun provideEncryptedSharedPreferences(
         @ApplicationContext context: Context
     ): SharedPreferences {
-        // Та же самая логика, что была у тебя, но теперь она живет здесь
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
 
         return EncryptedSharedPreferences.create(
             context,
-            "secret_shared_prefs", // Имя файла можно оставить
+            "secret_shared_prefs",
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM

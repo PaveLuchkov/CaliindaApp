@@ -14,9 +14,7 @@ object EventMapper {
   // Принимает ID часового пояса как параметр
   fun mapToEntity(event: CalendarEvent, zoneIdString: String): CalendarEventEntity? {
     try {
-      // 1. Используем поле isAllDay из CalendarEvent (самый надежный способ)
-      val isAllDayEvent = event.isAllDay // <--- Читаем поле
-      // 2. Парсим startTime с учетом часового пояса
+      val isAllDayEvent = event.isAllDay
       val startTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)
 
       if (startTimeInstant == null) {
@@ -27,21 +25,16 @@ object EventMapper {
       }
       val startTimeMillis = startTimeInstant.toEpochMilli()
 
-      // 3. Парсим endTime с учетом часового пояса
       val endTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.endTime, zoneIdString)
 
       val endTimeMillis: Long =
           when {
-            // Есть валидный endTimeInstant И он строго после startTime
             endTimeInstant != null && endTimeInstant.toEpochMilli() > startTimeMillis -> {
               endTimeInstant.toEpochMilli()
             }
-            // Это событие "весь день" (определено по полю isAllDay)
             isAllDayEvent -> {
-              // Конец = начало + 24 часа (начало следующего дня UTC)
               startTimeInstant.plus(1, ChronoUnit.DAYS).toEpochMilli()
             }
-            // Иначе (нет валидного endTime ИЛИ это не "весь день")
             else -> {
               Log.w(
                   TAG,
@@ -67,19 +60,16 @@ object EventMapper {
     }
   }
 
-  // Преобразует Entity из БД в модель для UI/ViewModel
-  // Принимает ID часового пояса для корректного форматирования
+
   fun mapToDomain(entity: CalendarEventEntity, zoneIdString: String): CalendarEvent {
-    // Форматируем время из UTC millis в строки ISO с учетом НУЖНОГО пояса
-    // Обычно для UI нужен пояс пользователя (zoneIdString)
     val startTimeStr = DateTimeUtils.formatMillisToIsoString(entity.startTimeMillis, zoneIdString)
     val endTimeStr = DateTimeUtils.formatMillisToIsoString(entity.endTimeMillis, zoneIdString)
 
     return CalendarEvent(
         id = entity.id,
         summary = entity.summary,
-        startTime = startTimeStr ?: "", // Передаем отформатированную строку
-        endTime = endTimeStr ?: "", // Передаем отформатированную строку
+        startTime = startTimeStr ?: "",
+        endTime = endTimeStr ?: "",
         description = entity.description,
         location = entity.location,
         isAllDay = entity.isAllDay,

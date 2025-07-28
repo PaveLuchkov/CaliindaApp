@@ -53,16 +53,13 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
 
 enum class ApiDeleteEventMode(val value: String) {
-  DEFAULT("default"), // Поведение по умолчанию (обычно вся серия для мастер-события)
-  INSTANCE_ONLY("instance_only") // Только этот экземпляр
-  // Можно добавить ALL_SERIES("all_series"), если бэкенд будет его явно обрабатывать,
-  // но пока DEFAULT часто выполняет эту роль.
+  DEFAULT("default"),
+    INSTANCE_ONLY("instance_only")
 }
 
 enum class ClientEventUpdateMode(val value: String) {
   SINGLE_INSTANCE("single_instance"),
   ALL_IN_SERIES("all_in_series")
-  // THIS_AND_FOLLOWING("this_and_following") // Пока не поддерживается
 }
 
 @Singleton
@@ -72,16 +69,15 @@ constructor(
     @ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
     private val eventDao: EventDao,
-    private val authManager: AuthManager, // Зависимость от AuthManager для токена
+    private val authManager: AuthManager,
     @BackendUrl private val backendBaseUrl: String,
-    private val settingsRepository: SettingsRepository, // Для таймзоны
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher // Внедряем IO диспатчер
+    private val settingsRepository: SettingsRepository,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
   private val TAG = "CalendarDataManager"
-  private val managerScope = CoroutineScope(SupervisorJob() + ioDispatcher) // Свой скоуп
+  private val managerScope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
-  // --- Константы ---
-  companion object {
+    companion object {
     const val INITIAL_LOAD_DAYS_AROUND = 7L
     const val UPDATE_LOAD_DAYS_AROUND = 5L
     const val TRIGGER_PREFETCH_THRESHOLD = 2L
@@ -90,7 +86,6 @@ constructor(
   }
 
 
-  // --- Внутренние состояния ---
   private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
   private val _loadedDateRange = MutableStateFlow<ClosedRange<LocalDate>?>(null)
   private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
@@ -101,7 +96,6 @@ constructor(
     private val fetchJobMutex = Mutex()
     private data class JobHolder(val job: Job, val requestedRange: ClosedRange<LocalDate>)
 
-  // --- Публичные StateFlow для ViewModel ---
   val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
   val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
   val createEventResult: StateFlow<CreateEventResult> = _createEventResult.asStateFlow()
@@ -110,16 +104,13 @@ constructor(
 
   private var activeFetchJob: Job? = null
 
-  // --- Публичные методы для ViewModel ---
-
-  /** Устанавливает текущую видимую дату и запускает проверку/загрузку диапазона */
+    /** Устанавливает текущую видимую дату и запускает проверку/загрузку диапазона */
   fun setCurrentVisibleDate(newDate: LocalDate, forceRefresh: Boolean = false) {
     Log.d(
         TAG,
         "setCurrentVisibleDate: CALLED with $newDate. Current value: ${_currentVisibleDate.value}")
 
-    // Only proceed if date is different OR range is not loaded yet
-    val needsDateUpdate = newDate != _currentVisibleDate.value
+        val needsDateUpdate = newDate != _currentVisibleDate.value
 
     if (!needsDateUpdate && !forceRefresh && _loadedDateRange.value != null) {
       Log.d(
@@ -130,20 +121,16 @@ constructor(
 
     Log.i(TAG, "setCurrentVisibleDate: Proceeding to set date and check range for $newDate")
 
-    // --- Explicit Cancellation ---
-    activeFetchJob?.cancel(
+        activeFetchJob?.cancel(
         CancellationException("New date set: $newDate, forceRefresh=$forceRefresh"))
     Log.d(TAG, "setCurrentVisibleDate: Previous activeFetchJob cancelled (if existed).")
-    // --------------------------
 
-    if (needsDateUpdate) {
+        if (needsDateUpdate) {
       _currentVisibleDate.value = newDate
     }
 
-    // --- ВАЖНО: ПРОВЕРКА АУТЕНТИФИКАЦИИ ПЕРЕД ЗАПУСКОМ ЗАГРУЗКИ ---
-    if (authManager.authState.value.isSignedIn) {
-      // Запускаем корутину ТОЛЬКО если пользователь вошел
-      activeFetchJob =
+        if (authManager.authState.value.isSignedIn) {
+            activeFetchJob =
           managerScope.launch {
             Log.d(
                 TAG,
@@ -154,14 +141,12 @@ constructor(
               Log.d(
                   TAG,
                   "setCurrentVisibleDate: Job ${coroutineContext[Job]} cancelled while ensuring range for $newDate: ${ce.message}")
-              throw ce // Перебрасываем отмену
+              throw ce
             } catch (e: Exception) {
               Log.e(
                   TAG,
                   "setCurrentVisibleDate: Error in ensureDateRangeLoadedAround for $newDate",
                   e)
-              // Возможно, обновить _rangeNetworkState здесь, если ensureDateRangeLoadedAround не
-              // сделает этого
             } finally {
               Log.d(
                   TAG, "setCurrentVisibleDate: Job ${coroutineContext[Job]} finished for $newDate")
@@ -169,14 +154,11 @@ constructor(
           }
       Log.d(TAG, "setCurrentVisibleDate: Assigned new activeFetchJob: $activeFetchJob")
     } else {
-      // Пользователь не вошел - не запускаем загрузку
-      Log.w(
+            Log.w(
           TAG,
           "setCurrentVisibleDate: Skipping range load for $newDate because user is not signed in.")
-      // Опционально: установить состояние ошибки или ожидания входа
-      // _rangeNetworkState.value = EventNetworkState.Error("Требуется вход")
-      activeFetchJob = null // Убедимся, что нет активной задачи
-    }
+            activeFetchJob = null
+        }
   }
 
   /** Предоставляет Flow событий из БД для указанной даты */
@@ -215,7 +197,7 @@ constructor(
           Log.e(TAG, "Error processing events Flow for date $date", e)
           emit(emptyList())
         }
-        .flowOn(ioDispatcher) // Выполняем combine, filter, map, catch на IO потоке
+        .flowOn(ioDispatcher)
   }
 
   /** Создает новое событие через бэкенд */
@@ -228,7 +210,7 @@ constructor(
       description: String?,
       location: String?,
       recurrenceRule: String?
-  ) { // Теперь suspend
+  ) {
       if (summary.isBlank()) {
           _createEventResult.value = CreateEventResult.Error(context.getString(R.string.error_summary_empty))
           return
@@ -240,12 +222,11 @@ constructor(
 
       _createEventResult.value = CreateEventResult.Loading
 
-      // Получаем токен через AuthManager
       val freshToken = authManager.getBackendAuthToken()
       if (freshToken == null) {
           Log.w(TAG, "Cannot create event: Failed to get fresh ID token.")
           _createEventResult.value = CreateEventResult.Error(context.getString(R.string.error_authentication))
-          return // Выход, если нет токена
+          return
       }
 
       val requestBody =
@@ -253,29 +234,23 @@ constructor(
               JSONObject()
                   .apply {
                       put("summary", summary)
-                      // --- ВОЗВРАЩАЕМ ПОЛЯ В КОРЕНЬ ---
-                      put("startTime", startTimeString) // Строка (date или dateTime)
-                      put("endTime", endTimeString) // Строка (date или dateTime)
-                      put("isAllDay", isAllDay) // Булево значение
-                      // Таймзона нужна бэкенду для формирования запроса к Google
+                      put("startTime", startTimeString)
+                      put("endTime", endTimeString)
+                      put("isAllDay", isAllDay)
                       if (!isAllDay && timeZoneId != null) {
-                          put("timeZoneId", timeZoneId) // Отправляем ID таймзоны
+                          put("timeZoneId", timeZoneId)
                       } else {
                           Log.w(TAG, "Sending timed event without timeZoneId to backend!")
-                          // Бэкенд должен будет обработать этот случай или вернуть ошибку
                       }
-                      // --- КОНЕЦ ВОЗВРАЩЕНИЯ ПОЛЕЙ ---
 
                       description?.takeIf { it.isNotBlank() }?.let { put("description", it) }
                       location?.takeIf { it.isNotBlank() }?.let { put("location", it) }
 
-                      // --- Добавляем recurrence (как и раньше) ---
                       recurrenceRule
                           ?.takeIf { it.isNotBlank() }
                           ?.let { ruleString ->
                               val fullRuleString = "RRULE:$ruleString"
                               val recurrenceArray = JSONArray().apply { put(fullRuleString) }
-                              // Убедитесь, что ключ "recurrence" ожидает ваш бэкенд
                               put("recurrence", recurrenceArray)
                           }
                   }
@@ -290,18 +265,16 @@ constructor(
       val request =
           Request.Builder()
               .url("$backendBaseUrl/calendar/events")
-              .header("Authorization", "Bearer $freshToken") // Используем полученный токен
+              .header("Authorization", "Bearer $freshToken")
               .post(requestBody)
               .build()
 
       try {
-          // Выполняем запрос в IO dispatcher
           val response = withContext(ioDispatcher) { okHttpClient.newCall(request).execute() }
           if (response.isSuccessful) {
               Log.i(TAG, "Event created successfully via backend.")
               _createEventResult.value = CreateEventResult.Success
-              // Обновляем данные для текущего видимого дня после успеха
-              refreshDate(_currentVisibleDate.value) // Используем новую функцию refreshDate
+              refreshDate(_currentVisibleDate.value)
           } else {
               val errorMsg = parseBackendError(response.body?.string(), response.code)
               Log.e(TAG, "Error creating event via backend: ${response.code} - $errorMsg")
@@ -314,8 +287,6 @@ constructor(
           Log.e(TAG, "Error creating event", e)
           _createEventResult.value = CreateEventResult.Error(context.getString(R.string.error_unknown) + ": ${e.message}")
       } finally {
-          // Сбросить состояние Loading, если Success/Error не установились (маловероятно, но для
-          // надежности)
           if (_createEventResult.value is CreateEventResult.Loading) {
               _createEventResult.value = CreateEventResult.Idle
           }
@@ -344,7 +315,7 @@ constructor(
     suspend fun deleteEvent(
         eventId: String,
         mode: ApiDeleteEventMode = ApiDeleteEventMode.DEFAULT
-    ) { // <-- ДОБАВЛЕН ПАРАМЕТР mode
+    ) {
         if (_deleteEventResult.value is DeleteEventResult.Loading) {
             Log.w(
                 TAG,
@@ -362,17 +333,15 @@ constructor(
             return
         }
 
-        // --- НОВОЕ: Формируем URL с query-параметром mode ---
         var url = "$backendBaseUrl/calendar/events/$eventId"
         if (mode != ApiDeleteEventMode.DEFAULT) {
             url += "?mode=${mode.value}"
         }
         Log.d(TAG, "Delete request URL: $url")
-        // ---------------------------------------------------
 
         val request =
             Request.Builder()
-                .url(url) // Используем обновленный URL
+                .url(url)
                 .delete()
                 .header("Authorization", "Bearer $freshToken")
                 .build()
@@ -429,7 +398,7 @@ constructor(
 
     suspend fun updateEvent(
         eventId: String,
-        updateData: UpdateEventApiRequest, // Данные для обновления
+        updateData: UpdateEventApiRequest,
         mode: ClientEventUpdateMode
     ) {
         if (_updateEventResult.value is UpdateEventResult.Loading) {
@@ -463,7 +432,7 @@ constructor(
                 .url(url)
                 .patch(
                     requestBodyJson.toRequestBody(
-                        "application/json; charset=utf-8".toMediaType())) // Используем PATCH
+                        "application/json; charset=utf-8".toMediaType()))
                 .header("Authorization", "Bearer $freshToken")
                 .build()
 
@@ -521,28 +490,22 @@ constructor(
   suspend fun refreshDate(centerDateToRefreshAround: LocalDate) {
       Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
 
-      // Отменяем любую текущую логику определения диапазона (activeFetchJob из setCurrentVisibleDate)
       activeFetchJob?.cancel(CancellationException("Manual refresh triggered for $centerDateToRefreshAround"))
       Log.d(TAG, "refreshDate: Previous activeFetchJob (ensure...) cancelled (if existed).")
 
-      // Определяем целевой диапазон для принудительного обновления
       val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(UPDATE_LOAD_DAYS_AROUND)
       val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(UPDATE_LOAD_DAYS_AROUND)
       val targetRefreshRange = targetRefreshRangeStart..targetRefreshRangeEnd
       Log.d(TAG, "refreshDate: Target refresh range is $targetRefreshRange")
 
-      // Принудительно отменяем текущую *сетевую* операцию, если она есть,
-      // так как это force refresh.
       fetchJobMutex.withLock {
           fetchJobHolder?.job?.cancel(CancellationException("Force refresh for $centerDateToRefreshAround"))
           fetchJobHolder = null
           Log.d(TAG, "refreshDate: Cancelled existing fetchJobHolder due to force refresh.")
       }
 
-      // Запускаем новую загрузку через защищенный механизм. `replace = true` для refresh.
-      launchProtectedFetch(targetRefreshRange, true) // true для replaceWholeLoadedRange
+      launchProtectedFetch(targetRefreshRange, true)
 
-      // refreshDate теперь неблокирующий. ViewModel и UI должны реагировать на изменения _rangeNetworkState.
   }
 
   /** Сбрасывает состояние ошибки сети */
@@ -552,11 +515,9 @@ constructor(
     }
   }
 
-  // --- Приватные/внутренние методы ---
-
-  /** Проверяет, нужно ли загружать/расширять диапазон дат */
+    /** Проверяет, нужно ли загружать/расширять диапазон дат */
   private suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) =
-      withContext(ioDispatcher) { // В IO
+      withContext(ioDispatcher) {
           val currentlyLoaded = _loadedDateRange.value
           val initialOrJumpTargetRange =
               centerDate.minusDays(INITIAL_LOAD_DAYS_AROUND)..centerDate.plusDays(INITIAL_LOAD_DAYS_AROUND)
@@ -564,19 +525,18 @@ constructor(
 
           if (forceLoad) {
               Log.i(TAG, "Force load requested for $centerDate. Fetching range: $initialOrJumpTargetRange")
-              // Принудительно отменяем текущую *сетевую* операцию, если она есть
               fetchJobMutex.withLock {
                   fetchJobHolder?.job?.cancel(CancellationException("Force load for $centerDate"))
                   fetchJobHolder = null
                   Log.d(TAG, "ensureDateRangeLoadedAround: Cancelled existing fetchJobHolder due to forceLoad.")
               }
-              launchProtectedFetch(initialOrJumpTargetRange, true) // true для replaceWholeLoadedRange
+              launchProtectedFetch(initialOrJumpTargetRange, true)
               return@withContext
           }
 
           if (currentlyLoaded == null) {
               Log.i(TAG, "Initial load for $centerDate. Fetching range: $initialOrJumpTargetRange")
-              launchProtectedFetch(initialOrJumpTargetRange, true) // true для replaceWholeLoadedRange
+              launchProtectedFetch(initialOrJumpTargetRange, true)
           } else {
               val isJump =
                   centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS) ||
@@ -584,13 +544,12 @@ constructor(
 
               if (isJump) {
                   Log.i(TAG, "Jump detected for $centerDate. Fetching new range: $initialOrJumpTargetRange")
-                  // При "прыжке" также можно отменить текущую загрузку, если она нерелевантна
                   fetchJobMutex.withLock {
                       fetchJobHolder?.job?.cancel(CancellationException("Jump detected for $centerDate"))
                       fetchJobHolder = null
                       Log.d(TAG, "ensureDateRangeLoadedAround: Cancelled existing fetchJobHolder due to jump.")
                   }
-                  launchProtectedFetch(initialOrJumpTargetRange, true) // true для replaceWholeLoadedRange
+                  launchProtectedFetch(initialOrJumpTargetRange, true)
               } else {
                   var rangeToFetchDeltaStart: LocalDate? = null
                   var rangeToFetchDeltaEnd: LocalDate? = null
@@ -606,7 +565,7 @@ constructor(
                   }
 
                   if (rangeToFetchDeltaStart != null && rangeToFetchDeltaEnd != null) {
-                      launchProtectedFetch(rangeToFetchDeltaStart..rangeToFetchDeltaEnd, false) // false для replace (это дельта)
+                      launchProtectedFetch(rangeToFetchDeltaStart..rangeToFetchDeltaEnd, false)
                   } else {
                       Log.d(TAG, "No delta load needed for $centerDate. It is comfortably within $currentlyLoaded.")
                   }
@@ -638,7 +597,6 @@ constructor(
         replaceWholeLoadedRangeWithThis: Boolean
     ) {
 
-        // --- 1. ПОЛУЧЕНИЕ ТОКЕНА (ОТМЕНЯЕМАЯ ЧАСТЬ) ---
         var freshToken: String? = null
         var attempts = 0
         val maxAttempts = 3
@@ -650,13 +608,12 @@ constructor(
         while (freshToken == null && attempts < maxAttempts) {
             attempts++
             try {
-                // authManager.getFreshIdToken() - это suspend функция, она может быть прервана отменой.
                 freshToken = authManager.getBackendAuthToken()
                 if (freshToken == null && attempts < maxAttempts) {
                     Log.w(
                         TAG,
                         "FADR: Failed to get token (attempt $attempts/$maxAttempts) for $startDate to $endDate. Retrying in ${retryDelay}ms...")
-                    delay(retryDelay) // delay() также реагирует на отмену корутины.
+                    delay(retryDelay)
                 }
             } catch (e: CancellationException) {
                 Log.i(
@@ -670,14 +627,11 @@ constructor(
             Log.w(
                 TAG,
                 "FADR: Cannot fetch range $startDate-$endDate. Failed to get fresh ID token after $maxAttempts attempts.")
-            // Если не удалось получить токен, устанавливаем ошибку и выходим.
-            // Это не отмена, а логическая ошибка.
             _rangeNetworkState.value = EventNetworkState.Error(context.getString(R.string.error_authentication))
             return
         }
         Log.d(TAG, "FADR: Token acquired for $startDate to $endDate.")
 
-        // --- 2. УСТАНОВКА СОСТОЯНИЯ ЗАГРУЗКИ И НАЧАЛО НЕОТМЕНЯЕМОЙ ОПЕРАЦИИ ---
         _rangeNetworkState.value = EventNetworkState.Loading
         Log.i(
             TAG,
@@ -698,9 +652,6 @@ constructor(
                     Request.Builder().url(url).get().header("Authorization", "Bearer $freshToken").build()
 
                 try {
-                    // okHttpClient.newCall(request).execute() - блокирующий вызов.
-                    // NonCancellable защищает эту корутину от внешней отмены во время выполнения этого
-                    // вызова.
                     val responseBodyString =
                         okHttpClient.newCall(request).execute().use { response ->
                             if (!response.isSuccessful) {
@@ -708,41 +659,37 @@ constructor(
                                 Log.e(
                                     TAG,
                                     "[NC] Error fetching range from backend for $startDate to $endDate: ${response.code} - $errorMsg")
-                                // Устанавливаем состояние ошибки ВНУТРИ NonCancellable блока
                                 _rangeNetworkState.value =
                                     EventNetworkState.Error(context.getString(R.string.error_server) + ": $errorMsg (${response.code})")
-                                return@withContext // Выходим из NonCancellable блока
+                                return@withContext
                             }
                             response.body?.string()
                         }
 
-                    // Проверяем, не установили ли мы ошибку на предыдущем шаге
                     if (_rangeNetworkState.value is EventNetworkState.Error) {
                         Log.w(
                             TAG,
                             "[NC] Skipping further processing for $startDate to $endDate due to earlier error in NC block.")
-                        return@withContext // Выходим, так как ошибка уже установлена
+                        return@withContext
                     }
 
                     if (responseBodyString.isNullOrBlank()) {
                         Log.w(TAG, "[NC] Empty response body for range $startDate to $endDate.")
-                        // saveEventsToDb - suspend функция, но она вызовется в NonCancellable контексте
                         saveEventsToDb(emptyList(), startDate, endDate)
-                        updateLoadedRange(startDate..endDate, replaceWholeLoadedRangeWithThis) // Не suspend
-                        _rangeNetworkState.value = EventNetworkState.Idle // Успех (пустой ответ)
+                        updateLoadedRange(startDate..endDate, replaceWholeLoadedRangeWithThis)
+                        _rangeNetworkState.value = EventNetworkState.Idle
                         Log.i(TAG, "[NC] Successfully processed EMPTY response for $startDate to $endDate.")
                     } else {
                         Log.i(
                             TAG,
                             "[NC] Range received from network for $startDate to $endDate. Size: ${responseBodyString.length}")
-                        val networkEvents = parseEventsResponse(responseBodyString) // Не suspend
-                        saveEventsToDb(networkEvents, startDate, endDate) // Suspend, но в NonCancellable
-                        updateLoadedRange(startDate..endDate, replaceWholeLoadedRangeWithThis) // Не suspend
-                        _rangeNetworkState.value = EventNetworkState.Idle // Успех
+                        val networkEvents = parseEventsResponse(responseBodyString)
+                        saveEventsToDb(networkEvents, startDate, endDate)
+                        updateLoadedRange(startDate..endDate, replaceWholeLoadedRangeWithThis)
+                        _rangeNetworkState.value = EventNetworkState.Idle
                         Log.i(TAG, "[NC] Successfully processed NON-EMPTY response for $startDate to $endDate.")
                     }
                 } catch (e: IOException) {
-                    // Эти ошибки (сетевые, парсинг) происходят ВНУТРИ NonCancellable блока.
                     Log.e(
                         TAG, "[NC] IOException during network call/processing for $startDate to $endDate", e)
                     _rangeNetworkState.value = EventNetworkState.Error(context.getString(R.string.error_network) + " (in NC): ${e.message}")
@@ -751,8 +698,6 @@ constructor(
                     _rangeNetworkState.value =
                         EventNetworkState.Error(context.getString(R.string.error_json_parsing) + " (in NC): ${e.message}")
                 } catch (e: Exception) {
-                    // Любые другие неожиданные ошибки ВНУТРИ NonCancellable блока.
-                    // Сюда не должна попадать CancellationException от *внешней* отмены.
                     Log.e(TAG, "[NC] Unexpected Exception for $startDate to $endDate", e)
                     _rangeNetworkState.value =
                         EventNetworkState.Error(context.getString(R.string.error_unknown) + " (in NC): ${e.message}")
@@ -760,26 +705,13 @@ constructor(
                 Log.i(
                     TAG,
                     "[NC] EXIT NonCancellable block for $startDate to $endDate. Final state: ${_rangeNetworkState.value}")
-            } // --- Конец NonCancellable блока ---
+            }
         } catch (e: CancellationException) {
-            // Этот блок `catch` сработает, если отмена произошла *ПОСЛЕ* установки
-            // `_rangeNetworkState.value = Loading`,
-            // но *ДО* фактического входа в `withContext(NonCancellable)`.
-            // `NonCancellable` блок сам по себе не должен пробрасывать `CancellationException` от внешней
-            // отмены.
             Log.i(
                 TAG,
                 "FADR: Operation CANCELLED for $startDate to $endDate *before* NonCancellable block (but after setting Loading). Job: ${coroutineContext[Job]}")
-            // Состояние Loading будет сброшено в `finally`.
-            // Важно перебросить CancellationException, чтобы родительская корутина (activeFetchJob)
-            // корректно завершилась как отмененная.
             throw e
         } catch (e: Exception) {
-            // Этот блок поймает исключения, которые могли произойти *вне* `NonCancellable` блока
-            // (например, если сам `withContext(NonCancellable)` бросил что-то при инициализации, что
-            // маловероятно),
-            // но *после* установки `Loading` и *до* или *после* `NonCancellable` блока.
-            // Ошибки ВНУТРИ `NonCancellable` блока обрабатываются его собственным `try-catch`.
             Log.e(
                 TAG,
                 "FADR: Generic Exception for $startDate to $endDate (outside NC block, or unhandled before NC). Job: ${coroutineContext[Job]}",
@@ -787,20 +719,11 @@ constructor(
             _rangeNetworkState.value =
                 EventNetworkState.Error(context.getString(R.string.error_unknown) + " (outside NC): ${e.message}")
         } finally {
-            // Этот блок `finally` выполнится всегда:
-            // - после нормального завершения `try` блока (включая `NonCancellable`).
-            // - после любого исключения, пойманного в `catch` блоках.
-            // - если `try` блок был прерван `CancellationException` (которая потом перебрасывается).
-            // Его задача - убедиться, что состояние `Loading` не "зависло".
-            // Если `NonCancellable` блок успешно выполнился, он сам установит `Idle` или `Error`.
-            // Этот `finally` важен для случаев, когда отмена или ошибка произошли *до* `NonCancellable`
-            // блока,
-            // но *после* установки `_rangeNetworkState.value = Loading`.
             if (_rangeNetworkState.value is EventNetworkState.Loading) {
                 Log.w(
                     TAG,
                     "FADR FINALLY: State still Loading for $startDate to $endDate. This implies cancellation/error before NC block completed its state update. Resetting to Idle. Job: ${coroutineContext[Job]}")
-                _rangeNetworkState.value = EventNetworkState.Idle // Безопасный сброс в состояние Idle
+                _rangeNetworkState.value = EventNetworkState.Idle
             }
             Log.d(
                 TAG,
@@ -814,12 +737,11 @@ constructor(
       startDate: LocalDate,
       endDate: LocalDate
   ) =
-      withContext(ioDispatcher) { // Явно указываем IO
-        // Получаем АКТУАЛЬНУЮ таймзону перед маппингом
+      withContext(ioDispatcher) {
         val currentTimeZoneId =
             try {
               settingsRepository.timeZoneFlow
-                  .first() // Берем последнее значение из Flow настроек
+                  .first()
                   .ifEmpty { ZoneId.systemDefault().id }
             } catch (e: Exception) {
               Log.w(TAG, "Could not get timezone from settings, using system default.", e)
@@ -875,20 +797,19 @@ constructor(
                     val startTimeStr = eventObject.optString("startTime")
                     val endTimeStr = eventObject.optString("endTime")
                     val id = eventObject.optString("id")
-                    // Use getString resource for default title
                     val summary = eventObject.optString("summary", context.getString(R.string.event_no_title))
                     val description: String? =
                         if (eventObject.has("description") && !eventObject.isNull("description")) {
                             eventObject.getString("description")
                         } else {
-                            null // Явно присваиваем Kotlin null
-                        } // Объявляем как nullable String
+                            null
+                        }
                     val location: String? =
                         if (eventObject.has("location") && !eventObject.isNull("location")) {
                             eventObject.getString("location")
                         } else {
-                            null // Явно присваиваем Kotlin null
-                        } // Объявляем как nullable String
+                            null
+                        }
                     val recurringEventId: String?
                     if (eventObject.has("recurringEventId") && !eventObject.isNull("recurringEventId")) {
                         val str = eventObject.getString("recurringEventId")
@@ -908,12 +829,10 @@ constructor(
                     if (eventObject.has("recurrenceRule") && !eventObject.isNull("recurrenceRule")) {
                         val rawRecurrenceRuleFromApi = eventObject.getString("recurrenceRule")
 
-                        // Проверяем, что полученная строка не является буквально "null" и не пустая
                         if (rawRecurrenceRuleFromApi != "null" && rawRecurrenceRuleFromApi.isNotBlank()) {
                             if (rawRecurrenceRuleFromApi.startsWith("RRULE:")) {
                                 finalRRuleForCalendarEvent = rawRecurrenceRuleFromApi.removePrefix("RRULE:")
                             } else {
-                                // Если префикса нет, но строка не "null" и не пустая, берем как есть
                                 finalRRuleForCalendarEvent = rawRecurrenceRuleFromApi
                                 Log.w(
                                     TAG,
@@ -936,7 +855,7 @@ constructor(
                             startTime = startTimeStr,
                             endTime =
                                 endTimeStr.takeIf { !it.isNullOrEmpty() }
-                                    ?: startTimeStr, // Используем твой fallback
+                                    ?: startTimeStr,
                             description = description,
                             location = location,
                             isAllDay = isAllDay,
@@ -949,7 +868,7 @@ constructor(
             }
         } catch (e: JSONException) {
             Log.e(TAG, "Failed to parse events JSON array", e)
-            throw e // Пробрасываем выше
+            throw e
         }
         return events
     }
@@ -957,78 +876,53 @@ constructor(
     private fun parseBackendError(responseBody: String?, code: Int): String {
         return try {
             val json = JSONObject(responseBody ?: "{}")
-            // Use getString resource with format for code
             json.optString("detail", context.getString(R.string.error_server_code_format, code))
         } catch (e: JSONException) {
-            // Fallback to a simpler string resource if JSON parsing fails
             context.getString(R.string.error_server_code_format, code)
         }
     }
 
     private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replaceWholeLoadedRange: Boolean) {
-        // Эта функция сама по себе не suspend, она запускает корутину для управления.
-        // Вызывается из suspend функций (ensureDateRangeLoadedAround, refreshDate).
-        managerScope.launch { // Оберточная корутина для управления доступом и запуском основной работы
-            fetchJobMutex.withLock { // Защищаем доступ к fetchJobHolder и _rangeNetworkState
+        managerScope.launch {
+            fetchJobMutex.withLock {
                 val currentActiveJobDetails = fetchJobHolder?.takeIf { it.job.isActive }
 
                 if (currentActiveJobDetails != null) {
                     val currentlyFetchingRange = currentActiveJobDetails.requestedRange
 
-                    // 1. Если новый диапазон уже полностью покрывается текущей активной загрузкой
                     if (rangeToFetch.start >= currentlyFetchingRange.start && rangeToFetch.endInclusive <= currentlyFetchingRange.endInclusive) {
                         Log.d(TAG, "launchProtectedFetch: New range $rangeToFetch is covered by ongoing $currentlyFetchingRange. Skipping.")
-                        return@launch // Выход из managerScope.launch (оберточной корутины)
+                        return@launch
                     }
-
-                    // 2. Если _rangeNetworkState.value == EventNetworkState.Loading, это значит,
-                    //    что currentActiveJobDetails.job активно что-то делает (сеть/БД).
-                    //    Даем ему завершиться. Следующий триггер (скролл/обновление)
-                    //    снова вызовет ensureDateRangeLoadedAround, и если диапазон все еще нужен, он будет загружен.
                     if (_rangeNetworkState.value == EventNetworkState.Loading) {
                         Log.d(TAG, "launchProtectedFetch: Network is already Loading (for $currentlyFetchingRange). New request for $rangeToFetch will be deferred. Skipping new launch.")
                         return@launch
                     }
-
-                    // 3. Если есть активная джоба (currentActiveJobDetails != null),
-                    //    но _rangeNetworkState.value НЕ Loading (например, Idle после ошибки или отмены до установки Loading),
-                    //    ИЛИ новый диапазон не покрывается текущим (проверка на это была выше, но для ясности).
-                    //    В этом случае, лучше отменить старую "зависшую" или нерелевантну джобу и начать новую.
                     Log.d(TAG, "launchProtectedFetch: New range $rangeToFetch. Cancelling previous job (if any was active but not in Loading state) for $currentlyFetchingRange.")
                     currentActiveJobDetails.job.cancel(CancellationException("Superseded by new fetch for $rangeToFetch"))
-                    // fetchJobHolder будет перезаписан ниже новой джобой.
                 }
 
-                // Если дошли сюда: либо не было активной/релевантной загрузки, либо предыдущая была отменена.
-                // Устанавливаем Loading ДО запуска новой джобы, чтобы другие вызовы это увидели.
                 _rangeNetworkState.value = EventNetworkState.Loading
                 Log.i(TAG, "launchProtectedFetch: Set _rangeNetworkState to Loading. Starting fetch for $rangeToFetch.")
 
-                val newActualFetchJob = managerScope.launch { // Это уже сама работающая джоба для FADR
+                val newActualFetchJob = managerScope.launch {
                     try {
                         fetchAndStoreDateRange(rangeToFetch.start, rangeToFetch.endInclusive, replaceWholeLoadedRange)
                     } catch (e: CancellationException) {
                         Log.i(TAG, "launchProtectedFetch/newActualFetchJob: Fetch job for $rangeToFetch was cancelled.", e)
-                        // FADR.finally должен обработать _rangeNetworkState.
-                        throw e // Перебросить, чтобы Job завершился как cancelled.
+                        throw e
                     } catch (e: Exception) {
                         Log.e(TAG, "launchProtectedFetch/newActualFetchJob: Exception in fetch job for $rangeToFetch", e)
-                        // FADR должен установить ошибку. Если нет, то здесь как fallback.
                         if (_rangeNetworkState.value !is EventNetworkState.Error && _rangeNetworkState.value != EventNetworkState.Idle) {
                             _rangeNetworkState.value = EventNetworkState.Error("FADR Error unhandled: ${e.message}")
                         }
-                        // Не перебрасываем, чтобы Job завершился как completed (с ошибкой).
                     } finally {
-                        // Этот finally для newActualFetchJob
-                        fetchJobMutex.withLock { // Синхронизация для очистки fetchJobHolder
-                            // Убедимся, что это та же джоба, которую мы отслеживали
+                        fetchJobMutex.withLock {
                             if (fetchJobHolder?.job == coroutineContext[Job]) {
                                 fetchJobHolder = null
                                 Log.d(TAG, "launchProtectedFetch (finally of newActualFetchJob): Cleared fetchJobHolder for $rangeToFetch.")
                             }
                         }
-                        // FADR.finally должен сбросить Loading в Idle/Error.
-                        // Дополнительная проверка на случай, если FADR не справился, а джоба завершилась.
                         if (_rangeNetworkState.value == EventNetworkState.Loading && !coroutineContext.isActive) {
                             Log.w(TAG, "launchProtectedFetch (finally of newActualFetchJob): Job for $rangeToFetch ended, but state is still Loading. Resetting to Idle.")
                             _rangeNetworkState.value = EventNetworkState.Idle
@@ -1036,8 +930,8 @@ constructor(
                     }
                 }
                 fetchJobHolder = JobHolder(newActualFetchJob, rangeToFetch)
-            } // конец fetchJobMutex.withLock
-        } // конец managerScope.launch (обертка)
+            }
+        }
     }
 
     /**
@@ -1051,7 +945,6 @@ constructor(
                 eventDao.deleteAllEvents()
                 Log.i(TAG, "Local database cleared successfully.")
             }
-            // Сбрасываем также внутреннее состояние загруженного диапазона.
             _loadedDateRange.value = null
             Log.d(TAG, "Reset _loadedDateRange state.")
 
@@ -1066,7 +959,6 @@ constructor(
     return newStart..newEnd
   }
 
-  // Helper minOf/maxOf для LocalDate (если нет в стандартной библиотеке нужной версии)
   private fun minOf(a: LocalDate, b: LocalDate): LocalDate = if (a.isBefore(b)) a else b
 
   private fun maxOf(a: LocalDate, b: LocalDate): LocalDate = if (a.isAfter(b)) a else b

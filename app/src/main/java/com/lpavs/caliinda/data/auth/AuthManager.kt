@@ -124,7 +124,7 @@ constructor(
     managerScope.launch {
       _authState.update { it.copy(isLoading = true, authError = null) }
       try {
-        val googleIdOption = buildGoogleIdOption(filterByAuthorizedAccounts = true)
+        val googleIdOption = buildGoogleIdOption(filterByAuthorizedAccounts = false)
         val request = GetCredentialRequest.Builder()
           .addCredentialOption(googleIdOption)
           .build()
