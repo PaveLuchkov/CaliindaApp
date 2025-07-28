@@ -6,8 +6,6 @@ import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.tasks.Task
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.ai.AiInteractionManager
 import com.lpavs.caliinda.data.ai.model.AiVisualizerState
@@ -19,7 +17,6 @@ import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.data.calendar.DeleteEventResult
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
-import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.data.repo.SettingsRepository
 import com.lpavs.caliinda.di.ITimeTicker
