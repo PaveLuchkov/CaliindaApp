@@ -233,7 +233,7 @@ constructor(
   /** Общая функция для отправки текста на бэкенд и обработки ответа */
   private suspend fun processText(text: String) {
     // Получаем токен
-    val freshToken = authManager.getFreshIdToken()
+    val freshToken = authManager.getBackendAuthToken()
     if (freshToken == null) {
       Log.e(TAG, "processText failed: Could not get fresh token.")
       handleBackendError("Ошибка аутентификации") // Обрабатываем как ошибку

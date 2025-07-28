@@ -102,6 +102,8 @@
     <string name="delete_recurring_event_prompt">The event "%1$s" is part of a series. How would you like to delete it?</string>
     <string name="delete_single_instance">Delete only this event</string>
     <string name="delete_all_in_series">Delete the entire series</string>
+    <string name="stop_repeating">Stop repeating</string>
+    <string name="delete_this_and_following">Delete this and following</string>
 
     <string name="edit_recurring_event_title">Edit recurring event</string>
     <string name="edit_recurring_event_prompt">How would you like to edit "%1$s"?</string>

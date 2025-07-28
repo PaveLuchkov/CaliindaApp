@@ -16,7 +16,6 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// Интерфейс для удобства тестирования (опционально, но хорошая практика)
 interface ITimeTicker {
   val currentTime: StateFlow<Instant>
 }
@@ -40,15 +39,12 @@ class TimeTicker @Inject constructor() : ITimeTicker { // @Inject constructor д
 }
 
 @Module
-@InstallIn(SingletonComponent::class) // Устанавливаем в компонент приложения
+@InstallIn(SingletonComponent::class)
 abstract class TimeTickerModule {
-
-  // Используем @Binds для предоставления реализации интерфейса
-  // Hilt знает, как создать TimeTicker (@Inject constructor),
-  // и свяжет запрос ITimeTicker с экземпляром TimeTicker.
+    // НЕ УДАЛЯТЬ МОДУЛЬ
   @Binds
-  @Singleton // Убедимся, что связывание тоже синглтонное
+  @Singleton
   abstract fun bindTimeTicker(
-      timeTicker: TimeTicker // Реализация
-  ): ITimeTicker // Интерфейс
+      timeTicker: TimeTicker
+  ): ITimeTicker
 }

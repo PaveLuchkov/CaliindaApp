@@ -1,14 +1,16 @@
 package com.lpavs.caliinda.ui.screens.main
 
 import android.Manifest
+import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -20,7 +22,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -45,7 +46,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.ui.common.BackgroundShapeContext
 import com.lpavs.caliinda.ui.common.BackgroundShapes
 import com.lpavs.caliinda.ui.screens.main.components.AI.AiVisualizer
@@ -79,6 +79,30 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
   val currentVisibleDate by viewModel.currentVisibleDate.collectAsStateWithLifecycle()
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
+  val activity = context as? Activity
+
+    val authorizationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { viewModel.handleAuthorizationResult(it) }
+        } else {
+            Log.w("MainScreen", "Authorization flow was cancelled by user.")
+            viewModel.signOut()
+        }
+    }
+    LaunchedEffect(uiState.authorizationIntent) {
+        uiState.authorizationIntent?.let { pendingIntent ->
+            try {
+                val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
+                authorizationLauncher.launch(intentSenderRequest)
+                viewModel.clearAuthorizationIntent()
+
+            } catch (e: Exception) {
+                Log.e("MainScreen", "Couldn't start authorization UI", e)
+            }
+        }
+    }
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
@@ -87,8 +111,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
           initialSelectedDateMillis =
               currentVisibleDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
       )
-  val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
-  val isListening = uiState.isListening
+
 
   // --- НОВОЕ: Настройка flingBehavior ---
   val customFlingBehavior =
@@ -109,10 +132,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
 
-  // Флаг показа BottomSheet для редактирования
   var showEditEventSheet by remember { mutableStateOf(false) }
-  // Состояние BottomSheet для редактирования (можно использовать отдельное или то же самое, если
-  // они не показываются одновременно)
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
   // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
@@ -162,89 +182,67 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
     if (uiState.showEditEventDialog && uiState.eventBeingEdited != null) {
       showEditEventSheet = true
     } else {
-      // Если ViewModel сказал скрыть диалог редактирования, скрываем и наш BottomSheet
-      if (showEditEventSheet) { // Только если он был показан
+      if (showEditEventSheet) {
         scope
             .launch { editSheetState.hide() }
             .invokeOnCompletion {
               if (!editSheetState.isVisible) {
                 showEditEventSheet = false
-                // Важно: Сообщить ViewModel, что редактирование отменено/завершено,
-                // если это не делается автоматически при onDismiss в EditEventScreen
-                // viewModel.cancelEditEvent() // или аналогичный метод для сброса eventBeingEdited
               }
             }
       }
     }
   }
-  // Если пользователь свайпнул BottomSheet редактирования вниз
   LaunchedEffect(editSheetState.isVisible) {
     if (!editSheetState.isVisible && showEditEventSheet) {
       showEditEventSheet = false
-      viewModel.cancelEditEvent() // Сообщаем ViewModel, что редактирование отменено
+      viewModel.cancelEditEvent()
     }
   }
 
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
-        CalendarAppBar( // Передаем только нужные данные
+        CalendarAppBar(
             onNavigateToSettings = onNavigateToSettings,
             onGoToTodayClick = {
               scope.launch {
                 if (pagerState.currentPage != initialPageIndex) {
-                  // 1. Обновляем ViewModel *до* скролла
                   viewModel.onVisibleDateChanged(today)
-                  // 2. Анимируем скролл
                   pagerState.animateScrollToPage(initialPageIndex)
                 } else {
-                  // Если уже на сегодня, просто обновляем данные
                   viewModel.refreshCurrentVisibleDate()
                 }
               }
             },
             onTitleClick = {
-              // Обновляем состояние DatePicker текущей датой перед показом
               datePickerState.selectableDates
 
-              showDatePicker = true // Показываем диалог
+              showDatePicker = true
             },
             date = currentVisibleDate)
       },
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-      // --- Слой 1: Фон (самый нижний) ---
       BackgroundShapes(BackgroundShapeContext.Main)
 
       VerticalPager(
           state = pagerState,
           modifier = Modifier.fillMaxSize(),
-          // Добавим key, чтобы помочь Pager различать страницы при изменениях
           key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() },
           flingBehavior = customFlingBehavior) { pageIndex ->
-            // Рассчитываем дату для текущей страницы
             val pageDate =
                 remember(pageIndex) { today.plusDays((pageIndex - initialPageIndex).toLong()) }
 
-            // --- НОВОЕ: Компонент для одной страницы/дня ---
             DayEventsPage(
                 date = pageDate,
                 viewModel = viewModel,
             )
           }
-      Column(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalAlignment = Alignment.CenterHorizontally,
-      ) {
-        if (isBusy && !isListening) {
-        //  LoadingIndicator()
-        }
-      }
-      // --- Слой 3: AI Visualizer (рисуется поверх фона и списка) ---
       AiVisualizer(
           aiState = aiState,
           aiMessage = aiMessage,
-          modifier = Modifier.fillMaxSize(), // Занимает всю область Box, но рисует где нужно
+          modifier = Modifier.fillMaxSize(),
           onResultShownTimeout = { viewModel.resetAiStateAfterResult() },
           onAskingShownTimeout = { viewModel.resetAiStateAfterAsking() })
       BottomBar(
@@ -261,10 +259,9 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
             viewModel.updatePermissionStatus(granted)
           }, // Передаем лямбду для обновления разрешений
           isTextInputVisible = isTextInputVisible,
-          viewModel,
           modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
           onCreateEventClick = {
-            selectedDateForSheet = currentVisibleDate // Use current visible date from Pager
+            selectedDateForSheet = currentVisibleDate
             showCreateEventSheet = true
           })
     } // End основной Box
@@ -276,7 +273,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
         confirmButton = {
           TextButton(
               onClick = {
-                showDatePicker = false // Скрываем диалог
+                showDatePicker = false
                 val selectedMillis = datePickerState.selectedDateMillis
                 if (selectedMillis != null) {
                   val selectedDate =
@@ -331,19 +328,17 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = { showCreateEventSheet = false },
         sheetState = sheetState,
-        contentWindowInsets = { WindowInsets.navigationBars } // Recommended for system nav bar
+        contentWindowInsets = { WindowInsets.navigationBars }
         ) {
-          // Use a Box to layer the scrollable content and the fixed button row
           CreateEventScreen(
               viewModel = viewModel,
-              initialDate = selectedDateForSheet, // Pass the selected date
-              onDismiss = { // Lambda for your sheet content to call when it wants to close
+              initialDate = selectedDateForSheet,
+              onDismiss = {
                 scope
                     .launch {
-                      sheetState.hide() // Programmatically hide the sheet
+                      sheetState.hide()
                     }
                     .invokeOnCompletion {
-                      // This ensures state is updated even if hide() is interrupted
                       if (!sheetState.isVisible) {
                         showCreateEventSheet = false
                       }
@@ -354,12 +349,11 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
   }
   if (showEditEventSheet) {
     val eventToEdit = uiState.eventBeingEdited
-    val mode = uiState.selectedUpdateMode // Получаем сохраненный режим
+    val mode = uiState.selectedUpdateMode
 
     if (eventToEdit != null && mode != null) {
       ModalBottomSheet(
           onDismissRequest = {
-            // При свайпе вниз или тапе вне области
             scope
                 .launch { editSheetState.hide() }
                 .invokeOnCompletion {
@@ -397,7 +391,15 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
   }
   if (uiState.showSignInRequiredDialog) {
     LogInScreenDialog(
-        onDismissRequest = { viewModel.onSignInRequiredDialogDismissed() }, viewModel = viewModel)
+        onDismissRequest = { viewModel.onSignInRequiredDialogDismissed() },
+        onSignInClick = {
+            if (activity != null) {
+                viewModel.signIn(activity)
+            } else {
+                Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+            }
+        }
+    )
   }
 
   LaunchedEffect(sheetState.isVisible) {

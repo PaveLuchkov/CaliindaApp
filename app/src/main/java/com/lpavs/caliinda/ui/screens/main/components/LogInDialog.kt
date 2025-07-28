@@ -1,9 +1,5 @@
 package com.lpavs.caliinda.ui.screens.main.components
 
-import android.app.Activity
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -40,44 +36,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.CommonStatusCodes
-import com.google.android.gms.common.api.Status
-import com.google.android.gms.tasks.Tasks
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LogInScreenDialog(
     onDismissRequest: () -> Unit,
-    viewModel: MainViewModel,
+    onSignInClick: () -> Unit,
 ) {
-  val signInLauncher =
-      rememberLauncherForActivityResult(
-          contract = ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-              result.data?.let { intent ->
-                val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-                viewModel.handleSignInResult(task)
-              }
-                  ?: run {
-                    // Обработка случая, когда intent равен null, если это возможно
-                    Log.e("SignInLauncher", "Sign-in result data is null")
-                    viewModel.handleSignInResult(
-                        Tasks.forException(
-                            ApiException(Status(CommonStatusCodes.ERROR, "Sign-in data is null"))))
-                  }
-            } else {
-              // Пользователь отменил вход или произошла ошибка на стороне Google Sign-In UI
-              Log.w(
-                  "SignInLauncher",
-                  "Sign-in failed or cancelled by user. Result code: ${result.resultCode}")
-              // Можно сообщить ViewModel, что попытка входа не удалась из-за отмены пользователем
-              // mainViewModel.handleSignInCancelledByUser() // Если нужен такой метод
-            }
-          }
+
 
   Dialog(
       onDismissRequest = { onDismissRequest() }, // ,
@@ -136,8 +103,7 @@ fun LogInScreenDialog(
                             val expandedSize = ButtonDefaults.MediumContainerHeight
                             Button(
                                 onClick = {
-                                  viewModel.onSignInRequiredDialogConfirmed()
-                                  signInLauncher.launch(viewModel.getSignInIntent())
+                                  onSignInClick()
                                 },
                                 colors =
                                     ButtonColors(

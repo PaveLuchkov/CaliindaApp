@@ -463,7 +463,7 @@ fun DayEventsPage(
       }
     } // End Column
     if (uiState.showDeleteConfirmationDialog && uiState.eventPendingDeletion != null) {
-      DeleteConfirmationDialog( // Твой существующий диалог
+      DeleteConfirmationDialog(
           onConfirm = { viewModel.confirmDeleteEvent() }, onDismiss = { viewModel.cancelDelete() })
     } else if (uiState.showRecurringDeleteOptionsDialog && uiState.eventPendingDeletion != null) {
       RecurringEventDeleteOptionsDialog(

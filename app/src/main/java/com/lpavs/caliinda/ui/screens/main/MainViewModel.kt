@@ -1,12 +1,11 @@
 package com.lpavs.caliinda.ui.screens.main
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.tasks.Task
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.ai.AiInteractionManager
 import com.lpavs.caliinda.data.ai.model.AiVisualizerState
@@ -34,7 +33,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -91,73 +94,42 @@ constructor(
   private val eventCreatedMessage: String =
       context.getString(R.string.event_created) // Получаем строку один раз
 
-  // --- НАБЛЮДАТЕЛИ (вынесены из init для чистоты) ---
   private fun observeAuthState() {
     viewModelScope.launch {
-      // Собираем весь AuthState, чтобы иметь доступ ко всем его полям
-      authManager.authState.collect { auth ->
-        val previousUiState = _uiState.value
-        var shouldShowSignInDialog = previousUiState.showSignInRequiredDialog
-
-        if (!initialAuthCheckCompletedAndProcessed && !auth.isLoading) {
-          // Это первая полная (не isLoading) информация о состоянии авторизации
-          initialAuthCheckCompletedAndProcessed = true
-          if (!auth.isSignedIn && auth.authError == null) {
-            // Silent sign-in не удался (нет явной ошибки, просто не вошел)
-            // Это соответствует вашему логу "SIGN_IN_REQUIRED"
-            Log.d(TAG, "Initial Auth: Not signed in, no explicit error. Triggering sign-in dialog.")
-            shouldShowSignInDialog = true
+      authManager.authState.collect { authState ->
+          val previousUiState = _uiState.value
+          _uiState.update { currentState ->
+              currentState.copy(
+                  isSignedIn = authState.isSignedIn,
+                  userEmail = authState.userEmail,
+                  displayName = authState.displayName,
+                  photo = authState.photoUrl,
+                  showAuthError = authState.authError,
+                  isLoading = calculateIsLoading(authLoading = authState.isLoading),
+                  authorizationIntent = authState.authorizationIntent
+              )
           }
-        }
-
-        // Если пользователь успешно вошел (возможно, после показа диалога), скрываем диалог
-        if (auth.isSignedIn && shouldShowSignInDialog) {
-          shouldShowSignInDialog = false
-        }
-
-        // Если пользователь вышел (auth.isSignedIn стало false), а до этого был внутри
-        // и диалог "требуется вход" не показывался (т.е. это не silent-fail),
-        // то мы не должны снова показывать диалог "требуется вход".
-        // Это обрабатывается тем, что shouldShowSignInDialog не меняется на true в этом случае.
-
-        _uiState.update { currentUiState ->
-          currentUiState.copy(
-              isSignedIn = auth.isSignedIn,
-              userEmail = auth.userEmail,
-              displayName = auth.displayName,
-              photo = auth.photoUrl,
-              showAuthError = auth.authError,
-              isLoading =
-                  calculateIsLoading(
-                      authLoading = auth.isLoading), // Передаем текущий auth.isLoading
-              // Сбрасываем общее сообщение, если изменился статус входа, ошибка или видимость
-              // диалога
-              message =
-                  if (auth.isSignedIn != previousUiState.isSignedIn ||
-                      auth.authError != null ||
-                      shouldShowSignInDialog != previousUiState.showSignInRequiredDialog) {
-                    null
-                  } else {
-                    currentUiState.message
-                  },
-              showSignInRequiredDialog = shouldShowSignInDialog)
-        }
-
-        if (auth.isSignedIn) {
-          Log.d(TAG, "Auth observer: User is signed in. Triggering calendar check.")
-          calendarDataManager.setCurrentVisibleDate(
-              calendarDataManager.currentVisibleDate.value, forceRefresh = true)
-        } else {
-          // Пользователь не вошел. Если это не случай "требуется вход", то просто не вошел.
-          // Данные календаря и так не загрузятся из-за проверки в CalendarDataManager.
-          // Можно дополнительно очистить локальные данные календаря, если необходимо.
-          if (!shouldShowSignInDialog && previousUiState.isSignedIn) {
-            // Это был явный выход пользователя, а не silent fail
-            Log.d(TAG, "Auth observer: User has signed out.")
+          if (!initialAuthCheckCompletedAndProcessed && !authState.isLoading) {
+              initialAuthCheckCompletedAndProcessed = true
+              Log.d(TAG, "Initial auth check completed and processed.")
+              if (!authState.isSignedIn && authState.authError == null) {
+                  Log.d(TAG, "Initial auth check: Showing sign-in required dialog.")
+                  _uiState.update { it.copy(showSignInRequiredDialog = true) }
+              }
           }
-        }
+          if (authState.isSignedIn && _uiState.value.showSignInRequiredDialog) {
+              _uiState.update { it.copy(showSignInRequiredDialog = false) }
+          }
+          if (authState.isSignedIn && !previousUiState.isSignedIn) {
+              _uiState.update { it.copy(showSignInRequiredDialog = false) }
+          }
+          if (authState.isSignedIn && !previousUiState.isSignedIn) {
+              Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
+              calendarDataManager.setCurrentVisibleDate(calendarDataManager.currentVisibleDate.value, forceRefresh = true)
+          }
       }
-    }
+
+      }
   }
 
   private fun observeAiState() {
@@ -351,35 +323,39 @@ constructor(
   }
 
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
-  fun getSignInIntent(): Intent = authManager.getSignInIntent()
-
-  fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) =
-      authManager.handleSignInResult(completedTask)
-
-  fun signOut() {
-    // Перед выходом, если диалог "требуется вход" был активен, его нужно скрыть
-    if (_uiState.value.showSignInRequiredDialog) {
-      _uiState.update { it.copy(showSignInRequiredDialog = false) }
-    }
-    authManager.signOut()
+  fun signIn(activity: Activity) {
+      if (_uiState.value.showSignInRequiredDialog) {
+          _uiState.update { it.copy(showSignInRequiredDialog = false) }
+      }
+      authManager.signIn(activity)
   }
+
+    fun handleAuthorizationResult(intent: Intent) {
+        authManager.handleAuthorizationResult(intent)
+    }
+
+    fun signOut() {
+        if (_uiState.value.showSignInRequiredDialog) {
+            _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        }
+        authManager.signOut()
+    }
+
+    fun clearAuthorizationIntent() {
+        authManager.clearAuthorizationIntent()
+    }
 
   fun clearAuthError() = authManager.clearAuthError()
 
-  fun onSignInRequiredDialogConfirmed() {
-    // Пользователь нажал "Войти" в диалоге "требуется вход"
-    _uiState.update { it.copy(showSignInRequiredDialog = false) }
-    // UI должен будет вызвать getSignInIntent() и запустить Activity for result.
-    // ViewModel здесь просто скрывает диалог.
-  }
+    fun onSignInRequiredDialogConfirmed(activity: Activity) {
+        // Теперь при нажатии "Войти" мы сразу запускаем наш новый флоу
+        signIn(activity)
+    }
 
-  fun onSignInRequiredDialogDismissed() {
-    // Пользователь нажал "Отмена" или закрыл диалог "требуется вход"
-    _uiState.update { it.copy(showSignInRequiredDialog = false) }
-    // Можно здесь дополнительно обновить uiState.message, если хотите
-    // _uiState.update { it.copy(message = "Вход отменен. Функционал ограничен.") }
-    Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
-  }
+    fun onSignInRequiredDialogDismissed() {
+        _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
+    }
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
   fun onVisibleDateChanged(newDate: LocalDate) = calendarDataManager.setCurrentVisibleDate(newDate)
@@ -503,35 +479,88 @@ constructor(
     val eventToDelete = _uiState.value.eventPendingDeletion ?: return
     _uiState.update { it.copy(showDeleteConfirmationDialog = false, eventPendingDeletion = null) }
     viewModelScope.launch {
-      // Для одиночного события или если мы решаем удалить экземпляр как обычное событие (что
-      // сделает его исключением)
-      // или если это мастер и мы хотим удалить всю серию по умолчанию.
       calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.DEFAULT)
     }
   }
 
-  fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-    _uiState.update {
-      it.copy(showRecurringDeleteOptionsDialog = false, eventPendingDeletion = null)
-    }
+    fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
+        val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+        _uiState.update {
+            it.copy(showRecurringDeleteOptionsDialog = false, eventPendingDeletion = null)
+        }
 
-    val mode =
         when (choice) {
-          RecurringDeleteChoice.SINGLE_INSTANCE -> ApiDeleteEventMode.INSTANCE_ONLY
-          RecurringDeleteChoice.ALL_IN_SERIES ->
-              ApiDeleteEventMode.DEFAULT
+            RecurringDeleteChoice.SINGLE_INSTANCE -> {
+                viewModelScope.launch {
+                    calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.INSTANCE_ONLY)
+                }
+            }
+
+            RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
+                handleThisAndFollowingDelete(eventToDelete)
+            }
+
+            RecurringDeleteChoice.ALL_IN_SERIES -> {
+                val idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
+                viewModelScope.launch {
+                    calendarDataManager.deleteEvent(idForBackendCall, ApiDeleteEventMode.DEFAULT)
+                }
+            }
+        }
+    }
+    /**
+     * Обрабатывает удаление текущего и последующих событий.
+     * Это делается путем обновления мастер-события: в его правило повторения (RRULE)
+     * добавляется дата окончания (UNTIL), установленная на день до удаляемого экземпляра.
+     *
+     * @param eventInstance Экземпляр события, с которого начинается удаление.
+     */
+    private fun handleThisAndFollowingDelete(eventInstance: CalendarEvent) {
+        val originalRRule = eventInstance.recurrenceRule
+        if (originalRRule.isNullOrBlank()) {
+            Log.e(TAG, "Cannot perform 'this and following' delete: Event ${eventInstance.id} has no recurrence rule.")
+            _uiState.update { it.copy(showGeneralError = "Не удалось обновить серию: отсутствует правило повторения.") }
+            return
         }
 
-      val idForBackendCall: String = if (mode == ApiDeleteEventMode.INSTANCE_ONLY) {
-            eventToDelete.id
-        } else {
-            eventToDelete.recurringEventId ?: eventToDelete.id
+        val masterEventId = eventInstance.recurringEventId ?: eventInstance.id
+
+        val instanceStartDate: LocalDate = try {
+            OffsetDateTime.parse(eventInstance.startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDate()
+        } catch (e: DateTimeParseException) {
+            try {
+                LocalDate.parse(eventInstance.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
+            } catch (e2: DateTimeParseException) {
+                Log.e(TAG, "Failed to parse event start time in any known format: ${eventInstance.startTime}", e2)
+                _uiState.update { it.copy(showGeneralError = "Ошибка в дате события. Невозможно выполнить операцию.") }
+                return
+            }
         }
 
-    Log.d(TAG, "Confirming recurring delete. Event ID for backend: $idForBackendCall, Mode: $mode")
-    viewModelScope.launch { calendarDataManager.deleteEvent(idForBackendCall, mode) }
-  }
+        val newUntilDate = instanceStartDate.minusDays(1)
+
+        val untilString = newUntilDate.atTime(23, 59, 59).atZone(ZoneOffset.UTC)
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
+
+        val ruleParts = originalRRule.split(';').filterNot {
+            it.startsWith("UNTIL=", ignoreCase = true) || it.startsWith("COUNT=", ignoreCase = true)
+        }
+        val newRRuleString = "RRULE:" + ruleParts.joinToString(";") + ";UNTIL=$untilString"
+
+        val updateRequest = UpdateEventApiRequest(
+            recurrence = listOf(newRRuleString)
+        )
+
+        Log.d(TAG, "Updating master event $masterEventId to stop recurrence. New RRULE: $newRRuleString")
+
+        viewModelScope.launch {
+            calendarDataManager.updateEvent(
+                eventId = masterEventId,
+                updateData = updateRequest,
+                mode = ClientEventUpdateMode.ALL_IN_SERIES
+            )
+        }
+    }
 
   /** Вызывается из UI для сброса флага ошибки удаления после ее показа (например, в Snackbar). */
   fun clearDeleteError() {
@@ -636,12 +665,6 @@ constructor(
           mode = modeFromUi)
     }
   }
-
-  /** Сбрасывает ошибку операции редактирования. */
-  fun clearEditError() {
-    _uiState.update { it.copy(editOperationError = null) }
-  }
-
   fun consumeUpdateEventResult() {
     calendarDataManager.consumeUpdateEventResult()
   }

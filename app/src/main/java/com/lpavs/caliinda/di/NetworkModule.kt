@@ -27,12 +27,7 @@ object NetworkModule {
         .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor(
             HttpLoggingInterceptor().apply {
-              // Уровень логирования можно вынести в BuildConfig
-              // if (BuildConfig.DEBUG) {
               level = HttpLoggingInterceptor.Level.BODY
-              // } else {
-              //    level = HttpLoggingInterceptor.Level.NONE
-              // }
             })
         .build()
   }
@@ -48,7 +43,7 @@ object DatabaseModule {
   @Singleton // Гарантирует один экземпляр базы данных
   fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
     return Room.databaseBuilder(
-        appContext, AppDatabase::class.java, "caliindar_database" // Имя файла БД
+        appContext, AppDatabase::class.java, "caliindar_database"
     )
         // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
         // Но для production нужно реализовать правильные миграции!

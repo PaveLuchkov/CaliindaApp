@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +35,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.Morph
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
@@ -53,12 +51,8 @@ fun GoogleAccountSection(
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   val email = uiState.userEmail ?: stringResource(R.string.loginplease)
   val displayName = uiState.displayName ?: email.substringBefore("@")
-    val photo: Uri? = uiState.photo
+  val photo: Uri? = uiState.photo
   val cornerRadius = cuid.SettingsItemCornerRadius
-
-    val shapeStart = MaterialShapes.Circle
-    val shapeEnd = MaterialShapes.Cookie7Sided
-    val morph = remember { Morph(shapeStart, shapeEnd) }
   Box(
       modifier =
           Modifier.fillMaxWidth()
@@ -99,7 +93,7 @@ fun GoogleAccountSection(
             Box(modifier = Modifier.width(130.dp)) {  Text(text = displayName, style = typography.bodyLarge, maxLines = 2)}
               Spacer(Modifier.weight(1f))
               Box(modifier = Modifier.padding(6.dp)) {
-                Box() {
+                Box {
                   if (!uiState.isSignedIn) {
                     Button(
                         onClick = onSignInClick, // Вызываем лямбду

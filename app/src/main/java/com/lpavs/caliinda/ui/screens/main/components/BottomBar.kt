@@ -56,7 +56,6 @@ fun BottomBar(
     onRecordStopAndSend: () -> Unit, // Лямбда для остановки/отправки
     onUpdatePermissionResult: (Boolean) -> Unit, // Лямбда для обновления разрешения
     isTextInputVisible: Boolean,
-    viewModel: MainViewModel,
     modifier: Modifier = Modifier,
     onCreateEventClick: () -> Unit,
 ) {
@@ -68,7 +67,6 @@ fun BottomBar(
           !uiState.isLoading &&
           !uiState.isListening
   var expanded by rememberSaveable { mutableStateOf(true) }
-  val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
   var onKeyboardToggle by remember { mutableStateOf(true) }
 
   // Request focus when text input becomes visible

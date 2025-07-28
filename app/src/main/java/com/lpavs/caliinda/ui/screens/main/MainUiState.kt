@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.ui.screens.main
 
+import android.app.PendingIntent
 import android.net.Uri
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 
@@ -12,7 +13,7 @@ data class MainUiState(
     val isLoading: Boolean = false,
     val isListening: Boolean = false,
     val isPermissionGranted: Boolean = false,
-    val message: String? = "Требуется вход.",
+    val message: String? = "Требуется вход.", // ?? TODO исправить
     val showGeneralError: String? = null,
     val showAuthError: String? = null,
     val eventToDeleteId: String? = null,
@@ -28,6 +29,7 @@ data class MainUiState(
     val eventForDetailedView: CalendarEvent? = null,
     val showEventDetailedView: Boolean = false,
     val showSignInRequiredDialog: Boolean = false,
+    val authorizationIntent: PendingIntent? = null,
 )
 
 data class CalendarEvent(
