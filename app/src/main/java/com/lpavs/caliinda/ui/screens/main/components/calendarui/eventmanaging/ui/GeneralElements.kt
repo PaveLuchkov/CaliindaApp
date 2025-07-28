@@ -121,8 +121,9 @@ fun RecurringEventDeleteOptionsDialog(
     val radioOptions =
         listOf(
             RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
-            RecurringDeleteChoice.THIS_AND_FOLLOWING to stringResource(R.string.delete_this_and_following),
-            RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series))
+            RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series),
+            RecurringDeleteChoice.THIS_AND_FOLLOWING to stringResource(R.string.delete_this_and_following))
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -165,7 +166,6 @@ fun RecurringEventDeleteOptionsDialog(
                             color =
                                 when (option) {
                                     RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
-                                    RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.tertiary
                                     else -> LocalContentColor.current
                                 })
                     }

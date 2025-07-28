@@ -529,24 +529,27 @@ constructor(
         val masterEventId = eventInstance.recurringEventId ?: eventInstance.id
 
         val instanceStartDate: LocalDate = try {
-            if (eventInstance.isAllDay) {
-                LocalDate.parse(eventInstance.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
-            } else {
-                OffsetDateTime.parse(eventInstance.startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDate()
-            }
+            OffsetDateTime.parse(eventInstance.startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDate()
         } catch (e: DateTimeParseException) {
-            Log.e(TAG, "Failed to parse event start time: ${eventInstance.startTime}", e)
-            _uiState.update { it.copy(showGeneralError = "Ошибка в дате события. Невозможно выполнить операцию.") }
-            return
+            try {
+                LocalDate.parse(eventInstance.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
+            } catch (e2: DateTimeParseException) {
+                Log.e(TAG, "Failed to parse event start time in any known format: ${eventInstance.startTime}", e2)
+                _uiState.update { it.copy(showGeneralError = "Ошибка в дате события. Невозможно выполнить операцию.") }
+                return
+            }
         }
 
         val newUntilDate = instanceStartDate.minusDays(1)
+
         val untilString = newUntilDate.atTime(23, 59, 59).atZone(ZoneOffset.UTC)
             .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
+
         val ruleParts = originalRRule.split(';').filterNot {
-            it.startsWith("UNTIL=") || it.startsWith("COUNT=")
+            it.startsWith("UNTIL=", ignoreCase = true) || it.startsWith("COUNT=", ignoreCase = true)
         }
         val newRRuleString = "RRULE:" + ruleParts.joinToString(";") + ";UNTIL=$untilString"
+
         val updateRequest = UpdateEventApiRequest(
             recurrence = listOf(newRRuleString)
         )
