@@ -259,7 +259,6 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
             viewModel.updatePermissionStatus(granted)
           }, // Передаем лямбду для обновления разрешений
           isTextInputVisible = isTextInputVisible,
-          viewModel,
           modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
           onCreateEventClick = {
             selectedDateForSheet = currentVisibleDate
