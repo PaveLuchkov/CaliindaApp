@@ -48,6 +48,8 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import androidx.core.net.toUri
+import androidx.credentials.exceptions.NoCredentialException
 
 
 @Singleton
@@ -58,9 +60,16 @@ constructor(
     private val okHttpClient: OkHttpClient,
     @BackendUrl private val backendBaseUrl: String,
     @WebClientId private val webClientId: String,
-    private val calendarDataManager: Lazy<CalendarDataManager>
+    private val calendarDataManager: Lazy<CalendarDataManager>,
+    private val sharedPreferences: SharedPreferences
 ) {
   private val TAG = "AuthManagerV2"
+  private companion object {
+    const val BACKEND_TOKEN_KEY = "backend_auth_token"
+    const val USER_EMAIL_KEY = "user_email"
+    const val USER_DISPLAY_NAME_KEY = "user_displayName"
+    const val USER_PHOTO_URL_KEY = "user_photoUrl"
+  }
 
   private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -75,7 +84,47 @@ constructor(
 
   init {
     Log.d(TAG, "Initializing AuthManager with Credential Manager...")
-    checkInitialAuthState()
+    restoreStateFromStorage()
+    //validateSessionWithGoogle()
+  }
+  private fun restoreStateFromStorage() {
+    try {
+      Log.d(TAG, "Starting state restoration from EncryptedSharedPreferences...")
+      Log.d(TAG, "Process ID: ${android.os.Process.myPid()}")
+
+      val token = getBackendAuthToken()
+      Log.d(TAG, "Token restoration result: ${if (token != null) "FOUND token" else "NO token found"}")
+
+      if (token != null) {
+        val email = sharedPreferences.getString(USER_EMAIL_KEY, null)
+        val displayName = sharedPreferences.getString(USER_DISPLAY_NAME_KEY, null)
+        val photoUrlString = sharedPreferences.getString(USER_PHOTO_URL_KEY, null)
+
+        Log.d(TAG, "Restoring user data: email=$email, displayName=$displayName")
+
+        val photoUri = if (!photoUrlString.isNullOrEmpty()) {
+          photoUrlString.toUri()
+        } else {
+          null
+        }
+
+        _authState.value = AuthState(
+          isSignedIn = true,
+          userEmail = email,
+          displayName = displayName,
+          photoUrl = photoUri,
+          isLoading = false,
+          authError = null
+        )
+        Log.i(TAG, "✅ Successfully restored session for $email from EncryptedSharedPreferences")
+      } else {
+        Log.d(TAG, "❌ No token found, setting signed out state")
+        _authState.value = AuthState(isLoading = false)
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ Exception during state restoration from EncryptedSharedPreferences", e)
+      _authState.value = AuthState(isLoading = false, authError = "Failed to restore session")
+    }
   }
 
   fun signIn(activity: Activity) {
@@ -109,6 +158,10 @@ constructor(
       try {
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
         val idToken = googleIdTokenCredential.idToken
+        val userEmail = googleIdTokenCredential.id
+        val displayName = googleIdTokenCredential.displayName
+        val photoUrl = googleIdTokenCredential.profilePictureUri?.toString()
+        saveUserInfo(userEmail, displayName, photoUrl)
         Log.i(TAG, "Authentication Success! Email: ${googleIdTokenCredential.id}")
 
         this.pendingIdToken = idToken
@@ -214,45 +267,68 @@ constructor(
     }
   }
 
-  private fun checkInitialAuthState() {
+  private fun validateSessionWithGoogle() {
+    // Запускаем в фоне, чтобы не блокировать
     managerScope.launch {
-      _authState.update { it.copy(isLoading = true) }
+      // Если мы уже не вошли (по данным из хранилища), то и проверять нечего.
+      if (!_authState.value.isSignedIn) {
+        Log.d(TAG, "Skipping session validation, user not signed in.")
+        return@launch
+      }
+
+      Log.d(TAG, "Starting background session validation with Google...")
       val googleIdOption = buildGoogleIdOption(filterByAuthorizedAccounts = true, autoSelect = true)
       val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+
       try {
-        val result = credentialManager.getCredential(context, request)
-        Log.i(TAG, "Silent sign-in successful on init.")
-        handleAuthenticationSuccess(result)
+        credentialManager.getCredential(context, request)
+        // Если мы дошли сюда, значит сессия с Google валидна. Все отлично.
+        Log.i(TAG, "Background session validation successful.")
+        // Можно обновить данные пользователя, если они изменились.
+        // handleAuthenticationSuccess(result) - но это запустит весь флоу заново.
+        // Лучше просто убедиться, что все хорошо.
+
       } catch (e: GetCredentialException) {
-        Log.w(TAG, "Silent sign-in failed on init: ${e.message}", e)
-        _authState.update { it.copy(isLoading = false) }
-        signOutInternally(null)
+        // Это может быть и реальная ошибка, и сетевая проблема.
+        // SIGN_IN_REQUIRED - это точно разлогин.
+        if (e is NoCredentialException || e.message?.contains("SIGN_IN_REQUIRED", true) == true) {
+          Log.w(TAG, "Session validation failed: SIGN_IN_REQUIRED. Signing out.", e)
+          signOutInternally("Your session has expired. Please sign in again.")
+        } else {
+          // Все остальные ошибки (включая сетевые) мы ИГНОРИРУЕМ.
+          // Мы не будем разлогинивать пользователя из-за временного сбоя.
+          Log.w(TAG, "Session validation failed (likely network issue), but keeping user signed in. Error: ${e.message}")
+        }
+      } catch (e: Exception) {
+        // То же самое для других исключений
+        Log.e(TAG, "Unexpected error during session validation, keeping user signed in.", e)
       }
     }
   }
 
   private fun signOutInternally(error: String?) {
     clearBackendToken()
+    clearUserInfo()
     pendingIdToken = null
-    _authState.update {
-      it.copy(
-        isSignedIn = false,
-        isLoading = false,
-        authError = error
-      )
-    }
+    _authState.value = AuthState(
+      isSignedIn = false,
+      isLoading = false,
+      authError = error
+    )
     Log.i(TAG, "Internal sign out completed. Error: $error")
   }
 
   private fun buildGoogleIdOption(
     filterByAuthorizedAccounts: Boolean,
-    autoSelect: Boolean = false
+    autoSelect: Boolean = false,
+    loginHint: String? = null
   ): GetGoogleIdOption {
     return GetGoogleIdOption.Builder()
       .setFilterByAuthorizedAccounts(filterByAuthorizedAccounts)
       .setServerClientId(webClientId)
       .setAutoSelectEnabled(autoSelect)
       .setNonce(generateNonce())
+
       .build()
   }
 
@@ -267,23 +343,6 @@ constructor(
   fun clearAuthorizationIntent() {
     _authState.update { it.copy(authorizationIntent = null) }
   }
-
-  @Suppress("DEPRECATION")
-  private val sharedPreferences: SharedPreferences by lazy {
-    val masterKey = MasterKey.Builder(context)
-      .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-      .build()
-
-    EncryptedSharedPreferences.create(
-      context,
-      "secret_shared_prefs",
-      masterKey,
-      EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-      EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
-  }
-
-  private val BACKEND_TOKEN_KEY = "backend_auth_token"
 
   @WorkerThread
   private suspend fun sendAuthInfoToBackend(idToken: String, authCode: String): Boolean =
@@ -311,9 +370,12 @@ constructor(
             try {
               val jsonResponse = JSONObject(responseBodyString)
               val backendToken = jsonResponse.optString("token", null.toString())
-              run {
+              if (backendToken != "null") { // Доп. проверка на строку "null" на всякий случай
                 saveBackendToken(backendToken)
                 true // Успех
+              } else {
+                Log.e(TAG, "Backend response is successful, but 'token' field is missing or null.")
+                false
               }
             } catch (e: JSONException) {
               Log.e(TAG, "Failed to parse backend token response.", e)
@@ -326,19 +388,113 @@ constructor(
         false
       }
     }
+
   fun getBackendAuthToken(): String? {
-    val token = sharedPreferences.getString(BACKEND_TOKEN_KEY, null)
-    if (token == null) {
-      Log.w(TAG, "Backend token not found in storage.")
+    return try {
+      Log.d(TAG, "Attempting to retrieve backend token with key: '$BACKEND_TOKEN_KEY'")
+
+      val token = sharedPreferences.getString(BACKEND_TOKEN_KEY, null)
+
+      if (token != null) {
+        Log.d(TAG, "✅ Backend token FOUND in EncryptedSharedPreferences (length: ${token.length})")
+        Log.d(TAG, "Token preview: ${token.take(20)}...")
+      } else {
+        Log.w(TAG, "❌ Backend token NOT FOUND in EncryptedSharedPreferences")
+
+        // Дополнительная диагностика
+        val hasKey = sharedPreferences.contains(BACKEND_TOKEN_KEY)
+        Log.d(TAG, "Key '$BACKEND_TOKEN_KEY' exists in preferences: $hasKey")
+
+        // Проверим все ключи
+        val allKeys = sharedPreferences.all.keys
+        Log.d(TAG, "All keys in EncryptedSharedPreferences: $allKeys")
+      }
+
+      token
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ Exception while retrieving backend token from EncryptedSharedPreferences", e)
+      null
     }
-    return token
   }
+
   private fun saveBackendToken(token: String) {
-    sharedPreferences.edit { putString(BACKEND_TOKEN_KEY, token) }
-    Log.d(TAG, "Backend token saved securely.")
+    try {
+      Log.d(TAG, "Attempting to save backend token with key: '$BACKEND_TOKEN_KEY'")
+
+      val success = sharedPreferences.edit()
+        .putString(BACKEND_TOKEN_KEY, token)
+        .commit()
+
+      if (success) {
+        Log.d(TAG, "✅ Backend token saved successfully to EncryptedSharedPreferences")
+
+        // Проверяем, что токен действительно сохранился
+        val savedToken = sharedPreferences.getString(BACKEND_TOKEN_KEY, null)
+        if (savedToken == token) {
+          Log.d(TAG, "✅ Token verification successful - token matches")
+        } else {
+          Log.e(TAG, "❌ Token verification FAILED! Expected: ${token.take(20)}..., Got: ${savedToken?.take(20) ?: "null"}")
+        }
+      } else {
+        Log.e(TAG, "❌ Failed to save backend token - commit() returned false")
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ Exception while saving backend token to EncryptedSharedPreferences", e)
+    }
   }
+
   private fun clearBackendToken() {
-    sharedPreferences.edit { remove(BACKEND_TOKEN_KEY) }
-    Log.d(TAG, "Backend token cleared.")
+    try {
+      Log.d(TAG, "Clearing backend token with key: '$BACKEND_TOKEN_KEY'")
+      val success = sharedPreferences.edit()
+        .remove(BACKEND_TOKEN_KEY)
+        .commit()
+
+      if (success) {
+        Log.d(TAG, "✅ Backend token cleared successfully")
+      } else {
+        Log.e(TAG, "❌ Failed to clear backend token")
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ Exception while clearing backend token", e)
+    }
+  }
+
+  private fun saveUserInfo(email: String?, displayName: String?, photoUrl: String?) {
+    try {
+      Log.d(TAG, "Saving user info to EncryptedSharedPreferences...")
+
+      val success = sharedPreferences.edit()
+        .putString(USER_EMAIL_KEY, email)
+        .putString(USER_DISPLAY_NAME_KEY, displayName)
+        .putString(USER_PHOTO_URL_KEY, photoUrl)
+        .commit()
+
+      if (success) {
+        Log.d(TAG, "✅ User info saved successfully")
+      } else {
+        Log.e(TAG, "❌ Failed to save user info")
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ Exception while saving user info to EncryptedSharedPreferences", e)
+    }
+  }
+
+  private fun clearUserInfo() {
+    try {
+      val success = sharedPreferences.edit()
+        .remove(USER_EMAIL_KEY)
+        .remove(USER_DISPLAY_NAME_KEY)
+        .remove(USER_PHOTO_URL_KEY)
+        .commit()
+
+      if (success) {
+        Log.d(TAG, "✅ User info cleared successfully")
+      } else {
+        Log.e(TAG, "❌ Failed to clear user info")
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "❌ Exception while clearing user info", e)
+    }
   }
 }
