@@ -12,8 +12,6 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -43,14 +41,10 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.core.content.edit
 import androidx.core.net.toUri
-import androidx.credentials.exceptions.NoCredentialException
-
 
 @Singleton
 class AuthManager
@@ -85,7 +79,6 @@ constructor(
   init {
     Log.d(TAG, "Initializing AuthManager with Credential Manager...")
     restoreStateFromStorage()
-    //validateSessionWithGoogle()
   }
   private fun restoreStateFromStorage() {
     try {
@@ -267,45 +260,6 @@ constructor(
     }
   }
 
-  private fun validateSessionWithGoogle() {
-    // Запускаем в фоне, чтобы не блокировать
-    managerScope.launch {
-      // Если мы уже не вошли (по данным из хранилища), то и проверять нечего.
-      if (!_authState.value.isSignedIn) {
-        Log.d(TAG, "Skipping session validation, user not signed in.")
-        return@launch
-      }
-
-      Log.d(TAG, "Starting background session validation with Google...")
-      val googleIdOption = buildGoogleIdOption(filterByAuthorizedAccounts = true, autoSelect = true)
-      val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-
-      try {
-        credentialManager.getCredential(context, request)
-        // Если мы дошли сюда, значит сессия с Google валидна. Все отлично.
-        Log.i(TAG, "Background session validation successful.")
-        // Можно обновить данные пользователя, если они изменились.
-        // handleAuthenticationSuccess(result) - но это запустит весь флоу заново.
-        // Лучше просто убедиться, что все хорошо.
-
-      } catch (e: GetCredentialException) {
-        // Это может быть и реальная ошибка, и сетевая проблема.
-        // SIGN_IN_REQUIRED - это точно разлогин.
-        if (e is NoCredentialException || e.message?.contains("SIGN_IN_REQUIRED", true) == true) {
-          Log.w(TAG, "Session validation failed: SIGN_IN_REQUIRED. Signing out.", e)
-          signOutInternally("Your session has expired. Please sign in again.")
-        } else {
-          // Все остальные ошибки (включая сетевые) мы ИГНОРИРУЕМ.
-          // Мы не будем разлогинивать пользователя из-за временного сбоя.
-          Log.w(TAG, "Session validation failed (likely network issue), but keeping user signed in. Error: ${e.message}")
-        }
-      } catch (e: Exception) {
-        // То же самое для других исключений
-        Log.e(TAG, "Unexpected error during session validation, keeping user signed in.", e)
-      }
-    }
-  }
-
   private fun signOutInternally(error: String?) {
     clearBackendToken()
     clearUserInfo()
@@ -321,7 +275,6 @@ constructor(
   private fun buildGoogleIdOption(
     filterByAuthorizedAccounts: Boolean,
     autoSelect: Boolean = false,
-    loginHint: String? = null
   ): GetGoogleIdOption {
     return GetGoogleIdOption.Builder()
       .setFilterByAuthorizedAccounts(filterByAuthorizedAccounts)
@@ -368,10 +321,10 @@ constructor(
             Log.i(TAG, "Backend successfully exchanged tokens. Response: $responseBodyString")
             // ----- НОВАЯ ЛОГИКА: ИЗВЛЕКАЕМ И СОХРАНЯЕМ ТОКЕН -----
             try {
-              val jsonResponse = JSONObject(responseBodyString)
-              val backendToken = jsonResponse.optString("token", null.toString())
-              if (backendToken != "null") { // Доп. проверка на строку "null" на всякий случай
-                saveBackendToken(backendToken)
+              val jsonResponse = responseBodyString?.let { JSONObject(it) }
+              val backendToken = jsonResponse?.optString("token", null.toString())
+              if (backendToken != null) { // Доп. проверка на строку "null" на всякий случай
+                  saveBackendToken(backendToken)
                 true // Успех
               } else {
                 Log.e(TAG, "Backend response is successful, but 'token' field is missing or null.")
