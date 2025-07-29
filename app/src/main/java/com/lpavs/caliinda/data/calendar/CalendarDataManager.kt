@@ -16,6 +16,7 @@ import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +28,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -162,43 +165,70 @@ constructor(
   }
 
   /** Предоставляет Flow событий из БД для указанной даты */
-  fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
-    val startOfDayUTC = date.atStartOfDay(ZoneOffset.UTC)
-    val startMillis = startOfDayUTC.toInstant().toEpochMilli()
-    val endMillis = startOfDayUTC.plusDays(1).toInstant().toEpochMilli()
+    /** Предоставляет Flow событий из БД для указанной даты (эффективная версия) */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
+        return settingsRepository.timeZoneFlow
+            .flatMapLatest { timeZoneIdString ->
+                val zoneId = parseTimeZone(timeZoneIdString)
+                val (startMillis, endMillis) = calculateLocalBounds(date, zoneId)
 
-    return combine(
-            eventDao.getEventsForDateRangeFlow(startMillis, endMillis),
-            settingsRepository.timeZoneFlow
-            ) { entityList, timeZoneIdString ->
-              val zoneId =
-                  try {
-                    ZoneId.of(timeZoneIdString.ifEmpty { ZoneId.systemDefault().id })
-                  } catch (e: Exception) {
-                    ZoneId.systemDefault()
-                  }
-              entityList
-                  .filter { entity: CalendarEventEntity ->
-                    if (!entity.isAllDay) {
-                      entity.endTimeMillis < endMillis
-                    } else {
-                      val durationMillis = entity.endTimeMillis - entity.startTimeMillis
-                      val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
-                      val toleranceMillis = TimeUnit.MINUTES.toMillis(5)
-                      (durationMillis >= twentyFourHoursMillis - toleranceMillis) &&
-                          (durationMillis <= twentyFourHoursMillis + toleranceMillis)
+                eventDao.getEventsForDateRangeFlow(startMillis, endMillis)
+                    .map { entityList ->
+                        entityList
+                            .filter { entity -> isEventValidForDate(entity, startMillis, endMillis) }
+                            .map { entity -> EventMapper.mapToDomain(entity, zoneId.toString()) }
                     }
-                  }
-                  .map { filteredEntity ->
-                    EventMapper.mapToDomain(filteredEntity, zoneId.toString())
-                  }
             }
-        .catch { e ->
-          Log.e(TAG, "Error processing events Flow for date $date", e)
-          emit(emptyList())
+            .catch { e ->
+                Log.e(TAG, "Error processing events Flow for date $date", e)
+                emit(emptyList())
+            }
+            .flowOn(ioDispatcher)
+    }
+
+    /** Безопасный парсинг часового пояса */
+    private fun parseTimeZone(timeZoneIdString: String): ZoneId {
+        return try {
+            ZoneId.of(timeZoneIdString.ifEmpty { ZoneId.systemDefault().id })
+        } catch (e: Exception) {
+            Log.w(TAG, "Invalid timezone: $timeZoneIdString, using system default", e)
+            ZoneId.systemDefault()
         }
-        .flowOn(ioDispatcher)
-  }
+    }
+
+    /** Вычисляет границы дня в локальном часовом поясе */
+    private fun calculateLocalBounds(date: LocalDate, zoneId: ZoneId): Pair<Long, Long> {
+        val startOfDay = date.atStartOfDay(zoneId)
+        val endOfDay = startOfDay.plusDays(1)
+
+        return Pair(
+            startOfDay.toInstant().toEpochMilli(),
+            endOfDay.toInstant().toEpochMilli()
+        )
+    }
+
+    /** Проверяет, валидно ли событие для указанной даты */
+    private fun isEventValidForDate(
+        entity: CalendarEventEntity,
+        startMillis: Long,
+        endMillis: Long
+    ): Boolean {
+        return if (!entity.isAllDay) {
+            // Обычное событие: должно пересекаться с границами дня
+            entity.startTimeMillis < endMillis && entity.endTimeMillis > startMillis
+        } else {
+            // Событие "весь день": проверяем продолжительность ~24 часа
+            val durationMillis = entity.endTimeMillis - entity.startTimeMillis
+            val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
+            val toleranceMillis = TimeUnit.MINUTES.toMillis(5)
+
+            (durationMillis >= twentyFourHoursMillis - toleranceMillis) &&
+                    (durationMillis <= twentyFourHoursMillis + toleranceMillis) &&
+                    // И должно пересекаться с нашим днем
+                    (entity.startTimeMillis < endMillis && entity.endTimeMillis > startMillis)
+        }
+    }
 
   /** Создает новое событие через бэкенд */
   suspend fun createEvent(
@@ -784,7 +814,6 @@ constructor(
     }
   }
 
-  /** Парсит JSON-ответ со списком событий */
     /** Парсит JSON-ответ со списком событий */
     private fun parseEventsResponse(jsonString: String): List<CalendarEvent> {
         val events = mutableListOf<CalendarEvent>()
