@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.di
+package com.lpavs.caliinda.app.di
 
 import dagger.Module
 import dagger.Provides
@@ -18,7 +18,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DispatchersModule {
 
-  @Provides @Singleton @IoDispatcher fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+  @Provides @Singleton @IoDispatcher
+  fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
   @Provides
   @Singleton

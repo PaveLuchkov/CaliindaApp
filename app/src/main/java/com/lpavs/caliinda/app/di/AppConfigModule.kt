@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.di
+package com.lpavs.caliinda.app.di
 
 import com.lpavs.caliinda.BuildConfig
 import dagger.Module

@@ -11,9 +11,9 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.ai.model.AiVisualizerState
 import com.lpavs.caliinda.data.auth.AuthManager
 import com.lpavs.caliinda.data.repo.SettingsRepository
-import com.lpavs.caliinda.di.BackendUrl
-import com.lpavs.caliinda.di.IoDispatcher
-import com.lpavs.caliinda.di.MainDispatcher
+import com.lpavs.caliinda.app.di.BackendUrl
+import com.lpavs.caliinda.app.di.IoDispatcher
+import com.lpavs.caliinda.app.di.MainDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

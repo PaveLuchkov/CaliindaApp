@@ -21,8 +21,8 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
 import com.lpavs.caliinda.data.calendar.CalendarDataManager
-import com.lpavs.caliinda.di.BackendUrl
-import com.lpavs.caliinda.di.WebClientId
+import com.lpavs.caliinda.app.di.BackendUrl
+import com.lpavs.caliinda.app.di.WebClientId
 import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope

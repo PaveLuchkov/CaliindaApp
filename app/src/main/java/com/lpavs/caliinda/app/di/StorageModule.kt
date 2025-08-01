@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.di
+package com.lpavs.caliinda.app.di
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences

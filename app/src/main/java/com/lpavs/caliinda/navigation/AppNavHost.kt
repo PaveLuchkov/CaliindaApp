@@ -103,14 +103,3 @@ fun AppNavHost(
       }
 }
 
-sealed class NavRoutes(val route: String) {
-  object Main : NavRoutes("main")
-
-  object Settings : NavRoutes("settings")
-
-  object AISettings : NavRoutes("aisettings")
-
-  object TimeSettings : NavRoutes("timesettings")
-
-  object Terms : NavRoutes("termsofuse")
-}
