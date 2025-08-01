@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging
+package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging
 
 import android.text.format.DateFormat
 import android.util.Log
@@ -61,13 +61,13 @@ import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimePicker
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.EventDateTimeState
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.EventNameSection
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.RecurrenceEndType
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.RecurrenceOption
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.AdaptiveContainer
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerDialog
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventDateTimePicker
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventDateTimeState
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventNameSection
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.RecurrenceEndType
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.RecurrenceOption
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.AdaptiveContainer
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.TimePickerDialog
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate

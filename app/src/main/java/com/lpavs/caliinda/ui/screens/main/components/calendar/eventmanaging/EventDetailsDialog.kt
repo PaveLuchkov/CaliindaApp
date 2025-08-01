@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging
+package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

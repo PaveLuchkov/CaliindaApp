@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components
+package com.lpavs.caliinda.ui.screens.main.components.panels
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -18,7 +18,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui
+package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,8 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections.SugNameChips
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.SugNameChips
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

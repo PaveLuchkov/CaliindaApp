@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui
+package com.lpavs.caliinda.ui.screens.main.components.calendar
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
@@ -50,10 +50,10 @@ import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.CalendarUiDefaults
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.DeleteConfirmationDialog
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.RecurringEventDeleteOptionsDialog
+import com.lpavs.caliinda.ui.screens.main.shared.CalendarUiDefaults
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.DeleteConfirmationDialog
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.util.DateTimeFormatterUtil
 import kotlinx.coroutines.launch
 import java.time.Duration

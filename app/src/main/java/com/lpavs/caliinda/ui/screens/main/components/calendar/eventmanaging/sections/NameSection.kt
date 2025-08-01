@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections
+package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -7,8 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.ChipsRow
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.CustomOutlinedTextField
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.ChipsRow
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.CustomOutlinedTextField
 
 data class SugNameChips(val name: String, val fullText: String)
 
@@ -16,9 +16,6 @@ data class SugNameChips(val name: String, val fullText: String)
 fun getSuggestedEventNames(): List<SugNameChips> {
   val context = LocalContext.current
   return listOf(
-      SugNameChips(
-          context.getString(R.string.suggested_event_test),
-          context.getString(R.string.suggested_event_test_full)),
       SugNameChips(
           context.getString(R.string.suggested_event_project),
           context.getString(R.string.suggested_event_project_full)),
@@ -116,7 +113,6 @@ fun EventNameSection(
     onSummaryErrorChange: (String?) -> Unit,
     isLoading: Boolean
 ) {
-  val chips = getSuggestedEventNames()
   CustomOutlinedTextField(
       value = summary,
       onValueChange = {
@@ -128,11 +124,11 @@ fun EventNameSection(
       isError = summaryError != null,
       supportingText = {
         if (summaryError != null) Text(summaryError)
-      }, // summaryError is nullable, no need for !!
+      },
       enabled = !isLoading,
   )
   ChipsRow(
-      chips = chips,
+      chips = getSuggestedEventNames(),
       onChipClick = { clickedChip -> onSummaryChange(clickedChip) },
       enabled = !isLoading)
 }

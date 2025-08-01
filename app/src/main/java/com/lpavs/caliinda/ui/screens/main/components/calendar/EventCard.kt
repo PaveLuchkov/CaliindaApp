@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui
+package com.lpavs.caliinda.ui.screens.main.components.calendar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -67,8 +67,8 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.common.RoundedPolygonShape
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.CalendarUiDefaults
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
+import com.lpavs.caliinda.ui.screens.main.shared.CalendarUiDefaults
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
 import com.lpavs.caliinda.ui.theme.Typography
 import java.time.Duration
 import kotlin.math.abs

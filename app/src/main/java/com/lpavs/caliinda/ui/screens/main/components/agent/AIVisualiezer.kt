@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.AI
+package com.lpavs.caliinda.ui.screens.main.components.agent
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor

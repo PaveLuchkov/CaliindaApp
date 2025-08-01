@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.sections
+package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections
 
 import android.text.format.DateFormat
 import android.util.Log
@@ -49,9 +49,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.DatePickerField
-import com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui.TimePickerField
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.DatePickerField
+import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.TimePickerField
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime

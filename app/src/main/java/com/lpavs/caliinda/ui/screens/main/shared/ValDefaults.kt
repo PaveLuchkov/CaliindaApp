@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.UIDefaults
+package com.lpavs.caliinda.ui.screens.main.shared
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp

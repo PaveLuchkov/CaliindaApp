@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 

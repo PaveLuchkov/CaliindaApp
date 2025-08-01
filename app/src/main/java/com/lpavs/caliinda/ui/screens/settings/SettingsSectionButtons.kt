@@ -39,7 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
 
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

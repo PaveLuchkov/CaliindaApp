@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components
+package com.lpavs.caliinda.ui.screens.main.components.panels
 
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +42,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
 
 @ExperimentalMaterial3ExpressiveApi
 @Composable

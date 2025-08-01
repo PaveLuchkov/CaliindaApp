@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components
+package com.lpavs.caliinda.ui.screens.main.components.panels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

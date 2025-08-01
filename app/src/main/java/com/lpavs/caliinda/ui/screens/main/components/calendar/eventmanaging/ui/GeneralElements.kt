@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendarui.eventmanaging.ui
+package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
-import com.lpavs.caliinda.ui.screens.main.components.UIDefaults.cuid
+import com.lpavs.caliinda.ui.screens.main.shared.cuid
 
 /**
  * Content [AdaptiveContainer] - container for any content. [TimePickerDialog] - timepicker
