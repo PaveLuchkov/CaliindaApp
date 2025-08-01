@@ -16,8 +16,6 @@ import javax.inject.Singleton
 
 @Singleton
 class SettingsRepository @Inject constructor(private val dataStore: DataStore<Preferences>) {
-  private val TAG = "SettingsRepository"
-
   private object PreferencesKeys {
     val BOT_TEMPER = stringPreferencesKey("bot_temper")
     val TIME_ZONE = stringPreferencesKey("time_zone")
@@ -66,5 +64,9 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     } catch (e: IOException) {
       Log.e(TAG, "Error saving time zone.", e)
     }
+  }
+
+  companion object {
+    private const val TAG = "SettingsRepository"
   }
 }

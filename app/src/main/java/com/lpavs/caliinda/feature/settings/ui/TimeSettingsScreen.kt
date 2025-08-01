@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.settings
+package com.lpavs.caliinda.feature.settings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -36,14 +36,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import com.lpavs.caliinda.ui.screens.main.shared.cuid
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimeSettingsScreen(viewModel: MainViewModel, onNavigateBack: () -> Unit, title: String) {
+fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit, title: String) {
   // Используем переданный viewModel
 
   val scope = rememberCoroutineScope()

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.settings
+package com.lpavs.caliinda.feature.settings.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth

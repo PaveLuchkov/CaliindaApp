@@ -65,7 +65,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
-import com.lpavs.caliinda.ui.common.RoundedPolygonShape
+import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.shared.CalendarUiDefaults
 import com.lpavs.caliinda.ui.screens.main.shared.cuid

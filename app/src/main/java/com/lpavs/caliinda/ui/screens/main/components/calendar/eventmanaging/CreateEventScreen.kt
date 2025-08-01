@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.data.local.DateTimeUtils
@@ -90,8 +91,8 @@ fun CreateEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  val createEventState by viewModel.createEventResult.collectAsState()
-  val userTimeZoneId by viewModel.timeZone.collectAsState()
+  val createEventState by viewModel.createEventResult.collectAsStateWithLifecycle()
+  val userTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
 
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }

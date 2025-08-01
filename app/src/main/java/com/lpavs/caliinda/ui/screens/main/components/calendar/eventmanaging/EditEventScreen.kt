@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
@@ -86,7 +87,7 @@ fun EditEventScreen(
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
 ) {
-    val userTimeZoneId by viewModel.timeZone.collectAsState()
+    val userTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
 
     var summary by remember(eventToEdit.id) { mutableStateOf(eventToEdit.summary) }
   var description by remember(eventToEdit.id) { mutableStateOf(eventToEdit.description ?: "") }

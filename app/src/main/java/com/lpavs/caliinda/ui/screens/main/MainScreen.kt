@@ -46,8 +46,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.common.BackgroundShapeContext
-import com.lpavs.caliinda.ui.common.BackgroundShapes
+import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
+import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.ui.screens.main.components.agent.AiVisualizer
 import com.lpavs.caliinda.ui.screens.main.components.panels.BottomBar
 import com.lpavs.caliinda.ui.screens.main.components.panels.CalendarAppBar

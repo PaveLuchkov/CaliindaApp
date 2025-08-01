@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.core.data.local.EventDao
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest

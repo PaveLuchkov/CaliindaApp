@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.auth
+package com.lpavs.caliinda.core.data.auth
 
 import android.app.PendingIntent
 import android.net.Uri

@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.ai.AiInteractionManager
 import com.lpavs.caliinda.data.ai.model.AiVisualizerState
-import com.lpavs.caliinda.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.data.calendar.ApiDeleteEventMode
 import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
@@ -74,13 +74,14 @@ constructor(
       aiInteractionManager.aiMessage // Сообщение от AI (Asking/Result)
 
   // Состояния Настроек
+    @Deprecated(
+        message = "состояние timeZone переехало в settingsViewModel",
+        replaceWith = ReplaceWith(""),
+        level = DeprecationLevel.WARNING
+    )
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
           viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
-
-  val botTemperState: StateFlow<String> =
-      settingsRepository.botTemperFlow.stateIn(
-          viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
   init {
     observeAuthState()
@@ -414,19 +415,6 @@ constructor(
   fun resetAiStateAfterResult() = aiInteractionManager.resetAiState()
 
   fun resetAiStateAfterAsking() = aiInteractionManager.resetAiState()
-
-  // --- ДЕЙСТВИЯ НАСТРОЕК ---
-  fun updateTimeZoneSetting(zoneId: String) {
-    if (ZoneId.getAvailableZoneIds().contains(zoneId)) {
-      viewModelScope.launch { settingsRepository.saveTimeZone(zoneId) }
-    } else {
-      Log.e(TAG, "Attempted to save invalid time zone ID: $zoneId")
-    }
-  }
-
-  fun updateBotTemperSetting(newTemper: String) {
-    viewModelScope.launch { settingsRepository.saveBotTemper(newTemper) }
-  }
 
   // --- ОБРАБОТКА UI СОБЫТИЙ / РАЗРЕШЕНИЙ ---
   fun updatePermissionStatus(isGranted: Boolean) {

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.auth
+package com.lpavs.caliinda.core.data.auth
 
 import android.app.Activity
 import android.content.Context

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.common
+package com.lpavs.caliinda.core.ui.util
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

@@ -10,16 +10,18 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.lpavs.caliinda.ui.screens.main.MainScreen
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.settings.AISettingsScreen
-import com.lpavs.caliinda.ui.screens.settings.SettingsScreen
-import com.lpavs.caliinda.ui.screens.settings.TermsOfUseScreen
-import com.lpavs.caliinda.ui.screens.settings.TimeSettingsScreen
+import com.lpavs.caliinda.feature.settings.ui.AISettingsScreen
+import com.lpavs.caliinda.feature.settings.ui.SettingsScreen
+import com.lpavs.caliinda.feature.settings.ui.TermsOfUseScreen
+import com.lpavs.caliinda.feature.settings.ui.TimeSettingsScreen
+import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 
 @Composable
 fun AppNavHost(
@@ -83,14 +85,16 @@ fun AppNavHost(
         composable(
             NavRoutes.AISettings.route,
             ) {
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
               AISettingsScreen(
-                  viewModel = viewModel, onNavigateBack = { navController.popBackStack() })
+                  viewModel = settingsViewModel, onNavigateBack = { navController.popBackStack() })
             }
         composable(
             NavRoutes.TimeSettings.route,
             ) {
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
               TimeSettingsScreen(
-                  viewModel = viewModel,
+                  viewModel = settingsViewModel,
                   onNavigateBack = { navController.popBackStack() },
                   title = "Time & Format")
             }

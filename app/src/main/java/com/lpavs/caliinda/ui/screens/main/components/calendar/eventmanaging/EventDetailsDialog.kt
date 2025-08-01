@@ -179,7 +179,6 @@ fun CustomEventDetailsDialog(
       }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailRow(icon: ImageVector, value: String, color: Color) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
