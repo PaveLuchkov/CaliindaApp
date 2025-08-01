@@ -1,6 +1,8 @@
 package com.lpavs.caliinda.app.di
 
 import com.lpavs.caliinda.BuildConfig
+import com.lpavs.caliinda.core.data.di.BackendUrl
+import com.lpavs.caliinda.core.data.di.WebClientId
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

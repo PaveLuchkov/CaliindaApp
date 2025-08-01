@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.repo
+package com.lpavs.caliinda.core.data.repository
 
 import android.util.Log
 import androidx.datastore.core.DataStore

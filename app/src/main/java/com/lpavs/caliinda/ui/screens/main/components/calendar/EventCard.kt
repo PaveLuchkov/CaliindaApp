@@ -69,7 +69,7 @@ import com.lpavs.caliinda.ui.common.RoundedPolygonShape
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.shared.CalendarUiDefaults
 import com.lpavs.caliinda.ui.screens.main.shared.cuid
-import com.lpavs.caliinda.ui.theme.Typography
+import com.lpavs.caliinda.core.ui.theme.Typography
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp

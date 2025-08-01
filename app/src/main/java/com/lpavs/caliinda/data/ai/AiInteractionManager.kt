@@ -10,8 +10,8 @@ import android.util.Log
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.ai.model.AiVisualizerState
 import com.lpavs.caliinda.data.auth.AuthManager
-import com.lpavs.caliinda.data.repo.SettingsRepository
-import com.lpavs.caliinda.app.di.BackendUrl
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
+import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.app.di.MainDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,13 +43,13 @@ import javax.inject.Singleton
 class AiInteractionManager
 @Inject
 constructor(
-    @ApplicationContext private val context: Context,
-    private val okHttpClient: OkHttpClient,
-    private val authManager: AuthManager, // Для получения токена
-    private val settingsRepository: SettingsRepository, // Для получения temper
-    @BackendUrl private val backendBaseUrl: String,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-    @MainDispatcher private val mainDispatcher: CoroutineDispatcher // Нужен для SpeechRecognizer
+  @ApplicationContext private val context: Context,
+  private val okHttpClient: OkHttpClient,
+  private val authManager: AuthManager, // Для получения токена
+  private val settingsRepository: SettingsRepository, // Для получения temper
+  @BackendUrl private val backendBaseUrl: String,
+  @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+  @MainDispatcher private val mainDispatcher: CoroutineDispatcher // Нужен для SpeechRecognizer
 ) {
   private val TAG = "AiInteractionManager"
   // Важно: Используем SupervisorJob, чтобы ошибка в одной корутине не отменила весь скоуп

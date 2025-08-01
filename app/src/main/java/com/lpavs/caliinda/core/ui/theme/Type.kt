@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.theme
+package com.lpavs.caliinda.core.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.ExperimentalTextApi

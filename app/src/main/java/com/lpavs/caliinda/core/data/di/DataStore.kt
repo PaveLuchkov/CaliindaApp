@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.app.di
+package com.lpavs.caliinda.core.data.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -12,7 +12,6 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-// Объявляем DataStore как расширение Context
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "app_settings")
 
 @Module

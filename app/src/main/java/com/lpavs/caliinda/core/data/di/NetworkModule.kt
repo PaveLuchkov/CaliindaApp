@@ -1,9 +1,9 @@
-package com.lpavs.caliinda.app.di
+package com.lpavs.caliinda.core.data.di
 
 import android.content.Context
 import androidx.room.Room
-import com.lpavs.caliinda.data.local.AppDatabase
-import com.lpavs.caliinda.data.local.EventDao
+import com.lpavs.caliinda.core.data.local.AppDatabase
+import com.lpavs.caliinda.core.data.local.EventDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

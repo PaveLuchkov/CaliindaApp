@@ -32,7 +32,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.lpavs.caliinda.navigation.AppNavHost
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.theme.CaliindaTheme
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

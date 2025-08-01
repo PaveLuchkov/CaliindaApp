@@ -21,8 +21,8 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
 import com.lpavs.caliinda.data.calendar.CalendarDataManager
-import com.lpavs.caliinda.app.di.BackendUrl
-import com.lpavs.caliinda.app.di.WebClientId
+import com.lpavs.caliinda.core.data.di.BackendUrl
+import com.lpavs.caliinda.core.data.di.WebClientId
 import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -50,12 +50,12 @@ import androidx.core.net.toUri
 class AuthManager
 @Inject
 constructor(
-    @ApplicationContext private val context: Context,
-    private val okHttpClient: OkHttpClient,
-    @BackendUrl private val backendBaseUrl: String,
-    @WebClientId private val webClientId: String,
-    private val calendarDataManager: Lazy<CalendarDataManager>,
-    private val sharedPreferences: SharedPreferences
+  @ApplicationContext private val context: Context,
+  private val okHttpClient: OkHttpClient,
+  @BackendUrl private val backendBaseUrl: String,
+  @WebClientId private val webClientId: String,
+  private val calendarDataManager: Lazy<CalendarDataManager>,
+  private val sharedPreferences: SharedPreferences
 ) {
   private val TAG = "AuthManagerV2"
   private companion object {

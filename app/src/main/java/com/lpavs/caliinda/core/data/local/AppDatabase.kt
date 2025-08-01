@@ -1,7 +1,8 @@
-package com.lpavs.caliinda.data.local
+package com.lpavs.caliinda.core.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.lpavs.caliinda.data.local.CalendarEventEntity
 
 @Database(
     entities = [CalendarEventEntity::class],

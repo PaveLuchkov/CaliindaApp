@@ -54,7 +54,7 @@ import com.lpavs.caliinda.ui.screens.main.shared.CalendarUiDefaults
 import com.lpavs.caliinda.ui.screens.main.shared.cuid
 import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.DeleteConfirmationDialog
 import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.RecurringEventDeleteOptionsDialog
-import com.lpavs.caliinda.util.DateTimeFormatterUtil
+import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant

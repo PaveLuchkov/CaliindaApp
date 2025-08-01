@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.util
+package com.lpavs.caliinda.core.ui.util
 
 import android.content.Context
 import android.text.format.DateFormat

@@ -18,8 +18,8 @@ import com.lpavs.caliinda.data.calendar.DeleteEventResult
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
-import com.lpavs.caliinda.data.repo.SettingsRepository
-import com.lpavs.caliinda.app.di.ITimeTicker
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
+import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

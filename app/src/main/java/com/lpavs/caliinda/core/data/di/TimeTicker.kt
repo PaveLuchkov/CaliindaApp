@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.app.di
+package com.lpavs.caliinda.core.data.di
 
 import dagger.Binds
 import dagger.Module
@@ -21,7 +21,7 @@ interface ITimeTicker {
 }
 
 @Singleton
-class TimeTicker @Inject constructor() : ITimeTicker { // @Inject constructor для Hilt
+class TimeTicker @Inject constructor() : ITimeTicker {
 
   private val tickerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 

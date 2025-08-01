@@ -6,11 +6,11 @@ import com.google.gson.Gson
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.auth.AuthManager
 import com.lpavs.caliinda.data.local.CalendarEventEntity
-import com.lpavs.caliinda.data.local.EventDao
+import com.lpavs.caliinda.core.data.local.EventDao
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.data.mapper.EventMapper
-import com.lpavs.caliinda.data.repo.SettingsRepository
-import com.lpavs.caliinda.app.di.BackendUrl
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
+import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import dagger.hilt.android.qualifiers.ApplicationContext

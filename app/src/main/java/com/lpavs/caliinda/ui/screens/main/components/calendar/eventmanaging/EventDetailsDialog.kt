@@ -53,8 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.util.DateTimeFormatterUtil
-import com.lpavs.caliinda.util.DateTimeFormatterUtil.formatRRule
+import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
+import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil.formatRRule
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

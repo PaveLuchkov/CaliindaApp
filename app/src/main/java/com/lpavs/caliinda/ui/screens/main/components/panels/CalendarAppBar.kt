@@ -35,7 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.theme.Typography
+import com.lpavs.caliinda.core.ui.theme.Typography
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 

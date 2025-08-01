@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.theme
+package com.lpavs.caliinda.core.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
