@@ -44,7 +44,6 @@ import com.lpavs.caliinda.ui.common.CustomRotatingMorphShape
 import com.lpavs.caliinda.ui.screens.main.MainUiState
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RecordButton(
     uiState: MainUiState,

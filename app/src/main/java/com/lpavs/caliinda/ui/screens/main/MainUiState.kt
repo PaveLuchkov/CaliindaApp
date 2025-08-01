@@ -4,7 +4,6 @@ import android.app.PendingIntent
 import android.net.Uri
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 
-// Переносим MainUiState в свой файл
 data class MainUiState(
     val isSignedIn: Boolean = false,
     val userEmail: String? = null,
@@ -42,6 +41,6 @@ data class CalendarEvent(
     val isAllDay: Boolean = false,
     val recurringEventId: String? = null, // ID "мастер-события", если это экземпляр
     val originalStartTime: String? =
-        null, // Для измененных экземпляров, их оригинальное время начала
+        null,
     val recurrenceRule: String? = null
 )

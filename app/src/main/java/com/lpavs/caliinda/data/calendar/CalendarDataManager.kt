@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
@@ -164,7 +163,6 @@ constructor(
         }
   }
 
-  /** Предоставляет Flow событий из БД для указанной даты */
     /** Предоставляет Flow событий из БД для указанной даты (эффективная версия) */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
@@ -602,16 +600,6 @@ constructor(
               }
           }
       }
-
-  /**
-   * Загружает данные для диапазона дат с бэкенда и сохраняет в БД.
-   *
-   * @param startDate Начало диапазона для запроса к бэкенду (может быть дельта).
-   * @param endDate Конец диапазона для запроса к бэкенду (может быть дельта).
-   * @param replaceWholeLoadedRangeWithThis true - если _loadedDateRange должен быть полностью
-   *   заменен на [startDate].[endDate]. false - если [startDate].[endDate] это дельта и ее нужно
-   *   объединить с текущим _loadedDateRange.
-   */
     /**
      * Загружает данные для диапазона дат с бэкенда и сохраняет в БД.
      *

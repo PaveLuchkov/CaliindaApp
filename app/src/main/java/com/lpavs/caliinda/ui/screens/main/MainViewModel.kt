@@ -50,7 +50,7 @@ constructor(
     private val aiInteractionManager: AiInteractionManager,
     private val settingsRepository: SettingsRepository,
     timeTicker: ITimeTicker,
-    @ApplicationContext private val context: Context // Оставляем, если нужен для чего-то еще
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -346,11 +346,6 @@ constructor(
     }
 
   fun clearAuthError() = authManager.clearAuthError()
-
-    fun onSignInRequiredDialogConfirmed(activity: Activity) {
-        // Теперь при нажатии "Войти" мы сразу запускаем наш новый флоу
-        signIn(activity)
-    }
 
     fun onSignInRequiredDialogDismissed() {
         _uiState.update { it.copy(showSignInRequiredDialog = false) }

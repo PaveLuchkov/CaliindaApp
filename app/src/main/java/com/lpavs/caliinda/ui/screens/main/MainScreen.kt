@@ -78,7 +78,6 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
   val initialPageIndex = remember { Int.MAX_VALUE / 2 }
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
   val currentVisibleDate by viewModel.currentVisibleDate.collectAsStateWithLifecycle()
-  val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val activity = context as? Activity
 
     val authorizationLauncher = rememberLauncherForActivityResult(

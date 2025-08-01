@@ -113,19 +113,7 @@ fun TimeSettingsScreen(viewModel: MainViewModel, onNavigateBack: () -> Unit, tit
                           }
                     }
               }
-          Spacer(modifier = Modifier.height(10.dp)) // Используй константу
-          //            Box(
-          //                modifier = Modifier
-          //                    .fillMaxWidth()
-          //                    .clip(RoundedCornerShape(cuid.SettingsItemCornerRadius)) //
-          // Константа
-          //                    .background(color = colorScheme.surfaceContainer) // Тема
-          //                    .padding(16.dp)
-          //            ) {
-          //                Column {
-          //                    Text("Другие настройки будут здесь.")
-          //                }
-          //            }
+          Spacer(modifier = Modifier.height(10.dp))
         }
       }
 }
