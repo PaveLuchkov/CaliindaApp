@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar
+package com.lpavs.caliinda.feature.calendar.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -67,8 +67,8 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
-import com.lpavs.caliinda.ui.screens.main.shared.CalendarUiDefaults
-import com.lpavs.caliinda.ui.screens.main.shared.cuid
+import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.Typography
 import java.time.Duration
 import kotlin.math.abs
@@ -76,11 +76,10 @@ import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
-fun EventListItem(
+fun EventItem(
     event: CalendarEvent,
     timeFormatter: (CalendarEvent) -> String,
     isCurrentEvent: Boolean,
-    isPastEvent: Boolean,
     isNextEvent: Boolean,
     proximityRatio: Float,
     isMicroEventFromList: Boolean,
@@ -261,7 +260,7 @@ fun EventListItem(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false))
-                        Spacer(modifier = Modifier.width(cuid.HeaderBottomSpacing))
+                        Spacer(modifier = Modifier.width(cuid.padding))
                         Text(
                             text = timeFormatter(event),
                             color = cardTextColor,
@@ -304,30 +303,28 @@ fun EventListItem(
                           tween(
                               durationMillis = 150,
                               delayMillis =
-                                  100)) + // Задержка для fadeIn может быть синхронизирована или
-                                          // убрана, если expandVertically начинается сразу
-                      expandVertically(
+                                  100)) +
+                          expandVertically(
                           animationSpec =
                               tween(
                                   durationMillis = 250,
-                                  delayMillis = 50), // Согласуй длительности с animateDpAsState
-                          expandFrom =
+                                  delayMillis = 50),
+                              expandFrom =
                               Alignment
-                                  .Top // Кнопки появляются снизу, значит расширяются от своего
-                                       // верхнего края вниз
+                                  .Top
                           ),
               exit =
                   shrinkVertically(
                       animationSpec = tween(durationMillis = 250),
-                      shrinkTowards = Alignment.Top // Схлопываются к своему верхнему краю
-                      ) + fadeOut(animationSpec = tween(durationMillis = 150))) {
+                      shrinkTowards = Alignment.Top
+                  ) + fadeOut(animationSpec = tween(durationMillis = 150))) {
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(
                                 horizontal = cuid.ItemHorizontalPadding,
-                                vertical = 4.dp), // Отступы для ряда кнопок
-                    horizontalArrangement = Arrangement.End, // Кнопки справа
+                                vertical = 4.dp),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically) {
                       FilledIconButton(
                           onClick = {
@@ -351,10 +348,9 @@ fun EventListItem(
                           contentPadding = PaddingValues(horizontal = 12.dp)) {
                             Icon(Icons.Filled.Edit, contentDescription = "Edit")
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Edit") // Или локализованная строка
-                          }
-                      //                    Spacer(modifier = Modifier.width(4.dp))
-                      FilledIconButton(
+                            Text("Edit")
+                      }
+                    FilledIconButton(
                           onClick = { onDeleteClickFromList() },
                           modifier =
                               Modifier.minimumInteractiveComponentSize()
@@ -381,7 +377,7 @@ fun AllDayEventItem(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     onDetailsClick: () -> Unit,
-    modifier: Modifier = Modifier // Добавил modifier
+    modifier: Modifier = Modifier
 ) {
   val cardBackground = colorScheme.tertiaryContainer
   val cardTextColor = colorScheme.onTertiaryContainer
@@ -394,8 +390,7 @@ fun AllDayEventItem(
               .clip(
                   RoundedCornerShape(
                       cuid
-                          .EventItemCornerRadius)) // Используем радиус как у обычных событий для
-                                                   // консистентности
+                          .EventItemCornerRadius))
               .background(cardBackground)
               .pointerInput(event.id) {
                 detectTapGestures(
@@ -408,7 +403,7 @@ fun AllDayEventItem(
         Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .padding( // Внутренние отступы для контента
+                    .padding(
                         horizontal = CalendarUiDefaults.AllDayItemPadding,
                         vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
               Text(
@@ -420,7 +415,7 @@ fun AllDayEventItem(
                   modifier =
                       Modifier.fillMaxWidth()
                           .padding(
-                              vertical = 3.dp), // Небольшой вертикальный отступ для самого текста
+                              vertical = 3.dp),
               )
 
               AnimatedVisibility(
@@ -435,13 +430,12 @@ fun AllDayEventItem(
                           animationSpec = tween(durationMillis = 250),
                           shrinkTowards = Alignment.Top) +
                           fadeOut(animationSpec = tween(durationMillis = 150))) {
-                    // Добавляем небольшой отступ сверху перед кнопками, если они видны
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier =
                             Modifier.fillMaxWidth()
-                                .padding(vertical = 4.dp), // Отступы для ряда кнопок
-                        horizontalArrangement = Arrangement.Center, // Кнопки справа
+                                .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically) {
                           Button(
                               onClick = {
@@ -462,12 +456,8 @@ fun AllDayEventItem(
                           Button(
                               onClick = {
                                 onEditClick()
-                                //                            onToggleExpand() // Опционально:
-                                // схлопывать после клика
                               },
                               contentPadding = PaddingValues(horizontal = 12.dp),
-                              // Можно настроить цвета кнопок, чтобы они лучше смотрелись на
-                              // tertiary фоне
                               colors =
                                   ButtonDefaults.buttonColors(
                                       containerColor = colorScheme.onTertiary,
@@ -481,7 +471,6 @@ fun AllDayEventItem(
                           Button(
                               onClick = {
                                 onDeleteClick()
-                                // onToggleExpand() // Опционально: схлопывать после клика
                               },
                               contentPadding = PaddingValues(horizontal = 12.dp),
                               colors =
@@ -508,7 +497,6 @@ fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
     val durationDouble = durationMinutes.toDouble()
     val heightRange = maxHeight - minHeight
 
-    // Sigmoid calculation
     val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
     val k = cuid.HeightSigmoidSteepness
     val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
@@ -538,7 +526,6 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
 
   val numVertices = (absHashCode % cuid.ShapeMaxVerticesDelta) + cuid.ShapeMinVertices
 
-  // Use different simple transformations of the hash for variety
   val shadowOffsetXSeed = absHashCode % cuid.ShapeShadowOffsetXMaxModulo
   val shadowOffsetYSeed =
       absHashCode % cuid.ShapeShadowOffsetYMaxModulo + cuid.ShapeShadowOffsetYMin
@@ -558,8 +545,8 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
       numVertices = numVertices,
       radiusSeed = coercedRadiusSeed,
       rotationAngle = rotationAngle,
-      shadowOffsetXSeed = shadowOffsetXSeed.dp, // Convert to Dp here
-      shadowOffsetYSeed = shadowOffsetYSeed.dp, // Convert to Dp here
+      shadowOffsetXSeed = shadowOffsetXSeed.dp,
+      shadowOffsetYSeed = shadowOffsetYSeed.dp,
       offestParam = offsetParam)
 }
 

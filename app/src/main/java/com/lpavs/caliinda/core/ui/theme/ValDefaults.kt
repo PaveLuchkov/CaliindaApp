@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.shared
+package com.lpavs.caliinda.core.ui.theme
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -12,7 +12,7 @@ object CalendarUiDefaults {
   val StandardItemContentVerticalPadding = 3.dp
   val AllDayItemPadding = 16.dp
   val AllDayItemVerticalContentPadding = 6.dp
-  val HeaderBottomSpacing = 8.dp
+  val padding = 8.dp
   val EventItemCornerRadius = 20.dp
   val MinEventHeight = 65.dp
   val MaxEventHeight = 200.dp

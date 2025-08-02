@@ -52,7 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.shared.cuid
+import com.lpavs.caliinda.core.ui.theme.cuid
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -177,7 +177,7 @@ fun GoogleAccountSection(
   val displayName = uiState.displayName ?: email.substringBefore("@")
   val photo: Uri? = uiState.photo
   val cornerRadius = cuid.SettingsItemCornerRadius
-    Box(
+  Box(
         modifier =
             Modifier.fillMaxWidth()
                 .clip(RoundedCornerShape(cornerRadius))

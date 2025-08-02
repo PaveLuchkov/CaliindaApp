@@ -20,7 +20,7 @@ import com.lpavs.caliinda.data.calendar.UpdateEventResult
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.di.ITimeTicker
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.RecurringDeleteChoice
+import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow

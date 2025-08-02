@@ -57,7 +57,7 @@ constructor(
   private val calendarDataManager: Lazy<CalendarDataManager>,
   private val sharedPreferences: SharedPreferences
 ) {
-  private val TAG = "AuthManagerV2"
+  private val TAG = "AuthManager"
   private companion object {
     const val BACKEND_TOKEN_KEY = "backend_auth_token"
     const val USER_EMAIL_KEY = "user_email"

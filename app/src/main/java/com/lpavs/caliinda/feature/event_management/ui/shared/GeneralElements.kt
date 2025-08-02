@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui
+package com.lpavs.caliinda.feature.event_management.ui.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,10 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
-import com.lpavs.caliinda.ui.screens.main.shared.cuid
+import com.lpavs.caliinda.core.ui.theme.cuid
 
 /**
- * Content [AdaptiveContainer] - container for any content. [TimePickerDialog] - timepicker
+ * Content [AdaptiveContainer] - container for any content.
+ * [TimePickerDialog] - timepicker
  * [DeleteConfirmationDialog] - delete confirmation dialog
  */
 @Composable
@@ -214,20 +215,20 @@ fun RecurringEventEditOptionsDialog(
 ) {
   BasicAlertDialog(
       onDismissRequest = onDismiss,
-      modifier = modifier.widthIn(min = 280.dp, max = 560.dp), // Рекомендации по ширине диалогов M3
+      modifier = modifier.widthIn(min = 280.dp, max = 560.dp),
       properties = properties,
   ) {
     Surface(
-        shape = shapes.extraLarge, // Стандартная форма для диалогов M3
-        color = colorScheme.surface, // Цвет фона диалога
-        tonalElevation = Elevation, // Стандартная тень для диалогов
-        modifier = Modifier.wrapContentSize() // Чтобы Surface обернул контент
-        ) {
+        shape = shapes.extraLarge,
+        color = colorScheme.surface,
+        tonalElevation = Elevation,
+        modifier = Modifier.wrapContentSize()
+    ) {
           Column(
               modifier =
                   Modifier.padding(
-                      top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp) // Явные отступы
-              ) {
+                      top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
+          ) {
                 Text(
                     text = stringResource(R.string.edit_recurring_event_title),
                     style = typography.headlineSmall,
@@ -238,9 +239,7 @@ fun RecurringEventEditOptionsDialog(
                     style = typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 24.dp))
 
-                // Опции выбора (кнопки)
-                // Кнопка "Только это событие"
-                TextButton(
+              TextButton(
                     onClick = { onOptionSelected(ClientEventUpdateMode.SINGLE_INSTANCE) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_single_instance))
@@ -248,26 +247,15 @@ fun RecurringEventEditOptionsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Кнопка "Все события в серии"
-                TextButton(
+              TextButton(
                     onClick = { onOptionSelected(ClientEventUpdateMode.ALL_IN_SERIES) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_all_in_series))
                     }
 
-                // Опционально: "Это и последующие", если поддерживается
-                // Spacer(modifier = Modifier.height(8.dp))
-                // TextButton(
-                //    onClick = { onOptionSelected(ClientEventUpdateMode.THIS_AND_FOLLOWING) },
-                //    modifier = Modifier.fillMaxWidth()
-                // ) {
-                //    Text(stringResource(R.string.edit_this_and_following))
-                // }
+              Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Кнопка "Отмена"
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+              Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                   TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 }
               }

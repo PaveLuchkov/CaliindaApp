@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui
+package com.lpavs.caliinda.feature.event_management.ui.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
@@ -23,18 +22,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.ui.screens.main.shared.cuid
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.SugNameChips
+import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -76,9 +71,9 @@ fun ChipsRow(chips: List<SugNameChips>, onChipClick: (String) -> Unit, enabled: 
   LazyRow(
       modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 8.dp),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      contentPadding = PaddingValues(horizontal = 10.dp)) {
+          .padding(horizontal = cuid.padding),
+      horizontalArrangement = Arrangement.spacedBy(cuid.padding),
+      contentPadding = PaddingValues(cuid.padding)) {
         items(chips, key = { it.name }) { chip ->
           SuggestionChip(
               onClick = { onChipClick(chip.fullText) },
@@ -91,103 +86,37 @@ fun ChipsRow(chips: List<SugNameChips>, onChipClick: (String) -> Unit, enabled: 
 
 @Composable
 internal fun DatePickerField(
-    label: String,
     date: LocalDate?,
     dateFormatter: DateTimeFormatter,
-    isError: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   ModernClickableTextField(
       value = date?.format(dateFormatter) ?: "",
-      isError = isError,
-      isLoading = isLoading,
-      onClick = onClick,
-      modifier = modifier)
-}
-/*
-@Composable
-internal fun TimePickerField(
-    label: String,
-    time: LocalTime?,
-    timeFormatter: DateTimeFormatter,
-    isError: Boolean,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  ClickableTextField(
-      value = time?.format(timeFormatter) ?: "--:--",
-      label = label,
-      isError = isError,
       isLoading = isLoading,
       onClick = onClick,
       modifier = modifier)
 }
 
- */
-
-
 @Composable
 internal fun TimePickerField(
-    label: String,
     time: LocalTime?,
     timeFormatter: DateTimeFormatter,
-    isError: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ModernClickableTextField(
         value = time?.format(timeFormatter) ?: "--:--",
-        isError = isError,
         isLoading = isLoading,
         onClick = onClick,
         modifier = modifier)
 }
 
-// Общий Composable для кликабельного текстового поля (паттерн с оверлеем)
-@Composable
-private fun ClickableTextField(
-    value: String,
-    label: String,
-    isError: Boolean,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-  Box(modifier = modifier) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = {}, // Не изменяется напрямую
-        readOnly = true,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
-        isError = isError,
-        enabled = !isLoading,
-        shape = RoundedCornerShape(cuid.ContainerCornerRadius))
-    // Прозрачный Оверлей для клика
-    Box(
-        modifier =
-            Modifier
-                .matchParentSize() // Занимает все место родителя
-                .clickable(
-                    enabled = !isLoading,
-                    onClick = onClick,
-                    indication = null, // Можно убрать стандартную рябь
-                    interactionSource =
-                        remember {
-                            MutableInteractionSource()
-                        } // Для обработки состояний нажатия оверлея, если нужно
-                ))
-  }
-}
-
 @Composable
 private fun ModernClickableTextField(
     value: String,
-    isError: Boolean,
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -214,19 +143,5 @@ private fun ModernClickableTextField(
         ) {
             Text(text = value, color = colorScheme.onSecondaryContainer)
         }
-    }
-}
-
-@Preview(showBackground = true, name = "ModernClickableTextField Centered")
-@Composable
-private fun ModernClickableTextFieldPreviewCentered() {
-    MaterialTheme {
-        var textValue by remember { mutableStateOf("17:00") }
-        ModernClickableTextField(
-            value = textValue,
-            isError = false,
-            isLoading = false,
-            onClick = { textValue = "Clicked Centered!" },
-        )
     }
 }

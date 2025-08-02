@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging
+package com.lpavs.caliinda.feature.event_management.ui.edit
 
 import android.text.format.DateFormat
 import android.util.Log
@@ -62,13 +62,13 @@ import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.ui.screens.main.CalendarEvent
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventDateTimePicker
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventDateTimeState
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventNameSection
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.RecurrenceEndType
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.RecurrenceOption
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.AdaptiveContainer
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.TimePickerDialog
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
+import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -82,13 +82,12 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun EditEventScreen(
     viewModel: MainViewModel,
+    userTimeZoneId: String,
     eventToEdit: CalendarEvent,
     selectedUpdateMode: ClientEventUpdateMode,
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
 ) {
-    val userTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
-
     var summary by remember(eventToEdit.id) { mutableStateOf(eventToEdit.summary) }
   var description by remember(eventToEdit.id) { mutableStateOf(eventToEdit.description ?: "") }
   var location by remember(eventToEdit.id) { mutableStateOf(eventToEdit.location ?: "") }
@@ -567,7 +566,7 @@ fun EditEventScreen(
                         Instant.ofEpochMilli(utcTimeMillis)
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
-                      return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
+                    return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
                   }
 
                   override fun isSelectableYear(year: Int): Boolean {

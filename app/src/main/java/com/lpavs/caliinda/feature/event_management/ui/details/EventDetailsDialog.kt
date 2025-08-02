@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging
+package com.lpavs.caliinda.feature.event_management.ui.details
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -60,24 +59,24 @@ import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil.formatRRule
 @Composable
 fun CustomEventDetailsDialog(
     event: CalendarEvent,
+    userTimeZoneId: String,
     onDismissRequest: () -> Unit,
     viewModel: MainViewModel,
 ) {
   val context = LocalContext.current
-  val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
   val timeFormatterLambda: (CalendarEvent) -> String =
-      remember(viewModel, currentTimeZoneId, currentLocale) {
+      remember(viewModel, userTimeZoneId, currentLocale) {
         { event ->
           DateTimeFormatterUtil.formatEventDetailsTime(
-              context, event, currentTimeZoneId, currentLocale)
+              context, event, userTimeZoneId, currentLocale)
         }
       }
   val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
   val isCurrent =
       remember(currentTime, event.startTime, event.endTime) {
-        val start = parseToInstant(event.startTime, currentTimeZoneId)
-        val end = parseToInstant(event.endTime, currentTimeZoneId)
+        val start = parseToInstant(event.startTime, userTimeZoneId)
+        val end = parseToInstant(event.endTime, userTimeZoneId)
         start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
       }
   Dialog(
@@ -143,7 +142,7 @@ fun CustomEventDetailsDialog(
                       if (!event.recurrenceRule.isNullOrEmpty()) {
                         DetailRow(
                             Icons.Filled.Repeat,
-                            formatRRule(event.recurrenceRule, zoneIdString = currentTimeZoneId),
+                            formatRRule(event.recurrenceRule, zoneIdString = userTimeZoneId),
                             color = onCardText)
                       }
                       Spacer(modifier = Modifier.height(20.dp))

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda
+package com.lpavs.caliinda.app
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

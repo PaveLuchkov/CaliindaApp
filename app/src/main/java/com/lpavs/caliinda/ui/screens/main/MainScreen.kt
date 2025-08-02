@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -50,13 +51,14 @@ import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.ui.screens.main.components.agent.AiVisualizer
 import com.lpavs.caliinda.ui.screens.main.components.panels.BottomBar
-import com.lpavs.caliinda.ui.screens.main.components.panels.CalendarAppBar
+import com.lpavs.caliinda.feature.calendar.ui.components.CalendarAppBar
 import com.lpavs.caliinda.ui.screens.main.components.LogInScreenDialog
-import com.lpavs.caliinda.ui.screens.main.components.calendar.DayEventsPage
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.CreateEventScreen
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.CustomEventDetailsDialog
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.EditEventScreen
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.RecurringEventEditOptionsDialog
+import com.lpavs.caliinda.feature.calendar.ui.components.DayEventsPage
+import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
+import com.lpavs.caliinda.feature.event_management.ui.details.CustomEventDetailsDialog
+import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
+import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -65,7 +67,13 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
+fun MainScreen(
+    viewModel: MainViewModel,
+    onNavigateToSettings: () -> Unit,
+    eventManagementViewModel: EventManagementViewModel
+)
+{
+    val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val snackbarHostState = remember { SnackbarHostState() }
@@ -79,7 +87,6 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
   val currentVisibleDate by viewModel.currentVisibleDate.collectAsStateWithLifecycle()
   val activity = context as? Activity
-
     val authorizationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -331,6 +338,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
         ) {
           CreateEventScreen(
               viewModel = viewModel,
+              userTimeZoneId = timeZone.value,
               initialDate = selectedDateForSheet,
               onDismiss = {
                 scope
@@ -366,6 +374,7 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
           contentWindowInsets = { WindowInsets.navigationBars }) {
             EditEventScreen(
                 viewModel = viewModel,
+                userTimeZoneId = timeZone.value,
                 eventToEdit = eventToEdit,
                 selectedUpdateMode = mode,
                 onDismiss = {
@@ -386,7 +395,8 @@ fun MainScreen(viewModel: MainViewModel, onNavigateToSettings: () -> Unit) {
     CustomEventDetailsDialog(
         event = uiState.eventForDetailedView!!, // Передаем событие
         onDismissRequest = { viewModel.cancelEventDetails() },
-        viewModel = viewModel)
+        viewModel = viewModel,
+        userTimeZoneId = timeZone.value)
   }
   if (uiState.showSignInRequiredDialog) {
     LogInScreenDialog(

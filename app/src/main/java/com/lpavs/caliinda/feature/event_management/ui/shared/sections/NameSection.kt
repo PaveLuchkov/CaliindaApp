@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections
+package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -7,10 +7,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.ChipsRow
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.CustomOutlinedTextField
+import com.lpavs.caliinda.feature.event_management.ui.shared.ChipsRow
+import com.lpavs.caliinda.feature.event_management.ui.shared.CustomOutlinedTextField
 
 data class SugNameChips(val name: String, val fullText: String)
+
+
+@Composable
+fun EventNameSection(
+    summary: String,
+    summaryError: String?,
+    onSummaryChange: (String) -> Unit,
+    onSummaryErrorChange: (String?) -> Unit,
+    isLoading: Boolean
+) {
+    CustomOutlinedTextField(
+        value = summary,
+        onValueChange = {
+            onSummaryChange(it)
+            onSummaryErrorChange(null)
+        },
+        label = stringResource(R.string.event_name),
+        modifier = Modifier.fillMaxWidth(),
+        isError = summaryError != null,
+        supportingText = {
+            if (summaryError != null) Text(summaryError)
+        },
+        enabled = !isLoading,
+    )
+    ChipsRow(
+        chips = getSuggestedEventNames(),
+        onChipClick = { clickedChip -> onSummaryChange(clickedChip) },
+        enabled = !isLoading)
+}
+
 
 @Composable
 fun getSuggestedEventNames(): List<SugNameChips> {
@@ -102,33 +132,6 @@ fun getSuggestedEventNames(): List<SugNameChips> {
           context.getString(R.string.suggested_event_breakfast_full)),
       SugNameChips(
           context.getString(R.string.suggested_event_pet),
-          context.getString(R.string.suggested_event_pet_full)))
-}
-
-@Composable
-fun EventNameSection(
-    summary: String,
-    summaryError: String?,
-    onSummaryChange: (String) -> Unit,
-    onSummaryErrorChange: (String?) -> Unit,
-    isLoading: Boolean
-) {
-  CustomOutlinedTextField(
-      value = summary,
-      onValueChange = {
-        onSummaryChange(it) // Call the callback here
-        onSummaryErrorChange(null) // Update the error
-      },
-      label = stringResource(R.string.event_name),
-      modifier = Modifier.fillMaxWidth(),
-      isError = summaryError != null,
-      supportingText = {
-        if (summaryError != null) Text(summaryError)
-      },
-      enabled = !isLoading,
+          context.getString(R.string.suggested_event_pet_full))
   )
-  ChipsRow(
-      chips = getSuggestedEventNames(),
-      onChipClick = { clickedChip -> onSummaryChange(clickedChip) },
-      enabled = !isLoading)
 }

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging
+package com.lpavs.caliinda.feature.event_management.ui.create
 
 import android.text.format.DateFormat
 import android.util.Log
@@ -44,7 +44,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,13 +58,13 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.data.local.DateTimeUtils
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventDateTimePicker
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventDateTimeState
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.EventNameSection
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.RecurrenceEndType
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.sections.RecurrenceOption
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.AdaptiveContainer
-import com.lpavs.caliinda.ui.screens.main.components.calendar.eventmanaging.ui.TimePickerDialog
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
+import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -80,6 +79,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CreateEventScreen(
     viewModel: MainViewModel,
+    userTimeZoneId: String,
     initialDate: LocalDate,
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
@@ -92,8 +92,6 @@ fun CreateEventScreen(
   var validationError by remember { mutableStateOf<String?>(null) }
 
   val createEventState by viewModel.createEventResult.collectAsStateWithLifecycle()
-  val userTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
-
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
 
@@ -131,7 +129,8 @@ fun CreateEventScreen(
             recurrenceEndType = RecurrenceEndType.NEVER,
             isRecurring = false, // Добавлено, если нужно управлять этим
             recurrenceRule = null // Добавлено
-            ))
+            )
+    )
   }
 
   fun formatEventTimesForSaving(
