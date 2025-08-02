@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.panels
+package com.lpavs.caliinda.feature.calendar.ui.components
 
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
@@ -42,11 +42,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.feature.agent.ui.RecordButton
+import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 fun BottomBar(
-    uiState: com.lpavs.caliinda.ui.screens.main.MainUiState, // Принимаем весь стейт
+    uiState: CalendarState, // Принимаем весь стейт
     textFieldValue: TextFieldValue,
     onTextChanged: (TextFieldValue) -> Unit,
     onSendClick: () -> Unit,

@@ -12,7 +12,7 @@ import com.lpavs.caliinda.data.mapper.EventMapper
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.app.di.IoDispatcher
-import com.lpavs.caliinda.ui.screens.main.CalendarEvent
+import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
