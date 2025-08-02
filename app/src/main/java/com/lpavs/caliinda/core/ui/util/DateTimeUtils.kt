@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.local
+package com.lpavs.caliinda.core.ui.util
 
 import android.util.Log
 import java.time.Instant

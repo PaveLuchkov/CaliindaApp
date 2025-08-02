@@ -26,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
-import com.lpavs.caliinda.ui.screens.main.CalendarEvent
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
+import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.cuid
 import java.time.Duration

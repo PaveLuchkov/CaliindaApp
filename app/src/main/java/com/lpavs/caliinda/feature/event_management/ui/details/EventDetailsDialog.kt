@@ -49,11 +49,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.data.local.DateTimeUtils.parseToInstant
-import com.lpavs.caliinda.ui.screens.main.CalendarEvent
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
+import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
+import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil.formatRRule
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -61,7 +62,8 @@ fun CustomEventDetailsDialog(
     event: CalendarEvent,
     userTimeZoneId: String,
     onDismissRequest: () -> Unit,
-    viewModel: MainViewModel,
+    viewModel: CalendarViewModel,
+    eventManagementViewModel: EventManagementViewModel
 ) {
   val context = LocalContext.current
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
@@ -151,7 +153,7 @@ fun CustomEventDetailsDialog(
                           verticalAlignment = Alignment.CenterVertically,
                           horizontalArrangement = Arrangement.End) {
                             Button(
-                                onClick = { viewModel.requestEditEvent(event) },
+                                onClick = { eventManagementViewModel.requestEditEvent(event) },
                                 contentPadding = PaddingValues(horizontal = 12.dp)) {
                                   Icon(Icons.Filled.Edit, contentDescription = "Edit")
                                   Spacer(Modifier.size(ButtonDefaults.IconSpacing))
@@ -159,7 +161,7 @@ fun CustomEventDetailsDialog(
                                 }
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
-                                onClick = { viewModel.requestDeleteConfirmation(event) },
+                                onClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
                                 modifier =
                                     Modifier.minimumInteractiveComponentSize()
                                         .size(

@@ -56,8 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.CreateEventResult
-import com.lpavs.caliinda.data.local.DateTimeUtils
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
@@ -65,6 +64,7 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.Recurrence
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -78,7 +78,7 @@ import java.time.format.DateTimeFormatter
     ExperimentalMaterial3ExpressiveApi::class) // Необходимо для M3 Dialogs и Pickers
 @Composable
 fun CreateEventScreen(
-    viewModel: MainViewModel,
+    viewModel: EventManagementViewModel,
     userTimeZoneId: String,
     initialDate: LocalDate,
     onDismiss: () -> Unit,

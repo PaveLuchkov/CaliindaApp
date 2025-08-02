@@ -25,14 +25,14 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.ui.Modifier
 import com.lpavs.caliinda.navigation.AppNavHost
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-  private val mainViewModel: MainViewModel by viewModels()
+  private val calendarViewModel: CalendarViewModel by viewModels()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       CaliindaTheme {
         AppNavHost(
-            viewModel = mainViewModel,
+            viewModel = calendarViewModel,
             modifier = Modifier.background(colorScheme.background),
         )
       }

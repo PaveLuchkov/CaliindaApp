@@ -33,12 +33,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
 import com.lpavs.caliinda.data.calendar.EventNetworkState
-import com.lpavs.caliinda.data.local.DateTimeUtils
-import com.lpavs.caliinda.ui.screens.main.CalendarEvent
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils
+import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
+import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -46,8 +47,10 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DayEventsPage(
+    isLoading: Boolean,
     date: LocalDate,
-    viewModel: MainViewModel,
+    viewModel: CalendarViewModel,
+    eventManagementViewModel: EventManagementViewModel
 ) {
     val eventsFlow = remember(date) { viewModel.getEventsFlowForDate(date) }
     val eventsState =
@@ -59,7 +62,8 @@ fun DayEventsPage(
         "DayEventsPage",
         "Events received from flow: ${events.joinToString { it.summary + " (allDay=" + it.isAllDay + ")" }}"
     )
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val calendarState by viewModel.state.collectAsStateWithLifecycle()
+    val eventManagementState by eventManagementViewModel.state.collectAsStateWithLifecycle()
     val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
 
     val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
@@ -116,19 +120,16 @@ fun DayEventsPage(
     // --- СОЗДАЕМ И ЗАПОМИНАЕМ СОСТОЯНИЕ СПИСКА ---
     val listState = rememberLazyListState()
     val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
-    val isBusy = uiState.isLoading || rangeNetworkState is EventNetworkState.Loading
-    val isListening = uiState.isListening
+    val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
+    val isListening = calendarState.isListening
 
     LaunchedEffect(
         targetScrollIndex,
         isToday
-    ) { // Запускаем, если изменился индекс или флаг isToday
+    ) {
         if (isToday && targetScrollIndex != -1) {
-            // Запускаем корутину для вызова suspend-функции animateScrollToItem
             launch {
-                // Небольшая задержка может помочь, если список еще не успел отрисоваться
-                // delay(100) // Раскомментируй, если нужно
-                try { // Добавим try-catch на всякий случай
+                try {
                     listState.animateScrollToItem(index = targetScrollIndex)
                 } catch (e: Exception) {
                     Log.e("DayEventsPageScroll", "Error scrolling to index $targetScrollIndex", e)
@@ -137,7 +138,6 @@ fun DayEventsPage(
         }
     }
     var expandedAllDayEventId by remember { mutableStateOf<String?>(null) }
-    //    val fixedColors = LocalFixedAccentColors.current
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -163,13 +163,13 @@ fun DayEventsPage(
                                     }
                             },
                             onDeleteClick = {
-                                viewModel.requestDeleteConfirmation(event)
+                                eventManagementViewModel.requestDeleteConfirmation(event)
                             },
                             onDetailsClick = {
-                                viewModel.requestEventDetails(event)
+                                eventManagementViewModel.requestEventDetails(event)
                             },
                             onEditClick = {
-                                viewModel.requestEditEvent(event)
+                                eventManagementViewModel.requestEditEvent(event)
                             },
                         )
                         Spacer(modifier = Modifier.height(6.dp))
@@ -196,9 +196,9 @@ fun DayEventsPage(
                     nextStartTime = nextStartTime,
                     currentTime = currentTime,
                     listState = listState,
-                    onDeleteRequest = viewModel::requestDeleteConfirmation,
-                    onEditRequest = viewModel::requestEditEvent,
-                    onDetailsRequest = viewModel::requestEventDetails,
+                    onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
+                    onEditRequest = eventManagementViewModel::requestEditEvent,
+                    onDetailsRequest = eventManagementViewModel::requestEventDetails,
                     currentTimeZoneId = currentTimeZoneId
                 )
             } else if (allDayEvents.isEmpty()) {
@@ -229,15 +229,15 @@ fun DayEventsPage(
             } else {
                 Spacer(modifier = Modifier.weight(1f))
             }
-            if (uiState.showDeleteConfirmationDialog && uiState.eventPendingDeletion != null) {
+            if (eventManagementState.showDeleteConfirmationDialog && eventManagementState.eventPendingDeletion != null) {
                 DeleteConfirmationDialog(
-                    onConfirm = { viewModel.confirmDeleteEvent() },
-                    onDismiss = { viewModel.cancelDelete() })
-            } else if (uiState.showRecurringDeleteOptionsDialog && uiState.eventPendingDeletion != null) {
+                    onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
+                    onDismiss = { eventManagementViewModel.cancelDelete() })
+            } else if (eventManagementState.showRecurringDeleteOptionsDialog && eventManagementState.eventPendingDeletion != null) {
                 RecurringEventDeleteOptionsDialog(
-                    eventName = uiState.eventPendingDeletion!!.summary,
-                    onDismiss = { viewModel.cancelDelete() },
-                    onOptionSelected = { choice -> viewModel.confirmRecurringDelete(choice) })
+                    eventName = eventManagementState.eventPendingDeletion!!.summary,
+                    onDismiss = { eventManagementViewModel.cancelDelete() },
+                    onOptionSelected = { choice -> eventManagementViewModel.confirmRecurringDelete(choice) })
             }
         }
     }

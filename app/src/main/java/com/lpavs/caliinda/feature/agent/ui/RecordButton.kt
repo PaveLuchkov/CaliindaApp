@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.panels
+package com.lpavs.caliinda.feature.agent.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -39,13 +39,12 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
-import com.lpavs.caliinda.ui.common.CustomRotatingMorphShape
-import com.lpavs.caliinda.ui.screens.main.MainUiState
+import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 import kotlinx.coroutines.launch
 
 @Composable
 fun RecordButton(
-    uiState: MainUiState,
+    uiState: CalendarState,
     onStartRecording: () -> Unit, // Принимаем лямбды вместо ViewModel
     onStopRecordingAndSend: () -> Unit,
     onUpdatePermissionResult: (Boolean) -> Unit,

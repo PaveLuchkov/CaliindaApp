@@ -54,14 +54,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
-import com.lpavs.caliinda.data.local.DateTimeUtils
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
-import com.lpavs.caliinda.ui.screens.main.CalendarEvent
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
@@ -69,6 +67,7 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.Recurrence
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -81,7 +80,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditEventScreen(
-    viewModel: MainViewModel,
+    viewModel: EventManagementViewModel,
     userTimeZoneId: String,
     eventToEdit: CalendarEvent,
     selectedUpdateMode: ClientEventUpdateMode,

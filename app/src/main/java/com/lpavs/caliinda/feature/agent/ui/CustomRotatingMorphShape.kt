@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.common
+package com.lpavs.caliinda.feature.agent.ui
 
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Matrix
