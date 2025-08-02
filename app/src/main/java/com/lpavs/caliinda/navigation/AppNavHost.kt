@@ -15,6 +15,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.ui.screens.main.MainScreen
 import com.lpavs.caliinda.ui.screens.main.MainViewModel
 import com.lpavs.caliinda.feature.settings.ui.AISettingsScreen
@@ -65,9 +66,11 @@ fun AppNavHost(
         composable(
             NavRoutes.Main.route,
         ) {
+            val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
               MainScreen(
                   viewModel = viewModel,
-                  onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) })
+                  onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) },
+                  eventManagementViewModel = eventManagementViewModel)
             }
         composable(
             NavRoutes.Settings.route,
