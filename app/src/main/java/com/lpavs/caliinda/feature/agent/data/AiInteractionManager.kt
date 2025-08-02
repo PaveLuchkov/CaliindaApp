@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.ai
+package com.lpavs.caliinda.feature.agent.data
 
 import android.content.Context
 import android.content.Intent
@@ -8,7 +8,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.data.ai.model.AiVisualizerState
+import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.di.BackendUrl

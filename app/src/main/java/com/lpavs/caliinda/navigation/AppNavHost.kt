@@ -16,8 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import com.lpavs.caliinda.ui.screens.main.MainScreen
-import com.lpavs.caliinda.ui.screens.main.MainViewModel
+import com.lpavs.caliinda.feature.calendar.ui.CalendarScreen
+import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.settings.ui.AISettingsScreen
 import com.lpavs.caliinda.feature.settings.ui.SettingsScreen
 import com.lpavs.caliinda.feature.settings.ui.TermsOfUseScreen
@@ -28,7 +28,7 @@ import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    viewModel: MainViewModel,
+    viewModel: CalendarViewModel,
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -67,16 +67,18 @@ fun AppNavHost(
             NavRoutes.Main.route,
         ) {
             val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
-              MainScreen(
-                  viewModel = viewModel,
+              CalendarScreen(
+                  calendarViewModel = viewModel,
                   onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) },
                   eventManagementViewModel = eventManagementViewModel)
             }
         composable(
             NavRoutes.Settings.route,
         ) {
+            val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
               SettingsScreen(
-                  viewModel = viewModel,
+                  calendarViewModel = viewModel,
+                  eventManagementViewModel = eventManagementViewModel,
                   onSignInClick = onSignInClick,
                   onNavigateBack = { navController.popBackStack() },
                   onNavigateToAISettings = { navController.navigate(NavRoutes.AISettings.route) },

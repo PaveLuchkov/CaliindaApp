@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.ui.screens.main.components.agent
+package com.lpavs.caliinda.feature.agent.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
@@ -46,7 +46,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.data.ai.model.AiVisualizerState
+import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
