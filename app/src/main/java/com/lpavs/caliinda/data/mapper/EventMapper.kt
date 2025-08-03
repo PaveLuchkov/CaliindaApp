@@ -1,18 +1,23 @@
 package com.lpavs.caliinda.data.mapper
 
 import android.util.Log
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent // Твоя модель для UI/сети
+import dagger.Provides
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object EventMapper {
+@Singleton
+class EventMapper @Inject constructor()  {
 
-  private const val TAG = "EventMapper"
+  private val TAG = "EventMapper"
 
   // Принимает ID часового пояса как параметр
-  fun mapToEntity(event: CalendarEvent, zoneIdString: String): CalendarEventEntity? {
+  fun mapToEntity(event: EventDto, zoneIdString: String): CalendarEventEntity? {
     try {
       val isAllDayEvent = event.isAllDay
       val startTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)

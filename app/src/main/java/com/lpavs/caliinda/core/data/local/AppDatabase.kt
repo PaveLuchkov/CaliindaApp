@@ -10,5 +10,5 @@ import com.lpavs.caliinda.data.local.CalendarEventEntity
     exportSchema = false // Установи true и укажи путь для схем в production
     )
 abstract class AppDatabase : RoomDatabase() {
-  abstract fun eventDao(): EventDao
+  abstract fun eventDao(): CalendarLocalDataSource
 }

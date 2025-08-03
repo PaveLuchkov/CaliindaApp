@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -55,8 +56,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
-import com.lpavs.caliinda.data.calendar.CreateEventResult
+import com.lpavs.caliinda.feature.calendar.data.onEventResults.CreateEventResult
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -89,9 +91,10 @@ fun CreateEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  val createEventState by viewModel.createEventResult.collectAsStateWithLifecycle()
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
   val context = LocalContext.current
 
@@ -189,27 +192,19 @@ fun CreateEventScreen(
     return summaryError == null && validationError == null
   }
 
-  // --- Обработка состояния ViewModel (без изменений) ---
-  LaunchedEffect(createEventState) {
-    isLoading = createEventState is CreateEventResult.Loading
-    when (val result = createEventState) {
-      is CreateEventResult.Success -> {
-        Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
-        viewModel.consumeCreateEventResult()
-        onDismiss()
-      }
-
-      is CreateEventResult.Error -> {
-        generalError = result.message
-        viewModel.consumeCreateEventResult()
-      }
-
-      is CreateEventResult.Loading -> generalError = null
-      is CreateEventResult.Idle -> {
-        /* Можно убрать generalError, если нужно */
-      }
+    LaunchedEffect(uiState.userFacingMessage) {
+        uiState.userFacingMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.onMessageShown()
+        }
     }
-  }
+
+    LaunchedEffect(uiState.eventCreationSuccess) {
+        if (uiState.eventCreationSuccess) {
+            onDismiss()
+            viewModel.onNavigationDone()
+        }
+    }
 
   // Функция сохранения (логика форматирования без изменений)
   val onSaveClick: () -> Unit = saveLambda@{
@@ -277,18 +272,18 @@ fun CreateEventScreen(
         finalRecurrenceRule = ruleParts.joinToString(";")
       }
       Log.d("CreateEvent", "Final RRULE to send: $finalRecurrenceRule")
+        val request = EventRequest(
+            summary = summary.trim(),
+            startTime = startStr,
+            endTime = endStr,
+            isAllDay = eventDateTimeState.isAllDay,
+            timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId,
+            description = description.trim().takeIf { it.isNotEmpty() },
+            location = location.trim().takeIf { it.isNotEmpty() },
+            recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") }
+        )
 
-      viewModel.createEvent(
-          summary = summary.trim(),
-          startTimeString = startStr, // Отправляем отформатированную строку
-          endTimeString = endStr, // Отправляем отформатированную строку
-          isAllDay = eventDateTimeState.isAllDay,
-          timeZoneId =
-              if (eventDateTimeState.isAllDay) null
-              else userTimeZoneId, // Передаем ID таймзоны только для timed событий
-          description = description.trim().takeIf { it.isNotEmpty() },
-          location = location.trim().takeIf { it.isNotEmpty() },
-          recurrenceRule = finalRecurrenceRule)
+      viewModel.createEvent(request)
     } else {
       Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
     }

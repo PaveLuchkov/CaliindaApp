@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.calendar
+package com.lpavs.caliinda.feature.calendar.data.onEventResults
 
 sealed interface DeleteEventResult {
   object Idle : DeleteEventResult

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.calendar
+package com.lpavs.caliinda.feature.calendar.data.onEventResults
 
 sealed interface CreateEventResult {
   object Idle : CreateEventResult

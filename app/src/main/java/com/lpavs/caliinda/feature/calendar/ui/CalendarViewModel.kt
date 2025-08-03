@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
+import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
@@ -32,7 +32,7 @@ class CalendarViewModel
 @Inject
 constructor(
     private val authManager: AuthManager,
-    private val calendarDataManager: CalendarDataManager,
+    private val calendarDataManager: CalendarRepository,
     private val aiInteractionManager: AiInteractionManager,
     settingsRepository: SettingsRepository,
     timeTicker: ITimeTicker,
@@ -48,7 +48,8 @@ constructor(
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
 
   // Состояния Календаря
-  val currentVisibleDate: StateFlow<LocalDate> = calendarDataManager.currentVisibleDate
+  private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
+  val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
   val rangeNetworkState: StateFlow<EventNetworkState> = calendarDataManager.rangeNetworkState
 
   // Состояния AI
@@ -102,7 +103,7 @@ constructor(
         if (authState.isSignedIn && !previousUiState.isSignedIn) {
           Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
           calendarDataManager.setCurrentVisibleDate(
-              calendarDataManager.currentVisibleDate.value, forceRefresh = true)
+              currentVisibleDate.value, forceRefresh = true)
         }
       }
     }
@@ -203,7 +204,7 @@ constructor(
 
   fun refreshCurrentVisibleDate() {
     viewModelScope.launch {
-      calendarDataManager.refreshDate(calendarDataManager.currentVisibleDate.value)
+      calendarDataManager.refreshDate(currentVisibleDate.value)
     }
   }
 
@@ -240,7 +241,6 @@ constructor(
 
   fun clearGeneralError() {
     _uiState.update { it.copy(showGeneralError = null) }
-    calendarDataManager.clearNetworkError() // Опционально
   }
 
   // --- LIFECYCLE ---

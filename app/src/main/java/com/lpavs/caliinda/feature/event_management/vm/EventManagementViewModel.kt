@@ -4,15 +4,11 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.data.calendar.ApiDeleteEventMode
-import com.lpavs.caliinda.data.calendar.CalendarDataManager
-import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
-import com.lpavs.caliinda.data.calendar.CreateEventResult
-import com.lpavs.caliinda.data.calendar.DeleteEventResult
-import com.lpavs.caliinda.data.calendar.UpdateEventResult
-import com.lpavs.caliinda.data.local.UpdateEventApiRequest
+import com.lpavs.caliinda.core.data.remote.EventDeleteMode
+import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.dto.EventRequest
+import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,144 +34,10 @@ class EventManagementViewModel
 constructor(
     settingsRepository: SettingsRepository,
     @ApplicationContext private val context: Context,
-    private val calendarDataManager: CalendarDataManager,
+    private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val state: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
-
-  init {
-    observeCreateEventResult()
-    observeDeleteEventResult()
-    observeUpdateEventResult()
-  }
-
-  private fun calculateIsLoading(
-      createEventState: CreateEventResult = calendarDataManager.createEventResult.value,
-      deleteEventState: DeleteEventResult = calendarDataManager.deleteEventResult.value,
-      updateEventState: UpdateEventResult = calendarDataManager.updateEventResult.value
-  ): Boolean {
-    val creatingEvent = createEventState is CreateEventResult.Loading
-    val deletingEvent = deleteEventState is DeleteEventResult.Loading
-    val updatingEvent = updateEventState is UpdateEventResult.Loading
-
-    return creatingEvent || deletingEvent || updatingEvent
-  }
-
-  private val eventCreatedMessage: String = context.getString(R.string.event_created)
-
-  private fun observeCreateEventResult() {
-    viewModelScope.launch {
-      calendarDataManager.createEventResult.collect { result ->
-        _uiState.update { currentUiState ->
-          val nextMessage =
-              when (result) {
-                is CreateEventResult.Success -> "Событие успешно создано"
-                is CreateEventResult.Error -> result.message
-                is CreateEventResult.Idle -> {
-                  val prevMsg = currentUiState.message
-                  if (prevMsg == eventCreatedMessage ||
-                      prevMsg?.contains(context.getString(R.string.error)) == true) {
-                    null
-                  } else {
-                    prevMsg
-                  }
-                }
-                is CreateEventResult.Loading -> currentUiState.message
-              }
-          currentUiState.copy(
-              isLoading = calculateIsLoading(createEventState = result), message = nextMessage)
-        }
-      }
-    }
-  }
-
-  private fun observeDeleteEventResult() {
-    viewModelScope.launch {
-      calendarDataManager.deleteEventResult.collect { result ->
-        _uiState.update { currentState ->
-          val updatedState =
-              when (result) {
-                is DeleteEventResult.Success -> {
-                  Log.i(TAG, "Event deletion successful (observed in VM).")
-                  currentState.copy(
-                      eventToDeleteId = null,
-                      deleteOperationError = null,
-                  )
-                }
-                is DeleteEventResult.Error -> {
-                  Log.e(TAG, "Event deletion failed (observed in VM): ${result.message}")
-                  currentState.copy(
-                      eventToDeleteId = null,
-                      deleteOperationError = result.message,
-                      showDeleteConfirmationDialog = false)
-                }
-                is DeleteEventResult.Loading -> {
-                  currentState.copy(deleteOperationError = null)
-                }
-                is DeleteEventResult.Idle -> {
-                  if (currentState.deleteOperationError != null) {
-                    currentState.copy(deleteOperationError = null)
-                  } else {
-                    currentState
-                  }
-                }
-              }
-          updatedState.copy(isLoading = calculateIsLoading())
-        }
-        if (result is DeleteEventResult.Success || result is DeleteEventResult.Error) {
-          calendarDataManager.consumeDeleteEventResult()
-        }
-      }
-    }
-  }
-
-  private fun observeUpdateEventResult() {
-    viewModelScope.launch {
-      calendarDataManager.updateEventResult.collect { result ->
-        _uiState.update { currentState ->
-          val updatedState =
-              when (result) {
-                is UpdateEventResult.Success -> {
-                  Log.i(
-                      TAG,
-                      "Event update successful (observed in VM). Event ID: ${result.updatedEventId}")
-                  currentState.copy(
-                      eventBeingEdited = null,
-                      showEditEventDialog = false,
-                      editOperationError = null,
-                      message = "Событие успешно обновлено")
-                }
-
-                is UpdateEventResult.Error -> {
-                  Log.e(TAG, "Event update failed (observed in VM): ${result.message}")
-                  currentState.copy(editOperationError = result.message)
-                }
-
-                is UpdateEventResult.Loading -> {
-                  currentState.copy(editOperationError = null)
-                }
-
-                is UpdateEventResult.Idle -> {
-                  if (currentState.editOperationError != null ||
-                      currentState.message == "Событие успешно обновлено") {
-                    currentState.copy(editOperationError = null, message = null)
-                  } else {
-                    currentState
-                  }
-                }
-              }
-          updatedState.copy(isLoading = calculateIsLoading())
-        }
-
-        if (result is UpdateEventResult.Success || result is UpdateEventResult.Error) {
-          calendarDataManager.consumeUpdateEventResult()
-        }
-      }
-    }
-  }
-
-  val createEventResult: StateFlow<CreateEventResult> = calendarDataManager.createEventResult
-  val updateEventResult: StateFlow<UpdateEventResult> = calendarDataManager.updateEventResult
 
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
@@ -191,8 +53,8 @@ constructor(
    *   всегда передаем режим.
    */
   fun confirmEventUpdate(
-      updatedEventData: UpdateEventApiRequest,
-      modeFromUi: ClientEventUpdateMode
+      updatedEventData: EventRequest,
+      modeFromUi: EventUpdateMode
   ) {
     val originalEvent = _uiState.value.eventBeingEdited
     if (originalEvent == null) {
@@ -206,41 +68,48 @@ constructor(
         "Confirming update for event ID: ${originalEvent.id}, mode: $modeFromUi, data: $updatedEventData")
 
     viewModelScope.launch {
-      calendarDataManager.updateEvent(
+      val result = calendarRepository.updateEvent(
           eventId = originalEvent.id, // ID оригинального события/экземпляра
           updateData = updatedEventData,
           mode = modeFromUi)
+        if (result.isSuccess) {
+            _uiState.update {
+                it.copy(isLoading = false, eventUpdateSuccess = true) // Добавьте eventCreationSuccess
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    userFacingError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+                )
+            }
+        }
     }
+
   }
 
-  fun consumeUpdateEventResult() {
-    calendarDataManager.consumeUpdateEventResult()
-  }
+
 
   fun createEvent(
-      summary: String,
-      startTimeString: String,
-      endTimeString: String,
-      isAllDay: Boolean,
-      description: String?,
-      timeZoneId: String?,
-      location: String?,
-      recurrenceRule: String?
+      request: EventRequest
   ) {
     viewModelScope.launch {
-      calendarDataManager.createEvent(
-          summary,
-          startTimeString,
-          endTimeString,
-          isAllDay,
-          timeZoneId = timeZoneId,
-          description,
-          location,
-          recurrenceRule = recurrenceRule)
+        _uiState.update { it.copy(isLoading = true) }
+      val result = calendarRepository.createEvent(request)
+        if (result.isSuccess) {
+            _uiState.update {
+                it.copy(isLoading = false, eventCreationSuccess = true) // Добавьте eventCreationSuccess
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    userFacingError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+                )
+            }
+        }
     }
   }
-
-  fun consumeCreateEventResult() = calendarDataManager.consumeCreateEventResult()
 
   /**
    * Вызывается из UI, когда пользователь инициирует удаление события. Устанавливает ID события и
@@ -277,23 +146,58 @@ constructor(
    * удаления через DataManager.
    */
   fun confirmDeleteEvent() {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-    _uiState.update { it.copy(showDeleteConfirmationDialog = false, eventPendingDeletion = null) }
-    viewModelScope.launch {
-      calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.DEFAULT)
-    }
+      val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+
+      viewModelScope.launch {
+          _uiState.update {
+              it.copy(
+                  isLoading = true,
+                  showDeleteConfirmationDialog = false,
+                  eventPendingDeletion = null,
+                  userFacingError = null
+              )
+          }
+
+          val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
+
+          if (result.isSuccess) {
+              _uiState.update { it.copy(isLoading = false, userFacingMessage = "Событие удалено") }
+          } else {
+              _uiState.update {
+                  it.copy(
+                      isLoading = false,
+                      userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                  )
+              }
+          }
+      }
   }
 
   fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
     val eventToDelete = _uiState.value.eventPendingDeletion ?: return
     _uiState.update {
-      it.copy(showRecurringDeleteOptionsDialog = false, eventPendingDeletion = null)
+        it.copy(
+            isLoading = true,
+            showDeleteConfirmationDialog = false,
+            eventPendingDeletion = null,
+            userFacingError = null
+        )
     }
 
     when (choice) {
       RecurringDeleteChoice.SINGLE_INSTANCE -> {
         viewModelScope.launch {
-          calendarDataManager.deleteEvent(eventToDelete.id, ApiDeleteEventMode.INSTANCE_ONLY)
+          val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.INSTANCE_ONLY)
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isLoading = false, userFacingMessage = "Событие удалено") }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                    )
+                }
+            }
         }
       }
 
@@ -304,7 +208,17 @@ constructor(
       RecurringDeleteChoice.ALL_IN_SERIES -> {
         val idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
         viewModelScope.launch {
-          calendarDataManager.deleteEvent(idForBackendCall, ApiDeleteEventMode.DEFAULT)
+          val result = calendarRepository.deleteEvent(idForBackendCall, EventDeleteMode.DEFAULT)
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isLoading = false, userFacingMessage = "Событие удалено") }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                    )
+                }
+            }
         }
       }
     }
@@ -324,7 +238,7 @@ constructor(
           TAG,
           "Cannot perform 'this and following' delete: Event ${eventInstance.id} has no recurrence rule.")
       _uiState.update {
-        it.copy(showGeneralError = "Не удалось обновить серию: отсутствует правило повторения.")
+        it.copy(userFacingError = "Не удалось обновить серию: отсутствует правило повторения.")
       }
       return
     }
@@ -335,7 +249,7 @@ constructor(
         try {
           OffsetDateTime.parse(eventInstance.startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
               .toLocalDate()
-        } catch (e: DateTimeParseException) {
+        } catch (_: DateTimeParseException) {
           try {
             LocalDate.parse(eventInstance.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
           } catch (e2: DateTimeParseException) {
@@ -344,7 +258,7 @@ constructor(
                 "Failed to parse event start time in any known format: ${eventInstance.startTime}",
                 e2)
             _uiState.update {
-              it.copy(showGeneralError = "Ошибка в дате события. Невозможно выполнить операцию.")
+              it.copy(userFacingError = "Ошибка в дате события. Невозможно выполнить операцию.")
             }
             return
           }
@@ -364,27 +278,32 @@ constructor(
         }
     val newRRuleString = "RRULE:" + ruleParts.joinToString(";") + ";UNTIL=$untilString"
 
-    val updateRequest = UpdateEventApiRequest(recurrence = listOf(newRRuleString))
+    val updateRequest = EventRequest(recurrence = listOf(newRRuleString))
 
     Log.d(
         TAG, "Updating master event $masterEventId to stop recurrence. New RRULE: $newRRuleString")
 
     viewModelScope.launch {
-      calendarDataManager.updateEvent(
+      val result = calendarRepository.updateEvent(
           eventId = masterEventId,
           updateData = updateRequest,
-          mode = ClientEventUpdateMode.ALL_IN_SERIES)
+          mode = EventUpdateMode.ALL_IN_SERIES)
+        if (result.isSuccess) {
+            _uiState.update { it.copy(isLoading = false, userFacingMessage = "События удалены") }
+        } else {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                )
+            }
+        }
     }
   }
 
   /** Вызывается из UI для сброса флага ошибки удаления после ее показа (например, в Snackbar). */
   fun clearDeleteError() {
     _uiState.update { it.copy(deleteOperationError = null) }
-  }
-
-  fun clearGeneralError() {
-    _uiState.update { it.copy(showGeneralError = null) }
-    calendarDataManager.clearNetworkError() // Опционально
   }
 
   /** Вызывается из UI, когда пользователь инициирует редактирование события. */
@@ -401,7 +320,7 @@ constructor(
           showEditEventDialog = !isAlreadyRecurring,
           selectedUpdateMode =
               if (!isAlreadyRecurring) {
-                ClientEventUpdateMode.ALL_IN_SERIES
+                EventUpdateMode.ALL_IN_SERIES
               } else {
                 it.selectedUpdateMode
               },
@@ -413,7 +332,7 @@ constructor(
   }
 
   /** Вызывается из диалога выбора режима редактирования для повторяющихся событий. */
-  fun onRecurringEditOptionSelected(choice: ClientEventUpdateMode) {
+  fun onRecurringEditOptionSelected(choice: EventUpdateMode) {
     val currentEvent = _uiState.value.eventBeingEdited
     if (currentEvent == null) {
       Log.e(TAG, "onRecurringEditOptionSelected called but eventBeingEdited is null.")
@@ -467,14 +386,29 @@ constructor(
     Log.d(TAG, "Cancelled event details view.")
   }
 
+    fun onNavigationDone() {
+        _uiState.update {
+            it.copy(
+                eventCreationSuccess = false,
+                eventUpdateSuccess = false,
+                eventDeletionSuccess = false
+            )
+        }
+    }
+    fun onErrorShown() {
+        _uiState.update { it.copy(userFacingError = null) }
+    }
+    fun onMessageShown() {
+        _uiState.update { it.copy(userFacingMessage = null) }
+    }
   companion object {
     private const val TAG = "EventManagementViewModel"
   }
 }
 
 data class EventManagementUiState(
-    val showGeneralError: String? = null,
-    val message: String? = "Log in required",
+    val userFacingError: String? = null,
+    val userFacingMessage: String? = null,
     val isLoading: Boolean = false,
     val eventToDeleteId: String? = null,
     val eventPendingDeletion: CalendarEvent? = null,
@@ -484,8 +418,11 @@ data class EventManagementUiState(
     val eventBeingEdited: CalendarEvent? = null,
     val showRecurringEditOptionsDialog: Boolean = false,
     val showEditEventDialog: Boolean = false,
-    val selectedUpdateMode: ClientEventUpdateMode? = null,
+    val selectedUpdateMode: EventUpdateMode? = null,
     val editOperationError: String? = null,
     val eventForDetailedView: CalendarEvent? = null,
     val showEventDetailedView: Boolean = false,
+    val eventCreationSuccess: Boolean = false,
+    val eventUpdateSuccess: Boolean = false,
+    val eventDeletionSuccess: Boolean = false
 )

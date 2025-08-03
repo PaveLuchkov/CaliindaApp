@@ -7,7 +7,12 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.BackendUrl
-import com.lpavs.caliinda.core.data.local.EventDao
+import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
+import com.lpavs.caliinda.core.data.remote.EventDeleteMode
+import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.feature.calendar.data.onEventResults.CreateEventResult
+import com.lpavs.caliinda.feature.calendar.data.onEventResults.DeleteEventResult
+import com.lpavs.caliinda.feature.calendar.data.onEventResults.UpdateEventResult
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
@@ -53,24 +58,14 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
-
-enum class ApiDeleteEventMode(val value: String) {
-  DEFAULT("default"),
-  INSTANCE_ONLY("instance_only")
-}
-
-enum class ClientEventUpdateMode(val value: String) {
-  SINGLE_INSTANCE("single_instance"),
-  ALL_IN_SERIES("all_in_series")
-}
-
+/*
 @Singleton
 class CalendarDataManager
 @Inject
 constructor(
     @ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
-    private val eventDao: EventDao,
+    private val eventDao: CalendarLocalDataSource,
     private val authManager: AuthManager,
     @BackendUrl private val backendBaseUrl: String,
     private val settingsRepository: SettingsRepository,
@@ -175,7 +170,7 @@ constructor(
           eventDao.getEventsForDateRangeFlow(startMillis, endMillis).map { entityList ->
             entityList
                 .filter { entity -> isEventValidForDate(entity, startMillis, endMillis) }
-                .map { entity -> EventMapper.mapToDomain(entity, zoneId.toString()) }
+                .map { entity -> eventMapper.mapToDomain(entity, zoneId.toString()) }
           }
         }
         .catch { e ->
@@ -210,17 +205,14 @@ constructor(
       endMillis: Long
   ): Boolean {
     return if (!entity.isAllDay) {
-      // Обычное событие: должно пересекаться с границами дня
       entity.startTimeMillis < endMillis && entity.endTimeMillis > startMillis
     } else {
-      // Событие "весь день": проверяем продолжительность ~24 часа
       val durationMillis = entity.endTimeMillis - entity.startTimeMillis
       val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
       val toleranceMillis = TimeUnit.MINUTES.toMillis(5)
 
       (durationMillis >= twentyFourHoursMillis - toleranceMillis) &&
           (durationMillis <= twentyFourHoursMillis + toleranceMillis) &&
-          // И должно пересекаться с нашим днем
           (entity.startTimeMillis < endMillis && entity.endTimeMillis > startMillis)
     }
   }
@@ -336,7 +328,7 @@ constructor(
    * @param eventId Уникальный идентификатор события для удаления.
    * @param mode Режим удаления для повторяющихся событий.
    */
-  suspend fun deleteEvent(eventId: String, mode: ApiDeleteEventMode = ApiDeleteEventMode.DEFAULT) {
+  suspend fun deleteEvent(eventId: String, mode: EventDeleteMode = EventDeleteMode.DEFAULT) {
     if (_deleteEventResult.value is DeleteEventResult.Loading) {
       Log.w(
           TAG,
@@ -356,7 +348,7 @@ constructor(
     }
 
     var url = "$backendBaseUrl/calendar/events/$eventId"
-    if (mode != ApiDeleteEventMode.DEFAULT) {
+    if (mode != EventDeleteMode.DEFAULT) {
       url += "?mode=${mode.value}"
     }
     Log.d(TAG, "Delete request URL: $url")
@@ -418,7 +410,7 @@ constructor(
   suspend fun updateEvent(
       eventId: String,
       updateData: UpdateEventApiRequest,
-      mode: ClientEventUpdateMode
+      mode: EventUpdateMode
   ) {
     if (_updateEventResult.value is UpdateEventResult.Loading) {
       Log.w(
@@ -790,16 +782,13 @@ constructor(
             }
 
         val eventEntities =
-            networkEvents.mapNotNull { EventMapper.mapToEntity(it, zoneId.toString()) }
+            false
 
         val startRangeMillis = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         val endRangeMillis =
             endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
-        Log.d(
-            TAG,
-            "Updating DB for range $startDate to $endDate. Deleting range [$startRangeMillis, $endRangeMillis), Inserting ${eventEntities.size} events.")
-        eventDao.clearAndInsertEventsForRange(startRangeMillis, endRangeMillis, eventEntities)
+
         Log.i(TAG, "DB updated for range $startDate to $endDate.")
       }
 
@@ -1021,3 +1010,6 @@ constructor(
 
   private fun maxOf(a: LocalDate, b: LocalDate): LocalDate = if (a.isAfter(b)) a else b
 }
+
+
+ */

@@ -9,7 +9,7 @@ import com.lpavs.caliinda.data.local.CalendarEventEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface EventDao {
+interface CalendarLocalDataSource {
 
   /**
    * Получает поток списка событий, время начала которых попадает в указанный диапазон миллисекунд

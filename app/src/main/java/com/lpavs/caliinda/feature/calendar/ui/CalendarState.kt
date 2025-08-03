@@ -2,7 +2,7 @@ package com.lpavs.caliinda.feature.calendar.ui
 
 import android.app.PendingIntent
 import android.net.Uri
-import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
+import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 
 data class CalendarState(
@@ -24,7 +24,7 @@ data class CalendarState(
     val eventBeingEdited: CalendarEvent? = null,
     val showRecurringEditOptionsDialog: Boolean = false,
     val showEditEventDialog: Boolean = false,
-    val selectedUpdateMode: ClientEventUpdateMode? = null,
+    val selectedUpdateMode: EventUpdateMode? = null,
     val editOperationError: String? = null,
     val eventForDetailedView: CalendarEvent? = null,
     val showEventDetailedView: Boolean = false,

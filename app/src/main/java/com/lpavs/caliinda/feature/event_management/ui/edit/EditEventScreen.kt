@@ -56,9 +56,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
-import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
-import com.lpavs.caliinda.data.calendar.UpdateEventResult
-import com.lpavs.caliinda.data.local.UpdateEventApiRequest
+import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.dto.EventRequest
+import com.lpavs.caliinda.feature.calendar.data.onEventResults.UpdateEventResult
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
@@ -83,7 +83,7 @@ fun EditEventScreen(
     viewModel: EventManagementViewModel,
     userTimeZoneId: String,
     eventToEdit: CalendarEvent,
-    selectedUpdateMode: ClientEventUpdateMode,
+    selectedUpdateMode: EventUpdateMode,
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
 ) {
@@ -724,8 +724,8 @@ fun buildUpdateEventApiRequest(
     formattedEndStr: String,
     finalRRuleStringFromUi: String?,
     userTimeZoneIdForTimed: String,
-    selectedUpdateMode: ClientEventUpdateMode
-): UpdateEventApiRequest? {
+    selectedUpdateMode: EventUpdateMode
+): EventRequest? {
   var hasChanges = false
 
   val summaryUpdate =
@@ -750,7 +750,7 @@ fun buildUpdateEventApiRequest(
   // Определяем, изменяется ли только правило повторения для всех событий
   val isOnlyRecurrenceChangeForAllEvents =
       recurrenceRuleChanged &&
-          selectedUpdateMode == ClientEventUpdateMode.ALL_IN_SERIES &&
+          selectedUpdateMode == EventUpdateMode.ALL_IN_SERIES &&
           currentSummary == originalEvent.summary &&
           currentDescription == (originalEvent.description ?: "") &&
           currentLocation == (originalEvent.location ?: "") &&
@@ -795,7 +795,7 @@ fun buildUpdateEventApiRequest(
     }
   }
 
-  if (selectedUpdateMode == ClientEventUpdateMode.SINGLE_INSTANCE &&
+  if (selectedUpdateMode == EventUpdateMode.SINGLE_INSTANCE &&
       recurrenceForApiRequest != null) {
     Log.w(
         "BuildUpdateRequest",
@@ -827,7 +827,7 @@ fun buildUpdateEventApiRequest(
   Log.d("BuildUpdateRequest", "Start time update: $startTimeUpdate")
   Log.d("BuildUpdateRequest", "End time update: $endTimeUpdate")
 
-  return UpdateEventApiRequest(
+  return EventRequest(
       summary = summaryUpdate,
       description = descriptionUpdate,
       location = locationUpdate,

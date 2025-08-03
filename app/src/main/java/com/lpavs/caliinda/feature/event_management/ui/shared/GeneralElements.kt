@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
+import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 
 /**
  * Content [AdaptiveContainer] - container for any content. [TimePickerDialog] - timepicker
@@ -210,7 +210,7 @@ fun RecurringEventDeleteOptionsDialog(
 fun RecurringEventEditOptionsDialog(
     eventName: String,
     onDismiss: () -> Unit,
-    onOptionSelected: (ClientEventUpdateMode) -> Unit,
+    onOptionSelected: (EventUpdateMode) -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties()
 ) {
@@ -238,7 +238,7 @@ fun RecurringEventEditOptionsDialog(
                     modifier = Modifier.padding(bottom = 24.dp))
 
                 TextButton(
-                    onClick = { onOptionSelected(ClientEventUpdateMode.SINGLE_INSTANCE) },
+                    onClick = { onOptionSelected(EventUpdateMode.SINGLE_INSTANCE) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_single_instance))
                     }
@@ -246,7 +246,7 @@ fun RecurringEventEditOptionsDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 TextButton(
-                    onClick = { onOptionSelected(ClientEventUpdateMode.ALL_IN_SERIES) },
+                    onClick = { onOptionSelected(EventUpdateMode.ALL_IN_SERIES) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_all_in_series))
                     }
