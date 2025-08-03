@@ -5,15 +5,15 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "calendar_events")
 data class CalendarEventEntity(
-    @PrimaryKey val id: String, // Google Calendar Event ID (естественный ключ)
+    @PrimaryKey val id: String,
     val summary: String,
-    val startTimeMillis: Long, // Время начала в миллисекундах UTC
-    val endTimeMillis: Long, // Время конца в миллисекундах UTC
+    val startTimeMillis: Long,
+    val endTimeMillis: Long,
     val description: String?,
     val location: String?,
     val isAllDay: Boolean = false,
-    val recurringEventId: String? = null, // Новое поле
-    val originalStartTimeString: String? = null, // Новое поле (храним как строку)
+    val recurringEventId: String? = null,
+    val originalStartTimeString: String? = null,
     val lastFetchedMillis: Long = System.currentTimeMillis(),
     val recurrenceRuleString: String? = null,
 )
