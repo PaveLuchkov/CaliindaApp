@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
-
 }
 
 android {
@@ -40,14 +39,19 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
     }
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -118,5 +122,4 @@ dependencies {
 
 // Tasks API for mocking Google Play Services Tasks
     testImplementation(libs.play.services.tasks) // Используй версию, совместимую с твоей основной
-
 }

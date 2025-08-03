@@ -76,7 +76,7 @@ constructor(
     private val settingsRepository: SettingsRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
-  private val TAG = "CalendarDataManager"
+
   private val managerScope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
   companion object {
@@ -85,6 +85,7 @@ constructor(
     const val TRIGGER_PREFETCH_THRESHOLD = 2L
     const val EXPAND_CHUNK_DAYS = 14L
     const val JUMP_DETECTION_BUFFER_DAYS = 10L
+    private const val TAG = "CalendarDataManager"
   }
 
   private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
@@ -163,7 +164,7 @@ constructor(
     }
   }
 
-  /** Предоставляет Flow событий из БД для указанной даты (эффективная версия) */
+  /** Предоставляет Flow событий из БД для указанной даты */
   @OptIn(ExperimentalCoroutinesApi::class)
   fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
     return settingsRepository.timeZoneFlow
@@ -328,13 +329,6 @@ constructor(
     _createEventResult.value = CreateEventResult.Idle
   }
 
-  /**
-   * Запускает процесс удаления события на бэкенде и в локальной БД. Результат операции будет
-   * доступен через [deleteEventResult] StateFlow.
-   *
-   * @param eventId Уникальный идентификатор события для удаления.
-   * @param mode Режим удаления для повторяющихся событий.
-   */
   /**
    * Запускает процесс удаления события на бэкенде и в локальной БД. Результат операции будет
    * доступен через [deleteEventResult] StateFlow.
