@@ -31,4 +31,3 @@ data class CalendarState(
     val showSignInRequiredDialog: Boolean = false,
     val authorizationIntent: PendingIntent? = null,
 )
-

@@ -8,12 +8,12 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
-import com.lpavs.caliinda.core.data.auth.AuthManager
-import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.app.di.MainDispatcher
+import com.lpavs.caliinda.core.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.di.BackendUrl
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
+import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

@@ -55,18 +55,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 import com.lpavs.caliinda.data.calendar.UpdateEventResult
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
+import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
+import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
-import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
-import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
 import java.time.Instant
@@ -87,35 +87,31 @@ fun EditEventScreen(
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
 ) {
-    var summary by remember(eventToEdit.id) { mutableStateOf(eventToEdit.summary) }
+  var summary by remember(eventToEdit.id) { mutableStateOf(eventToEdit.summary) }
   var description by remember(eventToEdit.id) { mutableStateOf(eventToEdit.description ?: "") }
   var location by remember(eventToEdit.id) { mutableStateOf(eventToEdit.location ?: "") }
 
   var summaryError by remember { mutableStateOf<String?>(null) }
-  var validationError by remember {
-    mutableStateOf<String?>(null)
-  }
+  var validationError by remember { mutableStateOf<String?>(null) }
 
-    val updateEventState by
-      viewModel.updateEventResult.collectAsState()
-    var isLoading by remember { mutableStateOf(false) }
+  val updateEventState by viewModel.updateEventResult.collectAsState()
+  var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
 
-    val context = LocalContext.current
+  val context = LocalContext.current
   val systemZoneId = remember { ZoneId.systemDefault() }
   val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
-    val initialEventDateTimeState =
+  val initialEventDateTimeState =
       remember(eventToEdit.id, userTimeZoneId) {
         parseCalendarEventToDateTimeState(eventToEdit, userTimeZoneId, systemZoneId)
       }
   var eventDateTimeState by remember(eventToEdit.id) { mutableStateOf(initialEventDateTimeState) }
-    LaunchedEffect(
-      initialEventDateTimeState) {
-        Log.d("EditEventScreen", "Initial EventDateTimeState for UI: $initialEventDateTimeState")
-      }
+  LaunchedEffect(initialEventDateTimeState) {
+    Log.d("EditEventScreen", "Initial EventDateTimeState for UI: $initialEventDateTimeState")
+  }
 
-    var showStartDatePicker by remember { mutableStateOf(false) }
+  var showStartDatePicker by remember { mutableStateOf(false) }
   var showStartTimePicker by remember { mutableStateOf(false) }
   var showEndDatePicker by remember { mutableStateOf(false) }
   var showEndTimePicker by remember { mutableStateOf(false) }
@@ -133,7 +129,7 @@ fun EditEventScreen(
           } catch (_: Exception) {
             null
           }
-        val effectiveEndDate = state.endDate.plusDays(1)
+      val effectiveEndDate = state.endDate.plusDays(1)
       val endDateStr =
           try {
             effectiveEndDate.format(formatter)
@@ -147,7 +143,7 @@ fun EditEventScreen(
         Log.e("CreateEvent", "Cannot format timed event without TimeZone ID!")
         return Pair(null, null)
       }
-        val startTimeNaiveIso =
+      val startTimeNaiveIso =
           DateTimeUtils.formatLocalDateTimeToNaiveIsoString(state.startDate, state.startTime)
       val endTimeNaiveIso =
           DateTimeUtils.formatLocalDateTimeToNaiveIsoString(state.endDate, state.endTime)
@@ -175,13 +171,13 @@ fun EditEventScreen(
     return summaryError == null && validationError == null
   }
 
-    LaunchedEffect(updateEventState) {
+  LaunchedEffect(updateEventState) {
     isLoading = updateEventState is UpdateEventResult.Loading
     when (val result = updateEventState) {
       is UpdateEventResult.Success -> {
         Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
         viewModel.consumeUpdateEventResult()
-          onDismiss()
+        onDismiss()
       }
       is UpdateEventResult.Error -> {
         generalError = result.message
@@ -200,13 +196,13 @@ fun EditEventScreen(
         return@saveLambda
       }
 
-        val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
+      val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
       var finalRecurrenceRule: String? = null
 
       if (baseRule != null) {
         val ruleParts = mutableListOf(baseRule)
 
-          if (baseRule == RecurrenceOption.Weekly.rruleValue &&
+        if (baseRule == RecurrenceOption.Weekly.rruleValue &&
             eventDateTimeState.selectedWeekdays.isNotEmpty()) {
           val bydayString =
               eventDateTimeState.selectedWeekdays.sorted().joinToString(",") { day ->
@@ -223,13 +219,13 @@ fun EditEventScreen(
           ruleParts.add("BYDAY=$bydayString")
         }
 
-          when (eventDateTimeState.recurrenceEndType) {
+        when (eventDateTimeState.recurrenceEndType) {
           RecurrenceEndType.DATE -> {
             eventDateTimeState.recurrenceEndDate?.let { endDate ->
               val systemZone = ZoneId.systemDefault()
-              val endOfDay = endDate.atTime(LocalTime.MAX).atZone(systemZone)
+                endDate.atTime(LocalTime.MAX).atZone(systemZone)
 
-                val endDateTimeUtc =
+              val endDateTimeUtc =
                   endDate.atTime(23, 59, 59).atZone(systemZone).withZoneSameInstant(ZoneOffset.UTC)
 
               val untilString = untilFormatter.format(endDateTimeUtc)
@@ -241,14 +237,13 @@ fun EditEventScreen(
             eventDateTimeState.recurrenceCount?.let { count -> ruleParts.add("COUNT=$count") }
           }
 
-          RecurrenceEndType.NEVER -> {
-          }
+          RecurrenceEndType.NEVER -> {}
         }
 
-          finalRecurrenceRule = ruleParts.joinToString(";")
+        finalRecurrenceRule = ruleParts.joinToString(";")
       }
 
-        val updateRequest =
+      val updateRequest =
           buildUpdateEventApiRequest(
               originalEvent = eventToEdit,
               currentSummary = summary.trim(),
@@ -274,11 +269,9 @@ fun EditEventScreen(
     }
   }
 
-    Row(
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(horizontal = 4.dp, vertical = 0.dp),
-        verticalAlignment = Alignment.CenterVertically,
+  Row(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
+      verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center) {
         AnimatedContent(
             targetState = currentSheetValue,
@@ -287,15 +280,11 @@ fun EditEventScreen(
                   .togetherWith(ExitTransition.None)
                   .using(
                       SizeTransform(
-                          clip =
-                              false,
+                          clip = false,
                           sizeAnimationSpec = { _, _ ->
                             spring(
-                                dampingRatio =
-                                    Spring
-                                        .DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessMediumLow
-                            )
+                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                stiffness = Spring.StiffnessMediumLow)
                           }))
             },
             label = "SaveButtonAnimation") { targetSheetValue ->
@@ -304,7 +293,7 @@ fun EditEventScreen(
 
               val isNotCompactState = targetSheetValue == SheetValue.Expanded
 
-            val size = if (!isNotCompactState) defaultSize else expandedSize
+              val size = if (!isNotCompactState) defaultSize else expandedSize
 
               Button(
                   onClick = onSaveClick,
@@ -318,21 +307,15 @@ fun EditEventScreen(
                     } else {
                       Icon(
                           imageVector = Icons.Filled.Check,
-                          contentDescription =
-                              stringResource(
-                                  R.string.save),
-                          modifier =
-                              Modifier.size(ButtonDefaults.iconSizeFor(size))
-                      )
+                          contentDescription = stringResource(R.string.save),
+                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
                     }
                   }
             }
       }
-    Column(
+  Column(
       modifier =
-          Modifier.verticalScroll(rememberScrollState())
-              .padding(horizontal = 16.dp)
-              .fillMaxWidth(),
+          Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).fillMaxWidth(),
   ) {
     AdaptiveContainer {
       EventNameSection(
@@ -379,16 +362,18 @@ fun EditEventScreen(
     }
     generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
     Spacer(modifier = Modifier.height(16.dp))
-    }
+  }
 
-    val currentDateTimeState = eventDateTimeState
+  val currentDateTimeState = eventDateTimeState
 
-    if (showStartDatePicker) {
+  if (showStartDatePicker) {
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
-                currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
-        )
+                currentDateTimeState.startDate
+                    .atStartOfDay(systemZoneId)
+                    .toInstant()
+                    .toEpochMilli())
     DatePickerDialog(
         onDismissRequest = { showStartDatePicker = false },
         confirmButton = {
@@ -396,7 +381,7 @@ fun EditEventScreen(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
                   val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                    eventDateTimeState =
+                  eventDateTimeState =
                       currentDateTimeState.copy(
                           startDate = selectedDate,
                           endDate =
@@ -419,15 +404,13 @@ fun EditEventScreen(
           DatePicker(state = datePickerState)
         }
   }
-    if (showStartTimePicker) {
-        val initialTime =
-        currentDateTimeState.startTime ?: LocalTime.now()
-        val timePickerState =
+  if (showStartTimePicker) {
+    val initialTime = currentDateTimeState.startTime ?: LocalTime.now()
+    val timePickerState =
         rememberTimePickerState(
             initialHour = initialTime.hour,
             initialMinute = initialTime.minute,
-            is24Hour = DateFormat.is24HourFormat(context)
-        )
+            is24Hour = DateFormat.is24HourFormat(context))
     TimePickerDialog(
         onDismissRequest = { showStartTimePicker = false },
         confirmButton = {
@@ -435,8 +418,8 @@ fun EditEventScreen(
               onClick = {
                 val selectedTime =
                     LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                  var newEndTime = currentDateTimeState.endTime
-                  if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
+                var newEndTime = currentDateTimeState.endTime
+                if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
                     currentDateTimeState.endTime != null &&
                     !selectedTime.isBefore(currentDateTimeState.endTime)) {
                   newEndTime = selectedTime.plusHours(1).withNano(0)
@@ -454,17 +437,17 @@ fun EditEventScreen(
           }
         }) {
           TimePicker(state = timePickerState)
-    }
+        }
   }
 
-    if (showEndDatePicker) {
-        val datePickerState =
+  if (showEndDatePicker) {
+    val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
                 currentDateTimeState.endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
             selectableDates =
                 object : SelectableDates {
-                    val startMillis =
+                  val startMillis =
                       currentDateTimeState.startDate
                           .atStartOfDay(systemZoneId)
                           .toInstant()
@@ -485,7 +468,7 @@ fun EditEventScreen(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
                   val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                    eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
+                  eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
                 }
                 showEndDatePicker = false
               },
@@ -502,8 +485,8 @@ fun EditEventScreen(
         }
   }
 
-    if (showEndTimePicker) {
-        val initialTime =
+  if (showEndTimePicker) {
+    val initialTime =
         currentDateTimeState.endTime
             ?: currentDateTimeState.startTime?.plusHours(1)
             ?: LocalTime.now()
@@ -519,16 +502,14 @@ fun EditEventScreen(
               onClick = {
                 val selectedTime =
                     LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                  if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
+                if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
                     currentDateTimeState.startTime != null &&
-                    !currentDateTimeState.startTime.isBefore(
-                        selectedTime)
-                  ) {
+                    !currentDateTimeState.startTime.isBefore(selectedTime)) {
                   Toast.makeText(
                           context, R.string.error_end_time_not_after_start, Toast.LENGTH_SHORT)
                       .show()
                 } else {
-                      eventDateTimeState = currentDateTimeState.copy(endTime = selectedTime)
+                  eventDateTimeState = currentDateTimeState.copy(endTime = selectedTime)
                   showEndTimePicker = false
                 }
               }) {
@@ -544,7 +525,7 @@ fun EditEventScreen(
         }
   }
   if (showRecurrenceEndDatePicker) {
-      val initialSelectedDateMillis =
+    val initialSelectedDateMillis =
         eventDateTimeState.recurrenceEndDate
             ?.atStartOfDay(ZoneId.systemDefault())
             ?.toInstant()
@@ -555,7 +536,7 @@ fun EditEventScreen(
                 .toInstant()
                 .toEpochMilli()
 
-      val datePickerState =
+    val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis = initialSelectedDateMillis,
             selectableDates =
@@ -572,7 +553,7 @@ fun EditEventScreen(
                     return year >= eventDateTimeState.startDate.year
                   }
                 })
-      DatePickerDialog(
+    DatePickerDialog(
         onDismissRequest = { showRecurrenceEndDatePicker = false },
         confirmButton = {
           TextButton(
@@ -596,10 +577,9 @@ fun EditEventScreen(
           TextButton(onClick = { showRecurrenceEndDatePicker = false }) {
             Text(stringResource(R.string.cancel))
           }
-        }
-      ) {
+        }) {
           DatePicker(state = datePickerState)
-      }
+        }
   }
 }
 
@@ -617,19 +597,16 @@ fun parseCalendarEventToDateTimeState(
 
   try {
     if (isAllDay) {
-        parsedStartDate = LocalDate.parse(event.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
-        parsedEndDate = LocalDate.parse(event.endTime, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
+      parsedStartDate = LocalDate.parse(event.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
+      parsedEndDate = LocalDate.parse(event.endTime, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
     } else {
 
-        val startInstant =
-          DateTimeUtils.parseToInstant(
-              event.startTime, userTimeZoneId)
-        val endInstant = DateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)
+      val startInstant = DateTimeUtils.parseToInstant(event.startTime, userTimeZoneId)
+      val endInstant = DateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)
 
       if (startInstant != null) {
-        val startZonedDateTime =
-            startInstant.atZone(ZoneId.of(userTimeZoneId))
-          parsedStartDate = startZonedDateTime.toLocalDate()
+        val startZonedDateTime = startInstant.atZone(ZoneId.of(userTimeZoneId))
+        parsedStartDate = startZonedDateTime.toLocalDate()
         parsedStartTime = startZonedDateTime.toLocalTime().withNano(0)
       }
       if (endInstant != null) {
@@ -640,14 +617,14 @@ fun parseCalendarEventToDateTimeState(
     }
   } catch (e: Exception) {
     Log.e("ParseToState", "Error parsing event date/time for editing: ${e.message}")
-      val now = ZonedDateTime.now(ZoneId.of(userTimeZoneId))
+    val now = ZonedDateTime.now(ZoneId.of(userTimeZoneId))
     parsedStartDate = now.toLocalDate()
     parsedStartTime = if (!isAllDay) now.toLocalTime().plusHours(1).withMinute(0) else null
     parsedEndDate = parsedStartDate
     parsedEndTime = if (!isAllDay) parsedStartTime?.plusHours(1) else null
   }
 
-    var recurrenceOption: RecurrenceOption? = null
+  var recurrenceOption: RecurrenceOption? = null
   var selectedWeekdays: Set<DayOfWeek> = emptySet()
   var recurrenceEndType = RecurrenceEndType.NEVER
   var recurrenceEndDate: LocalDate? = null
@@ -686,15 +663,12 @@ fun parseCalendarEventToDateTimeState(
           }
           "UNTIL" -> {
             try {
-                val zonedDateTime =
+              val zonedDateTime =
                   ZonedDateTime.parse(
                       value,
                       DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC))
-              recurrenceEndDate =
-                  zonedDateTime
-                      .withZoneSameInstant(systemZoneId)
-                      .toLocalDate()
-                recurrenceEndType = RecurrenceEndType.DATE
+              recurrenceEndDate = zonedDateTime.withZoneSameInstant(systemZoneId).toLocalDate()
+              recurrenceEndType = RecurrenceEndType.DATE
             } catch (e: Exception) {
               Log.e("ParseToState", "Error parsing UNTIL value: $value - ${e.message}")
             }
@@ -706,8 +680,8 @@ fun parseCalendarEventToDateTimeState(
         }
       }
     }
-      if (recurrenceOption == null) {
-          Log.w("ParseToState", "Could not map FREQ from RRULE: $rruleString to known RecurrenceOption")
+    if (recurrenceOption == null) {
+      Log.w("ParseToState", "Could not map FREQ from RRULE: $rruleString to known RecurrenceOption")
     }
   }
 
@@ -752,111 +726,114 @@ fun buildUpdateEventApiRequest(
     userTimeZoneIdForTimed: String,
     selectedUpdateMode: ClientEventUpdateMode
 ): UpdateEventApiRequest? {
-    var hasChanges = false
+  var hasChanges = false
 
-    val summaryUpdate =
-        currentSummary.takeIf { it != originalEvent.summary }?.also { hasChanges = true }
-    val descriptionUpdate =
-        currentDescription
-            .takeIf { it != (originalEvent.description ?: "") }
-            ?.also { hasChanges = true }
-    val locationUpdate =
-        currentLocation.takeIf { it != (originalEvent.location ?: "") }?.also { hasChanges = true }
+  val summaryUpdate =
+      currentSummary.takeIf { it != originalEvent.summary }?.also { hasChanges = true }
+  val descriptionUpdate =
+      currentDescription
+          .takeIf { it != (originalEvent.description ?: "") }
+          ?.also { hasChanges = true }
+  val locationUpdate =
+      currentLocation.takeIf { it != (originalEvent.location ?: "") }?.also { hasChanges = true }
 
-    var startTimeUpdate: String? = null
-    var endTimeUpdate: String? = null
-    var isAllDayUpdate: Boolean? = null
-    var timeZoneIdUpdate: String? = null
+  var startTimeUpdate: String? = null
+  var endTimeUpdate: String? = null
+  var isAllDayUpdate: Boolean? = null
+  var timeZoneIdUpdate: String? = null
 
-    // Проверяем изменение правила повторения
-    val originalRRuleString = originalEvent.recurrenceRule?.takeIf { it.isNotBlank() }
-    val currentRRuleString = finalRRuleStringFromUi?.takeIf { it.isNotBlank() }
-    val recurrenceRuleChanged = currentRRuleString != originalRRuleString
+  // Проверяем изменение правила повторения
+  val originalRRuleString = originalEvent.recurrenceRule?.takeIf { it.isNotBlank() }
+  val currentRRuleString = finalRRuleStringFromUi?.takeIf { it.isNotBlank() }
+  val recurrenceRuleChanged = currentRRuleString != originalRRuleString
 
-    // Определяем, изменяется ли только правило повторения для всех событий
-    val isOnlyRecurrenceChangeForAllEvents = recurrenceRuleChanged &&
-            selectedUpdateMode == ClientEventUpdateMode.ALL_IN_SERIES &&
-            currentSummary == originalEvent.summary &&
-            currentDescription == (originalEvent.description ?: "") &&
-            currentLocation == (originalEvent.location ?: "") &&
-            currentDateTimeState.isAllDay == originalEvent.isAllDay
+  // Определяем, изменяется ли только правило повторения для всех событий
+  val isOnlyRecurrenceChangeForAllEvents =
+      recurrenceRuleChanged &&
+          selectedUpdateMode == ClientEventUpdateMode.ALL_IN_SERIES &&
+          currentSummary == originalEvent.summary &&
+          currentDescription == (originalEvent.description ?: "") &&
+          currentLocation == (originalEvent.location ?: "") &&
+          currentDateTimeState.isAllDay == originalEvent.isAllDay
 
-    // Обновляем даты только если это НЕ случай изменения только правила повторения для всех событий
-    if (!isOnlyRecurrenceChangeForAllEvents) {
-        if (currentDateTimeState.isAllDay != originalEvent.isAllDay) {
-            isAllDayUpdate = currentDateTimeState.isAllDay
-            hasChanges = true
-        }
-
-        if (formattedStartStr != originalEvent.startTime) {
-            startTimeUpdate = formattedStartStr
-            hasChanges = true
-        }
-        if (formattedEndStr != originalEvent.endTime) {
-            endTimeUpdate = formattedEndStr
-            hasChanges = true
-        }
-
-        // Обновляем timezone только если обновляются даты
-        if (!currentDateTimeState.isAllDay) {
-            if (userTimeZoneIdForTimed.isNotBlank()) {
-                if (isAllDayUpdate == false ||
-                    (isAllDayUpdate == null && (startTimeUpdate != null || endTimeUpdate != null))) {
-                    timeZoneIdUpdate = userTimeZoneIdForTimed
-                }
-            }
-        }
+  // Обновляем даты только если это НЕ случай изменения только правила повторения для всех событий
+  if (!isOnlyRecurrenceChangeForAllEvents) {
+    if (currentDateTimeState.isAllDay != originalEvent.isAllDay) {
+      isAllDayUpdate = currentDateTimeState.isAllDay
+      hasChanges = true
     }
 
-    var recurrenceForApiRequest: List<String>? = null
+    if (formattedStartStr != originalEvent.startTime) {
+      startTimeUpdate = formattedStartStr
+      hasChanges = true
+    }
+    if (formattedEndStr != originalEvent.endTime) {
+      endTimeUpdate = formattedEndStr
+      hasChanges = true
+    }
 
-    if (recurrenceRuleChanged) {
-        hasChanges = true
-
-        if (currentRRuleString != null) {
-            recurrenceForApiRequest = listOf("RRULE:$currentRRuleString")
-        } else {
-            recurrenceForApiRequest = emptyList()
+    // Обновляем timezone только если обновляются даты
+    if (!currentDateTimeState.isAllDay) {
+      if (userTimeZoneIdForTimed.isNotBlank()) {
+        if (isAllDayUpdate == false ||
+            (isAllDayUpdate == null && (startTimeUpdate != null || endTimeUpdate != null))) {
+          timeZoneIdUpdate = userTimeZoneIdForTimed
         }
+      }
     }
+  }
 
-    if (selectedUpdateMode == ClientEventUpdateMode.SINGLE_INSTANCE &&
-        recurrenceForApiRequest != null) {
-        Log.w(
-            "BuildUpdateRequest",
-            "Recurrence data was calculated but will be ignored for SINGLE_INSTANCE update mode.")
-        recurrenceForApiRequest = null
+  var recurrenceForApiRequest: List<String>? = null
+
+  if (recurrenceRuleChanged) {
+    hasChanges = true
+
+    if (currentRRuleString != null) {
+      recurrenceForApiRequest = listOf("RRULE:$currentRRuleString")
+    } else {
+      recurrenceForApiRequest = emptyList()
     }
+  }
 
-    val noPrimaryFieldChanges =
-        summaryUpdate == null &&
-                descriptionUpdate == null &&
-                locationUpdate == null &&
-                startTimeUpdate == null &&
-                endTimeUpdate == null &&
-                isAllDayUpdate == null &&
-                timeZoneIdUpdate == null
+  if (selectedUpdateMode == ClientEventUpdateMode.SINGLE_INSTANCE &&
+      recurrenceForApiRequest != null) {
+    Log.w(
+        "BuildUpdateRequest",
+        "Recurrence data was calculated but will be ignored for SINGLE_INSTANCE update mode.")
+    recurrenceForApiRequest = null
+  }
 
-    if (noPrimaryFieldChanges && recurrenceForApiRequest == null) {
-        Log.d(
-            "BuildUpdateRequest",
-            "No actual changes to save after considering all fields and update mode.")
-        return null
-    }
+  val noPrimaryFieldChanges =
+      summaryUpdate == null &&
+          descriptionUpdate == null &&
+          locationUpdate == null &&
+          startTimeUpdate == null &&
+          endTimeUpdate == null &&
+          isAllDayUpdate == null &&
+          timeZoneIdUpdate == null
 
-    Log.d("BuildUpdateRequest", "Update mode: $selectedUpdateMode")
-    Log.d("BuildUpdateRequest", "Recurrence rule changed: $recurrenceRuleChanged")
-    Log.d("BuildUpdateRequest", "Is only recurrence change for all events: $isOnlyRecurrenceChangeForAllEvents")
-    Log.d("BuildUpdateRequest", "Start time update: $startTimeUpdate")
-    Log.d("BuildUpdateRequest", "End time update: $endTimeUpdate")
+  if (noPrimaryFieldChanges && recurrenceForApiRequest == null) {
+    Log.d(
+        "BuildUpdateRequest",
+        "No actual changes to save after considering all fields and update mode.")
+    return null
+  }
 
-    return UpdateEventApiRequest(
-        summary = summaryUpdate,
-        description = descriptionUpdate,
-        location = locationUpdate,
-        startTime = startTimeUpdate,
-        endTime = endTimeUpdate,
-        isAllDay = isAllDayUpdate,
-        timeZoneId = timeZoneIdUpdate,
-        recurrence = recurrenceForApiRequest)
+  Log.d("BuildUpdateRequest", "Update mode: $selectedUpdateMode")
+  Log.d("BuildUpdateRequest", "Recurrence rule changed: $recurrenceRuleChanged")
+  Log.d(
+      "BuildUpdateRequest",
+      "Is only recurrence change for all events: $isOnlyRecurrenceChangeForAllEvents")
+  Log.d("BuildUpdateRequest", "Start time update: $startTimeUpdate")
+  Log.d("BuildUpdateRequest", "End time update: $endTimeUpdate")
+
+  return UpdateEventApiRequest(
+      summary = summaryUpdate,
+      description = descriptionUpdate,
+      location = locationUpdate,
+      startTime = startTimeUpdate,
+      endTime = endTimeUpdate,
+      isAllDay = isAllDayUpdate,
+      timeZoneId = timeZoneIdUpdate,
+      recurrence = recurrenceForApiRequest)
 }

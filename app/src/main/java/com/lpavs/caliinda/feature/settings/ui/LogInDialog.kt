@@ -45,7 +45,6 @@ fun LogInScreenDialog(
     onSignInClick: () -> Unit,
 ) {
 
-
   Dialog(
       onDismissRequest = { onDismissRequest() }, // ,
       properties =
@@ -102,9 +101,7 @@ fun LogInScreenDialog(
                           horizontalArrangement = Arrangement.Center) {
                             val expandedSize = ButtonDefaults.MediumContainerHeight
                             Button(
-                                onClick = {
-                                  onSignInClick()
-                                },
+                                onClick = { onSignInClick() },
                                 colors =
                                     ButtonColors(
                                         contentColor = colorScheme.onTertiary,

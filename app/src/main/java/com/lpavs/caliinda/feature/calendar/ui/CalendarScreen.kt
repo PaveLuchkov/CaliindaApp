@@ -51,13 +51,13 @@ import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.feature.agent.ui.AiVisualizer
 import com.lpavs.caliinda.feature.calendar.ui.components.BottomBar
 import com.lpavs.caliinda.feature.calendar.ui.components.CalendarAppBar
-import com.lpavs.caliinda.feature.settings.ui.LogInScreenDialog
 import com.lpavs.caliinda.feature.calendar.ui.components.DayEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.details.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import com.lpavs.caliinda.feature.settings.ui.LogInScreenDialog
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -70,12 +70,11 @@ fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
     onNavigateToSettings: () -> Unit,
     eventManagementViewModel: EventManagementViewModel
-)
-{
-    val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
+) {
+  val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
-    val aiState by calendarViewModel.aiState.collectAsState()
-    val eventManagementState by eventManagementViewModel.state.collectAsState()
+  val aiState by calendarViewModel.aiState.collectAsState()
+  val eventManagementState by eventManagementViewModel.state.collectAsState()
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val snackbarHostState = remember { SnackbarHostState() }
   val isTextInputVisible by remember { mutableStateOf(false) }
@@ -87,31 +86,29 @@ fun CalendarScreen(
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
   val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()
   val activity = context as? Activity
-    val authorizationLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.let { calendarViewModel.handleAuthorizationResult(it) }
-        } else {
-            Log.w("MainScreen", "Authorization flow was cancelled by user.")
-            calendarViewModel.signOut()
-        }
-    }
-    val isOverallLoading = calendarState.isLoading ||
-            eventManagementState.isLoading
-
-    LaunchedEffect(calendarState.authorizationIntent) {
-        calendarState.authorizationIntent?.let { pendingIntent ->
-            try {
-                val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
-                authorizationLauncher.launch(intentSenderRequest)
-                calendarViewModel.clearAuthorizationIntent()
-
-            } catch (e: Exception) {
-                Log.e("MainScreen", "Couldn't start authorization UI", e)
+  val authorizationLauncher =
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+              result.data?.let { calendarViewModel.handleAuthorizationResult(it) }
+            } else {
+              Log.w("MainScreen", "Authorization flow was cancelled by user.")
+              calendarViewModel.signOut()
             }
-        }
+          }
+  val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
+
+  LaunchedEffect(calendarState.authorizationIntent) {
+    calendarState.authorizationIntent?.let { pendingIntent ->
+      try {
+        val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
+        authorizationLauncher.launch(intentSenderRequest)
+        calendarViewModel.clearAuthorizationIntent()
+      } catch (e: Exception) {
+        Log.e("MainScreen", "Couldn't start authorization UI", e)
+      }
     }
+  }
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
@@ -120,7 +117,6 @@ fun CalendarScreen(
           initialSelectedDateMillis =
               currentVisibleDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
       )
-
 
   // --- НОВОЕ: Настройка flingBehavior ---
   val customFlingBehavior =
@@ -183,8 +179,12 @@ fun CalendarScreen(
   if (calendarState.showRecurringEditOptionsDialog && calendarState.eventBeingEdited != null) {
     RecurringEventEditOptionsDialog( // Вам нужно создать этот Composable
         eventName = calendarState.eventBeingEdited!!.summary,
-        onDismiss = { eventManagementViewModel.cancelEditEvent() }, // Если пользователь закрыл диалог
-        onOptionSelected = { choice -> eventManagementViewModel.onRecurringEditOptionSelected(choice) })
+        onDismiss = {
+          eventManagementViewModel.cancelEditEvent()
+        }, // Если пользователь закрыл диалог
+        onOptionSelected = { choice ->
+          eventManagementViewModel.onRecurringEditOptionSelected(choice)
+        })
   }
 
   LaunchedEffect(calendarState.showEditEventDialog, calendarState.eventBeingEdited) {
@@ -247,8 +247,7 @@ fun CalendarScreen(
                 isLoading = isOverallLoading,
                 date = pageDate,
                 viewModel = calendarViewModel,
-                eventManagementViewModel = eventManagementViewModel
-            )
+                eventManagementViewModel = eventManagementViewModel)
           }
       AiVisualizer(
           aiState = aiState,
@@ -339,17 +338,14 @@ fun CalendarScreen(
     ModalBottomSheet(
         onDismissRequest = { showCreateEventSheet = false },
         sheetState = sheetState,
-        contentWindowInsets = { WindowInsets.navigationBars }
-        ) {
+        contentWindowInsets = { WindowInsets.navigationBars }) {
           CreateEventScreen(
               viewModel = eventManagementViewModel,
               userTimeZoneId = timeZone.value,
               initialDate = selectedDateForSheet,
               onDismiss = {
                 scope
-                    .launch {
-                      sheetState.hide()
-                    }
+                    .launch { sheetState.hide() }
                     .invokeOnCompletion {
                       if (!sheetState.isVisible) {
                         showCreateEventSheet = false
@@ -408,13 +404,12 @@ fun CalendarScreen(
     LogInScreenDialog(
         onDismissRequest = { calendarViewModel.onSignInRequiredDialogDismissed() },
         onSignInClick = {
-            if (activity != null) {
-                calendarViewModel.signIn(activity)
-            } else {
-                Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
-            }
-        }
-    )
+          if (activity != null) {
+            calendarViewModel.signIn(activity)
+          } else {
+            Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+          }
+        })
   }
 
   LaunchedEffect(sheetState.isVisible) {

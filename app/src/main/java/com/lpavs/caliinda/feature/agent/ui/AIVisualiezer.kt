@@ -104,7 +104,7 @@ fun AiVisualizer(
       if (rotationAngle.isRunning) {
         launch {
           rotationAngle.stop()
-          val currentRotation = rotationAngle.value
+            rotationAngle.value
           rotationAngle.animateTo(
               targetValue = 0f, // Возвращаем в 0 для предсказуемости
               animationSpec = tween(durationMillis = 500, easing = EaseOutCubic))

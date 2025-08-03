@@ -23,8 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun IconAndTextButtonGroupScreen() {
   var isFavorite by remember { mutableStateOf(false) }
-  var isNotificationsEnabled by remember { mutableStateOf(true) }
-  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     ButtonGroup(
         overflowIndicator = { menuState ->
           FilledIconButton(

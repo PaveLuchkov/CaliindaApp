@@ -55,15 +55,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.data.calendar.CreateEventResult
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
+import com.lpavs.caliinda.data.calendar.CreateEventResult
+import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
+import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
-import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
-import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
 import java.time.Instant
@@ -73,9 +73,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class) // Необходимо для M3 Dialogs и Pickers
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CreateEventScreen(
     viewModel: EventManagementViewModel,
@@ -129,8 +127,7 @@ fun CreateEventScreen(
             recurrenceEndType = RecurrenceEndType.NEVER,
             isRecurring = false, // Добавлено, если нужно управлять этим
             recurrenceRule = null // Добавлено
-            )
-    )
+            ))
   }
 
   fun formatEventTimesForSaving(
@@ -316,9 +313,8 @@ fun CreateEventScreen(
                             // Используем spring для более "живой" анимации размера
                             spring(
                                 dampingRatio =
-                                    Spring
-                                        .DampingRatioLowBouncy, // Попробуйте LowBouncy или
-                                                                // MediumBouncy
+                                    Spring.DampingRatioLowBouncy, // Попробуйте LowBouncy или
+                                // MediumBouncy
                                 stiffness = Spring.StiffnessMediumLow // Попробуйте Medium или Low
                                 )
                           }))
@@ -359,54 +355,53 @@ fun CreateEventScreen(
           Modifier.verticalScroll(rememberScrollState())
               .padding(horizontal = 16.dp, vertical = 4.dp) // Горизонтальные отступы для контента
               .fillMaxWidth(),
-      verticalArrangement = Arrangement.spacedBy(4.dp)
-  ) {
-    AdaptiveContainer {
-      EventNameSection(
-          summary = summary,
-          summaryError = summaryError,
-          onSummaryChange = { summary = it },
-          onSummaryErrorChange = { summaryError = it },
-          isLoading = isLoading)
-    }
-    AdaptiveContainer {
-      EventDateTimePicker(
-          state = eventDateTimeState,
-          onStateChange = { newState ->
-            eventDateTimeState = newState
-            validationError = null
-          },
-          isLoading = isLoading,
-          onRequestShowStartDatePicker = { showStartDatePicker = true },
-          onRequestShowStartTimePicker = { showStartTimePicker = true },
-          onRequestShowEndDatePicker = { showEndDatePicker = true },
-          onRequestShowEndTimePicker = { showEndTimePicker = true },
-          onRequestShowRecurrenceEndDatePicker = { showRecurrenceEndDatePicker = true },
-          modifier = Modifier.fillMaxWidth())
-    }
-    validationError?.let { Text(it, color = colorScheme.error, style = typography.bodySmall) }
+      verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        AdaptiveContainer {
+          EventNameSection(
+              summary = summary,
+              summaryError = summaryError,
+              onSummaryChange = { summary = it },
+              onSummaryErrorChange = { summaryError = it },
+              isLoading = isLoading)
+        }
+        AdaptiveContainer {
+          EventDateTimePicker(
+              state = eventDateTimeState,
+              onStateChange = { newState ->
+                eventDateTimeState = newState
+                validationError = null
+              },
+              isLoading = isLoading,
+              onRequestShowStartDatePicker = { showStartDatePicker = true },
+              onRequestShowStartTimePicker = { showStartTimePicker = true },
+              onRequestShowEndDatePicker = { showEndDatePicker = true },
+              onRequestShowEndTimePicker = { showEndTimePicker = true },
+              onRequestShowRecurrenceEndDatePicker = { showRecurrenceEndDatePicker = true },
+              modifier = Modifier.fillMaxWidth())
+        }
+        validationError?.let { Text(it, color = colorScheme.error, style = typography.bodySmall) }
 
-    AdaptiveContainer {
-      OutlinedTextField(
-          value = description,
-          onValueChange = { description = it },
-          label = { Text(stringResource(R.string.description)) },
-          modifier = Modifier.fillMaxWidth().height(100.dp),
-          maxLines = 4,
-          enabled = !isLoading,
-          shape = RoundedCornerShape(25.dp))
-      OutlinedTextField(
-          value = location,
-          onValueChange = { location = it },
-          label = { Text(stringResource(R.string.location)) },
-          modifier = Modifier.fillMaxWidth(),
-          singleLine = true,
-          enabled = !isLoading,
-          shape = RoundedCornerShape(25.dp))
-    }
-    generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
-    Spacer(modifier = Modifier.height(16.dp)) // Отступ перед кнопкой сохранения
-  } // End Scrollable Column
+        AdaptiveContainer {
+          OutlinedTextField(
+              value = description,
+              onValueChange = { description = it },
+              label = { Text(stringResource(R.string.description)) },
+              modifier = Modifier.fillMaxWidth().height(100.dp),
+              maxLines = 4,
+              enabled = !isLoading,
+              shape = RoundedCornerShape(25.dp))
+          OutlinedTextField(
+              value = location,
+              onValueChange = { location = it },
+              label = { Text(stringResource(R.string.location)) },
+              modifier = Modifier.fillMaxWidth(),
+              singleLine = true,
+              enabled = !isLoading,
+              shape = RoundedCornerShape(25.dp))
+        }
+        generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
+        Spacer(modifier = Modifier.height(16.dp)) // Отступ перед кнопкой сохранения
+      } // End Scrollable Column
 
   // Кнопка сохранения внизу листа
 

@@ -26,9 +26,7 @@ object NetworkModule {
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor(
-            HttpLoggingInterceptor().apply {
-              level = HttpLoggingInterceptor.Level.BODY
-            })
+            HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
         .build()
   }
 
@@ -42,9 +40,7 @@ object DatabaseModule {
   @Provides
   @Singleton // Гарантирует один экземпляр базы данных
   fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
-    return Room.databaseBuilder(
-        appContext, AppDatabase::class.java, "caliindar_database"
-    )
+    return Room.databaseBuilder(appContext, AppDatabase::class.java, "caliindar_database")
         // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
         // Но для production нужно реализовать правильные миграции!
         .fallbackToDestructiveMigration(false)

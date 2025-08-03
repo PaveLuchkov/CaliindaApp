@@ -12,7 +12,6 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.CustomOutlinedTextF
 
 data class SugNameChips(val name: String, val fullText: String)
 
-
 @Composable
 fun EventNameSection(
     summary: String,
@@ -21,26 +20,23 @@ fun EventNameSection(
     onSummaryErrorChange: (String?) -> Unit,
     isLoading: Boolean
 ) {
-    CustomOutlinedTextField(
-        value = summary,
-        onValueChange = {
-            onSummaryChange(it)
-            onSummaryErrorChange(null)
-        },
-        label = stringResource(R.string.event_name),
-        modifier = Modifier.fillMaxWidth(),
-        isError = summaryError != null,
-        supportingText = {
-            if (summaryError != null) Text(summaryError)
-        },
-        enabled = !isLoading,
-    )
-    ChipsRow(
-        chips = getSuggestedEventNames(),
-        onChipClick = { clickedChip -> onSummaryChange(clickedChip) },
-        enabled = !isLoading)
+  CustomOutlinedTextField(
+      value = summary,
+      onValueChange = {
+        onSummaryChange(it)
+        onSummaryErrorChange(null)
+      },
+      label = stringResource(R.string.event_name),
+      modifier = Modifier.fillMaxWidth(),
+      isError = summaryError != null,
+      supportingText = { if (summaryError != null) Text(summaryError) },
+      enabled = !isLoading,
+  )
+  ChipsRow(
+      chips = getSuggestedEventNames(),
+      onChipClick = { clickedChip -> onSummaryChange(clickedChip) },
+      enabled = !isLoading)
 }
-
 
 @Composable
 fun getSuggestedEventNames(): List<SugNameChips> {
@@ -132,6 +128,5 @@ fun getSuggestedEventNames(): List<SugNameChips> {
           context.getString(R.string.suggested_event_breakfast_full)),
       SugNameChips(
           context.getString(R.string.suggested_event_pet),
-          context.getString(R.string.suggested_event_pet_full))
-  )
+          context.getString(R.string.suggested_event_pet_full)))
 }

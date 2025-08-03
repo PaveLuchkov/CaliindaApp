@@ -49,11 +49,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
+import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil.formatRRule
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
-import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
-import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil.formatRRule
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -161,7 +161,9 @@ fun CustomEventDetailsDialog(
                                 }
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
-                                onClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
+                                onClick = {
+                                  eventManagementViewModel.requestDeleteConfirmation(event)
+                                },
                                 modifier =
                                     Modifier.minimumInteractiveComponentSize()
                                         .size(

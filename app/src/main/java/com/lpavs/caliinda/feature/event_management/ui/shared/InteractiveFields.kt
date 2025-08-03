@@ -49,9 +49,7 @@ fun CustomOutlinedTextField(
       value = value,
       onValueChange = onValueChange,
       label = { Text(text = label, textAlign = TextAlign.Center) },
-      modifier = modifier
-          .fillMaxWidth()
-          .padding(horizontal = 8.dp),
+      modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
       shape = RoundedCornerShape(cuid.ContainerCornerRadius),
       colors =
           OutlinedTextFieldDefaults.colors(
@@ -69,9 +67,7 @@ fun CustomOutlinedTextField(
 @Composable
 fun ChipsRow(chips: List<SugNameChips>, onChipClick: (String) -> Unit, enabled: Boolean) {
   LazyRow(
-      modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = cuid.padding),
+      modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
       horizontalArrangement = Arrangement.spacedBy(cuid.padding),
       contentPadding = PaddingValues(cuid.padding)) {
         items(chips, key = { it.name }) { chip ->
@@ -107,11 +103,11 @@ internal fun TimePickerField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ModernClickableTextField(
-        value = time?.format(timeFormatter) ?: "--:--",
-        isLoading = isLoading,
-        onClick = onClick,
-        modifier = modifier)
+  ModernClickableTextField(
+      value = time?.format(timeFormatter) ?: "--:--",
+      isLoading = isLoading,
+      onClick = onClick,
+      modifier = modifier)
 }
 
 @Composable
@@ -121,27 +117,23 @@ private fun ModernClickableTextField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier
-        .height(45.dp)
-        .clip(shape=RoundedCornerShape(cuid.ContainerCornerRadius))
-        .background(colorScheme.secondaryContainer)
-    ) {
+  Box(
+      modifier =
+          modifier
+              .height(45.dp)
+              .clip(shape = RoundedCornerShape(cuid.ContainerCornerRadius))
+              .background(colorScheme.secondaryContainer)) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    enabled = !isLoading,
-                    onClick = onClick,
-                    indication = null,
-                    interactionSource =
-                        remember {
-                            MutableInteractionSource()
-                        }
-                ),
+            modifier =
+                Modifier.fillMaxSize()
+                    .clickable(
+                        enabled = !isLoading,
+                        onClick = onClick,
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }),
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = value, color = colorScheme.onSecondaryContainer)
-        }
-    }
+            verticalAlignment = Alignment.CenterVertically) {
+              Text(text = value, color = colorScheme.onSecondaryContainer)
+            }
+      }
 }

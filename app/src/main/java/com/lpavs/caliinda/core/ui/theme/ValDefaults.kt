@@ -24,8 +24,6 @@ object CalendarUiDefaults {
   // Для настроек
   val SettingsItemCornerRadius = 25.dp
 
-  // Шрифты
-  val HeaderFontSize = 16.sp
 
   // Тени и Z-index
   val CurrentEventElevation = 8.dp
@@ -36,20 +34,20 @@ object CalendarUiDefaults {
   const val EVENT_TRANSITION_WINDOW_MINUTES = 60L
 
   const val ShapeMinVertices = 3
-  const val ShapeMaxVerticesDelta = 5 // Vertices = Min + (hash % Delta) -> Range [3, 7] now
-  const val ShapeShadowOffsetXMaxModulo = 11 // Range [0, 10]
+  const val ShapeMaxVerticesDelta = 5
+  const val ShapeShadowOffsetXMaxModulo = 11
   const val ShapeShadowOffsetYMin = 3
-  const val ShapeShadowOffsetYMaxModulo = 6 // Range [3, 8]
+  const val ShapeShadowOffsetYMaxModulo = 6
   const val ShapeOffsetParamMultiplier = 0.1f
   const val ShapeRadiusSeedMin = 0.4f
-  const val ShapeRadiusSeedRange = 0.4f // Range [0.4f, 0.8f]
+  const val ShapeRadiusSeedRange = 0.4f
   const val ShapeRadiusSeedRangeModulo = 11
-  const val ShapeMaxRadius = 3f // Coerce limit
-  const val ShapeRotationMaxDegrees = 91 // Range [0, 90]
-  const val ShapeRotationOffsetDegrees = -45f // Center range around 0
+  const val ShapeMaxRadius = 3f
+  const val ShapeRotationMaxDegrees = 91
+  const val ShapeRotationOffsetDegrees = -45f
   const val ShapeCornerRounding = 0.95f
-  const val ShapeMainAlpha = 0.95f // Alpha for the main star shape
-  const val SHAPEINNERRADIUS = 0.3f // Alpha for the main star shape
+  const val ShapeMainAlpha = 0.95f
+  const val SHAPEINNERRADIUS = 0.3f
 
   // CreationScreen
   val ContainerPadding = 10.dp

@@ -64,12 +64,12 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.core.ui.theme.Typography
+import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
-import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
-import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.core.ui.theme.Typography
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
@@ -127,11 +127,11 @@ fun EventItem(
       }
 
   // Compute the transitionColor
-    val transitionColorCard = lerpOkLab(
-        start = colorScheme.primaryContainer,
-        stop = colorScheme.tertiaryContainer,
-        fraction = proximityRatio
-    )
+  val transitionColorCard =
+      lerpOkLab(
+          start = colorScheme.primaryContainer,
+          stop = colorScheme.tertiaryContainer,
+          fraction = proximityRatio)
   val darkerShadowColor = Color.Black
 
   // --- Параметры текущего события (получаем isCurrentEvent) ---
@@ -144,42 +144,45 @@ fun EventItem(
         isNextEvent -> transitionColorCard // Слегка выделяем следующее (пример)
         else -> colorScheme.primaryContainer // Обычный фон
       }
-    val cardBackground by animateColorAsState(
-        if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
-        label = "card color"
-    )
+  val cardBackground by
+      animateColorAsState(
+          if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
+          label = "card color")
 
-
-    val cardTextColor =
+  val cardTextColor =
       when {
         isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
         else -> colorScheme.onPrimaryContainer // Обычный фон
       }
-    val textStyle = when{
-        !isMicroEventFromList -> if (isCurrentEvent) Typography.headlineSmallEmphasized else Typography.headlineSmall
-        else-> if (isCurrentEvent) Typography.bodyLargeEmphasized else Typography.bodyLarge
-    }
-    val cardFontFamily =
-        when {
-            isCurrentEvent -> FontFamily(
-            Font(
-                R.font.robotoflex_variable,
-                variationSettings = FontVariation.Settings(
-                    FontVariation.weight(700),
-                    FontVariation.grade(70),
-                    FontVariation.width(65f),
-                    FontVariation.slant(-5f),
-                )
-            ))
-            else -> FontFamily(
+  val textStyle =
+      when {
+        !isMicroEventFromList ->
+            if (isCurrentEvent) Typography.headlineSmallEmphasized else Typography.headlineSmall
+        else -> if (isCurrentEvent) Typography.bodyLargeEmphasized else Typography.bodyLarge
+      }
+  val cardFontFamily =
+      when {
+        isCurrentEvent ->
+            FontFamily(
                 Font(
                     R.font.robotoflex_variable,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(600),
-                        FontVariation.width(100f),
-                    )
-                ))
-        }
+                    variationSettings =
+                        FontVariation.Settings(
+                            FontVariation.weight(700),
+                            FontVariation.grade(70),
+                            FontVariation.width(65f),
+                            FontVariation.slant(-5f),
+                        )))
+        else ->
+            FontFamily(
+                Font(
+                    R.font.robotoflex_variable,
+                    variationSettings =
+                        FontVariation.Settings(
+                            FontVariation.weight(600),
+                            FontVariation.width(100f),
+                        )))
+      }
   // --- Композиция UI ---
   Box( // Корневой Box для тени, фона, высоты и кликабельности
       modifier =
@@ -298,32 +301,18 @@ fun EventItem(
           AnimatedVisibility(
               visible = isExpanded,
               enter =
-                  fadeIn(
-                      animationSpec =
-                          tween(
-                              durationMillis = 150,
-                              delayMillis =
-                                  100)) +
-                          expandVertically(
-                          animationSpec =
-                              tween(
-                                  durationMillis = 250,
-                                  delayMillis = 50),
-                              expandFrom =
-                              Alignment
-                                  .Top
-                          ),
+                  fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                      expandVertically(
+                          animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                          expandFrom = Alignment.Top),
               exit =
                   shrinkVertically(
-                      animationSpec = tween(durationMillis = 250),
-                      shrinkTowards = Alignment.Top
-                  ) + fadeOut(animationSpec = tween(durationMillis = 150))) {
+                      animationSpec = tween(durationMillis = 250), shrinkTowards = Alignment.Top) +
+                      fadeOut(animationSpec = tween(durationMillis = 150))) {
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(
-                                horizontal = cuid.ItemHorizontalPadding,
-                                vertical = 4.dp),
+                            .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically) {
                       FilledIconButton(
@@ -342,15 +331,15 @@ fun EventItem(
                                 contentDescription = "info",
                             )
                           }
-                                          Spacer(modifier = Modifier.width(4.dp))
+                      Spacer(modifier = Modifier.width(4.dp))
                       Button(
                           onClick = { onEditClickFromList() },
                           contentPadding = PaddingValues(horizontal = 12.dp)) {
                             Icon(Icons.Filled.Edit, contentDescription = "Edit")
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text("Edit")
-                      }
-                    FilledIconButton(
+                          }
+                      FilledIconButton(
                           onClick = { onDeleteClickFromList() },
                           modifier =
                               Modifier.minimumInteractiveComponentSize()
@@ -387,10 +376,7 @@ fun AllDayEventItem(
       modifier =
           modifier
               .fillMaxWidth()
-              .clip(
-                  RoundedCornerShape(
-                      cuid
-                          .EventItemCornerRadius))
+              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
               .pointerInput(event.id) {
                 detectTapGestures(
@@ -412,10 +398,7 @@ fun AllDayEventItem(
                   fontWeight = FontWeight.Medium,
                   color = cardTextColor,
                   textAlign = TextAlign.Center,
-                  modifier =
-                      Modifier.fillMaxWidth()
-                          .padding(
-                              vertical = 3.dp),
+                  modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
               )
 
               AnimatedVisibility(
@@ -432,9 +415,7 @@ fun AllDayEventItem(
                           fadeOut(animationSpec = tween(durationMillis = 150))) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically) {
                           Button(
@@ -454,9 +435,7 @@ fun AllDayEventItem(
                               }
                           Spacer(modifier = Modifier.width(8.dp))
                           Button(
-                              onClick = {
-                                onEditClick()
-                              },
+                              onClick = { onEditClick() },
                               contentPadding = PaddingValues(horizontal = 12.dp),
                               colors =
                                   ButtonDefaults.buttonColors(
@@ -469,9 +448,7 @@ fun AllDayEventItem(
                               }
                           Spacer(modifier = Modifier.width(8.dp))
                           Button(
-                              onClick = {
-                                onDeleteClick()
-                              },
+                              onClick = { onDeleteClick() },
                               contentPadding = PaddingValues(horizontal = 12.dp),
                               colors =
                                   ButtonDefaults.buttonColors(
@@ -551,14 +528,13 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
 }
 
 fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
-    val startOklab = start.convert(ColorSpaces.Oklab)
-    val stopOklab = stop.convert(ColorSpaces.Oklab)
+  val startOklab = start.convert(ColorSpaces.Oklab)
+  val stopOklab = stop.convert(ColorSpaces.Oklab)
 
-    val l = startOklab.component1() + (stopOklab.component1() - startOklab.component1()) * fraction
-    val a = startOklab.component2() + (stopOklab.component2() - startOklab.component2()) * fraction
-    val b = startOklab.component3() + (stopOklab.component3() - startOklab.component3()) * fraction
-    val alpha = startOklab.alpha + (stopOklab.alpha - startOklab.alpha) * fraction
+  val l = startOklab.component1() + (stopOklab.component1() - startOklab.component1()) * fraction
+  val a = startOklab.component2() + (stopOklab.component2() - startOklab.component2()) * fraction
+  val b = startOklab.component3() + (stopOklab.component3() - startOklab.component3()) * fraction
+  val alpha = startOklab.alpha + (stopOklab.alpha - startOklab.alpha) * fraction
 
-    return Color(l, a, b, alpha, ColorSpaces.Oklab).convert(ColorSpaces.Srgb)
+  return Color(l, a, b, alpha, ColorSpaces.Oklab).convert(ColorSpaces.Srgb)
 }
-

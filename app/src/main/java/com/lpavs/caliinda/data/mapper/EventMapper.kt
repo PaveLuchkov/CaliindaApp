@@ -1,8 +1,8 @@
 package com.lpavs.caliinda.data.mapper
 
 import android.util.Log
-import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
+import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent // Твоя модель для UI/сети
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -59,7 +59,6 @@ object EventMapper {
       return null
     }
   }
-
 
   fun mapToDomain(entity: CalendarEventEntity, zoneIdString: String): CalendarEvent {
     val startTimeStr = DateTimeUtils.formatMillisToIsoString(entity.startTimeMillis, zoneIdString)

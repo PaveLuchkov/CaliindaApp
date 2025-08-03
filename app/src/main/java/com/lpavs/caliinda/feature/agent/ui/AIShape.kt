@@ -26,8 +26,7 @@ object AiStarShape : Shape {
       RoundedPolygon.star(
           numVerticesPerRadius = STAR_VERTICES,
           innerRadius = STAR_INNER_RADIUS_RATIO, // Adjust if needed
-          rounding = STAR_ROUNDING
-      )
+          rounding = STAR_ROUNDING)
   private val matrix = Matrix()
 
   override fun createOutline(

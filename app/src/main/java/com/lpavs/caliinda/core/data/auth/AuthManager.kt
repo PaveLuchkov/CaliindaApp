@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.annotation.WorkerThread
+import androidx.core.net.toUri
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -20,9 +21,9 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
-import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.core.data.di.WebClientId
+import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -44,20 +45,20 @@ import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.core.net.toUri
 
 @Singleton
 class AuthManager
 @Inject
 constructor(
-  @ApplicationContext private val context: Context,
-  private val okHttpClient: OkHttpClient,
-  @BackendUrl private val backendBaseUrl: String,
-  @WebClientId private val webClientId: String,
-  private val calendarDataManager: Lazy<CalendarDataManager>,
-  private val sharedPreferences: SharedPreferences
+    @ApplicationContext private val context: Context,
+    private val okHttpClient: OkHttpClient,
+    @BackendUrl private val backendBaseUrl: String,
+    @WebClientId private val webClientId: String,
+    private val calendarDataManager: Lazy<CalendarDataManager>,
+    private val sharedPreferences: SharedPreferences
 ) {
   private val TAG = "AuthManager"
+
   private companion object {
     const val BACKEND_TOKEN_KEY = "backend_auth_token"
     const val USER_EMAIL_KEY = "user_email"
@@ -80,13 +81,16 @@ constructor(
     Log.d(TAG, "Initializing AuthManager with Credential Manager...")
     restoreStateFromStorage()
   }
+
   private fun restoreStateFromStorage() {
     try {
       Log.d(TAG, "Starting state restoration from EncryptedSharedPreferences...")
       Log.d(TAG, "Process ID: ${android.os.Process.myPid()}")
 
       val token = getBackendAuthToken()
-      Log.d(TAG, "Token restoration result: ${if (token != null) "FOUND token" else "NO token found"}")
+      Log.d(
+          TAG,
+          "Token restoration result: ${if (token != null) "FOUND token" else "NO token found"}")
 
       if (token != null) {
         val email = sharedPreferences.getString(USER_EMAIL_KEY, null)
@@ -95,20 +99,21 @@ constructor(
 
         Log.d(TAG, "Restoring user data: email=$email, displayName=$displayName")
 
-        val photoUri = if (!photoUrlString.isNullOrEmpty()) {
-          photoUrlString.toUri()
-        } else {
-          null
-        }
+        val photoUri =
+            if (!photoUrlString.isNullOrEmpty()) {
+              photoUrlString.toUri()
+            } else {
+              null
+            }
 
-        _authState.value = AuthState(
-          isSignedIn = true,
-          userEmail = email,
-          displayName = displayName,
-          photoUrl = photoUri,
-          isLoading = false,
-          authError = null
-        )
+        _authState.value =
+            AuthState(
+                isSignedIn = true,
+                userEmail = email,
+                displayName = displayName,
+                photoUrl = photoUri,
+                isLoading = false,
+                authError = null)
         Log.i(TAG, "✅ Successfully restored session for $email from EncryptedSharedPreferences")
       } else {
         Log.d(TAG, "❌ No token found, setting signed out state")
@@ -125,9 +130,7 @@ constructor(
       _authState.update { it.copy(isLoading = true, authError = null) }
       try {
         val googleIdOption = buildGoogleIdOption(filterByAuthorizedAccounts = false)
-        val request = GetCredentialRequest.Builder()
-          .addCredentialOption(googleIdOption)
-          .build()
+        val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
         val result = credentialManager.getCredential(activity, request)
         handleAuthenticationSuccess(result)
       } catch (e: GetCredentialException) {
@@ -136,10 +139,7 @@ constructor(
       } catch (e: Exception) {
         Log.e(TAG, "Unknown error during sign-in", e)
         _authState.update {
-          it.copy(
-            isLoading = false,
-            authError = "Произошла неизвестная ошибка."
-          )
+          it.copy(isLoading = false, authError = "Произошла неизвестная ошибка.")
         }
       }
     }
@@ -147,7 +147,8 @@ constructor(
 
   private suspend fun handleAuthenticationSuccess(result: GetCredentialResponse) {
     val credential = result.credential
-    if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+    if (credential is CustomCredential &&
+        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
       try {
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
         val idToken = googleIdTokenCredential.idToken
@@ -160,10 +161,10 @@ constructor(
         this.pendingIdToken = idToken
         _authState.update {
           it.copy(
-            isLoading = true,
-            userEmail = googleIdTokenCredential.id,
-            displayName = googleIdTokenCredential.displayName,
-            photoUrl = googleIdTokenCredential.profilePictureUri,
+              isLoading = true,
+              userEmail = googleIdTokenCredential.id,
+              displayName = googleIdTokenCredential.displayName,
+              photoUrl = googleIdTokenCredential.profilePictureUri,
           )
         }
         requestCalendarAuthorization()
@@ -179,10 +180,11 @@ constructor(
 
   private suspend fun requestCalendarAuthorization() {
     val requiredScopes = Scope(CalendarScopes.CALENDAR)
-    val authRequest = AuthorizationRequest.builder()
-      .setRequestedScopes(listOf(requiredScopes))
-      .requestOfflineAccess(webClientId)
-      .build()
+    val authRequest =
+        AuthorizationRequest.builder()
+            .setRequestedScopes(listOf(requiredScopes))
+            .requestOfflineAccess(webClientId)
+            .build()
     try {
       val result = authorizationClient.authorize(authRequest).await()
       if (result.hasResolution()) {
@@ -233,9 +235,9 @@ constructor(
       Log.i(TAG, "Successfully exchanged tokens with backend.")
       _authState.update {
         it.copy(
-          isSignedIn = true,
-          isLoading = false,
-          authError = null,
+            isSignedIn = true,
+            isLoading = false,
+            authError = null,
         )
       }
       pendingIdToken = null
@@ -264,25 +266,20 @@ constructor(
     clearBackendToken()
     clearUserInfo()
     pendingIdToken = null
-    _authState.value = AuthState(
-      isSignedIn = false,
-      isLoading = false,
-      authError = error
-    )
+    _authState.value = AuthState(isSignedIn = false, isLoading = false, authError = error)
     Log.i(TAG, "Internal sign out completed. Error: $error")
   }
 
   private fun buildGoogleIdOption(
-    filterByAuthorizedAccounts: Boolean,
-    autoSelect: Boolean = false,
+      filterByAuthorizedAccounts: Boolean,
+      autoSelect: Boolean = false,
   ): GetGoogleIdOption {
     return GetGoogleIdOption.Builder()
-      .setFilterByAuthorizedAccounts(filterByAuthorizedAccounts)
-      .setServerClientId(webClientId)
-      .setAutoSelectEnabled(autoSelect)
-      .setNonce(generateNonce())
-
-      .build()
+        .setFilterByAuthorizedAccounts(filterByAuthorizedAccounts)
+        .setServerClientId(webClientId)
+        .setAutoSelectEnabled(autoSelect)
+        .setNonce(generateNonce())
+        .build()
   }
 
   private fun generateNonce(): String {
@@ -299,48 +296,49 @@ constructor(
 
   @WorkerThread
   private suspend fun sendAuthInfoToBackend(idToken: String, authCode: String): Boolean =
-    withContext(Dispatchers.IO) {
-      Log.i(TAG, "Sending Auth Info (JSON) to /auth/google/exchange")
-      val jsonObject =
-        JSONObject().apply {
-          put("id_token", idToken)
-          put("auth_code", authCode)
-        }
-      val requestBody =
-        jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-      val request =
-        Request.Builder().url("$backendBaseUrl/auth/google/exchange").post(requestBody).build()
+      withContext(Dispatchers.IO) {
+        Log.i(TAG, "Sending Auth Info (JSON) to /auth/google/exchange")
+        val jsonObject =
+            JSONObject().apply {
+              put("id_token", idToken)
+              put("auth_code", authCode)
+            }
+        val requestBody =
+            jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+        val request =
+            Request.Builder().url("$backendBaseUrl/auth/google/exchange").post(requestBody).build()
 
-      try {
-        okHttpClient.newCall(request).execute().use { response ->
-          val responseBodyString = response.body?.string()
-          if (!response.isSuccessful) {
-            Log.e(TAG, "Backend error exchanging code: ${response.code} - $responseBodyString")
-            false
-          } else {
-            Log.i(TAG, "Backend successfully exchanged tokens. Response: $responseBodyString")
-            // ----- НОВАЯ ЛОГИКА: ИЗВЛЕКАЕМ И СОХРАНЯЕМ ТОКЕН -----
-            try {
-              val jsonResponse = responseBodyString?.let { JSONObject(it) }
-              val backendToken = jsonResponse?.optString("token", null.toString())
-              if (backendToken != null) { // Доп. проверка на строку "null" на всякий случай
+        try {
+          okHttpClient.newCall(request).execute().use { response ->
+            val responseBodyString = response.body?.string()
+            if (!response.isSuccessful) {
+              Log.e(TAG, "Backend error exchanging code: ${response.code} - $responseBodyString")
+              false
+            } else {
+              Log.i(TAG, "Backend successfully exchanged tokens. Response: $responseBodyString")
+              // ----- НОВАЯ ЛОГИКА: ИЗВЛЕКАЕМ И СОХРАНЯЕМ ТОКЕН -----
+              try {
+                val jsonResponse = responseBodyString?.let { JSONObject(it) }
+                val backendToken = jsonResponse?.optString("token", null.toString())
+                if (backendToken != null) { // Доп. проверка на строку "null" на всякий случай
                   saveBackendToken(backendToken)
-                true // Успех
-              } else {
-                Log.e(TAG, "Backend response is successful, but 'token' field is missing or null.")
+                  true // Успех
+                } else {
+                  Log.e(
+                      TAG, "Backend response is successful, but 'token' field is missing or null.")
+                  false
+                }
+              } catch (e: JSONException) {
+                Log.e(TAG, "Failed to parse backend token response.", e)
                 false
               }
-            } catch (e: JSONException) {
-              Log.e(TAG, "Failed to parse backend token response.", e)
-              false
             }
           }
+        } catch (e: Exception) {
+          Log.e(TAG, "Error processing backend response for auth exchange", e)
+          false
         }
-      } catch (e: Exception) {
-        Log.e(TAG, "Error processing backend response for auth exchange", e)
-        false
       }
-    }
 
   fun getBackendAuthToken(): String? {
     return try {
@@ -374,9 +372,7 @@ constructor(
     try {
       Log.d(TAG, "Attempting to save backend token with key: '$BACKEND_TOKEN_KEY'")
 
-      val success = sharedPreferences.edit()
-        .putString(BACKEND_TOKEN_KEY, token)
-        .commit()
+      val success = sharedPreferences.edit().putString(BACKEND_TOKEN_KEY, token).commit()
 
       if (success) {
         Log.d(TAG, "✅ Backend token saved successfully to EncryptedSharedPreferences")
@@ -386,7 +382,9 @@ constructor(
         if (savedToken == token) {
           Log.d(TAG, "✅ Token verification successful - token matches")
         } else {
-          Log.e(TAG, "❌ Token verification FAILED! Expected: ${token.take(20)}..., Got: ${savedToken?.take(20) ?: "null"}")
+          Log.e(
+              TAG,
+              "❌ Token verification FAILED! Expected: ${token.take(20)}..., Got: ${savedToken?.take(20) ?: "null"}")
         }
       } else {
         Log.e(TAG, "❌ Failed to save backend token - commit() returned false")
@@ -399,9 +397,7 @@ constructor(
   private fun clearBackendToken() {
     try {
       Log.d(TAG, "Clearing backend token with key: '$BACKEND_TOKEN_KEY'")
-      val success = sharedPreferences.edit()
-        .remove(BACKEND_TOKEN_KEY)
-        .commit()
+      val success = sharedPreferences.edit().remove(BACKEND_TOKEN_KEY).commit()
 
       if (success) {
         Log.d(TAG, "✅ Backend token cleared successfully")
@@ -417,11 +413,13 @@ constructor(
     try {
       Log.d(TAG, "Saving user info to EncryptedSharedPreferences...")
 
-      val success = sharedPreferences.edit()
-        .putString(USER_EMAIL_KEY, email)
-        .putString(USER_DISPLAY_NAME_KEY, displayName)
-        .putString(USER_PHOTO_URL_KEY, photoUrl)
-        .commit()
+      val success =
+          sharedPreferences
+              .edit()
+              .putString(USER_EMAIL_KEY, email)
+              .putString(USER_DISPLAY_NAME_KEY, displayName)
+              .putString(USER_PHOTO_URL_KEY, photoUrl)
+              .commit()
 
       if (success) {
         Log.d(TAG, "✅ User info saved successfully")
@@ -435,11 +433,13 @@ constructor(
 
   private fun clearUserInfo() {
     try {
-      val success = sharedPreferences.edit()
-        .remove(USER_EMAIL_KEY)
-        .remove(USER_DISPLAY_NAME_KEY)
-        .remove(USER_PHOTO_URL_KEY)
-        .commit()
+      val success =
+          sharedPreferences
+              .edit()
+              .remove(USER_EMAIL_KEY)
+              .remove(USER_DISPLAY_NAME_KEY)
+              .remove(USER_PHOTO_URL_KEY)
+              .commit()
 
       if (success) {
         Log.d(TAG, "✅ User info cleared successfully")

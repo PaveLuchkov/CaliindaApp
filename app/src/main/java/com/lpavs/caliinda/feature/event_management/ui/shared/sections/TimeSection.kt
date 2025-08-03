@@ -103,12 +103,12 @@ fun EventDateTimePicker(
   val oneDay = stringResource(R.string.one_day)
   val recEvent = stringResource(R.string.recurrence_event)
   val endsLabel = stringResource(R.string.recurrence_ends)
-    val endNeverLabel = stringResource(R.string.recurrence_end_never)
-    val endDateLabel = stringResource(R.string.recurrence_end_date)
-    val endCountLabel = stringResource(R.string.recurrence_end_count)
-    val recurrenceCountFieldLabel = stringResource(R.string.recurrence_count_field)
+  val endNeverLabel = stringResource(R.string.recurrence_end_never)
+  val endDateLabel = stringResource(R.string.recurrence_end_date)
+  val endCountLabel = stringResource(R.string.recurrence_end_count)
+  val recurrenceCountFieldLabel = stringResource(R.string.recurrence_count_field)
 
-    val weekdays = remember { DayOfWeek.entries.toTypedArray() }
+  val weekdays = remember { DayOfWeek.entries.toTypedArray() }
 
   // --- Форматтеры для отображения (без изменений) ---
   val deviceDateFormatter = remember {
@@ -124,7 +124,7 @@ fun EventDateTimePicker(
       isAllDay = state.isAllDay
     }
   }
-    LaunchedEffect(state.startDate, state.endDate) {
+  LaunchedEffect(state.startDate, state.endDate) {
     val actualIsOneDay = state.startDate == state.endDate
     if (isOneDay != actualIsOneDay) {
       isOneDay = actualIsOneDay
@@ -133,7 +133,7 @@ fun EventDateTimePicker(
 
   LaunchedEffect(state) {
     dateTimeError = null
-      val actualIsOneDay = state.startDate == state.endDate
+    val actualIsOneDay = state.startDate == state.endDate
 
     if (!actualIsOneDay && state.endDate.isBefore(state.startDate)) {
       dateTimeError = context.getString(R.string.error_end_date_before_start)
@@ -164,46 +164,45 @@ fun EventDateTimePicker(
           onClick = {
             val newIsAllDay = !isAllDay
 
-              val newState: EventDateTimeState
+            val newState: EventDateTimeState
             if (newIsAllDay) {
               newState = state.copy(isAllDay = true, startTime = null, endTime = null)
             } else {
-                val defaultStartTime =
+              val defaultStartTime =
                   state.startTime
                       ?: LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
 
               var newEndTime = state.endTime
               var newEndDate = state.endDate
 
-                if (state.startDate == state.endDate) {
-                    if (newEndTime == null || !defaultStartTime.isBefore(newEndTime)) {
+              if (state.startDate == state.endDate) {
+                if (newEndTime == null || !defaultStartTime.isBefore(newEndTime)) {
                   newEndTime = defaultStartTime.plusHours(1)
                 }
                 if (newEndTime != null) {
                   newEndTime = newEndTime.withNano(0)
                 }
 
-                    if (newEndTime != null) {
+                if (newEndTime != null) {
                   if (newEndTime.isBefore(defaultStartTime)) {
                     newEndDate = state.startDate.plusDays(1)
                   }
                 }
               } else {
-                    if (newEndTime == null) {
-                        newEndTime = defaultStartTime.plusHours(1)
-                    }
+                if (newEndTime == null) {
+                  newEndTime = defaultStartTime.plusHours(1)
+                }
                 if (newEndTime != null) {
                   newEndTime = newEndTime.withNano(0)
                 }
-                }
+              }
 
               newState =
                   state.copy(
                       isAllDay = false,
                       startTime = defaultStartTime,
                       endTime = newEndTime,
-                      endDate = newEndDate
-                  )
+                      endDate = newEndDate)
             }
             onStateChange(newState)
           },
@@ -217,21 +216,20 @@ fun EventDateTimePicker(
             val currentActualIsOneDay = state.startDate == state.endDate
             val targetIsOneDay = !currentActualIsOneDay
 
-              val newEndDateCandidate: LocalDate
+            val newEndDateCandidate: LocalDate
             var newEndTimeCandidate = state.endTime
 
             if (targetIsOneDay) {
-                newEndDateCandidate = state.startDate
+              newEndDateCandidate = state.startDate
 
               if (!state.isAllDay && state.startTime != null) {
                 val currentStartTime = state.startTime
-                  if (newEndTimeCandidate == null ||
+                if (newEndTimeCandidate == null ||
                     !currentStartTime.isBefore(newEndTimeCandidate)) {
                   newEndTimeCandidate = currentStartTime.plusHours(1).withNano(0)
-                      if (newEndTimeCandidate.isBefore(currentStartTime)) {
-                    newEndTimeCandidate =
-                        LocalTime.of(23, 59, 0, 0)
-                      }
+                  if (newEndTimeCandidate.isBefore(currentStartTime)) {
+                    newEndTimeCandidate = LocalTime.of(23, 59, 0, 0)
+                  }
                 }
               }
             } else {
@@ -249,9 +247,9 @@ fun EventDateTimePicker(
             val newIsRecurring = !state.isRecurring
             val newRule =
                 if (!newIsRecurring) {
-                    null
+                  null
                 } else {
-                    state.recurrenceRule ?: RecurrenceOption.Daily.rruleValue
+                  state.recurrenceRule ?: RecurrenceOption.Daily.rruleValue
                 }
             onStateChange(state.copy(isRecurring = newIsRecurring, recurrenceRule = newRule))
           },
@@ -259,14 +257,14 @@ fun EventDateTimePicker(
           enabled = !isLoading)
     }
 
-      AnimatedVisibility(
+    AnimatedVisibility(
         visible = dateTimeError != null,
         enter = fadeIn() + expandVertically(),
         exit = fadeOut() + shrinkVertically()) {
           Column {
-              Text(
+            Text(
                 text = dateTimeError ?: "",
-                  color = colorScheme.error,
+                color = colorScheme.error,
                 style = typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 8.dp))
             Spacer(modifier = Modifier.height(4.dp))
@@ -274,7 +272,7 @@ fun EventDateTimePicker(
         }
 
     // --- Поля ввода Даты/Времени ---
-      Column(
+    Column(
         modifier = Modifier.animateContentSize(animationSpec = tween(300)),
         verticalArrangement = Arrangement.spacedBy(8.dp)) {
           AnimatedContent(
@@ -297,109 +295,110 @@ fun EventDateTimePicker(
               },
               label = "DateTimeFieldsAnimation") { targetLayoutState ->
                 val (showAllDay, showOneDay) = targetLayoutState
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    when {
-                        showAllDay && showOneDay -> {
-                          DatePickerField(
-                              state.startDate,
-                              deviceDateFormatter,
-                              isLoading,
-                              onRequestShowStartDatePicker,
-                              Modifier.fillMaxWidth().padding(horizontal = 50.dp))
-                        }
-
-                        showAllDay -> {
-                          Row(
-                              Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                              Arrangement.spacedBy(8.dp),
-                              Alignment.Top) {
-                                DatePickerField(
-                                    state.startDate,
-                                    deviceDateFormatter,
-                                    isLoading,
-                                    onRequestShowStartDatePicker,
-                                    Modifier.weight(1f))
-                                DatePickerField(
-                                    state.endDate,
-                                    deviceDateFormatter,
-                                    isLoading,
-                                    onRequestShowEndDatePicker,
-                                    Modifier.weight(1f))
-                              }
-                        }
-
-                        showOneDay -> {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-
-                            ) {
-                                Row(
-                                    Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                                    Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                                    Alignment.CenterVertically) {
-                                    TimePickerField(
-                                        state.startTime,
-                                        deviceTimeFormatter,
-                                        isLoading,
-                                        onRequestShowStartTimePicker,
-                                        Modifier.width(100.dp))
-                                    Box(modifier = Modifier.width(10.dp).height(1.dp).background(color = colorScheme.onBackground))
-                                    TimePickerField(
-                                        state.endTime,
-                                        deviceTimeFormatter,
-                                        isLoading,
-                                        onRequestShowEndTimePicker,
-                                        Modifier.width(100.dp))
-                                }
-                                DatePickerField(
-                                    state.startDate,
-                                    deviceDateFormatter,
-                                    isLoading,
-                                    onRequestShowStartDatePicker,
-                                    Modifier.width(218.dp))
-                            }
-                        }
-
-                        else -> {
-                          Row(
-                              Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                              Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                              Alignment.Top) {
-                                TimePickerField(
-                                    state.startTime,
-                                    deviceTimeFormatter,
-                                    isLoading,
-                                    onRequestShowStartTimePicker,
-                                    Modifier.weight(1f))
-                                TimePickerField(
-                                    state.endTime,
-                                    deviceTimeFormatter,
-                                    isLoading,
-                                    onRequestShowEndTimePicker,
-                                    Modifier.weight(1f))
-                              }
-                          Row(
-                              Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                              Arrangement.spacedBy(8.dp),
-                              Alignment.Top) {
-                                DatePickerField(
-                                    state.startDate,
-                                    deviceDateFormatter,
-                                    isLoading,
-                                    onRequestShowStartDatePicker,
-                                    Modifier.weight(1f))
-                                DatePickerField(
-                                    state.endDate,
-                                    deviceDateFormatter,
-                                    isLoading,
-                                    onRequestShowEndDatePicker,
-                                    Modifier.weight(1f))
-                              }
-                        }
-                      }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                  when {
+                    showAllDay && showOneDay -> {
+                      DatePickerField(
+                          state.startDate,
+                          deviceDateFormatter,
+                          isLoading,
+                          onRequestShowStartDatePicker,
+                          Modifier.fillMaxWidth().padding(horizontal = 50.dp))
                     }
+
+                    showAllDay -> {
+                      Row(
+                          Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                          Arrangement.spacedBy(8.dp),
+                          Alignment.Top) {
+                            DatePickerField(
+                                state.startDate,
+                                deviceDateFormatter,
+                                isLoading,
+                                onRequestShowStartDatePicker,
+                                Modifier.weight(1f))
+                            DatePickerField(
+                                state.endDate,
+                                deviceDateFormatter,
+                                isLoading,
+                                onRequestShowEndDatePicker,
+                                Modifier.weight(1f))
+                          }
+                    }
+
+                    showOneDay -> {
+                      Column(
+                          horizontalAlignment = Alignment.CenterHorizontally,
+                          verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                                Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+                                Alignment.CenterVertically) {
+                                  TimePickerField(
+                                      state.startTime,
+                                      deviceTimeFormatter,
+                                      isLoading,
+                                      onRequestShowStartTimePicker,
+                                      Modifier.width(100.dp))
+                                  Box(
+                                      modifier =
+                                          Modifier.width(10.dp)
+                                              .height(1.dp)
+                                              .background(color = colorScheme.onBackground))
+                                  TimePickerField(
+                                      state.endTime,
+                                      deviceTimeFormatter,
+                                      isLoading,
+                                      onRequestShowEndTimePicker,
+                                      Modifier.width(100.dp))
+                                }
+                            DatePickerField(
+                                state.startDate,
+                                deviceDateFormatter,
+                                isLoading,
+                                onRequestShowStartDatePicker,
+                                Modifier.width(218.dp))
+                          }
+                    }
+
+                    else -> {
+                      Row(
+                          Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                          Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                          Alignment.Top) {
+                            TimePickerField(
+                                state.startTime,
+                                deviceTimeFormatter,
+                                isLoading,
+                                onRequestShowStartTimePicker,
+                                Modifier.weight(1f))
+                            TimePickerField(
+                                state.endTime,
+                                deviceTimeFormatter,
+                                isLoading,
+                                onRequestShowEndTimePicker,
+                                Modifier.weight(1f))
+                          }
+                      Row(
+                          Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                          Arrangement.spacedBy(8.dp),
+                          Alignment.Top) {
+                            DatePickerField(
+                                state.startDate,
+                                deviceDateFormatter,
+                                isLoading,
+                                onRequestShowStartDatePicker,
+                                Modifier.weight(1f))
+                            DatePickerField(
+                                state.endDate,
+                                deviceDateFormatter,
+                                isLoading,
+                                onRequestShowEndDatePicker,
+                                Modifier.weight(1f))
+                          }
+                    }
+                  }
+                }
               } // End AnimatedContent
         } // End Column for Date/Time fields with animateContentSize
 
@@ -585,10 +584,7 @@ fun EventDateTimePicker(
                             value = state.recurrenceCount?.toString() ?: "",
                             onValueChange = { text ->
                               val count =
-                                  text
-                                      .filter { it.isDigit() }
-                                      .toIntOrNull()
-                                      ?.coerceAtLeast(1)
+                                  text.filter { it.isDigit() }.toIntOrNull()?.coerceAtLeast(1)
                               onStateChange(state.copy(recurrenceCount = count))
                             },
                             label = { Text(recurrenceCountFieldLabel) }, // "Number of times"
@@ -633,28 +629,28 @@ private fun FilterChipForOption(
           } else null)
 }
 
-
 sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: String?) {
-    data object None : RecurrenceOption(R.string.recurrence_none, null)
+  data object None : RecurrenceOption(R.string.recurrence_none, null)
 
-    data object Daily : RecurrenceOption(R.string.recurrence_daily, "FREQ=DAILY")
+  data object Daily : RecurrenceOption(R.string.recurrence_daily, "FREQ=DAILY")
 
-    data object Weekly : RecurrenceOption(R.string.recurrence_weekly, "FREQ=WEEKLY")
+  data object Weekly : RecurrenceOption(R.string.recurrence_weekly, "FREQ=WEEKLY")
 
-    data object Monthly : RecurrenceOption(R.string.recurrence_monthly, "FREQ=MONTHLY")
+  data object Monthly : RecurrenceOption(R.string.recurrence_monthly, "FREQ=MONTHLY")
 
-    data object Yearly : RecurrenceOption(R.string.recurrence_yearly, "FREQ=YEARLY")
+  data object Yearly : RecurrenceOption(R.string.recurrence_yearly, "FREQ=YEARLY")
 
-    companion object {
-        val ALL_OPTIONS: List<RecurrenceOption> = listOf(None, Daily, Weekly, Monthly, Yearly)
-        fun fromRule(rule: String?): RecurrenceOption {
-            return when (rule) {
-                Daily.rruleValue -> Daily
-                Weekly.rruleValue -> Weekly
-                Monthly.rruleValue -> Monthly
-                Yearly.rruleValue -> Yearly
-                else -> None
-            }
-        }
+  companion object {
+    val ALL_OPTIONS: List<RecurrenceOption> = listOf(None, Daily, Weekly, Monthly, Yearly)
+
+    fun fromRule(rule: String?): RecurrenceOption {
+      return when (rule) {
+        Daily.rruleValue -> Daily
+        Weekly.rruleValue -> Weekly
+        Monthly.rruleValue -> Monthly
+        Yearly.rruleValue -> Yearly
+        else -> None
+      }
     }
+  }
 }

@@ -13,30 +13,33 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel
+@Inject
+constructor(
     private val settingsRepository: SettingsRepository,
-    ): ViewModel() {
+) : ViewModel() {
 
-    val timeZone: StateFlow<String> =
-        settingsRepository.timeZoneFlow.stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
+  val timeZone: StateFlow<String> =
+      settingsRepository.timeZoneFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
 
-    fun updateTimeZoneSetting(zoneId: String) {
-        if (ZoneId.getAvailableZoneIds().contains(zoneId)) {
-            viewModelScope.launch { settingsRepository.saveTimeZone(zoneId) }
-        } else {
-            Log.e(TAG, "Attempted to save invalid time zone ID: $zoneId")
-        }
+  fun updateTimeZoneSetting(zoneId: String) {
+    if (ZoneId.getAvailableZoneIds().contains(zoneId)) {
+      viewModelScope.launch { settingsRepository.saveTimeZone(zoneId) }
+    } else {
+      Log.e(TAG, "Attempted to save invalid time zone ID: $zoneId")
     }
+  }
 
-    val botTemperState: StateFlow<String> =
-        settingsRepository.botTemperFlow.stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+  val botTemperState: StateFlow<String> =
+      settingsRepository.botTemperFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
-    fun updateBotTemperSetting(newTemper: String) {
-        viewModelScope.launch { settingsRepository.saveBotTemper(newTemper) }
-    }
-    companion object {
-        private const val TAG = "SettingsViewModel"
-    }
+  fun updateBotTemperSetting(newTemper: String) {
+    viewModelScope.launch { settingsRepository.saveBotTemper(newTemper) }
+  }
+
+  companion object {
+    private const val TAG = "SettingsViewModel"
+  }
 }

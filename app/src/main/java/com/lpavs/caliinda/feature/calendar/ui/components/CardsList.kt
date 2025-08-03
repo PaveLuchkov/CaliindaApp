@@ -26,10 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
+import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import java.time.Duration
 import java.time.Instant
 
@@ -56,7 +56,7 @@ fun CardsList(
     onDetailsRequest: (CalendarEvent) -> Unit,
 ) {
   val transitionWindowDurationMillis = remember {
-      Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()
+    Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()
   }
   var expandedEventId by remember { mutableStateOf<String?>(null) }
 
@@ -79,9 +79,7 @@ fun CardsList(
           AnimatedVisibility(
               visible = true,
               enter =
-                  slideInVertically(
-                      initialOffsetY = { it / 2 },
-                      animationSpec = sliderSpringSpec),
+                  slideInVertically(initialOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
               exit =
                   fadeOut(animationSpec = fadeSpringSpec) +
                       slideOutVertically(
@@ -118,8 +116,7 @@ fun CardsList(
                 val buttonsRowHeight = 56.dp
                 val expandedAdditionalHeight =
                     remember(isMicroEvent) {
-                      if (isMicroEvent &&
-                          baseHeight < buttonsRowHeight * 1.5f) {
+                      if (isMicroEvent && baseHeight < buttonsRowHeight * 1.5f) {
                         buttonsRowHeight * 1.2f
                       } else {
                         buttonsRowHeight
@@ -128,10 +125,8 @@ fun CardsList(
 
                 val expandedCalculatedHeight =
                     remember(baseHeight, expandedAdditionalHeight) {
-                      if (eventDurationMinutes > 120 &&
-                          !isMicroEvent) {
-                        (baseHeight + expandedAdditionalHeight * 0.9f).coerceAtLeast(
-                            baseHeight)
+                      if (eventDurationMinutes > 120 && !isMicroEvent) {
+                        (baseHeight + expandedAdditionalHeight * 0.9f).coerceAtLeast(baseHeight)
                       } else {
                         baseHeight + expandedAdditionalHeight
                       }
@@ -208,9 +203,7 @@ fun CardsList(
                           }
                     },
                     onDeleteClickFromList = { onDeleteRequest(event) },
-                    onEditClickFromList = {
-                      onEditRequest(event)
-                    },
+                    onEditClickFromList = { onEditRequest(event) },
                     onDetailsClickFromList = { onDetailsRequest(event) },
                     // --------------------------------
                     modifier =
@@ -224,4 +217,3 @@ fun CardsList(
       }
   Box(modifier = Modifier.height(70.dp))
 }
-

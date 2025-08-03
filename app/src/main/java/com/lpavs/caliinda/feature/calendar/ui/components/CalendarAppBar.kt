@@ -39,9 +39,10 @@ import com.lpavs.caliinda.core.ui.theme.Typography
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalTextApi::class
-)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalTextApi::class)
 @Composable
 fun CalendarAppBar(
     onNavigateToSettings: () -> Unit,
@@ -62,29 +63,30 @@ fun CalendarAppBar(
       } else {
         colorScheme.onSecondary
       }
-    val headerTextStyle = when{
+  val headerTextStyle =
+      when {
         isToday -> Typography.titleLargeEmphasized
-        else-> Typography.titleLarge
-    }
-    val headerFontFamily =
-        when {
-            isToday -> FontFamily(
+        else -> Typography.titleLarge
+      }
+  val headerFontFamily =
+      when {
+        isToday ->
+            FontFamily(
                 Font(
                     R.font.robotoflex_variable,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(750),
-                    )
-                )
-            )
-            else -> FontFamily(
+                    variationSettings =
+                        FontVariation.Settings(
+                            FontVariation.weight(750),
+                        )))
+        else ->
+            FontFamily(
                 Font(
                     R.font.robotoflex_variable,
-                    variationSettings = FontVariation.Settings(
-                        FontVariation.weight(600),
-                    )
-                )
-            )
-        }
+                    variationSettings =
+                        FontVariation.Settings(
+                            FontVariation.weight(600),
+                        )))
+      }
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
   val formatterWithShortDay = DateTimeFormatter.ofPattern("E, d MMMM yyyy", currentLocale)
   CenterAlignedTopAppBar(

@@ -9,7 +9,6 @@ data class CalendarEvent(
     val location: String? = null,
     val isAllDay: Boolean = false,
     val recurringEventId: String? = null,
-    val originalStartTime: String? =
-        null,
+    val originalStartTime: String? = null,
     val recurrenceRule: String? = null
 )

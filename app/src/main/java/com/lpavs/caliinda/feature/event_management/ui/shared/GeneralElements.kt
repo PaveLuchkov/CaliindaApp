@@ -44,12 +44,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.data.calendar.ClientEventUpdateMode
 
 /**
- * Content [AdaptiveContainer] - container for any content.
- * [TimePickerDialog] - timepicker
+ * Content [AdaptiveContainer] - container for any content. [TimePickerDialog] - timepicker
  * [DeleteConfirmationDialog] - delete confirmation dialog
  */
 @Composable
@@ -96,8 +95,7 @@ fun DeleteConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
             onClick = { onConfirm() },
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary)) {
+                    containerColor = colorScheme.primary, contentColor = colorScheme.onPrimary)) {
               Text(text = stringResource(R.string.delete))
             }
       },
@@ -107,9 +105,9 @@ fun DeleteConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 enum class RecurringDeleteChoice {
-    SINGLE_INSTANCE,
-    THIS_AND_FOLLOWING,
-    ALL_IN_SERIES
+  SINGLE_INSTANCE,
+  THIS_AND_FOLLOWING,
+  ALL_IN_SERIES
 }
 
 @Composable
@@ -118,90 +116,93 @@ fun RecurringEventDeleteOptionsDialog(
     onDismiss: () -> Unit,
     onOptionSelected: (RecurringDeleteChoice) -> Unit
 ) {
-    var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
-    val radioOptions =
-        listOf(
-            RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
-            RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series),
-            RecurringDeleteChoice.THIS_AND_FOLLOWING to stringResource(R.string.delete_this_and_following))
+  var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
+  val radioOptions =
+      listOf(
+          RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
+          RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series),
+          RecurringDeleteChoice.THIS_AND_FOLLOWING to
+              stringResource(R.string.delete_this_and_following))
 
+  AlertDialog(
+      onDismissRequest = onDismiss,
+      title = { Text(text = stringResource(R.string.delete_recurring_event_title)) },
+      text = {
+        Column(modifier = Modifier.selectableGroup()) {
+          Text(
+              text = stringResource(R.string.delete_recurring_event_prompt, eventName),
+              style = typography.bodyMedium,
+              modifier = Modifier.padding(bottom = 16.dp))
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.delete_recurring_event_title)) },
-        text = {
-            Column(modifier = Modifier.selectableGroup()) {
-                Text(
-                    text = stringResource(R.string.delete_recurring_event_prompt, eventName),
-                    style = typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 16.dp))
-
-                radioOptions.forEach { (option, label) ->
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .selectable(
-                                selected = (option == selectedOption),
-                                onClick = { selectedOption = option },
-                                role = Role.RadioButton)
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = (option == selectedOption),
-                            onClick = null,
-                            colors =
-                                RadioButtonDefaults.colors(
-                                    selectedColor =
-                                        when (option) {
-                                            RecurringDeleteChoice.ALL_IN_SERIES -> {
-                                                if (selectedOption == option) colorScheme.error else colorScheme.primary
-                                            }
-                                            RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
-                                                if (selectedOption == option) colorScheme.tertiary else colorScheme.primary
-                                            }
-                                            else -> colorScheme.primary
-                                        }))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = label,
-                            style = typography.bodyLarge,
-                            color =
-                                when (option) {
-                                    RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
-                                    else -> LocalContentColor.current
-                                })
-                    }
+          radioOptions.forEach { (option, label) ->
+            Row(
+                Modifier.fillMaxWidth()
+                    .selectable(
+                        selected = (option == selectedOption),
+                        onClick = { selectedOption = option },
+                        role = Role.RadioButton)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                  RadioButton(
+                      selected = (option == selectedOption),
+                      onClick = null,
+                      colors =
+                          RadioButtonDefaults.colors(
+                              selectedColor =
+                                  when (option) {
+                                    RecurringDeleteChoice.ALL_IN_SERIES -> {
+                                      if (selectedOption == option) colorScheme.error
+                                      else colorScheme.primary
+                                    }
+                                    RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
+                                      if (selectedOption == option) colorScheme.tertiary
+                                      else colorScheme.primary
+                                    }
+                                    else -> colorScheme.primary
+                                  }))
+                  Spacer(Modifier.width(8.dp))
+                  Text(
+                      text = label,
+                      style = typography.bodyLarge,
+                      color =
+                          when (option) {
+                            RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
+                            else -> LocalContentColor.current
+                          })
                 }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onOptionSelected(selectedOption)
-                    onDismiss()
-                },
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            when (selectedOption) {
-                                RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
-                                RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.tertiary
-                                else -> colorScheme.primary
-                            },
-                        contentColor =
-                            when (selectedOption) {
-                                RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.onError
-                                RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.onTertiary
-                                else -> colorScheme.onPrimary
-                            })) {
-                Text(
-                    text = when (selectedOption) {
-                        RecurringDeleteChoice.THIS_AND_FOLLOWING -> stringResource(R.string.stop_repeating)
+          }
+        }
+      },
+      confirmButton = {
+        Button(
+            onClick = {
+              onOptionSelected(selectedOption)
+              onDismiss()
+            },
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor =
+                        when (selectedOption) {
+                          RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
+                          RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.tertiary
+                          else -> colorScheme.primary
+                        },
+                    contentColor =
+                        when (selectedOption) {
+                          RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.onError
+                          RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.onTertiary
+                          else -> colorScheme.onPrimary
+                        })) {
+              Text(
+                  text =
+                      when (selectedOption) {
+                        RecurringDeleteChoice.THIS_AND_FOLLOWING ->
+                            stringResource(R.string.stop_repeating)
                         else -> stringResource(R.string.delete)
-                    }
-                )
+                      })
             }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
+      },
+      dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -222,13 +223,10 @@ fun RecurringEventEditOptionsDialog(
         shape = shapes.extraLarge,
         color = colorScheme.surface,
         tonalElevation = Elevation,
-        modifier = Modifier.wrapContentSize()
-    ) {
+        modifier = Modifier.wrapContentSize()) {
           Column(
               modifier =
-                  Modifier.padding(
-                      top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)
-          ) {
+                  Modifier.padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)) {
                 Text(
                     text = stringResource(R.string.edit_recurring_event_title),
                     style = typography.headlineSmall,
@@ -239,7 +237,7 @@ fun RecurringEventEditOptionsDialog(
                     style = typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 24.dp))
 
-              TextButton(
+                TextButton(
                     onClick = { onOptionSelected(ClientEventUpdateMode.SINGLE_INSTANCE) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_single_instance))
@@ -247,15 +245,15 @@ fun RecurringEventEditOptionsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-              TextButton(
+                TextButton(
                     onClick = { onOptionSelected(ClientEventUpdateMode.ALL_IN_SERIES) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_all_in_series))
                     }
 
-              Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-              Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                   TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 }
               }

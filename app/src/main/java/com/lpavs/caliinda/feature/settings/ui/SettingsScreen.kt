@@ -52,8 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -69,10 +69,9 @@ fun SettingsScreen(
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val snackbarHostState = remember { SnackbarHostState() }
-    val eventManagementState by eventManagementViewModel.state.collectAsState()
+  val eventManagementState by eventManagementViewModel.state.collectAsState()
 
-    val isOverallLoading = calendarState.isLoading ||
-            eventManagementState.isLoading
+  val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
   LaunchedEffect(calendarState.showAuthError) {
     calendarState.showAuthError?.let { error ->
@@ -117,7 +116,7 @@ fun SettingsScreen(
                   },
                   title = stringResource(R.string.aisettings),
                   onClick = onNavigateToAISettings,
-            shape = MaterialShapes.Clover4Leaf.toShape())
+                  shape = MaterialShapes.Clover4Leaf.toShape())
 
               Spacer(modifier = Modifier.height(10.dp))
 
@@ -151,14 +150,13 @@ fun SettingsScreen(
 @Composable
 fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Unit, shape: Shape) {
   val cornerRadius = cuid.SettingsItemCornerRadius
-    Box(
-        modifier =
-            Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(cornerRadius))
-                .background(color = colorScheme.surfaceContainer)
-                .height(60.dp)
-                .clickable(onClick = onClick)
-    ) {
+  Box(
+      modifier =
+          Modifier.fillMaxWidth()
+              .clip(RoundedCornerShape(cornerRadius))
+              .background(color = colorScheme.surfaceContainer)
+              .height(60.dp)
+              .clickable(onClick = onClick)) {
         Box(
             modifier =
                 Modifier.align(Alignment.CenterStart)
@@ -166,12 +164,11 @@ fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Uni
                     .clip(shape)
                     .size(40.dp)
                     .background(color = colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            icon()
-        }
+            contentAlignment = Alignment.Center) {
+              icon()
+            }
         Text(text = title, modifier = Modifier.padding(16.dp).align(Alignment.Center))
-    }
+      }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -181,80 +178,71 @@ fun GoogleAccountSection(
     eventManagementViewModel: EventManagementViewModel,
     onSignInClick: () -> Unit,
 ) {
-    val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
+  val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val email = calendarState.userEmail ?: stringResource(R.string.loginplease)
   val displayName = calendarState.displayName ?: email.substringBefore("@")
   val photo: Uri? = calendarState.photo
   val cornerRadius = cuid.SettingsItemCornerRadius
-    val eventManagementState by eventManagementViewModel.state.collectAsState()
-    val isOverallLoading = calendarState.isLoading ||
-            eventManagementState.isLoading
+  val eventManagementState by eventManagementViewModel.state.collectAsState()
+  val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
   Box(
-        modifier =
-            Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(cornerRadius))
-                .background(color = colorScheme.surfaceContainer)
-                .height(120.dp)
-    ) {
+      modifier =
+          Modifier.fillMaxWidth()
+              .clip(RoundedCornerShape(cornerRadius))
+              .background(color = colorScheme.surfaceContainer)
+              .height(120.dp)) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(80.dp)
-                        .clip(if (photo == null) MaterialShapes.Circle.toShape() else MaterialShapes.Cookie7Sided.toShape())
-                        .background(color = colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                if (photo == null) {
-                    Icon(
-                        Icons.Rounded.AccountCircle,
-                        tint = colorScheme.onPrimaryContainer,
-                        contentDescription = stringResource(R.string.account),
-                        modifier = Modifier.size(40.dp)
-                    )
-                } else {
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = photo,
-                        contentDescription = stringResource(R.string.account),
-                        contentScale = ContentScale.Fit,
-                        placeholder = rememberVectorPainter(image = Icons.Rounded.AccountCircle),
-                        error = rememberVectorPainter(image = Icons.Rounded.Error),
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Box(modifier = Modifier.width(130.dp)) {
-                Text(
-                    text = displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 2
-                )
-            }
-            Spacer(Modifier.weight(1f))
-            Box(modifier = Modifier.padding(6.dp)) {
-                Box {
-                    if (!calendarState.isSignedIn) {
-                        Button(
-                            onClick = onSignInClick, // Вызываем лямбду
-                        ) {
-                            Text(stringResource(R.string.login))
-                        }
+            verticalAlignment = Alignment.CenterVertically) {
+              Box(
+                  modifier =
+                      Modifier.size(80.dp)
+                          .clip(
+                              if (photo == null) MaterialShapes.Circle.toShape()
+                              else MaterialShapes.Cookie7Sided.toShape())
+                          .background(color = colorScheme.primaryContainer),
+                  contentAlignment = Alignment.Center) {
+                    if (photo == null) {
+                      Icon(
+                          Icons.Rounded.AccountCircle,
+                          tint = colorScheme.onPrimaryContainer,
+                          contentDescription = stringResource(R.string.account),
+                          modifier = Modifier.size(40.dp))
                     } else {
-                        Button(onClick = { calendarViewModel.signOut() }, enabled = !isOverallLoading) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Logout,
-                                tint = colorScheme.onPrimaryContainer,
-                                contentDescription = stringResource(R.string.account),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                      AsyncImage(
+                          modifier = Modifier.fillMaxSize(),
+                          model = photo,
+                          contentDescription = stringResource(R.string.account),
+                          contentScale = ContentScale.Fit,
+                          placeholder = rememberVectorPainter(image = Icons.Rounded.AccountCircle),
+                          error = rememberVectorPainter(image = Icons.Rounded.Error),
+                      )
                     }
+                  }
+              Spacer(modifier = Modifier.width(16.dp))
+              Box(modifier = Modifier.width(130.dp)) {
+                Text(text = displayName, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
+              }
+              Spacer(Modifier.weight(1f))
+              Box(modifier = Modifier.padding(6.dp)) {
+                Box {
+                  if (!calendarState.isSignedIn) {
+                    Button(
+                        onClick = onSignInClick, // Вызываем лямбду
+                    ) {
+                      Text(stringResource(R.string.login))
+                    }
+                  } else {
+                    Button(onClick = { calendarViewModel.signOut() }, enabled = !isOverallLoading) {
+                      Icon(
+                          Icons.AutoMirrored.Rounded.Logout,
+                          tint = colorScheme.onPrimaryContainer,
+                          contentDescription = stringResource(R.string.account),
+                          modifier = Modifier.size(20.dp))
+                    }
+                  }
                 }
+              }
             }
-        }
-    }
+      }
 }

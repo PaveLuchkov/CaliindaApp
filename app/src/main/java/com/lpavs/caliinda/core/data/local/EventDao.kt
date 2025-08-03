@@ -51,8 +51,8 @@ interface EventDao {
       endRangeMillis: Long,
       newEvents: List<CalendarEventEntity>
   ) {
-      deleteEventsForDateRange(startRangeMillis, endRangeMillis)
-      insertOrReplaceEvents(newEvents)
+    deleteEventsForDateRange(startRangeMillis, endRangeMillis)
+    insertOrReplaceEvents(newEvents)
   }
 
   /**
@@ -61,13 +61,9 @@ interface EventDao {
    * @param eventId Уникальный идентификатор события (обычно строка, совпадающая с Google Calendar
    *   event ID).
    */
-  @Query(
-      "DELETE FROM calendar_events WHERE id = :eventId")
+  @Query("DELETE FROM calendar_events WHERE id = :eventId")
   suspend fun deleteEventById(eventId: String)
 
-    /**
-     * Удаляет все данные календаря из локальной базы данных.
-     */
-    @Query("DELETE FROM calendar_events")
-    suspend fun deleteAllEvents()
+  /** Удаляет все данные календаря из локальной базы данных. */
+  @Query("DELETE FROM calendar_events") suspend fun deleteAllEvents()
 }

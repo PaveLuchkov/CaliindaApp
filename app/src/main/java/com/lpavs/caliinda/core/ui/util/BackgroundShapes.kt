@@ -33,7 +33,6 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
 import kotlin.math.max
-import kotlin.random.Random
 
 enum class BackgroundShapeContext {
   Main,
@@ -65,7 +64,8 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
                         .rotate(30f)
                         .clip(Clover4Leaf)
                         .background(color = Color.Transparent)
-                        .border(width = 2.dp, color = colorScheme.surfaceVariant, shape=Clover4Leaf))
+                        .border(
+                            width = 2.dp, color = colorScheme.surfaceVariant, shape = Clover4Leaf))
 
             // Фигура 2 (звезда 4)
             Box(
@@ -145,13 +145,4 @@ class RoundedPolygonShape(
     path.transform(matrix)
     return Outline.Generic(path)
   }
-}
-
-fun createRandomShape(
-    isStar: Boolean = Random.nextBoolean(),
-    vertices: Int = Random.nextInt(4, 9),
-    rounding: CornerRounding = CornerRounding(Random.nextFloat() * 0.7f),
-    radius: Float = Random.nextFloat() * 10f
-): RoundedPolygon {
-  return RoundedPolygon(numVertices = vertices, radius = radius, rounding = rounding)
 }

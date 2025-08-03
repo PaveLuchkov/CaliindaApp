@@ -41,10 +41,6 @@ class TimeTicker @Inject constructor() : ITimeTicker {
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class TimeTickerModule {
-    // НЕ УДАЛЯТЬ МОДУЛЬ
-  @Binds
-  @Singleton
-  abstract fun bindTimeTicker(
-      timeTicker: TimeTicker
-  ): ITimeTicker
+  // НЕ УДАЛЯТЬ МОДУЛЬ
+  @Binds @Singleton abstract fun bindTimeTicker(timeTicker: TimeTicker): ITimeTicker
 }

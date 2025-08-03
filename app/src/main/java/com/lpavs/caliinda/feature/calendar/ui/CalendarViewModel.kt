@@ -5,13 +5,13 @@ import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
-import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import com.lpavs.caliinda.core.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.di.ITimeTicker
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.data.calendar.CalendarDataManager
 import com.lpavs.caliinda.data.calendar.EventNetworkState
-import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.core.data.di.ITimeTicker
+import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
+import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -57,11 +57,10 @@ constructor(
       aiInteractionManager.aiMessage // Сообщение от AI (Asking/Result)
 
   // Состояния Настроек
-    @Deprecated(
-        message = "состояние timeZone переехало в settingsViewModel",
-        replaceWith = ReplaceWith(""),
-        level = DeprecationLevel.WARNING
-    )
+  @Deprecated(
+      message = "состояние timeZone переехало в settingsViewModel",
+      replaceWith = ReplaceWith(""),
+      level = DeprecationLevel.WARNING)
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
           viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
@@ -75,39 +74,38 @@ constructor(
   private fun observeAuthState() {
     viewModelScope.launch {
       authManager.authState.collect { authState ->
-          val previousUiState = _uiState.value
-          _uiState.update { currentState ->
-              currentState.copy(
-                  isSignedIn = authState.isSignedIn,
-                  userEmail = authState.userEmail,
-                  displayName = authState.displayName,
-                  photo = authState.photoUrl,
-                  showAuthError = authState.authError,
-                  isLoading = calculateIsLoading(authLoading = authState.isLoading),
-                  authorizationIntent = authState.authorizationIntent
-              )
+        val previousUiState = _uiState.value
+        _uiState.update { currentState ->
+          currentState.copy(
+              isSignedIn = authState.isSignedIn,
+              userEmail = authState.userEmail,
+              displayName = authState.displayName,
+              photo = authState.photoUrl,
+              showAuthError = authState.authError,
+              isLoading = calculateIsLoading(authLoading = authState.isLoading),
+              authorizationIntent = authState.authorizationIntent)
+        }
+        if (!initialAuthCheckCompletedAndProcessed && !authState.isLoading) {
+          initialAuthCheckCompletedAndProcessed = true
+          Log.d(TAG, "Initial auth check completed and processed.")
+          if (!authState.isSignedIn && authState.authError == null) {
+            Log.d(TAG, "Initial auth check: Showing sign-in required dialog.")
+            _uiState.update { it.copy(showSignInRequiredDialog = true) }
           }
-          if (!initialAuthCheckCompletedAndProcessed && !authState.isLoading) {
-              initialAuthCheckCompletedAndProcessed = true
-              Log.d(TAG, "Initial auth check completed and processed.")
-              if (!authState.isSignedIn && authState.authError == null) {
-                  Log.d(TAG, "Initial auth check: Showing sign-in required dialog.")
-                  _uiState.update { it.copy(showSignInRequiredDialog = true) }
-              }
-          }
-          if (authState.isSignedIn && _uiState.value.showSignInRequiredDialog) {
-              _uiState.update { it.copy(showSignInRequiredDialog = false) }
-          }
-          if (authState.isSignedIn && !previousUiState.isSignedIn) {
-              _uiState.update { it.copy(showSignInRequiredDialog = false) }
-          }
-          if (authState.isSignedIn && !previousUiState.isSignedIn) {
-              Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
-              calendarDataManager.setCurrentVisibleDate(calendarDataManager.currentVisibleDate.value, forceRefresh = true)
-          }
+        }
+        if (authState.isSignedIn && _uiState.value.showSignInRequiredDialog) {
+          _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        }
+        if (authState.isSignedIn && !previousUiState.isSignedIn) {
+          _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        }
+        if (authState.isSignedIn && !previousUiState.isSignedIn) {
+          Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
+          calendarDataManager.setCurrentVisibleDate(
+              calendarDataManager.currentVisibleDate.value, forceRefresh = true)
+        }
       }
-
-      }
+    }
   }
 
   private fun observeAiState() {
@@ -152,6 +150,7 @@ constructor(
       }
     }
   }
+
   // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
   /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
   private fun calculateIsLoading(
@@ -163,40 +162,38 @@ constructor(
     val calendarLoading = networkState is EventNetworkState.Loading
     val aiThinking = aiState == AiVisualizerState.THINKING
 
-    return authLoading ||
-        calendarLoading ||
-        aiThinking
+    return authLoading || calendarLoading || aiThinking
   }
 
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
   fun signIn(activity: Activity) {
-      if (_uiState.value.showSignInRequiredDialog) {
-          _uiState.update { it.copy(showSignInRequiredDialog = false) }
-      }
-      authManager.signIn(activity)
+    if (_uiState.value.showSignInRequiredDialog) {
+      _uiState.update { it.copy(showSignInRequiredDialog = false) }
+    }
+    authManager.signIn(activity)
   }
 
-    fun handleAuthorizationResult(intent: Intent) {
-        authManager.handleAuthorizationResult(intent)
-    }
+  fun handleAuthorizationResult(intent: Intent) {
+    authManager.handleAuthorizationResult(intent)
+  }
 
-    fun signOut() {
-        if (_uiState.value.showSignInRequiredDialog) {
-            _uiState.update { it.copy(showSignInRequiredDialog = false) }
-        }
-        authManager.signOut()
+  fun signOut() {
+    if (_uiState.value.showSignInRequiredDialog) {
+      _uiState.update { it.copy(showSignInRequiredDialog = false) }
     }
+    authManager.signOut()
+  }
 
-    fun clearAuthorizationIntent() {
-        authManager.clearAuthorizationIntent()
-    }
+  fun clearAuthorizationIntent() {
+    authManager.clearAuthorizationIntent()
+  }
 
   fun clearAuthError() = authManager.clearAuthError()
 
-    fun onSignInRequiredDialogDismissed() {
-        _uiState.update { it.copy(showSignInRequiredDialog = false) }
-        Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
-    }
+  fun onSignInRequiredDialogDismissed() {
+    _uiState.update { it.copy(showSignInRequiredDialog = false) }
+    Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
+  }
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
   fun onVisibleDateChanged(newDate: LocalDate) = calendarDataManager.setCurrentVisibleDate(newDate)
