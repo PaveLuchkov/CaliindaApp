@@ -5,6 +5,7 @@ import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.core.common.ApiException
 import com.lpavs.caliinda.core.common.NetworkException
 import com.lpavs.caliinda.core.common.UnknownException
+import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import kotlinx.coroutines.CoroutineDispatcher
@@ -20,13 +21,27 @@ private const val TAG = "CalendarRemoteDataSource"
 class CalendarRemoteDataSource
 @Inject constructor(
     private val apiService: CalendarApiService,
+    private val authManager: AuthManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
+    private suspend inline fun <T> authenticatedApiCall(
+        crossinline apiCall: suspend (String) -> T
+    ): Result<T> {
+        val token = authManager.getBackendAuthToken()
+        return if (token != null) {
+            safeApiCall { apiCall("Bearer $token") }
+        } else {
+            Log.e(TAG, "Could not get fresh token")
+            Result.failure(Exception("Could not get fresh token"))
+        }
+    }
+
     suspend fun getEvents(startDate: LocalDate, endDate: LocalDate): Result<List<EventDto>> {
         Log.d(TAG, "getEvents called with startDate: $startDate, endDate: $endDate")
-        return safeApiCall {
+        return authenticatedApiCall { token ->
             Log.d(TAG, "Fetching events from API for range: $startDate - $endDate")
             val events = apiService.getEventsForRange(
+                token = token,
                 startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 endDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
             )
@@ -37,17 +52,10 @@ class CalendarRemoteDataSource
 
     suspend fun createEvent(event: EventRequest): Result<Unit> {
         Log.d(TAG, "createEvent called with event: $event")
-        return safeApiCall {
+        return authenticatedApiCall { token ->
             Log.d(TAG, "Creating event via API: $event")
-            val response = apiService.createEvent(event)
-            Log.d(TAG, "createEvent response: $response")
-            if (response.isSuccessful) {
-                Log.d(TAG, "createEvent successful")
-                Unit
-            } else {
-                Log.e(TAG, "createEvent failed: ${response.code()}, errorBody: ${response.errorBody()?.string()}")
-                throw Exception("Failed to create event: ${response.code()}")
-            }
+            apiService.createEvent(token, event)
+            Log.d(TAG, "createEvent successful")
         }
     }
 
@@ -57,9 +65,10 @@ class CalendarRemoteDataSource
         updateData: EventRequest
     ): Result<Unit> {
         Log.d(TAG, "updateEvent called with eventId: $eventId, mode: $mode, updateData: $updateData")
-        return safeApiCall {
+        return authenticatedApiCall { token ->
             Log.d(TAG, "Updating event via API: eventId=$eventId, mode=$mode, data=$updateData")
             val response = apiService.updateEvent(
+                token,
                 eventId,
                 mode.value,
                 updateData,
@@ -76,9 +85,9 @@ class CalendarRemoteDataSource
 
     suspend fun deleteEvent(eventId: String, mode: EventDeleteMode): Result<Unit> {
         Log.d(TAG, "deleteEvent called with eventId: $eventId, mode: $mode")
-        return safeApiCall {
+        return authenticatedApiCall { token ->
             Log.d(TAG, "Deleting event via API: eventId=$eventId, mode=$mode")
-            val response = apiService.deleteEvent(eventId, mode.value)
+            val response = apiService.deleteEvent(token, eventId, mode.value)
             Log.d(TAG, "deleteEvent response: $response")
             if (response.isSuccessful) {
                 Log.d(TAG, "deleteEvent successful")
