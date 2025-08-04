@@ -196,6 +196,7 @@ fun CreateEventScreen(
   }
 
   val onSaveClick: () -> Unit = saveLambda@{
+      isLoading = true
     generalError = null
     if (validateInput()) {
       val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
@@ -271,8 +272,11 @@ fun CreateEventScreen(
               recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
 
       viewModel.createEvent(request)
+        isLoading = false
+
     } else {
       Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
+        isLoading = false
     }
   }
 

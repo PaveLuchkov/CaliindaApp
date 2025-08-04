@@ -183,6 +183,7 @@ fun EditEventScreen(
     }
 
   val onSaveClick: () -> Unit = saveLambda@{
+      isLoading = true
     generalError = null
     if (validateInput()) {
       val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
@@ -258,7 +259,9 @@ fun EditEventScreen(
 
       viewModel.confirmEventUpdate(
           updatedEventData = updateRequest, modeFromUi = selectedUpdateMode)
+        isLoading = false
     } else {
+        isLoading = false
       Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
     }
   }
@@ -281,7 +284,7 @@ fun EditEventScreen(
                                 stiffness = Spring.StiffnessMediumLow)
                           }))
             },
-            label = "SaveButtonAnimation") { targetSheetValue ->
+            label = "SaveButtonAnimation") { targetSheetValue -> // TODO исправить чтобы выключалась на загрузке
               val expandedSize = ButtonDefaults.LargeContainerHeight
               val defaultSize = ButtonDefaults.MediumContainerHeight
 
