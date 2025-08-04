@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object DateTimeFormatterUtil {
-  fun formatEventListTime(context: Context, event: CalendarEvent, zoneIdString: String): String {
+  fun formatEventListTime(context: Context, event: EventDto, zoneIdString: String): String {
     if (event.isAllDay) return R.string.all_day.toString()
 
     val zoneId =
@@ -78,7 +78,7 @@ object DateTimeFormatterUtil {
 
   fun formatEventDetailsTime(
       context: Context,
-      event: CalendarEvent,
+      event: EventDto,
       zoneIdString: String,
       locale: Locale
   ): String {

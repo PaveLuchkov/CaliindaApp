@@ -7,12 +7,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -199,7 +199,7 @@ constructor(
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
   fun onVisibleDateChanged(newDate: LocalDate) = calendarDataManager.setCurrentVisibleDate(newDate)
 
-  fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> =
+  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
       calendarDataManager.getEventsFlowForDate(date)
 
   fun refreshCurrentVisibleDate() {

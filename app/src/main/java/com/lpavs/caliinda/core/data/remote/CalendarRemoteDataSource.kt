@@ -8,7 +8,6 @@ import com.lpavs.caliinda.core.common.NetworkException
 import com.lpavs.caliinda.core.common.UnknownException
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.IOException

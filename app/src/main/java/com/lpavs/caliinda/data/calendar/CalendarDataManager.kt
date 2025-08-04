@@ -17,7 +17,6 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.data.local.UpdateEventApiRequest
 import com.lpavs.caliinda.data.mapper.EventMapper
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

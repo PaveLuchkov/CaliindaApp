@@ -99,6 +99,7 @@ fun CreateEventScreen(
   val context = LocalContext.current
 
   // Состояния для управления видимостью диалогов M3
+    val createEventState by viewModel.createEventResult.collectAsStateWithLifecycle()
   var showStartDatePicker by remember { mutableStateOf(false) }
   var showStartTimePicker by remember { mutableStateOf(false) }
   var showEndDatePicker by remember { mutableStateOf(false) }
@@ -192,17 +193,25 @@ fun CreateEventScreen(
     return summaryError == null && validationError == null
   }
 
-    LaunchedEffect(uiState.userFacingMessage) {
-        uiState.userFacingMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            viewModel.onMessageShown()
-        }
-    }
+    // --- Обработка состояния ViewModel (без изменений) ---
+    LaunchedEffect(createEventState) {
+        isLoading = createEventState is CreateEventResult.Loading
+        when (val result = createEventState) {
+            is CreateEventResult.Success -> {
+                Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
+                viewModel.consumeCreateEventResult()
+                onDismiss()
+            }
 
-    LaunchedEffect(uiState.eventCreationSuccess) {
-        if (uiState.eventCreationSuccess) {
-            onDismiss()
-            viewModel.onNavigationDone()
+            is CreateEventResult.Error -> {
+                generalError = result.message
+                viewModel.consumeCreateEventResult()
+            }
+
+            is CreateEventResult.Loading -> generalError = null
+            is CreateEventResult.Idle -> {
+                /* Можно убрать generalError, если нужно */
+            }
         }
     }
 

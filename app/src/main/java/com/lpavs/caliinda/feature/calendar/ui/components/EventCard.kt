@@ -64,12 +64,12 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
@@ -77,8 +77,8 @@ import kotlin.math.exp
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
 fun EventItem(
-    event: CalendarEvent,
-    timeFormatter: (CalendarEvent) -> String,
+    event: EventDto,
+    timeFormatter: (EventDto) -> String,
     isCurrentEvent: Boolean,
     isNextEvent: Boolean,
     proximityRatio: Float,
@@ -360,7 +360,7 @@ fun EventItem(
 
 @Composable
 fun AllDayEventItem(
-    event: CalendarEvent,
+    event: EventDto,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onDeleteClick: () -> Unit,

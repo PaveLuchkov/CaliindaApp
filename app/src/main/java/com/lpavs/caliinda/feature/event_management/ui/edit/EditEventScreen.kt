@@ -57,9 +57,9 @@ import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.feature.calendar.data.onEventResults.UpdateEventResult
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -81,8 +81,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun EditEventScreen(
     viewModel: EventManagementViewModel,
-    userTimeZoneId: String,
-    eventToEdit: CalendarEvent,
+    userTimeZone: String,
+    eventToEdit: EventDto,
     selectedUpdateMode: EventUpdateMode,
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
@@ -97,14 +97,14 @@ fun EditEventScreen(
   val updateEventState by viewModel.updateEventResult.collectAsState()
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
-
+  val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
+    
   val context = LocalContext.current
-  val systemZoneId = remember { ZoneId.systemDefault() }
   val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
   val initialEventDateTimeState =
-      remember(eventToEdit.id, userTimeZoneId) {
-        parseCalendarEventToDateTimeState(eventToEdit, userTimeZoneId, systemZoneId)
+      remember(eventToEdit.id, userTimeZone) {
+        parseCalendarEventToDateTimeState(eventToEdit, userTimeZone)
       }
   var eventDateTimeState by remember(eventToEdit.id) { mutableStateOf(initialEventDateTimeState) }
   LaunchedEffect(initialEventDateTimeState) {
@@ -163,7 +163,7 @@ fun EditEventScreen(
       validationError = R.string.error_specify_start_and_end_time.toString()
       return false
     }
-    val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZoneId)
+    val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZone)
     if (testStartTimeStr == null || testEndTimeStr == null) {
       validationError = R.string.error_failed_to_format_datetime.toString()
       return false
@@ -191,7 +191,7 @@ fun EditEventScreen(
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null
     if (validateInput()) {
-      val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
+      val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
       if (startStr == null || endStr == null) {
         return@saveLambda
       }
@@ -253,7 +253,7 @@ fun EditEventScreen(
               formattedStartStr = startStr,
               formattedEndStr = endStr,
               finalRRuleStringFromUi = finalRecurrenceRule,
-              userTimeZoneIdForTimed = userTimeZoneId,
+              userTimeZoneIdForTimed = userTimeZone,
               selectedUpdateMode = selectedUpdateMode)
 
       if (updateRequest == null) {
@@ -371,7 +371,7 @@ fun EditEventScreen(
         rememberDatePickerState(
             initialSelectedDateMillis =
                 currentDateTimeState.startDate
-                    .atStartOfDay(systemZoneId)
+                    .atStartOfDay(userTimeZoneId)
                     .toInstant()
                     .toEpochMilli())
     DatePickerDialog(
@@ -380,7 +380,7 @@ fun EditEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
+                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState =
                       currentDateTimeState.copy(
                           startDate = selectedDate,
@@ -444,12 +444,12 @@ fun EditEventScreen(
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
-                currentDateTimeState.endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
+                currentDateTimeState.endDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
             selectableDates =
                 object : SelectableDates {
                   val startMillis =
                       currentDateTimeState.startDate
-                          .atStartOfDay(systemZoneId)
+                          .atStartOfDay(userTimeZoneId)
                           .toInstant()
                           .toEpochMilli()
 
@@ -467,7 +467,7 @@ fun EditEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
+                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
                 }
                 showEndDatePicker = false
@@ -582,11 +582,10 @@ fun EditEventScreen(
         }
   }
 }
-
+// TODO
 fun parseCalendarEventToDateTimeState(
-    event: CalendarEvent,
+    event: EventDto,
     userTimeZoneId: String,
-    systemZoneId: ZoneId = ZoneId.systemDefault()
 ): EventDateTimeState {
   val isAllDay = event.isAllDay
 
@@ -667,7 +666,7 @@ fun parseCalendarEventToDateTimeState(
                   ZonedDateTime.parse(
                       value,
                       DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC))
-              recurrenceEndDate = zonedDateTime.withZoneSameInstant(systemZoneId).toLocalDate()
+              recurrenceEndDate = zonedDateTime.withZoneSameInstant(ZoneId.of(userTimeZoneId)).toLocalDate()
               recurrenceEndType = RecurrenceEndType.DATE
             } catch (e: Exception) {
               Log.e("ParseToState", "Error parsing UNTIL value: $value - ${e.message}")
@@ -715,7 +714,7 @@ fun parseCalendarEventToDateTimeState(
 }
 
 fun buildUpdateEventApiRequest(
-    originalEvent: CalendarEvent,
+    originalEvent: EventDto,
     currentSummary: String,
     currentDescription: String,
     currentLocation: String,

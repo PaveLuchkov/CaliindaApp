@@ -26,10 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import java.time.Duration
 import java.time.Instant
 
@@ -44,16 +44,16 @@ data class GeneratedShapeParams(
 
 @Composable
 fun CardsList(
-    events: List<CalendarEvent>,
-    timeFormatter: (CalendarEvent) -> String,
+    events: List<EventDto>,
+    timeFormatter: (EventDto) -> String,
     currentTime: Instant,
     isToday: Boolean,
     currentTimeZoneId: String,
     listState: LazyListState,
     nextStartTime: Instant?,
-    onDeleteRequest: (CalendarEvent) -> Unit,
-    onEditRequest: (CalendarEvent) -> Unit,
-    onDetailsRequest: (CalendarEvent) -> Unit,
+    onDeleteRequest: (EventDto) -> Unit,
+    onEditRequest: (EventDto) -> Unit,
+    onDetailsRequest: (EventDto) -> Unit,
 ) {
   val transitionWindowDurationMillis = remember {
     Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()

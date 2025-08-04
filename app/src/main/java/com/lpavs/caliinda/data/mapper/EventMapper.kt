@@ -4,7 +4,6 @@ import android.util.Log
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.data.local.CalendarEventEntity
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent // Твоя модель для UI/сети
 import dagger.Provides
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -65,11 +64,11 @@ class EventMapper @Inject constructor()  {
     }
   }
 
-  fun mapToDomain(entity: CalendarEventEntity, zoneIdString: String): CalendarEvent {
+  fun mapToDomain(entity: CalendarEventEntity, zoneIdString: String): EventDto {
     val startTimeStr = DateTimeUtils.formatMillisToIsoString(entity.startTimeMillis, zoneIdString)
     val endTimeStr = DateTimeUtils.formatMillisToIsoString(entity.endTimeMillis, zoneIdString)
 
-    return CalendarEvent(
+    return EventDto(
         id = entity.id,
         summary = entity.summary,
         startTime = startTimeStr ?: "",

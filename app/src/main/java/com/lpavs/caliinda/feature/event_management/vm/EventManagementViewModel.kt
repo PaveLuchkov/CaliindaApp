@@ -7,9 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.remote.EventDeleteMode
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -80,12 +80,11 @@ constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    userFacingError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+                    operationError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
                 )
             }
         }
     }
-
   }
 
 
@@ -104,7 +103,7 @@ constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    userFacingError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+                    operationError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
                 )
             }
         }
@@ -115,7 +114,7 @@ constructor(
    * Вызывается из UI, когда пользователь инициирует удаление события. Устанавливает ID события и
    * показывает диалог подтверждения.
    */
-  fun requestDeleteConfirmation(event: CalendarEvent) {
+  fun requestDeleteConfirmation(event: EventDto) {
     _uiState.update {
       val isActuallyRecurring = event.recurringEventId != null || event.originalStartTime != null
       Log.d(
@@ -154,7 +153,7 @@ constructor(
                   isLoading = true,
                   showDeleteConfirmationDialog = false,
                   eventPendingDeletion = null,
-                  userFacingError = null
+                  operationError = null
               )
           }
 
@@ -166,7 +165,7 @@ constructor(
               _uiState.update {
                   it.copy(
                       isLoading = false,
-                      userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                      operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
                   )
               }
           }
@@ -180,7 +179,7 @@ constructor(
             isLoading = true,
             showDeleteConfirmationDialog = false,
             eventPendingDeletion = null,
-            userFacingError = null
+            operationError = null
         )
     }
 
@@ -194,7 +193,7 @@ constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                        operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
                     )
                 }
             }
@@ -215,7 +214,7 @@ constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                        operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
                     )
                 }
             }
@@ -231,14 +230,14 @@ constructor(
    *
    * @param eventInstance Экземпляр события, с которого начинается удаление.
    */
-  private fun handleThisAndFollowingDelete(eventInstance: CalendarEvent) {
+  private fun handleThisAndFollowingDelete(eventInstance: EventDto) {
     val originalRRule = eventInstance.recurrenceRule
     if (originalRRule.isNullOrBlank()) {
       Log.e(
           TAG,
           "Cannot perform 'this and following' delete: Event ${eventInstance.id} has no recurrence rule.")
       _uiState.update {
-        it.copy(userFacingError = "Не удалось обновить серию: отсутствует правило повторения.")
+        it.copy(operationError = "Не удалось обновить серию: отсутствует правило повторения.")
       }
       return
     }
@@ -258,7 +257,7 @@ constructor(
                 "Failed to parse event start time in any known format: ${eventInstance.startTime}",
                 e2)
             _uiState.update {
-              it.copy(userFacingError = "Ошибка в дате события. Невозможно выполнить операцию.")
+              it.copy(operationError = "Ошибка в дате события. Невозможно выполнить операцию.")
             }
             return
           }
@@ -294,7 +293,7 @@ constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    userFacingError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
+                    operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
                 )
             }
         }
@@ -307,7 +306,7 @@ constructor(
   }
 
   /** Вызывается из UI, когда пользователь инициирует редактирование события. */
-  fun requestEditEvent(event: CalendarEvent) {
+  fun requestEditEvent(event: EventDto) {
     val isAlreadyRecurring =
         event.recurringEventId != null ||
             event.originalStartTime != null ||
@@ -368,7 +367,7 @@ constructor(
    * Вызывается из UI, когда пользователь хочет посмотреть детали события. Устанавливает событие для
    * просмотра и флаг для отображения UI.
    */
-  fun requestEventDetails(event: CalendarEvent) {
+  fun requestEventDetails(event: EventDto) {
     _uiState.update { currentState ->
       currentState.copy(eventForDetailedView = event, showEventDetailedView = true)
     }
@@ -386,43 +385,33 @@ constructor(
     Log.d(TAG, "Cancelled event details view.")
   }
 
-    fun onNavigationDone() {
-        _uiState.update {
-            it.copy(
-                eventCreationSuccess = false,
-                eventUpdateSuccess = false,
-                eventDeletionSuccess = false
-            )
-        }
-    }
-    fun onErrorShown() {
-        _uiState.update { it.copy(userFacingError = null) }
-    }
-    fun onMessageShown() {
-        _uiState.update { it.copy(userFacingMessage = null) }
-    }
   companion object {
     private const val TAG = "EventManagementViewModel"
   }
 }
 
 data class EventManagementUiState(
-    val userFacingError: String? = null,
-    val userFacingMessage: String? = null,
+    val operationError: String? = null,
     val isLoading: Boolean = false,
+
     val eventToDeleteId: String? = null,
-    val eventPendingDeletion: CalendarEvent? = null,
+    val eventPendingDeletion: EventDto? = null,
     val showDeleteConfirmationDialog: Boolean = false,
     val showRecurringDeleteOptionsDialog: Boolean = false,
     val deleteOperationError: String? = null,
-    val eventBeingEdited: CalendarEvent? = null,
+    val eventBeingEdited: EventDto? = null,
     val showRecurringEditOptionsDialog: Boolean = false,
     val showEditEventDialog: Boolean = false,
     val selectedUpdateMode: EventUpdateMode? = null,
     val editOperationError: String? = null,
-    val eventForDetailedView: CalendarEvent? = null,
+    val eventForDetailedView: EventDto? = null,
     val showEventDetailedView: Boolean = false,
     val eventCreationSuccess: Boolean = false,
     val eventUpdateSuccess: Boolean = false,
     val eventDeletionSuccess: Boolean = false
 )
+
+sealed class EventManagementUiEvent {
+    data class ShowMessage(val message: String) : EventManagementUiEvent()
+    object OperationSuccess : EventManagementUiEvent()
+}

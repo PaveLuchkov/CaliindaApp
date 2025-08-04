@@ -375,7 +375,7 @@ fun CalendarScreen(
           contentWindowInsets = { WindowInsets.navigationBars }) {
             EditEventScreen(
                 viewModel = eventManagementViewModel,
-                userTimeZoneId = timeZone.value,
+                userTimeZone = timeZone.value,
                 eventToEdit = eventToEdit,
                 selectedUpdateMode = mode,
                 onDismiss = {

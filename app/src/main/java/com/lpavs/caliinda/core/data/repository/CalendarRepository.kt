@@ -7,11 +7,11 @@ import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
 import com.lpavs.caliinda.core.data.remote.CalendarRemoteDataSource
 import com.lpavs.caliinda.core.data.remote.EventDeleteMode
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.data.local.CalendarEventEntity
 import com.lpavs.caliinda.data.mapper.EventMapper
-import com.lpavs.caliinda.feature.calendar.data.model.CalendarEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,7 +55,6 @@ class CalendarRepository @Inject constructor(
     private val fetchJobMutex = Mutex()
 
     private var lastKnownVisibleDate = LocalDate.now()
-        private set
 
     private data class JobHolder(val job: Job, val requestedRange: ClosedRange<LocalDate>)
     private var activeFetchJob: Job? = null
@@ -74,7 +73,7 @@ class CalendarRepository @Inject constructor(
     // --- Секция Предоставление данных ---
     /** Предоставляет Flow событий из БД для указанной даты */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun getEventsFlowForDate(date: LocalDate): Flow<List<CalendarEvent>> {
+    fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> {
         return settingsRepository.timeZoneFlow
             .flatMapLatest { timeZoneIdString ->
                 val zoneId = parseTimeZone(timeZoneIdString)
