@@ -16,7 +16,7 @@ interface CalendarApiService {
     suspend fun getEventsForRange(
         @Query("startDate") startDate: String,
         @Query("endDate") endDate: String
-    ): Response<List<EventDto>>
+    ): List<EventDto>
 
     @POST("calendar/events")
     suspend fun createEvent(
