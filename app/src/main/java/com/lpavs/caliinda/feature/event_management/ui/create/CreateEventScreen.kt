@@ -37,7 +37,6 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -54,11 +53,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
-import com.lpavs.caliinda.feature.calendar.data.onEventResults.CreateEventResult
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -66,6 +63,7 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateT
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
 import java.time.Instant
@@ -91,15 +89,12 @@ fun CreateEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
   val context = LocalContext.current
 
   // Состояния для управления видимостью диалогов M3
-    val createEventState by viewModel.createEventResult.collectAsStateWithLifecycle()
   var showStartDatePicker by remember { mutableStateOf(false) }
   var showStartTimePicker by remember { mutableStateOf(false) }
   var showEndDatePicker by remember { mutableStateOf(false) }
@@ -111,16 +106,15 @@ fun CreateEventScreen(
   val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
   var eventDateTimeState by remember {
-    val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-    val defaultEndTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0)
-    var effectiveEndDate = initialDate
+  val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
+  val defaultEndTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0)
+  var effectiveEndDate = initialDate
 
-    // Если время конца раньше времени начала (например, startTime=23:00, endTime=00:00),
-    // это означает переход через полночь, так что endDate должен быть на следующий день.
-    if (defaultEndTime.isBefore(defaultStartTime)) {
+  if (defaultEndTime.isBefore(defaultStartTime)) {
       effectiveEndDate = initialDate.plusDays(1)
-    }
-    mutableStateOf(
+  }
+
+  mutableStateOf(
         EventDateTimeState(
             startDate = initialDate,
             startTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0),
@@ -129,14 +123,26 @@ fun CreateEventScreen(
             isAllDay = false,
             selectedWeekdays = emptySet(),
             recurrenceEndType = RecurrenceEndType.NEVER,
-            isRecurring = false, // Добавлено, если нужно управлять этим
-            recurrenceRule = null // Добавлено
-            ))
+            isRecurring = false,
+            recurrenceRule = null))
+  }
+
+  LaunchedEffect(key1 = true) {
+    viewModel.eventFlow.collect { event ->
+      when (event) {
+        is EventManagementUiEvent.ShowMessage -> {
+          Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+        }
+        is EventManagementUiEvent.OperationSuccess -> {
+          onDismiss()
+        }
+      }
+    }
   }
 
   fun formatEventTimesForSaving(
       state: EventDateTimeState,
-      timeZoneId: String? // Теперь может быть null
+      timeZoneId: String?
   ): Pair<String?, String?> {
     return if (state.isAllDay) {
       val formatter = DateTimeFormatter.ISO_LOCAL_DATE
@@ -146,7 +152,6 @@ fun CreateEventScreen(
           } catch (_: Exception) {
             null
           }
-      // Для all-day события конец должен быть на следующий день после фактического последнего дня
       val effectiveEndDate = state.endDate.plusDays(1)
       val endDateStr =
           try {
@@ -157,12 +162,10 @@ fun CreateEventScreen(
       Log.d("CreateEvent", "Formatting All-Day: Start Date=$startDateStr, End Date=$endDateStr")
       Pair(startDateStr, endDateStr)
     } else {
-      // Для событий со временем используем ISO с оффсетом
       if (timeZoneId == null) {
         Log.e("CreateEvent", "Cannot format timed event without TimeZone ID!")
-        return Pair(null, null) // Не можем форматировать без таймзоны
+        return Pair(null, null)
       }
-      // validateInput уже проверил, что startTime и endTime не null
       val startTimeIso =
           DateTimeUtils.formatDateTimeToIsoWithOffset(
               state.startDate, state.startTime!!, false, timeZoneId)
@@ -175,7 +178,6 @@ fun CreateEventScreen(
     }
   }
 
-  // --- Логика валидации ---
   fun validateInput(): Boolean {
     summaryError =
         if (summary.isBlank()) R.string.error_summary_cannot_be_empty.toString() else null
@@ -193,33 +195,9 @@ fun CreateEventScreen(
     return summaryError == null && validationError == null
   }
 
-    // --- Обработка состояния ViewModel (без изменений) ---
-    LaunchedEffect(createEventState) {
-        isLoading = createEventState is CreateEventResult.Loading
-        when (val result = createEventState) {
-            is CreateEventResult.Success -> {
-                Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
-                viewModel.consumeCreateEventResult()
-                onDismiss()
-            }
-
-            is CreateEventResult.Error -> {
-                generalError = result.message
-                viewModel.consumeCreateEventResult()
-            }
-
-            is CreateEventResult.Loading -> generalError = null
-            is CreateEventResult.Idle -> {
-                /* Можно убрать generalError, если нужно */
-            }
-        }
-    }
-
-  // Функция сохранения (логика форматирования без изменений)
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null
     if (validateInput()) {
-      // Передаем userTimeZoneId в функцию форматирования
       val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
 
       if (startStr == null || endStr == null) {
@@ -281,16 +259,16 @@ fun CreateEventScreen(
         finalRecurrenceRule = ruleParts.joinToString(";")
       }
       Log.d("CreateEvent", "Final RRULE to send: $finalRecurrenceRule")
-        val request = EventRequest(
-            summary = summary.trim(),
-            startTime = startStr,
-            endTime = endStr,
-            isAllDay = eventDateTimeState.isAllDay,
-            timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId,
-            description = description.trim().takeIf { it.isNotEmpty() },
-            location = location.trim().takeIf { it.isNotEmpty() },
-            recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") }
-        )
+      val request =
+          EventRequest(
+              summary = summary.trim(),
+              startTime = startStr,
+              endTime = endStr,
+              isAllDay = eventDateTimeState.isAllDay,
+              timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId,
+              description = description.trim().takeIf { it.isNotEmpty() },
+              location = location.trim().takeIf { it.isNotEmpty() },
+              recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
 
       viewModel.createEvent(request)
     } else {
@@ -299,9 +277,7 @@ fun CreateEventScreen(
   }
 
   Row(
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(horizontal = 4.dp, vertical = 0.dp), // Меньше отступы для иконки
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center) {
         AnimatedContent(
@@ -311,16 +287,11 @@ fun CreateEventScreen(
                   .togetherWith(ExitTransition.None)
                   .using(
                       SizeTransform(
-                          clip =
-                              false, // false - чтобы контент не обрезался во время анимации размера
+                          clip = false,
                           sizeAnimationSpec = { _, _ ->
-                            // Используем spring для более "живой" анимации размера
                             spring(
-                                dampingRatio =
-                                    Spring.DampingRatioLowBouncy, // Попробуйте LowBouncy или
-                                // MediumBouncy
-                                stiffness = Spring.StiffnessMediumLow // Попробуйте Medium или Low
-                                )
+                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                stiffness = Spring.StiffnessMediumLow)
                           }))
             },
             label = "SaveButtonAnimation") { targetSheetValue ->
@@ -343,21 +314,17 @@ fun CreateEventScreen(
                     } else {
                       Icon(
                           imageVector = Icons.Filled.Check,
-                          contentDescription =
-                              "Сохранить", // Consider using stringResource here too
-                          modifier =
-                              Modifier.size(ButtonDefaults.iconSizeFor(size)) // Animated icon size
-                          )
+                          contentDescription = "Сохранить",
+                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
                     }
                   }
             }
       }
 
-  // Основной контент с прокруткой
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState())
-              .padding(horizontal = 16.dp, vertical = 4.dp) // Горизонтальные отступы для контента
+              .padding(horizontal = 16.dp, vertical = 4.dp)
               .fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AdaptiveContainer {
@@ -404,21 +371,19 @@ fun CreateEventScreen(
               shape = RoundedCornerShape(25.dp))
         }
         generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
-        Spacer(modifier = Modifier.height(16.dp)) // Отступ перед кнопкой сохранения
-      } // End Scrollable Column
+        Spacer(modifier = Modifier.height(16.dp))
+      }
 
-  // Кнопка сохранения внизу листа
+  val currentDateTimeState = eventDateTimeState
 
-  val currentDateTimeState = eventDateTimeState // Захватываем текущее состояние для лямбд
-
-  // Диалог выбора Даты Начала
   if (showStartDatePicker) {
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
-                currentDateTimeState.startDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
-            // Добавьте selectableDates, если нужно ограничить выбор
-            )
+                currentDateTimeState.startDate
+                    .atStartOfDay(systemZoneId)
+                    .toInstant()
+                    .toEpochMilli())
     DatePickerDialog(
         onDismissRequest = { showStartDatePicker = false },
         confirmButton = {
@@ -426,12 +391,9 @@ fun CreateEventScreen(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
                   val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                  // Обновляем состояние через copy
                   eventDateTimeState =
                       currentDateTimeState.copy(
                           startDate = selectedDate,
-                          // Если дата конца стала раньше начала, подтягиваем ее
-                          // Или если режим "Один день", дата конца = дате начала
                           endDate =
                               if (selectedDate.isAfter(currentDateTimeState.endDate) ||
                                   currentDateTimeState.startTime == null)
@@ -452,27 +414,21 @@ fun CreateEventScreen(
           DatePicker(state = datePickerState)
         }
   }
-  // Диалог выбора Времени Начала
-  if (showStartTimePicker) { // Компонент не запросит, если не нужно
-    val initialTime =
-        currentDateTimeState.startTime ?: LocalTime.now() // Безопасное значение по умолчанию
+  if (showStartTimePicker) {
+    val initialTime = currentDateTimeState.startTime ?: LocalTime.now()
     val timePickerState =
         rememberTimePickerState(
             initialHour = initialTime.hour,
             initialMinute = initialTime.minute,
-            is24Hour = DateFormat.is24HourFormat(context) // Учитываем настройку системы
-            )
-    TimePickerDialog( // Используем кастомную обертку
+            is24Hour = DateFormat.is24HourFormat(context))
+    TimePickerDialog(
         onDismissRequest = { showStartTimePicker = false },
         confirmButton = {
           TextButton(
               onClick = {
                 val selectedTime =
                     LocalTime.of(timePickerState.hour, timePickerState.minute).withNano(0)
-                // Обновляем состояние через copy
                 var newEndTime = currentDateTimeState.endTime
-                // Если дата конца совпадает с датой начала и новое время начала >= времени конца,
-                // сдвигаем время конца на час вперед
                 if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
                     currentDateTimeState.endTime != null &&
                     !selectedTime.isBefore(currentDateTimeState.endTime)) {
@@ -490,18 +446,17 @@ fun CreateEventScreen(
             Text(stringResource(R.string.cancel))
           }
         }) {
-          TimePicker(state = timePickerState) // Вставляем сам пикер
+          TimePicker(state = timePickerState)
         }
   }
 
-  // Диалог выбора Даты Конца
-  if (showEndDatePicker) { // Компонент не запросит, если не нужно
+  if (showEndDatePicker) {
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
                 currentDateTimeState.endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
             selectableDates =
-                object : SelectableDates { // Ограничение выбора
+                object : SelectableDates {
                   val startMillis =
                       currentDateTimeState.startDate
                           .atStartOfDay(systemZoneId)
@@ -509,11 +464,11 @@ fun CreateEventScreen(
                           .toEpochMilli()
 
                   override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return utcTimeMillis >= startMillis // Нельзя выбрать дату раньше даты начала
+                    return utcTimeMillis >= startMillis
                   }
 
                   override fun isSelectableYear(year: Int): Boolean {
-                    return year >= currentDateTimeState.startDate.year // Оптимизация для годов
+                    return year >= currentDateTimeState.startDate.year
                   }
                 })
     DatePickerDialog(
@@ -523,9 +478,7 @@ fun CreateEventScreen(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
                   val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
-                  // Обновляем состояние через copy
                   eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
-                  // Дополнительно можно проверить и скорректировать endTime, если нужно
                 }
                 showEndDatePicker = false
               },
@@ -542,8 +495,7 @@ fun CreateEventScreen(
         }
   }
 
-  // Диалог выбора Времени Конца
-  if (showEndTimePicker) { // Компонент не запросит, если не нужно
+  if (showEndTimePicker) {
     val initialTime =
         currentDateTimeState.endTime
             ?: currentDateTimeState.startTime?.plusHours(1)
@@ -563,29 +515,14 @@ fun CreateEventScreen(
 
                 var newFinalEndDate = currentDateTimeState.endDate
 
-                // Проверка: если даты одинаковые, время конца не может быть раньше или равно
-                // времени начала
                 if (currentDateTimeState.startDate == currentDateTimeState.endDate &&
                     currentDateTimeState.startTime != null &&
                     selectedTime.isBefore(currentDateTimeState.startTime)) {
-                  // Устанавливаем дату конца на следующий день
                   newFinalEndDate = currentDateTimeState.startDate.plusDays(1)
-                  // Флаг isOneDay в EventDateTimePicker автоматически обновится,
-                  // так как startDate и newFinalEndDate станут разными.
-                  // Сообщение об ошибке здесь не нужно, так как мы исправляем ситуацию.
                 }
-                // В противном случае (многодневное событие или время выбрано корректно для
-                // однодневного),
-                // просто устанавливаем выбранное время.
-                // Валидация (например, endDate < startDate или endTime < startTime на одной дате
-                // для многодневного)
-                // будет обработана в LaunchedEffect внутри EventDateTimePicker.
 
                 eventDateTimeState =
-                    currentDateTimeState.copy(
-                        endTime = selectedTime,
-                        endDate = newFinalEndDate // Обновляем и дату конца, если она изменилась
-                        )
+                    currentDateTimeState.copy(endTime = selectedTime, endDate = newFinalEndDate)
                 showEndTimePicker = false
               }) {
                 Text("OK")
@@ -600,15 +537,13 @@ fun CreateEventScreen(
         }
   }
   if (showRecurrenceEndDatePicker) {
-    // Рассчитываем начальную дату для пикера
-    //
     val initialSelectedDateMillis =
         eventDateTimeState.recurrenceEndDate
             ?.atStartOfDay(ZoneId.systemDefault())
             ?.toInstant()
             ?.toEpochMilli()
             ?: eventDateTimeState.startDate
-                .plusMonths(1) // По умолчанию через месяц от старта
+                .plusMonths(1)
                 .atStartOfDay(ZoneId.systemDefault())
                 .toInstant()
                 .toEpochMilli()
@@ -623,7 +558,6 @@ fun CreateEventScreen(
                         Instant.ofEpochMilli(utcTimeMillis)
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
-                    // Не раньше даты начала события
                     return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
                   }
 
@@ -647,7 +581,6 @@ fun CreateEventScreen(
                 }
                 showRecurrenceEndDatePicker = false
               },
-              // Можно добавить enabled = datePickerState.selectedDateMillis != null
           ) {
             Text("OK")
           }
@@ -656,10 +589,8 @@ fun CreateEventScreen(
           TextButton(onClick = { showRecurrenceEndDatePicker = false }) {
             Text(stringResource(R.string.cancel))
           }
+        }) {
+          DatePicker(state = datePickerState)
         }
-        // --- ИСПОЛЬЗУЕМ ИМЕНОВАННЫЙ ПАРАМЕТР content ---
-        ) { // Начало лямбды для content
-          DatePicker(state = datePickerState) // Передаем DatePicker как контент
-        } // Конец лямбды для content
   }
 }

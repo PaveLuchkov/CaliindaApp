@@ -56,6 +56,7 @@ import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.details.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.ui.LogInScreenDialog
 import kotlinx.coroutines.launch
@@ -113,7 +114,6 @@ fun CalendarScreen(
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
       rememberDatePickerState(
-          // Инициализируем текущей видимой датой из ViewModel
           initialSelectedDateMillis =
               currentVisibleDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
       )
@@ -147,26 +147,28 @@ fun CalendarScreen(
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
 
-  // --- Side Effects (Snackbar) ---
-  LaunchedEffect(calendarState.showGeneralError) {
-    calendarState.showGeneralError?.let { error ->
-      snackbarHostState.showSnackbar("Ошибка: $error")
-      calendarViewModel.clearGeneralError()
+    LaunchedEffect(key1 = true) {
+        calendarViewModel.eventFlow.collect { event -> // TODO сделать
+            when (event) {
+                is CalendarUiEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
     }
-  }
-  LaunchedEffect(calendarState.showAuthError) {
-    calendarState.showAuthError?.let { error ->
-      snackbarHostState.showSnackbar(error) // Ошибки аутентификации часто уже содержат пояснение
-      calendarViewModel.clearAuthError()
-    }
-  }
 
-  LaunchedEffect(calendarState.deleteOperationError) {
-    calendarState.deleteOperationError?.let { error ->
-      snackbarHostState.showSnackbar("Ошибка удаления: $error")
-      eventManagementViewModel.clearDeleteError() // Сбрасываем ошибку после показа
+// события от EventManagementViewModel (успех/ошибка CRUD операций)
+    LaunchedEffect(key1 = true) {
+        eventManagementViewModel.eventFlow.collect { event ->
+            when (event) {
+                is EventManagementUiEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                is EventManagementUiEvent.OperationSuccess -> {
+                }
+            }
+        }
     }
-  }
   // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
   LaunchedEffect(Unit) {
@@ -176,9 +178,9 @@ fun CalendarScreen(
     calendarViewModel.updatePermissionStatus(hasPermission)
   }
 
-  if (calendarState.showRecurringEditOptionsDialog && calendarState.eventBeingEdited != null) {
+  if (eventManagementState.showRecurringEditOptionsDialog && eventManagementState.eventBeingEdited != null) {
     RecurringEventEditOptionsDialog( // Вам нужно создать этот Composable
-        eventName = calendarState.eventBeingEdited!!.summary,
+        eventName = eventManagementState.eventBeingEdited!!.summary,
         onDismiss = {
           eventManagementViewModel.cancelEditEvent()
         }, // Если пользователь закрыл диалог
@@ -187,8 +189,8 @@ fun CalendarScreen(
         })
   }
 
-  LaunchedEffect(calendarState.showEditEventDialog, calendarState.eventBeingEdited) {
-    if (calendarState.showEditEventDialog && calendarState.eventBeingEdited != null) {
+  LaunchedEffect(eventManagementState.showEditEventDialog, eventManagementState.eventBeingEdited) {
+    if (eventManagementState.showEditEventDialog && eventManagementState.eventBeingEdited != null) {
       showEditEventSheet = true
     } else {
       if (showEditEventSheet) {
@@ -356,8 +358,8 @@ fun CalendarScreen(
         }
   }
   if (showEditEventSheet) {
-    val eventToEdit = calendarState.eventBeingEdited
-    val mode = calendarState.selectedUpdateMode
+    val eventToEdit = eventManagementState.eventBeingEdited
+    val mode = eventManagementState.selectedUpdateMode
 
     if (eventToEdit != null && mode != null) {
       ModalBottomSheet(
@@ -392,9 +394,9 @@ fun CalendarScreen(
           }
     }
   }
-  if (calendarState.showEventDetailedView && calendarState.eventForDetailedView != null) {
+  if (eventManagementState.showEventDetailedView && eventManagementState.eventForDetailedView != null) {
     CustomEventDetailsDialog(
-        event = calendarState.eventForDetailedView!!, // Передаем событие
+        event = eventManagementState.eventForDetailedView!!, // Передаем событие
         onDismissRequest = { eventManagementViewModel.cancelEventDetails() },
         viewModel = calendarViewModel,
         userTimeZoneId = timeZone.value,

@@ -60,7 +60,7 @@ fun DayEventsPage(
       "Events received from flow: ${events.joinToString { it.summary + " (allDay=" + it.isAllDay + ")" }}")
   val calendarState by viewModel.state.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
-  val currentTimeZoneId by viewModel.timeZone.collectAsStateWithLifecycle()
+  val currentTimeZoneId by eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
 
   val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
 

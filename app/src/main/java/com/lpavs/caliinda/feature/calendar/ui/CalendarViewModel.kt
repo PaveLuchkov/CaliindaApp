@@ -15,9 +15,12 @@ import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -34,7 +37,6 @@ constructor(
     private val authManager: AuthManager,
     private val calendarDataManager: CalendarRepository,
     private val aiInteractionManager: AiInteractionManager,
-    settingsRepository: SettingsRepository,
     timeTicker: ITimeTicker,
 ) : ViewModel() {
 
@@ -52,19 +54,14 @@ constructor(
   val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
   val rangeNetworkState: StateFlow<EventNetworkState> = calendarDataManager.rangeNetworkState
 
+  private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()
+  val eventFlow: SharedFlow<CalendarUiEvent> = _eventFlow.asSharedFlow()
+
   // Состояния AI
   val aiState: StateFlow<AiVisualizerState> = aiInteractionManager.aiState
   val aiMessage: StateFlow<String?> =
       aiInteractionManager.aiMessage // Сообщение от AI (Asking/Result)
 
-  // Состояния Настроек
-  @Deprecated(
-      message = "состояние timeZone переехало в settingsViewModel",
-      replaceWith = ReplaceWith(""),
-      level = DeprecationLevel.WARNING)
-  val timeZone: StateFlow<String> =
-      settingsRepository.timeZoneFlow.stateIn(
-          viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
 
   init {
     observeAuthState()
@@ -78,13 +75,18 @@ constructor(
         val previousUiState = _uiState.value
         _uiState.update { currentState ->
           currentState.copy(
-              isSignedIn = authState.isSignedIn,
-              userEmail = authState.userEmail,
-              displayName = authState.displayName,
-              photo = authState.photoUrl,
-              showAuthError = authState.authError,
-              isLoading = calculateIsLoading(authLoading = authState.isLoading),
-              authorizationIntent = authState.authorizationIntent)
+            isSignedIn = authState.isSignedIn,
+            userEmail = authState.userEmail,
+            displayName = authState.displayName,
+            photo = authState.photoUrl,
+            isLoading = calculateIsLoading(authLoading = authState.isLoading),
+            authorizationIntent = authState.authorizationIntent
+          )
+        }
+
+        authState.authError?.let { error ->
+          _eventFlow.emit(CalendarUiEvent.ShowMessage(error))
+          authManager.clearAuthError()
         }
         if (!initialAuthCheckCompletedAndProcessed && !authState.isLoading) {
           initialAuthCheckCompletedAndProcessed = true
@@ -113,21 +115,15 @@ constructor(
     viewModelScope.launch {
       aiInteractionManager.aiState.collect { ai ->
         _uiState.update { currentUiState ->
+          // Обновляем только состояние isLoading и isListening
           currentUiState.copy(
-              isListening = ai == AiVisualizerState.LISTENING,
-              isLoading = calculateIsLoading(aiState = ai),
-              message =
-                  aiInteractionManager.aiMessage.value
-                      ?: when (ai) {
-                        AiVisualizerState.LISTENING -> "Слушаю..."
-                        AiVisualizerState.THINKING -> "Обработка..."
-                        else -> currentUiState.message // Иначе оставляем текущее
-                      })
+            isListening = ai == AiVisualizerState.LISTENING,
+            isLoading = calculateIsLoading(aiState = ai)
+          )
         }
-        // Реакция на результат AI (успешное создание события)
-        if (ai == AiVisualizerState.RESULT /*&& какое-то условие успеха, если нужно*/) {
+        if (ai == AiVisualizerState.RESULT) {
           Log.d(TAG, "AI observer: Interaction finished with RESULT, triggering calendar refresh.")
-          refreshCurrentVisibleDate() // Обновляем календарь
+          refreshCurrentVisibleDate()
         }
       }
     }
@@ -136,17 +132,12 @@ constructor(
   private fun observeCalendarNetworkState() {
     viewModelScope.launch {
       calendarDataManager.rangeNetworkState.collect { network ->
-        _uiState.update { currentUiState ->
-          currentUiState.copy(
-              isLoading =
-                  calculateIsLoading(networkState = network), // Обновляем только этот источник
-              // Показываем ошибку сети, только если нет ошибки аутентификации
-              showGeneralError =
-                  if (network is EventNetworkState.Error && currentUiState.showAuthError == null)
-                      network.message
-                  else currentUiState.showGeneralError,
-              // Сбрасываем ошибку сети, если она была показана и состояние изменилось
-          )
+        _uiState.update { it.copy(isLoading = calculateIsLoading(networkState = network)) }
+
+        if (network is EventNetworkState.Error) {
+          if (authManager.authState.value.authError == null) {
+            _eventFlow.emit(CalendarUiEvent.ShowMessage(network.message))
+          }
         }
       }
     }
@@ -211,7 +202,9 @@ constructor(
   // --- ДЕЙСТВИЯ AI ---
   fun startListening() {
     if (!_uiState.value.isPermissionGranted) {
-      _uiState.update { it.copy(showGeneralError = "Нет разрешения на запись аудио") }
+      viewModelScope.launch {
+        _eventFlow.emit(CalendarUiEvent.ShowMessage("Нет разрешения на запись аудио"))
+      }
       return
     }
     aiInteractionManager.startListening()
@@ -239,10 +232,6 @@ constructor(
     }
   }
 
-  fun clearGeneralError() {
-    _uiState.update { it.copy(showGeneralError = null) }
-  }
-
   // --- LIFECYCLE ---
   override fun onCleared() {
     super.onCleared()
@@ -253,4 +242,8 @@ constructor(
   companion object {
     private const val TAG = "CalendarViewModel" // Используем один TAG
   }
+}
+
+sealed class CalendarUiEvent {
+  data class ShowMessage(val message: String) : CalendarUiEvent()
 }

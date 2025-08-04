@@ -1,21 +1,22 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.remote.EventDeleteMode
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -38,7 +39,8 @@ constructor(
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
 
-
+    private val _eventFlow = MutableSharedFlow<EventManagementUiEvent>()
+    val eventFlow: SharedFlow<EventManagementUiEvent> = _eventFlow.asSharedFlow()
 
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
@@ -57,59 +59,43 @@ constructor(
       updatedEventData: EventRequest,
       modeFromUi: EventUpdateMode
   ) {
-    val originalEvent = _uiState.value.eventBeingEdited
-    if (originalEvent == null) {
-      Log.e(TAG, "confirmEventUpdate called but eventBeingEdited is null.")
-      _uiState.update { it.copy(editOperationError = "Ошибка: нет данных для редактирования.") }
-      return
-    }
-
-    Log.d(
-        TAG,
-        "Confirming update for event ID: ${originalEvent.id}, mode: $modeFromUi, data: $updatedEventData")
-
+    val originalEvent = _uiState.value.eventBeingEdited ?: return
     viewModelScope.launch {
+        _uiState.update { it.copy(isLoading = true, operationError = null) }
       val result = calendarRepository.updateEvent(
-          eventId = originalEvent.id, // ID оригинального события/экземпляра
+          eventId = originalEvent.id,
           updateData = updatedEventData,
           mode = modeFromUi)
+        _uiState.update { it.copy(isLoading = false) }
         if (result.isSuccess) {
-            _uiState.update {
-                it.copy(isLoading = false, eventUpdateSuccess = true) // Добавьте eventCreationSuccess
-            }
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage("Событие успешно обновлено")) //TODO R
+            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
         } else {
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    operationError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
-                )
-            }
+            val errorMessage = result.exceptionOrNull()?.message ?: "Ошибка обновления"
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
         }
     }
   }
 
 
 
-  fun createEvent(
-      request: EventRequest
-  ) {
-    viewModelScope.launch {
-        _uiState.update { it.copy(isLoading = true) }
-      val result = calendarRepository.createEvent(request)
-        if (result.isSuccess) {
-            _uiState.update {
-                it.copy(isLoading = false, eventCreationSuccess = true) // Добавьте eventCreationSuccess
-            }
-        } else {
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    operationError = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
-                )
+    fun createEvent(request: EventRequest) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, operationError = null) }
+
+            val result = calendarRepository.createEvent(request)
+
+            _uiState.update { it.copy(isLoading = false) }
+
+            if (result.isSuccess) {
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage("Событие успешно создано"))
+                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+            } else {
+                val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
             }
         }
     }
-  }
 
   /**
    * Вызывается из UI, когда пользователь инициирует удаление события. Устанавливает ID события и
@@ -125,9 +111,8 @@ constructor(
       it.copy(
           eventPendingDeletion = event,
           showDeleteConfirmationDialog =
-              !isActuallyRecurring, // Показываем простой диалог, если НЕ повторяющееся
-          showRecurringDeleteOptionsDialog = isActuallyRecurring,
-          deleteOperationError = null)
+              !isActuallyRecurring,
+          showRecurringDeleteOptionsDialog = isActuallyRecurring,)
     }
   }
 
@@ -161,14 +146,11 @@ constructor(
           val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
 
           if (result.isSuccess) {
-              _uiState.update { it.copy(isLoading = false, userFacingMessage = "Событие удалено") }
+              _eventFlow.emit(EventManagementUiEvent.ShowMessage("События успешно удалены")) // TODO
+              _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
           } else {
-              _uiState.update {
-                  it.copy(
-                      isLoading = false,
-                      operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
-                  )
-              }
+              val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" //TODO
+              _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
           }
       }
   }
@@ -189,14 +171,11 @@ constructor(
         viewModelScope.launch {
           val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.INSTANCE_ONLY)
             if (result.isSuccess) {
-                _uiState.update { it.copy(isLoading = false, userFacingMessage = "Событие удалено") }
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage("Событие успешно удалено")) // TODO
+                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
             } else {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
-                    )
-                }
+                val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" //TODO
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
             }
         }
       }
@@ -210,14 +189,11 @@ constructor(
         viewModelScope.launch {
           val result = calendarRepository.deleteEvent(idForBackendCall, EventDeleteMode.DEFAULT)
             if (result.isSuccess) {
-                _uiState.update { it.copy(isLoading = false, userFacingMessage = "Событие удалено") }
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage("События успешно удалены")) // TODO
+                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
             } else {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
-                    )
-                }
+                val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" //TODO
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
             }
         }
       }
@@ -289,21 +265,13 @@ constructor(
           updateData = updateRequest,
           mode = EventUpdateMode.ALL_IN_SERIES)
         if (result.isSuccess) {
-            _uiState.update { it.copy(isLoading = false, userFacingMessage = "События удалены") }
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage("События успешно удалены")) // TODO
+            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
         } else {
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    operationError = result.exceptionOrNull()?.message ?: "Ошибка удаления"
-                )
-            }
+            val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" //TODO
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
         }
     }
-  }
-
-  /** Вызывается из UI для сброса флага ошибки удаления после ее показа (например, в Snackbar). */
-  fun clearDeleteError() {
-    _uiState.update { it.copy(deleteOperationError = null) }
   }
 
   /** Вызывается из UI, когда пользователь инициирует редактирование события. */
@@ -323,8 +291,7 @@ constructor(
                 EventUpdateMode.ALL_IN_SERIES
               } else {
                 it.selectedUpdateMode
-              },
-          editOperationError = null)
+              },)
     }
     Log.d(
         TAG,
@@ -358,8 +325,7 @@ constructor(
       it.copy(
           eventBeingEdited = null,
           showRecurringEditOptionsDialog = false,
-          showEditEventDialog = false,
-          editOperationError = null)
+          showEditEventDialog = false)
     }
     Log.d(TAG, "Event editing cancelled.")
   }
@@ -395,6 +361,7 @@ data class EventManagementUiState(
     val operationError: String? = null,
     val isLoading: Boolean = false,
 
+    val eventToDeleteId: String? = null,
     val eventPendingDeletion: EventDto? = null,
     val showDeleteConfirmationDialog: Boolean = false,
     val showRecurringDeleteOptionsDialog: Boolean = false,
