@@ -142,9 +142,9 @@ fun CalendarScreen(
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
   // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
-  LaunchedEffect(pagerState.settledPage) { // Реагируем, когда страница "устаканилась"
-    val settledDate = today.plusDays((pagerState.settledPage - initialPageIndex).toLong())
-    Log.d("MainScreen", "Pager settled on page ${pagerState.settledPage}, date: $settledDate")
+  LaunchedEffect(pagerState.targetPage) { // Реагируем, когда страница "устаканилась"
+    val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
+    Log.d("CalendarScreen", "Pager settled on page ${pagerState.targetPage}, date: $settledDate")
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
 
