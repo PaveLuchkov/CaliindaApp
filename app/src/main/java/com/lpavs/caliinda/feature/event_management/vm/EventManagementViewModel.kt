@@ -33,11 +33,12 @@ class EventManagementViewModel
 @Inject
 constructor(
     settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context,
     private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
-  val state: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
+  val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
+
+
 
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
@@ -394,21 +395,17 @@ data class EventManagementUiState(
     val operationError: String? = null,
     val isLoading: Boolean = false,
 
-    val eventToDeleteId: String? = null,
     val eventPendingDeletion: EventDto? = null,
     val showDeleteConfirmationDialog: Boolean = false,
     val showRecurringDeleteOptionsDialog: Boolean = false,
-    val deleteOperationError: String? = null,
+
     val eventBeingEdited: EventDto? = null,
     val showRecurringEditOptionsDialog: Boolean = false,
     val showEditEventDialog: Boolean = false,
     val selectedUpdateMode: EventUpdateMode? = null,
-    val editOperationError: String? = null,
+
     val eventForDetailedView: EventDto? = null,
     val showEventDetailedView: Boolean = false,
-    val eventCreationSuccess: Boolean = false,
-    val eventUpdateSuccess: Boolean = false,
-    val eventDeletionSuccess: Boolean = false
 )
 
 sealed class EventManagementUiEvent {

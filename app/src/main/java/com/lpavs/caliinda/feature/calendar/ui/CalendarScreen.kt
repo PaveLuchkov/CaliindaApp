@@ -74,7 +74,7 @@ fun CalendarScreen(
   val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val aiState by calendarViewModel.aiState.collectAsState()
-  val eventManagementState by eventManagementViewModel.state.collectAsState()
+  val eventManagementState by eventManagementViewModel.uiState.collectAsState()
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val snackbarHostState = remember { SnackbarHostState() }
   val isTextInputVisible by remember { mutableStateOf(false) }

@@ -69,7 +69,7 @@ fun SettingsScreen(
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val snackbarHostState = remember { SnackbarHostState() }
-  val eventManagementState by eventManagementViewModel.state.collectAsState()
+  val eventManagementState by eventManagementViewModel.uiState.collectAsState()
 
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
@@ -183,7 +183,7 @@ fun GoogleAccountSection(
   val displayName = calendarState.displayName ?: email.substringBefore("@")
   val photo: Uri? = calendarState.photo
   val cornerRadius = cuid.SettingsItemCornerRadius
-  val eventManagementState by eventManagementViewModel.state.collectAsState()
+  val eventManagementState by eventManagementViewModel.uiState.collectAsState()
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
   Box(
       modifier =

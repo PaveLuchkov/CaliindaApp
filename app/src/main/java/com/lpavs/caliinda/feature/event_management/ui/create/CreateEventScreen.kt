@@ -91,7 +91,7 @@ fun CreateEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-    val uiState by viewModel.state.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
