@@ -216,11 +216,11 @@ fun EditEventScreen(
         when (eventDateTimeState.recurrenceEndType) {
           RecurrenceEndType.DATE -> {
             eventDateTimeState.recurrenceEndDate?.let { endDate ->
-              val systemZone = ZoneId.systemDefault()
-                endDate.atTime(LocalTime.MAX).atZone(systemZone)
+              val userTimeZone = userTimeZoneId
+                endDate.atTime(LocalTime.MAX).atZone(userTimeZone)
 
               val endDateTimeUtc =
-                  endDate.atTime(23, 59, 59).atZone(systemZone).withZoneSameInstant(ZoneOffset.UTC)
+                  endDate.atTime(23, 59, 59).atZone(userTimeZone).withZoneSameInstant(ZoneOffset.UTC)
 
               val untilString = untilFormatter.format(endDateTimeUtc)
               ruleParts.add("UNTIL=$untilString")
@@ -521,12 +521,12 @@ fun EditEventScreen(
   if (showRecurrenceEndDatePicker) {
     val initialSelectedDateMillis =
         eventDateTimeState.recurrenceEndDate
-            ?.atStartOfDay(ZoneId.systemDefault())
+            ?.atStartOfDay(userTimeZoneId)
             ?.toInstant()
             ?.toEpochMilli()
             ?: eventDateTimeState.startDate
                 .plusMonths(1)
-                .atStartOfDay(ZoneId.systemDefault())
+                .atStartOfDay(userTimeZoneId)
                 .toInstant()
                 .toEpochMilli()
 
@@ -538,7 +538,7 @@ fun EditEventScreen(
                   override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     val selectedLocalDate =
                         Instant.ofEpochMilli(utcTimeMillis)
-                            .atZone(ZoneId.systemDefault())
+                            .atZone(userTimeZoneId)
                             .toLocalDate()
                     return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
                   }
@@ -554,7 +554,7 @@ fun EditEventScreen(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
                   val selectedDate =
-                      Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                      Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState =
                       eventDateTimeState.copy(
                           recurrenceEndDate = selectedDate,

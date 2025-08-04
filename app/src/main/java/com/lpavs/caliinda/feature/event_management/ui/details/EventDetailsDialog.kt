@@ -60,7 +60,7 @@ import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 @Composable
 fun CustomEventDetailsDialog(
     event: EventDto,
-    userTimeZoneId: String,
+    userTimeZone: String,
     onDismissRequest: () -> Unit,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel
@@ -68,17 +68,17 @@ fun CustomEventDetailsDialog(
   val context = LocalContext.current
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
   val timeFormatterLambda: (EventDto) -> String =
-      remember(viewModel, userTimeZoneId, currentLocale) {
+      remember(viewModel, userTimeZone, currentLocale) {
         { event ->
           DateTimeFormatterUtil.formatEventDetailsTime(
-              context, event, userTimeZoneId, currentLocale)
+              context, event, userTimeZone, currentLocale)
         }
       }
   val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
   val isCurrent =
       remember(currentTime, event.startTime, event.endTime) {
-        val start = parseToInstant(event.startTime, userTimeZoneId)
-        val end = parseToInstant(event.endTime, userTimeZoneId)
+        val start = parseToInstant(event.startTime, userTimeZone)
+        val end = parseToInstant(event.endTime, userTimeZone)
         start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
       }
   Dialog(
@@ -144,7 +144,7 @@ fun CustomEventDetailsDialog(
                       if (!event.recurrenceRule.isNullOrEmpty()) {
                         DetailRow(
                             Icons.Filled.Repeat,
-                            formatRRule(event.recurrenceRule, zoneIdString = userTimeZoneId),
+                            formatRRule(event.recurrenceRule, zoneIdString = userTimeZone),
                             color = onCardText)
                       }
                       Spacer(modifier = Modifier.height(20.dp))

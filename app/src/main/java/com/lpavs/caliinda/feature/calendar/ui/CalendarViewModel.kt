@@ -9,7 +9,6 @@ import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
-import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.data.calendar.EventNetworkState
 import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
@@ -18,26 +17,23 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel
 @Inject
 constructor(
-    private val authManager: AuthManager,
-    private val calendarDataManager: CalendarRepository,
-    private val aiInteractionManager: AiInteractionManager,
-    timeTicker: ITimeTicker,
+  private val authManager: AuthManager,
+  private val calendarRepository: CalendarRepository,
+  private val aiInteractionManager: AiInteractionManager,
+  timeTicker: ITimeTicker,
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -52,7 +48,7 @@ constructor(
   // Состояния Календаря
   private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
   val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
-  val rangeNetworkState: StateFlow<EventNetworkState> = calendarDataManager.rangeNetworkState
+  val rangeNetworkState: StateFlow<EventNetworkState> = calendarRepository.rangeNetworkState
 
   private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()
   val eventFlow: SharedFlow<CalendarUiEvent> = _eventFlow.asSharedFlow()
@@ -104,7 +100,7 @@ constructor(
         }
         if (authState.isSignedIn && !previousUiState.isSignedIn) {
           Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
-          calendarDataManager.setCurrentVisibleDate(
+          calendarRepository.setCurrentVisibleDate(
               currentVisibleDate.value, forceRefresh = true)
         }
       }
@@ -131,7 +127,7 @@ constructor(
 
   private fun observeCalendarNetworkState() {
     viewModelScope.launch {
-      calendarDataManager.rangeNetworkState.collect { network ->
+      calendarRepository.rangeNetworkState.collect { network ->
         _uiState.update { it.copy(isLoading = calculateIsLoading(networkState = network)) }
 
         if (network is EventNetworkState.Error) {
@@ -146,10 +142,10 @@ constructor(
   // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
   /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
   private fun calculateIsLoading(
-      authLoading: Boolean =
+    authLoading: Boolean =
           authManager.authState.value.isLoading, // Берем текущие значения по умолчанию
-      networkState: EventNetworkState = calendarDataManager.rangeNetworkState.value,
-      aiState: AiVisualizerState = aiInteractionManager.aiState.value,
+    networkState: EventNetworkState = calendarRepository.rangeNetworkState.value,
+    aiState: AiVisualizerState = aiInteractionManager.aiState.value,
   ): Boolean {
     val calendarLoading = networkState is EventNetworkState.Loading
     val aiThinking = aiState == AiVisualizerState.THINKING
@@ -180,7 +176,6 @@ constructor(
     authManager.clearAuthorizationIntent()
   }
 
-  fun clearAuthError() = authManager.clearAuthError()
 
   fun onSignInRequiredDialogDismissed() {
     _uiState.update { it.copy(showSignInRequiredDialog = false) }
@@ -188,14 +183,20 @@ constructor(
   }
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
-  fun onVisibleDateChanged(newDate: LocalDate) = calendarDataManager.setCurrentVisibleDate(newDate)
+  fun onVisibleDateChanged(newDate: LocalDate) {
+    if (newDate == _currentVisibleDate.value) return
+    _currentVisibleDate.value = newDate
+    viewModelScope.launch {
+      calendarRepository.setCurrentVisibleDate(newDate)
+    }
+  }
 
   fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
-      calendarDataManager.getEventsFlowForDate(date)
+      calendarRepository.getEventsFlowForDate(date)
 
   fun refreshCurrentVisibleDate() {
     viewModelScope.launch {
-      calendarDataManager.refreshDate(currentVisibleDate.value)
+      calendarRepository.refreshDate(currentVisibleDate.value)
     }
   }
 

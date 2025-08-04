@@ -73,6 +73,7 @@ fun CalendarScreen(
     eventManagementViewModel: EventManagementViewModel
 ) {
   val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
+    val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val aiState by calendarViewModel.aiState.collectAsState()
   val eventManagementState by eventManagementViewModel.uiState.collectAsState()
@@ -115,7 +116,7 @@ fun CalendarScreen(
   val datePickerState =
       rememberDatePickerState(
           initialSelectedDateMillis =
-              currentVisibleDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+              currentVisibleDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
       )
 
   // --- НОВОЕ: Настройка flingBehavior ---
@@ -290,7 +291,7 @@ fun CalendarScreen(
                 if (selectedMillis != null) {
                   val selectedDate =
                       Instant.ofEpochMilli(selectedMillis)
-                          .atZone(ZoneId.systemDefault()) // Используй корректную ZoneId
+                          .atZone(userTimeZoneId)
                           .toLocalDate()
 
                   // Проверяем, изменилась ли дата
@@ -343,7 +344,7 @@ fun CalendarScreen(
         contentWindowInsets = { WindowInsets.navigationBars }) {
           CreateEventScreen(
               viewModel = eventManagementViewModel,
-              userTimeZoneId = timeZone.value,
+              userTimeZone = timeZone.value,
               initialDate = selectedDateForSheet,
               onDismiss = {
                 scope
@@ -399,7 +400,7 @@ fun CalendarScreen(
         event = eventManagementState.eventForDetailedView!!, // Передаем событие
         onDismissRequest = { eventManagementViewModel.cancelEventDetails() },
         viewModel = calendarViewModel,
-        userTimeZoneId = timeZone.value,
+        userTimeZone = timeZone.value,
         eventManagementViewModel = eventManagementViewModel)
   }
   if (calendarState.showSignInRequiredDialog) {

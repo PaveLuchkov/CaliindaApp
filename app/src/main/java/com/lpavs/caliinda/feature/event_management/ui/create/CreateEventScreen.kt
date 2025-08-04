@@ -77,7 +77,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CreateEventScreen(
     viewModel: EventManagementViewModel,
-    userTimeZoneId: String,
+    userTimeZone: String,
     initialDate: LocalDate,
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue
@@ -85,6 +85,7 @@ fun CreateEventScreen(
   var summary by remember { mutableStateOf("") }
   var description by remember { mutableStateOf("") }
   var location by remember { mutableStateOf("") }
+    val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
 
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
@@ -102,7 +103,6 @@ fun CreateEventScreen(
   var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
 
   // Форматер
-  val systemZoneId = remember { ZoneId.systemDefault() }
   val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
   var eventDateTimeState by remember {
@@ -187,7 +187,7 @@ fun CreateEventScreen(
       validationError = R.string.error_specify_start_and_end_time.toString()
       return false
     }
-    val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZoneId)
+    val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZone)
     if (testStartTimeStr == null || testEndTimeStr == null) {
       validationError = R.string.error_failed_to_format_datetime.toString()
       return false
@@ -198,7 +198,7 @@ fun CreateEventScreen(
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null
     if (validateInput()) {
-      val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZoneId)
+      val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
 
       if (startStr == null || endStr == null) {
         validationError = R.string.error_failed_to_format_datetime.toString()
@@ -235,11 +235,11 @@ fun CreateEventScreen(
         when (eventDateTimeState.recurrenceEndType) {
           RecurrenceEndType.DATE -> {
             eventDateTimeState.recurrenceEndDate?.let { endDate ->
-              val systemZone = ZoneId.systemDefault()
-              endDate.atTime(LocalTime.MAX).atZone(systemZone)
+              val userTimeZone = userTimeZoneId
+              endDate.atTime(LocalTime.MAX).atZone(userTimeZone)
 
               val endDateTimeUtc =
-                  endDate.atTime(23, 59, 59).atZone(systemZone).withZoneSameInstant(ZoneOffset.UTC)
+                  endDate.atTime(23, 59, 59).atZone(userTimeZone).withZoneSameInstant(ZoneOffset.UTC)
 
               val untilString = untilFormatter.format(endDateTimeUtc)
               ruleParts.add("UNTIL=$untilString")
@@ -265,7 +265,7 @@ fun CreateEventScreen(
               startTime = startStr,
               endTime = endStr,
               isAllDay = eventDateTimeState.isAllDay,
-              timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZoneId,
+              timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZone,
               description = description.trim().takeIf { it.isNotEmpty() },
               location = location.trim().takeIf { it.isNotEmpty() },
               recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
@@ -381,7 +381,7 @@ fun CreateEventScreen(
         rememberDatePickerState(
             initialSelectedDateMillis =
                 currentDateTimeState.startDate
-                    .atStartOfDay(systemZoneId)
+                    .atStartOfDay(userTimeZoneId)
                     .toInstant()
                     .toEpochMilli())
     DatePickerDialog(
@@ -390,7 +390,7 @@ fun CreateEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
+                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState =
                       currentDateTimeState.copy(
                           startDate = selectedDate,
@@ -454,12 +454,12 @@ fun CreateEventScreen(
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
-                currentDateTimeState.endDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli(),
+                currentDateTimeState.endDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
             selectableDates =
                 object : SelectableDates {
                   val startMillis =
                       currentDateTimeState.startDate
-                          .atStartOfDay(systemZoneId)
+                          .atStartOfDay(userTimeZoneId)
                           .toInstant()
                           .toEpochMilli()
 
@@ -477,7 +477,7 @@ fun CreateEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(systemZoneId).toLocalDate()
+                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
                 }
                 showEndDatePicker = false
@@ -539,12 +539,12 @@ fun CreateEventScreen(
   if (showRecurrenceEndDatePicker) {
     val initialSelectedDateMillis =
         eventDateTimeState.recurrenceEndDate
-            ?.atStartOfDay(ZoneId.systemDefault())
+            ?.atStartOfDay(userTimeZoneId)
             ?.toInstant()
             ?.toEpochMilli()
             ?: eventDateTimeState.startDate
                 .plusMonths(1)
-                .atStartOfDay(ZoneId.systemDefault())
+                .atStartOfDay(userTimeZoneId)
                 .toInstant()
                 .toEpochMilli()
 
@@ -556,7 +556,7 @@ fun CreateEventScreen(
                   override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     val selectedLocalDate =
                         Instant.ofEpochMilli(utcTimeMillis)
-                            .atZone(ZoneId.systemDefault())
+                            .atZone(userTimeZoneId)
                             .toLocalDate()
                     return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
                   }
@@ -572,7 +572,7 @@ fun CreateEventScreen(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
                   val selectedDate =
-                      Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                      Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState =
                       eventDateTimeState.copy(
                           recurrenceEndDate = selectedDate,
