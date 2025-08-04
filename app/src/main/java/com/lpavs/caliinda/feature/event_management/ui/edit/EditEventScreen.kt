@@ -44,7 +44,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,11 +54,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
-import com.lpavs.caliinda.feature.calendar.data.onEventResults.UpdateEventResult
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -67,6 +65,7 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateT
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
 import java.time.Instant
@@ -94,7 +93,6 @@ fun EditEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  val updateEventState by viewModel.updateEventResult.collectAsState()
   var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
@@ -171,22 +169,18 @@ fun EditEventScreen(
     return summaryError == null && validationError == null
   }
 
-  LaunchedEffect(updateEventState) {
-    isLoading = updateEventState is UpdateEventResult.Loading
-    when (val result = updateEventState) {
-      is UpdateEventResult.Success -> {
-        Toast.makeText(context, R.string.event_updated_successfully, Toast.LENGTH_SHORT).show()
-        viewModel.consumeUpdateEventResult()
-        onDismiss()
-      }
-      is UpdateEventResult.Error -> {
-        generalError = result.message
-        viewModel.consumeUpdateEventResult()
-      }
-      is UpdateEventResult.Loading -> generalError = null
-      is UpdateEventResult.Idle -> {}
+    LaunchedEffect(key1 = true) { // key1 = true, чтобы эффект запустился один раз за композицию
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is EventManagementUiEvent.ShowMessage -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is EventManagementUiEvent.OperationSuccess -> {
+                    onDismiss() // Закрываем экран/диалог
+                }
+            }
+        }
     }
-  }
 
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null

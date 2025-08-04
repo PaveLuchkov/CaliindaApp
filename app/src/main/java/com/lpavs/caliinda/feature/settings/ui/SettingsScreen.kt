@@ -73,12 +73,6 @@ fun SettingsScreen(
 
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
-  LaunchedEffect(calendarState.showAuthError) {
-    calendarState.showAuthError?.let { error ->
-      snackbarHostState.showSnackbar(error)
-      calendarViewModel.clearAuthError()
-    }
-  }
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {

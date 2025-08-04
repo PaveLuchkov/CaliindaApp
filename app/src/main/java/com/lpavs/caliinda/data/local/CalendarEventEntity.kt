@@ -17,14 +17,3 @@ data class CalendarEventEntity(
     val lastFetchedMillis: Long = System.currentTimeMillis(),
     val recurrenceRuleString: String? = null,
 )
-
-data class UpdateEventApiRequest(
-    val summary: String? = null,
-    val startTime: String? = null,
-    val endTime: String? = null,
-    val isAllDay: Boolean? = null,
-    val timeZoneId: String? = null,
-    val description: String? = null,
-    val location: String? = null,
-    val recurrence: List<String>? = null
-)
