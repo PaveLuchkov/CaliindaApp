@@ -163,7 +163,7 @@ fun CalendarScreen(
         eventManagementViewModel.eventFlow.collect { event ->
             when (event) {
                 is EventManagementUiEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    snackbarHostState.showSnackbar(event.message.asString(context))
                 }
                 is EventManagementUiEvent.OperationSuccess -> {
                 }

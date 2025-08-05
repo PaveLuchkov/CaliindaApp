@@ -9,7 +9,7 @@ import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
-import com.lpavs.caliinda.data.calendar.EventNetworkState
+import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import dagger.hilt.android.lifecycle.HiltViewModel

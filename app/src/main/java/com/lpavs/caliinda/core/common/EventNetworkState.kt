@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.calendar
+package com.lpavs.caliinda.core.common
 
 sealed interface EventNetworkState {
   object Idle : EventNetworkState

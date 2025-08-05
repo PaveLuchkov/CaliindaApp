@@ -35,7 +35,7 @@ import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
-import com.lpavs.caliinda.data.calendar.EventNetworkState
+import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog

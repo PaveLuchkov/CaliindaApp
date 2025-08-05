@@ -211,4 +211,150 @@
     <string name="suggested_event_breakfast_full">🍳 Breakfast</string>
     <string name="suggested_event_pet">Pet</string>
     <string name="suggested_event_pet_full">🦮 Walking the pet</string>
+    <!-- Time Prefixes -->
+    <string name="prefix_good_morning">Good morning!</string>
+    <string name="prefix_rise_shine">Rise and shine!</string>
+    <string name="prefix_morning_vibes">Morning vibes! ☀️</string>
+    <string name="prefix_good_afternoon">Good afternoon!</string>
+    <string name="prefix_midday_magic">Midday magic!</string>
+    <string name="prefix_afternoon_energy">Afternoon energy! 🌞</string>
+    <string name="prefix_good_evening">Good evening!</string>
+    <string name="prefix_evening_chill">Evening chill!</string>
+    <string name="prefix_night_owl">Night owl mode! 🌙</string>
+    <string name="prefix_midnight_oil">Burning the midnight oil!</string>
+    <string name="prefix_night_shift">Night shift!</string>
+    <string name="prefix_late_night">Late night productivity! 🌃</string>
+
+    <!-- Combined Time Messages -->
+    <string name="combined_morning_event_created">Good morning! Event spawned successfully! ☀️🎉</string>
+    <string name="combined_afternoon_event_created">Afternoon productivity! New event just dropped! 🌞📅</string>
+    <string name="combined_evening_event_created">Evening plans! Event deployed to your calendar! 🌙🚀</string>
+    <string name="combined_night_event_created">Night owl mode! Fresh event baked and ready! 🌃🍞</string>
+
+    <!-- Time-based Event Updated -->
+    <string name="morning_event_updated">Good morning! Event \'%1$s\' got an early upgrade! ☀️</string>
+    <string name="afternoon_event_updated">Afternoon improvements! Event \'%1$s\' updated! 🌞</string>
+    <string name="evening_event_updated">Evening tweaks! Event \'%1$s\' refined! 🌙</string>
+    <string name="night_event_updated">Night adjustments! Event \'%1$s\' polished! 🌃</string>
+
+    <string name="morning_event_updated_simple">Good morning! Event got an early upgrade! ☀️</string>
+    <string name="afternoon_event_updated_simple">Afternoon improvements! Event updated! 🌞</string>
+    <string name="evening_event_updated_simple">Evening tweaks! Event refined! 🌙</string>
+    <string name="night_event_updated_simple">Night adjustments! Event polished! 🌃</string>
+
+    <!-- Time-based Event Deleted -->
+    <string name="morning_event_deleted">Good morning! Event \'%1$s\' cleared for a fresh start! ☀️</string>
+    <string name="afternoon_event_deleted">Afternoon cleanup! Event \'%1$s\' removed! 🌞</string>
+    <string name="evening_event_deleted">Evening cleanup! Event \'%1$s\' dismissed! 🌙</string>
+    <string name="night_event_deleted">Night cleanup! Event \'%1$s\' vanished! 🌃</string>
+
+    <string name="morning_event_deleted_simple">Good morning! Event cleared for a fresh start! ☀️</string>
+    <string name="afternoon_event_deleted_simple">Afternoon cleanup! Event removed! 🌞</string>
+    <string name="evening_event_deleted_simple">Evening cleanup! Event dismissed! 🌙</string>
+    <string name="night_event_deleted_simple">Night cleanup! Event vanished! 🌃</string>
+
+    <!-- Event Created Messages -->
+    <string name="event_created_spawned">Event spawned successfully! 🎉</string>
+    <string name="event_created_dropped">New event just dropped! 📅</string>
+    <string name="event_created_deployed">Event deployed to your calendar! 🚀</string>
+    <string name="event_created_baked">Fresh event baked and ready! 🍞</string>
+    <string name="event_created_nailed">Event creation: NAILED IT! 💪</string>
+
+    <!-- Event Created with Name -->
+    <string name="event_created_with_name_spawned">Event \'%1$s\' spawned successfully! 🎉</string>
+    <string name="event_created_with_name_deployed">Event \'%1$s\' deployed to calendar! 🚀</string>
+    <string name="event_created_with_name_live">Event \'%1$s\' is now live! 🔥</string>
+    <string name="event_created_with_name_complete">Event \'%1$s\' creation complete! ✅</string>
+    <string name="event_created_with_name_entered_chat">Event \'%1$s\' has entered the chat! 💬</string>
+
+    <!-- Time-based Event Created -->
+    <string name="morning_event_created">Good morning! Event \'%1$s\' is ready to start your day! ☀️</string>
+    <string name="afternoon_event_created">Afternoon productivity! Event \'%1$s\' created! 🌞</string>
+    <string name="evening_event_created">Evening plans set! Event \'%1$s\' is ready! 🌙</string>
+    <string name="night_event_created">Night owl! Event \'%1$s\' created for later! 🌃</string>
+
+    <string name="morning_event_created_simple">Good morning! Fresh event ready to start your day! ☀️</string>
+    <string name="afternoon_event_created_simple">Afternoon productivity boost! Event created! 🌞</string>
+    <string name="evening_event_created_simple">Evening plans locked in! Event ready! 🌙</string>
+    <string name="night_event_created_simple">Night owl mode! Event created! 🌃</string>
+
+    <!-- Event Updated Messages -->
+    <string name="event_updated_glow_up">Event got a glow up! ✨</string>
+    <string name="event_updated_upgraded">Event has been upgraded! 🚀</string>
+    <string name="event_updated_makeover">Event makeover complete! 💅</string>
+    <string name="event_updated_leveled">Event leveled up! ⬆️</string>
+    <string name="event_updated_live">Event 2.0 is live! 🔥</string>
+
+    <!-- Event Updated with Name -->
+    <string name="event_updated_with_name_glow_up">Event \'%1$s\' got a glow up! ✨</string>
+    <string name="event_updated_with_name_upgraded">Event \'%1$s\' has been upgraded! 🚀</string>
+    <string name="event_updated_with_name_makeover">Event \'%1$s\' makeover complete! 💅</string>
+    <string name="event_updated_with_name_leveled">Event \'%1$s\' leveled up! ⬆️</string>
+    <string name="event_updated_with_name_live">Event \'%1$s\' 2.0 is live! 🔥</string>
+
+    <!-- Event Deleted Messages -->
+    <string name="event_deleted_slayed">Event was slayed ☠️</string>
+    <string name="event_deleted_shadow_realm">Event sent to the shadow realm 👻</string>
+    <string name="event_deleted_left_chat">Event has left the chat 💬</string>
+    <string name="event_deleted_yeeted">Event yeeted successfully! 🗑️</string>
+    <string name="event_deleted_vanished">Event vanished into thin air! 💨</string>
+
+    <!-- Event Deleted with Name -->
+    <string name="event_deleted_with_name_slayed">Event \'%1$s\' was slayed ☠️</string>
+    <string name="event_deleted_with_name_shadow_realm">Event \'%1$s\' sent to shadow realm 👻</string>
+    <string name="event_deleted_with_name_left_chat">Event \'%1$s\' has left the chat 💬</string>
+    <string name="event_deleted_with_name_yeeted">Event \'%1$s\' yeeted successfully! 🗑️</string>
+    <string name="event_deleted_with_name_vanished">Event \'%1$s\' vanished! 💨</string>
+
+    <!-- Series Deleted Messages -->
+    <string name="series_deleted_ace">ACE! Event series have been deleted 👻</string>
+    <string name="series_deleted_bloodline">Entire event bloodline eliminated 💀</string>
+    <string name="series_deleted_dynasty">Event dynasty has fallen! 👑💥</string>
+    <string name="series_deleted_nuked">Series nuked from orbit! 🚀💥</string>
+    <string name="series_deleted_family_tree">Event family tree cut down! 🌳✂️</string>
+
+    <!-- Generic Error Messages -->
+    <string name="error_generic_idk">idk smth wrong happened 🙁</string>
+    <string name="error_generic_oopsie">Oopsie 🙁</string>
+    <string name="error_generic_sus">Something went sus 🤔</string>
+    <string name="error_generic_mission_failed">Mission failed, we\'ll get \'em next time 😤</string>
+    <string name="error_generic_motivation_404">Error 404: Motivation not found 🤷‍♂️</string>
+    <string name="error_generic_spaghetti">Oops, spaghetti code strikes again 🍝</string>
+    <string name="error_generic_calendar_gods">The calendar gods are angry today ⚡</string>
+    <string name="error_generic_houston">Houston, we have a problem 🚀</string>
+    <string name="error_generic_task_failed">Task failed successfully 📋❌</string>
+    <string name="error_generic_computer_says_no">Computer says no 💻❌</string>
+
+    <!-- Create Error Messages -->
+    <string name="error_create_spectacular">Event creation failed spectacularly 💥</string>
+    <string name="error_create_rejected">Calendar rejected your event 📅❌</string>
+    <string name="error_create_spawning">Event spawning error occurred 🐛</string>
+    <string name="error_create_cook_failed">Failed to cook your event 🍳💔</string>
+
+    <!-- Update Error Messages -->
+    <string name="error_update_makeover_wrong">Event makeover went wrong 💔</string>
+    <string name="error_update_mission_aborted">Update mission aborted 🚫</string>
+    <string name="error_update_refused">Event refused the upgrade 📱❌</string>
+    <string name="error_update_glow_up_failed">Glow up failed miserably ✨💔</string>
+
+    <!-- Delete Error Messages -->
+    <string name="error_delete_refused_slayed">Event refused to be slayed 🛡️</string>
+    <string name="error_delete_blocked">Delete attempt blocked 🚫</string>
+    <string name="error_delete_immortal">Event is immortal apparently 👻</string>
+    <string name="error_delete_rights_revoked">Deletion rights revoked 📋❌</string>
+
+    <!-- Seasonal Messages -->
+    <string name="seasonal_winter_magic">❄️ Winter magic applied!</string>
+    <string name="seasonal_ho_ho_ho">🎄 Ho ho ho!</string>
+    <string name="seasonal_frosty_success">⛄ Frosty success!</string>
+    <string name="seasonal_spring_vibes">🌸 Spring vibes!</string>
+    <string name="seasonal_fresh_start">🌱 Fresh start!</string>
+    <string name="seasonal_blooming_success">🦋 Blooming success!</string>
+    <string name="seasonal_summer_heat">☀️ Summer heat!</string>
+    <string name="seasonal_beach_mode">🏖️ Beach mode on!</string>
+    <string name="seasonal_sweet_success">🍉 Sweet success!</string>
+    <string name="seasonal_autumn_magic">🍂 Autumn magic!</string>
+    <string name="seasonal_spooky_success">🎃 Spooky success!</string>
+    <string name="seasonal_fall_vibes">🍁 Fall vibes!</string>
+    <string name="recurring_this_and_following_error">Something went wrong. Cannot perform this and following delete.</string>
 </resources>

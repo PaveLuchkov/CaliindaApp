@@ -5,7 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.lpavs.caliinda.data.local.CalendarEventEntity
+import com.lpavs.caliinda.core.data.repository.CalendarEventEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -9,9 +9,9 @@ import com.lpavs.caliinda.core.data.remote.EventDeleteMode
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
-import com.lpavs.caliinda.data.calendar.EventNetworkState
-import com.lpavs.caliinda.data.local.CalendarEventEntity
-import com.lpavs.caliinda.data.mapper.EventMapper
+import com.lpavs.caliinda.core.common.EventNetworkState
+import com.lpavs.caliinda.core.data.repository.CalendarEventEntity
+import com.lpavs.caliinda.core.data.repository.mapper.EventMapper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -1,9 +1,9 @@
-package com.lpavs.caliinda.data.mapper
+package com.lpavs.caliinda.core.data.repository.mapper
 
 import android.util.Log
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
-import com.lpavs.caliinda.data.local.CalendarEventEntity
+import com.lpavs.caliinda.core.data.repository.CalendarEventEntity
 import dagger.Provides
 import java.time.Instant
 import java.time.temporal.ChronoUnit

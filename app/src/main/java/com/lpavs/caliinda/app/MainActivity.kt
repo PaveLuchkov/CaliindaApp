@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.ui.Modifier
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
+import com.lpavs.caliinda.feature.calendar.ui.components.FunMessages
 import com.lpavs.caliinda.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -46,5 +47,9 @@ class MainActivity : ComponentActivity() {
         )
       }
     }
+  }
+  override fun onResume() {
+    super.onResume()
+    calendarViewModel.refreshCurrentVisibleDate()
   }
 }

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.data.local
+package com.lpavs.caliinda.core.data.repository
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
