@@ -31,11 +31,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
-import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog

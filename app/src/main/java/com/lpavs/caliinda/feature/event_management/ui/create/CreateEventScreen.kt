@@ -90,7 +90,7 @@ fun CreateEventScreen(
   var summary by remember { mutableStateOf("") }
   var description by remember { mutableStateOf("") }
   var location by remember { mutableStateOf("") }
-    val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
+  val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
 
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
@@ -98,7 +98,7 @@ fun CreateEventScreen(
   var generalError by remember { mutableStateOf<String?>(null) }
 
   val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
+  val uiState by viewModel.uiState.collectAsState()
   // Состояния для управления видимостью диалогов M3
   var showStartDatePicker by remember { mutableStateOf(false) }
   var showStartTimePicker by remember { mutableStateOf(false) }
@@ -110,15 +110,15 @@ fun CreateEventScreen(
   val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
   var eventDateTimeState by remember {
-  val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-  val defaultEndTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0)
-  var effectiveEndDate = initialDate
+    val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
+    val defaultEndTime = LocalTime.now().plusHours(2).withMinute(0).withSecond(0).withNano(0)
+    var effectiveEndDate = initialDate
 
-  if (defaultEndTime.isBefore(defaultStartTime)) {
+    if (defaultEndTime.isBefore(defaultStartTime)) {
       effectiveEndDate = initialDate.plusDays(1)
-  }
+    }
 
-  mutableStateOf(
+    mutableStateOf(
         EventDateTimeState(
             startDate = initialDate,
             startTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0),
@@ -131,12 +131,11 @@ fun CreateEventScreen(
             recurrenceRule = null))
   }
 
-
-    LaunchedEffect(key1 = true) {
+  LaunchedEffect(key1 = true) {
     viewModel.eventFlow.collect { event ->
       when (event) {
         is EventManagementUiEvent.ShowMessage -> {
-//          Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+          //          Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
         }
         is EventManagementUiEvent.OperationSuccess -> {
           onDismiss()
@@ -144,10 +143,11 @@ fun CreateEventScreen(
       }
     }
   }
-    LaunchedEffect(eventDateTimeState.startTime) {
-        suggestionsViewModel.updateSortContext(eventDateTimeState.startTime, eventDateTimeState.isAllDay)
-    }
-    val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
+  LaunchedEffect(eventDateTimeState.startTime) {
+    suggestionsViewModel.updateSortContext(
+        eventDateTimeState.startTime, eventDateTimeState.isAllDay)
+  }
+  val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
   fun formatEventTimesForSaving(
       state: EventDateTimeState,
@@ -248,7 +248,10 @@ fun CreateEventScreen(
               endDate.atTime(LocalTime.MAX).atZone(userTimeZone)
 
               val endDateTimeUtc =
-                  endDate.atTime(23, 59, 59).atZone(userTimeZone).withZoneSameInstant(ZoneOffset.UTC)
+                  endDate
+                      .atTime(23, 59, 59)
+                      .atZone(userTimeZone)
+                      .withZoneSameInstant(ZoneOffset.UTC)
 
               val untilString = untilFormatter.format(endDateTimeUtc)
               ruleParts.add("UNTIL=$untilString")
@@ -280,7 +283,6 @@ fun CreateEventScreen(
               recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
 
       viewModel.createEvent(request)
-
     } else {
       Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
     }
@@ -344,8 +346,7 @@ fun CreateEventScreen(
               onSummaryChange = { summary = it },
               onSummaryErrorChange = { summaryError = it },
               isLoading = uiState.isLoading,
-              suggestedChips = suggestedChips
-          )
+              suggestedChips = suggestedChips)
         }
         AdaptiveContainer {
           EventDateTimePicker(
@@ -402,7 +403,8 @@ fun CreateEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+                  val selectedDate =
+                      Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState =
                       currentDateTimeState.copy(
                           startDate = selectedDate,
@@ -466,7 +468,10 @@ fun CreateEventScreen(
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
-                currentDateTimeState.endDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
+                currentDateTimeState.endDate
+                    .atStartOfDay(userTimeZoneId)
+                    .toInstant()
+                    .toEpochMilli(),
             selectableDates =
                 object : SelectableDates {
                   val startMillis =
@@ -489,7 +494,8 @@ fun CreateEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+                  val selectedDate =
+                      Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
                 }
                 showEndDatePicker = false
@@ -567,9 +573,7 @@ fun CreateEventScreen(
                 object : SelectableDates {
                   override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     val selectedLocalDate =
-                        Instant.ofEpochMilli(utcTimeMillis)
-                            .atZone(userTimeZoneId)
-                            .toLocalDate()
+                        Instant.ofEpochMilli(utcTimeMillis).atZone(userTimeZoneId).toLocalDate()
                     return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
                   }
 

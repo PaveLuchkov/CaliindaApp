@@ -98,11 +98,11 @@ fun EditEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-    val uiState by viewModel.uiState.collectAsState()
+  val uiState by viewModel.uiState.collectAsState()
 
-    var generalError by remember { mutableStateOf<String?>(null) }
+  var generalError by remember { mutableStateOf<String?>(null) }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
-    
+
   val context = LocalContext.current
   val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
@@ -175,21 +175,21 @@ fun EditEventScreen(
     return summaryError == null && validationError == null
   }
 
-    LaunchedEffect(key1 = true) {
-        viewModel.eventFlow.collect { event ->
-            when (event) {
-                is EventManagementUiEvent.ShowMessage -> {
-                }
-                is EventManagementUiEvent.OperationSuccess -> {
-                    onDismiss()
-                }
-            }
+  LaunchedEffect(key1 = true) {
+    viewModel.eventFlow.collect { event ->
+      when (event) {
+        is EventManagementUiEvent.ShowMessage -> {}
+        is EventManagementUiEvent.OperationSuccess -> {
+          onDismiss()
         }
+      }
     }
-    LaunchedEffect(eventDateTimeState.startTime) {
-        suggestionsViewModel.updateSortContext(eventDateTimeState.startTime, eventDateTimeState.isAllDay)
-    }
-    val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
+  }
+  LaunchedEffect(eventDateTimeState.startTime) {
+    suggestionsViewModel.updateSortContext(
+        eventDateTimeState.startTime, eventDateTimeState.isAllDay)
+  }
+  val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null
@@ -226,10 +226,13 @@ fun EditEventScreen(
           RecurrenceEndType.DATE -> {
             eventDateTimeState.recurrenceEndDate?.let { endDate ->
               val userTimeZone = userTimeZoneId
-                endDate.atTime(LocalTime.MAX).atZone(userTimeZone)
+              endDate.atTime(LocalTime.MAX).atZone(userTimeZone)
 
               val endDateTimeUtc =
-                  endDate.atTime(23, 59, 59).atZone(userTimeZone).withZoneSameInstant(ZoneOffset.UTC)
+                  endDate
+                      .atTime(23, 59, 59)
+                      .atZone(userTimeZone)
+                      .withZoneSameInstant(ZoneOffset.UTC)
 
               val untilString = untilFormatter.format(endDateTimeUtc)
               ruleParts.add("UNTIL=$untilString")
@@ -290,7 +293,8 @@ fun EditEventScreen(
                                 stiffness = Spring.StiffnessMediumLow)
                           }))
             },
-            label = "SaveButtonAnimation") { targetSheetValue -> // TODO исправить чтобы выключалась на загрузке
+            label = "SaveButtonAnimation") { targetSheetValue
+              -> // TODO исправить чтобы выключалась на загрузке
               val expandedSize = ButtonDefaults.LargeContainerHeight
               val defaultSize = ButtonDefaults.MediumContainerHeight
 
@@ -384,7 +388,8 @@ fun EditEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+                  val selectedDate =
+                      Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState =
                       currentDateTimeState.copy(
                           startDate = selectedDate,
@@ -448,7 +453,10 @@ fun EditEventScreen(
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis =
-                currentDateTimeState.endDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
+                currentDateTimeState.endDate
+                    .atStartOfDay(userTimeZoneId)
+                    .toInstant()
+                    .toEpochMilli(),
             selectableDates =
                 object : SelectableDates {
                   val startMillis =
@@ -471,7 +479,8 @@ fun EditEventScreen(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+                  val selectedDate =
+                      Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
                   eventDateTimeState = currentDateTimeState.copy(endDate = selectedDate)
                 }
                 showEndDatePicker = false
@@ -547,9 +556,7 @@ fun EditEventScreen(
                 object : SelectableDates {
                   override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     val selectedLocalDate =
-                        Instant.ofEpochMilli(utcTimeMillis)
-                            .atZone(userTimeZoneId)
-                            .toLocalDate()
+                        Instant.ofEpochMilli(utcTimeMillis).atZone(userTimeZoneId).toLocalDate()
                     return !selectedLocalDate.isBefore(eventDateTimeState.startDate)
                   }
 
@@ -586,6 +593,7 @@ fun EditEventScreen(
         }
   }
 }
+
 // TODO
 fun parseCalendarEventToDateTimeState(
     event: EventDto,
@@ -670,7 +678,8 @@ fun parseCalendarEventToDateTimeState(
                   ZonedDateTime.parse(
                       value,
                       DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC))
-              recurrenceEndDate = zonedDateTime.withZoneSameInstant(ZoneId.of(userTimeZoneId)).toLocalDate()
+              recurrenceEndDate =
+                  zonedDateTime.withZoneSameInstant(ZoneId.of(userTimeZoneId)).toLocalDate()
               recurrenceEndType = RecurrenceEndType.DATE
             } catch (e: Exception) {
               Log.e("ParseToState", "Error parsing UNTIL value: $value - ${e.message}")
@@ -798,8 +807,7 @@ fun buildUpdateEventApiRequest(
     }
   }
 
-  if (selectedUpdateMode == EventUpdateMode.SINGLE_INSTANCE &&
-      recurrenceForApiRequest != null) {
+  if (selectedUpdateMode == EventUpdateMode.SINGLE_INSTANCE && recurrenceForApiRequest != null) {
     Log.w(
         "BuildUpdateRequest",
         "Recurrence data was calculated but will be ignored for SINGLE_INSTANCE update mode.")

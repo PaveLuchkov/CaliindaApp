@@ -5,11 +5,11 @@ import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
-import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,10 +30,10 @@ import javax.inject.Inject
 class CalendarViewModel
 @Inject
 constructor(
-  private val authManager: AuthManager,
-  private val calendarRepository: CalendarRepository,
-  private val aiInteractionManager: AiInteractionManager,
-  timeTicker: ITimeTicker,
+    private val authManager: AuthManager,
+    private val calendarRepository: CalendarRepository,
+    private val aiInteractionManager: AiInteractionManager,
+    timeTicker: ITimeTicker,
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -58,7 +58,6 @@ constructor(
   val aiMessage: StateFlow<String?> =
       aiInteractionManager.aiMessage // Сообщение от AI (Asking/Result)
 
-
   init {
     observeAuthState()
     observeAiState()
@@ -71,13 +70,12 @@ constructor(
         val previousUiState = _uiState.value
         _uiState.update { currentState ->
           currentState.copy(
-            isSignedIn = authState.isSignedIn,
-            userEmail = authState.userEmail,
-            displayName = authState.displayName,
-            photo = authState.photoUrl,
-            isLoading = calculateIsLoading(authLoading = authState.isLoading),
-            authorizationIntent = authState.authorizationIntent
-          )
+              isSignedIn = authState.isSignedIn,
+              userEmail = authState.userEmail,
+              displayName = authState.displayName,
+              photo = authState.photoUrl,
+              isLoading = calculateIsLoading(authLoading = authState.isLoading),
+              authorizationIntent = authState.authorizationIntent)
         }
 
         authState.authError?.let { error ->
@@ -100,8 +98,7 @@ constructor(
         }
         if (authState.isSignedIn && !previousUiState.isSignedIn) {
           Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
-          calendarRepository.setCurrentVisibleDate(
-              currentVisibleDate.value, forceRefresh = true)
+          calendarRepository.setCurrentVisibleDate(currentVisibleDate.value, forceRefresh = true)
         }
       }
     }
@@ -113,9 +110,8 @@ constructor(
         _uiState.update { currentUiState ->
           // Обновляем только состояние isLoading и isListening
           currentUiState.copy(
-            isListening = ai == AiVisualizerState.LISTENING,
-            isLoading = calculateIsLoading(aiState = ai)
-          )
+              isListening = ai == AiVisualizerState.LISTENING,
+              isLoading = calculateIsLoading(aiState = ai))
         }
         if (ai == AiVisualizerState.RESULT) {
           Log.d(TAG, "AI observer: Interaction finished with RESULT, triggering calendar refresh.")
@@ -142,10 +138,10 @@ constructor(
   // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
   /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
   private fun calculateIsLoading(
-    authLoading: Boolean =
+      authLoading: Boolean =
           authManager.authState.value.isLoading, // Берем текущие значения по умолчанию
-    networkState: EventNetworkState = calendarRepository.rangeNetworkState.value,
-    aiState: AiVisualizerState = aiInteractionManager.aiState.value,
+      networkState: EventNetworkState = calendarRepository.rangeNetworkState.value,
+      aiState: AiVisualizerState = aiInteractionManager.aiState.value,
   ): Boolean {
     val calendarLoading = networkState is EventNetworkState.Loading
     val aiThinking = aiState == AiVisualizerState.THINKING
@@ -176,7 +172,6 @@ constructor(
     authManager.clearAuthorizationIntent()
   }
 
-
   fun onSignInRequiredDialogDismissed() {
     _uiState.update { it.copy(showSignInRequiredDialog = false) }
     Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
@@ -186,18 +181,14 @@ constructor(
   fun onVisibleDateChanged(newDate: LocalDate) {
     if (newDate == _currentVisibleDate.value) return
     _currentVisibleDate.value = newDate
-    viewModelScope.launch {
-      calendarRepository.setCurrentVisibleDate(newDate)
-    }
+    viewModelScope.launch { calendarRepository.setCurrentVisibleDate(newDate) }
   }
 
   fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
       calendarRepository.getEventsFlowForDate(date)
 
   fun refreshCurrentVisibleDate() {
-    viewModelScope.launch {
-      calendarRepository.refreshDate(currentVisibleDate.value)
-    }
+    viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value) }
   }
 
   // --- ДЕЙСТВИЯ AI ---

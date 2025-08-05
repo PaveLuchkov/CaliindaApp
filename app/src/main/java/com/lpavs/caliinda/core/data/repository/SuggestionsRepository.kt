@@ -11,9 +11,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SuggestionsRepository @Inject constructor(private val dataStore: DataStore<Preferences>)
+class SuggestionsRepository @Inject constructor(private val dataStore: DataStore<Preferences>) {
 
-{
   private object PreferencesKeys {
     val SUGGESTION_WEIGHTS = stringPreferencesKey("suggestion_weights")
   }
@@ -27,14 +26,18 @@ class SuggestionsRepository @Inject constructor(private val dataStore: DataStore
   }
 
   suspend fun getWeights(): Map<String, Int> {
-    return dataStore.data.map { preferences ->
-      preferences.asMap().keys
-        .filter { it.name.endsWith("_weight") }
-        .associate { key ->
-          val chipKey = key.name.removeSuffix("_weight")
-          val weight = preferences[key] as? Int ?: 0
-          chipKey to weight
+    return dataStore.data
+        .map { preferences ->
+          preferences
+              .asMap()
+              .keys
+              .filter { it.name.endsWith("_weight") }
+              .associate { key ->
+                val chipKey = key.name.removeSuffix("_weight")
+                val weight = preferences[key] as? Int ?: 0
+                chipKey to weight
+              }
         }
-    }.first()
+        .first()
   }
 }

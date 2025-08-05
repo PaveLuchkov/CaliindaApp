@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.core.ui.theme
 
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 // --- Константы для UI и логики ---
 object CalendarUiDefaults {
@@ -23,7 +22,6 @@ object CalendarUiDefaults {
 
   // Для настроек
   val SettingsItemCornerRadius = 25.dp
-
 
   // Тени и Z-index
   val CurrentEventElevation = 8.dp

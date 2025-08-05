@@ -10,5 +10,4 @@ class CaliindaApplication : Application() {
     super.onCreate()
     FunMessages.resetSession()
   }
-
 }

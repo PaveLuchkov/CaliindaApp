@@ -23,53 +23,53 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    @Provides
-    @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        return OkHttpClient.Builder()
-            .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .addInterceptor(
-                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
-            .build()
-    }
+  @Provides
+  @Singleton
+  fun provideOkHttpClient(): OkHttpClient {
+    return OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .addInterceptor(
+            HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+        .build()
+  }
 
-    @Provides
-    @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient, @BackendUrl baseUrl: String): Retrofit {
-        val json = Json { ignoreUnknownKeys = true }
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(okHttpClient)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-    }
+  @Provides
+  @Singleton
+  fun provideRetrofit(okHttpClient: OkHttpClient, @BackendUrl baseUrl: String): Retrofit {
+    val json = Json { ignoreUnknownKeys = true }
+    return Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .client(okHttpClient)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+  }
 
-    @Provides
-    @Singleton
-    fun provideCalendarApiService(retrofit: Retrofit): CalendarApiService {
-        return retrofit.create(CalendarApiService::class.java)
-    }
+  @Provides
+  @Singleton
+  fun provideCalendarApiService(retrofit: Retrofit): CalendarApiService {
+    return retrofit.create(CalendarApiService::class.java)
+  }
 }
 
 @Module
 @InstallIn(SingletonComponent::class) // Живет пока живет приложение
 object DatabaseModule {
 
-    @Provides
-    @Singleton // Гарантирует один экземпляр базы данных
-    fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
-        return Room.databaseBuilder(appContext, AppDatabase::class.java, "caliindar_database")
-            // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
-            // Но для production нужно реализовать правильные миграции!
-            .fallbackToDestructiveMigration(false)
-            .build()
-    }
+  @Provides
+  @Singleton // Гарантирует один экземпляр базы данных
+  fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
+    return Room.databaseBuilder(appContext, AppDatabase::class.java, "caliindar_database")
+        // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
+        // Но для production нужно реализовать правильные миграции!
+        .fallbackToDestructiveMigration(false)
+        .build()
+  }
 
-    @Provides
-    @Singleton // DAO тоже должен быть синглтоном, т.к. зависит от синглтона БД
-    fun provideEventDao(appDatabase: AppDatabase): CalendarLocalDataSource {
-        return appDatabase.eventDao()
-    }
+  @Provides
+  @Singleton // DAO тоже должен быть синглтоном, т.к. зависит от синглтона БД
+  fun provideEventDao(appDatabase: AppDatabase): CalendarLocalDataSource {
+    return appDatabase.eventDao()
+  }
 }

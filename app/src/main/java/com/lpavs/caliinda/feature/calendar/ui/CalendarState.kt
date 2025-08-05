@@ -2,8 +2,6 @@ package com.lpavs.caliinda.feature.calendar.ui
 
 import android.app.PendingIntent
 import android.net.Uri
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
 
 data class CalendarState(
     val isSignedIn: Boolean = false,

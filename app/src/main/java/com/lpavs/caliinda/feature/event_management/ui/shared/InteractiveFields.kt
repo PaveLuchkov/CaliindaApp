@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -69,7 +68,12 @@ fun CustomOutlinedTextField(
 }
 
 @Composable
-fun ChipsRow(chips: List<SugNameChips>, onChipClick: (SugNameChips) -> Unit, enabled: Boolean, lazyListState: LazyListState) {
+fun ChipsRow(
+    chips: List<SugNameChips>,
+    onChipClick: (SugNameChips) -> Unit,
+    enabled: Boolean,
+    lazyListState: LazyListState
+) {
   LazyRow(
       state = lazyListState,
       modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
@@ -77,7 +81,7 @@ fun ChipsRow(chips: List<SugNameChips>, onChipClick: (SugNameChips) -> Unit, ena
       contentPadding = PaddingValues(cuid.padding)) {
         items(chips, key = { it.name }) { chip ->
           SuggestionChip(
-              onClick = { onChipClick(chip)  },
+              onClick = { onChipClick(chip) },
               label = { Text(chip.name) },
               modifier = Modifier.height(35.dp),
               enabled = enabled)
@@ -125,7 +129,7 @@ private fun ModernClickableTextField(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val haptics = LocalHapticFeedback.current
+  val haptics = LocalHapticFeedback.current
   Box(
       modifier =
           modifier
@@ -139,12 +143,11 @@ private fun ModernClickableTextField(
                         enabled = !isLoading,
                         onClick = onClick,
                         onLongClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onLongClick?.invoke()
+                          haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                          onLongClick?.invoke()
                         },
                         indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ),
+                        interactionSource = remember { MutableInteractionSource() }),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically) {
               Text(text = value, color = colorScheme.onSecondaryContainer)

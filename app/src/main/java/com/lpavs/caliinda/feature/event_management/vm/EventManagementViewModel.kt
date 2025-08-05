@@ -1,10 +1,8 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
 import android.util.Log
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.EventDeleteMode
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
@@ -15,13 +13,6 @@ import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.calendar.ui.components.FunMessages
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -32,6 +23,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import javax.inject.Inject
 
 @HiltViewModel
 class EventManagementViewModel
@@ -67,17 +65,17 @@ constructor(
           calendarRepository.updateEvent(
               eventId = originalEvent.id, updateData = updatedEventData, mode = modeFromUi)
       _uiState.update { it.copy(isLoading = false) }
-        if (result.isSuccess) {
-            // Обычные случайные сообщения для обновления
-            val message = FunMessages.getEventUpdatedMessage(originalEvent.summary)
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-        } else {
-            val message = result.exceptionOrNull()?.message?.let {
-                UiText.DynamicString(it)
-            } ?: FunMessages.getUpdateErrorMessage()
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-        }
+      if (result.isSuccess) {
+        // Обычные случайные сообщения для обновления
+        val message = FunMessages.getEventUpdatedMessage(originalEvent.summary)
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+      } else {
+        val message =
+            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                ?: FunMessages.getUpdateErrorMessage()
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+      }
     }
   }
 
@@ -90,13 +88,14 @@ constructor(
       _uiState.update { it.copy(isLoading = false) }
 
       if (result.isSuccess) {
-          val message = FunMessages.getEventCreatedMessage(request.summary)
+        val message = FunMessages.getEventCreatedMessage(request.summary)
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
         _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
       } else {
-          val message = result.exceptionOrNull()?.message?.let {
-              UiText.DynamicString(it)} ?: FunMessages.getCreateErrorMessage()
-              _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+        val message =
+            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                ?: FunMessages.getCreateErrorMessage()
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
       }
     }
   }
@@ -148,18 +147,16 @@ constructor(
 
       val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
 
-    if (result.isSuccess) {
+      if (result.isSuccess) {
         val message = FunMessages.getEventDeletedMessage(eventToDelete.summary)
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
         _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-    } else {
-        val errorMessage: UiText = result.exceptionOrNull()?.message?.let {
-            UiText.DynamicString(it)
-        } ?: run {
-            FunMessages.getDeleteErrorMessage()
-        }
+      } else {
+        val errorMessage: UiText =
+            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                ?: run { FunMessages.getDeleteErrorMessage() }
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-    }
+      }
     }
   }
 
@@ -178,18 +175,16 @@ constructor(
         viewModelScope.launch {
           val result =
               calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.INSTANCE_ONLY)
-            if (result.isSuccess) {
-                val message = FunMessages.getSeriesDeletedMessage()
-                _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-            } else {
-                val errorMessage: UiText = result.exceptionOrNull()?.message?.let {
-                    UiText.DynamicString(it)
-                } ?: run {
-                    FunMessages.getGenericErrorMessage()
-                }
-                _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-            }
+          if (result.isSuccess) {
+            val message = FunMessages.getSeriesDeletedMessage()
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+          } else {
+            val errorMessage: UiText =
+                result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                    ?: run { FunMessages.getGenericErrorMessage() }
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
+          }
         }
       }
 
@@ -201,18 +196,16 @@ constructor(
         val idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
         viewModelScope.launch {
           val result = calendarRepository.deleteEvent(idForBackendCall, EventDeleteMode.DEFAULT)
-            if (result.isSuccess) {
-                val message = FunMessages.getSeriesDeletedMessage()
-                _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-            } else {
-                val errorMessage: UiText = result.exceptionOrNull()?.message?.let {
-                    UiText.DynamicString(it)
-                } ?: run {
-                    FunMessages.getGenericErrorMessage()
-                }
-                _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-            }
+          if (result.isSuccess) {
+            val message = FunMessages.getSeriesDeletedMessage()
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+          } else {
+            val errorMessage: UiText =
+                result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                    ?: run { FunMessages.getGenericErrorMessage() }
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
+          }
         }
       }
     }
@@ -231,9 +224,7 @@ constructor(
       Log.e(
           TAG,
           "Cannot perform 'this and following' delete: Event ${eventInstance.id} has no recurrence rule.")
-      _uiState.update {
-        it.copy(operationError = FunMessages.getGenericErrorMessage())
-      }
+      _uiState.update { it.copy(operationError = FunMessages.getGenericErrorMessage()) }
       return
     }
 
@@ -251,9 +242,7 @@ constructor(
                 TAG,
                 "Failed to parse event start time in any known format: ${eventInstance.startTime}",
                 e2)
-            _uiState.update {
-              it.copy(operationError = FunMessages.getGenericErrorMessage())
-            }
+            _uiState.update { it.copy(operationError = FunMessages.getGenericErrorMessage()) }
             return
           }
         }
@@ -283,18 +272,16 @@ constructor(
               eventId = masterEventId,
               updateData = updateRequest,
               mode = EventUpdateMode.ALL_IN_SERIES)
-        if (result.isSuccess) {
-            val message = FunMessages.getSeriesDeletedMessage()
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-        } else {
-            val errorMessage: UiText = result.exceptionOrNull()?.message?.let {
-                UiText.DynamicString(it)
-            } ?: run {
-                FunMessages.getGenericErrorMessage()
-            }
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-        }
+      if (result.isSuccess) {
+        val message = FunMessages.getSeriesDeletedMessage()
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+      } else {
+        val errorMessage: UiText =
+            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                ?: run { FunMessages.getGenericErrorMessage() }
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
+      }
     }
   }
 

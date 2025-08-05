@@ -38,16 +38,14 @@ fun EventNameSection(
       enabled = !isLoading,
   )
 
-    val lazyListState = rememberLazyListState()
-    LaunchedEffect(suggestedChips) {
-        lazyListState.animateScrollToItem(index = 0)
-    }
+  val lazyListState = rememberLazyListState()
+  LaunchedEffect(suggestedChips) { lazyListState.animateScrollToItem(index = 0) }
   ChipsRow(
       chips = suggestedChips,
       onChipClick = { chip ->
-          onSummaryChange(chip.fullText)
-          suggestionsViewModel.onChipClicked(chip) },
+        onSummaryChange(chip.fullText)
+        suggestionsViewModel.onChipClicked(chip)
+      },
       enabled = !isLoading,
       lazyListState = lazyListState)
 }
-

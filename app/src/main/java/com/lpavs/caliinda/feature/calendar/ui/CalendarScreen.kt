@@ -73,7 +73,7 @@ fun CalendarScreen(
     eventManagementViewModel: EventManagementViewModel
 ) {
   val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
-    val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
+  val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val aiState by calendarViewModel.aiState.collectAsState()
   val eventManagementState by eventManagementViewModel.uiState.collectAsState()
@@ -148,28 +148,27 @@ fun CalendarScreen(
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
 
-    LaunchedEffect(key1 = true) {
-        calendarViewModel.eventFlow.collect { event ->
-            when (event) {
-                is CalendarUiEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
-                }
-            }
+  LaunchedEffect(key1 = true) {
+    calendarViewModel.eventFlow.collect { event ->
+      when (event) {
+        is CalendarUiEvent.ShowMessage -> {
+          snackbarHostState.showSnackbar(event.message)
         }
+      }
     }
+  }
 
-// события от EventManagementViewModel (успех/ошибка CRUD операций)
-    LaunchedEffect(key1 = true) {
-        eventManagementViewModel.eventFlow.collect { event ->
-            when (event) {
-                is EventManagementUiEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message.asString(context))
-                }
-                is EventManagementUiEvent.OperationSuccess -> {
-                }
-            }
+  // события от EventManagementViewModel (успех/ошибка CRUD операций)
+  LaunchedEffect(key1 = true) {
+    eventManagementViewModel.eventFlow.collect { event ->
+      when (event) {
+        is EventManagementUiEvent.ShowMessage -> {
+          snackbarHostState.showSnackbar(event.message.asString(context))
         }
+        is EventManagementUiEvent.OperationSuccess -> {}
+      }
     }
+  }
   // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
   LaunchedEffect(Unit) {
@@ -179,7 +178,8 @@ fun CalendarScreen(
     calendarViewModel.updatePermissionStatus(hasPermission)
   }
 
-  if (eventManagementState.showRecurringEditOptionsDialog && eventManagementState.eventBeingEdited != null) {
+  if (eventManagementState.showRecurringEditOptionsDialog &&
+      eventManagementState.eventBeingEdited != null) {
     RecurringEventEditOptionsDialog( // Вам нужно создать этот Composable
         eventName = eventManagementState.eventBeingEdited!!.summary,
         onDismiss = {
@@ -290,9 +290,7 @@ fun CalendarScreen(
                 val selectedMillis = datePickerState.selectedDateMillis
                 if (selectedMillis != null) {
                   val selectedDate =
-                      Instant.ofEpochMilli(selectedMillis)
-                          .atZone(userTimeZoneId)
-                          .toLocalDate()
+                      Instant.ofEpochMilli(selectedMillis).atZone(userTimeZoneId).toLocalDate()
 
                   // Проверяем, изменилась ли дата
                   if (selectedDate != currentVisibleDate) {
@@ -394,7 +392,8 @@ fun CalendarScreen(
           }
     }
   }
-  if (eventManagementState.showEventDetailedView && eventManagementState.eventForDetailedView != null) {
+  if (eventManagementState.showEventDetailedView &&
+      eventManagementState.eventForDetailedView != null) {
     CustomEventDetailsDialog(
         event = eventManagementState.eventForDetailedView!!, // Передаем событие
         onDismissRequest = { eventManagementViewModel.cancelEventDetails() },

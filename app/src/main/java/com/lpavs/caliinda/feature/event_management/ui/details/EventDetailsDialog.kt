@@ -70,8 +70,7 @@ fun CustomEventDetailsDialog(
   val timeFormatterLambda: (EventDto) -> String =
       remember(viewModel, userTimeZone, currentLocale) {
         { event ->
-          DateTimeFormatterUtil.formatEventDetailsTime(
-              context, event, userTimeZone, currentLocale)
+          DateTimeFormatterUtil.formatEventDetailsTime(context, event, userTimeZone, currentLocale)
         }
       }
   val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()

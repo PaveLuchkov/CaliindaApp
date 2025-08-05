@@ -2,16 +2,15 @@ package com.lpavs.caliinda.core.data.repository.mapper
 
 import android.util.Log
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.core.data.repository.CalendarEventEntity
-import dagger.Provides
+import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EventMapper @Inject constructor()  {
+class EventMapper @Inject constructor() {
 
   private val TAG = "EventMapper"
 
