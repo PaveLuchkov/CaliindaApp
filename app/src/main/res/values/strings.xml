@@ -33,6 +33,7 @@
 
     <string name="event_created">Event created successfully</string>
     <string name="error">Error</string>
+    <string name="funny_error">Unknown error </string>
 
     <string name="speech_recognizer_error_audio">Audio error</string>
     <string name="speech_recognizer_error_client">Client error</string>

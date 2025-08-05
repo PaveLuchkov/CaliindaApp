@@ -149,7 +149,7 @@ fun CalendarScreen(
   }
 
     LaunchedEffect(key1 = true) {
-        calendarViewModel.eventFlow.collect { event -> // TODO сделать
+        calendarViewModel.eventFlow.collect { event ->
             when (event) {
                 is CalendarUiEvent.ShowMessage -> {
                     snackbarHostState.showSnackbar(event.message)

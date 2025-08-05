@@ -1,8 +1,10 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
 import android.util.Log
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.EventDeleteMode
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
@@ -64,10 +66,10 @@ constructor(
               eventId = originalEvent.id, updateData = updatedEventData, mode = modeFromUi)
       _uiState.update { it.copy(isLoading = false) }
       if (result.isSuccess) {
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage("Событие успешно обновлено")) // TODO R
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage("'${originalEvent.summary}' updated")) // TODO R
         _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
       } else {
-        val errorMessage = result.exceptionOrNull()?.message ?: "Ошибка обновления"
+        val errorMessage = result.exceptionOrNull()?.message ?: "Error updating '${originalEvent.summary}'"
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
       }
     }
@@ -82,10 +84,10 @@ constructor(
       _uiState.update { it.copy(isLoading = false) }
 
       if (result.isSuccess) {
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage("Событие успешно создано"))
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage("Created ${request.summary} ✅"))
         _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
       } else {
-        val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error 😞"
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
       }
     }
@@ -139,11 +141,10 @@ constructor(
       val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
 
       if (result.isSuccess) {
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage("События успешно удалены")) // TODO
+        _eventFlow.emit(EventManagementUiEvent.ShowMessage("Event ${eventToDelete.summary} destroyed 🗑️")) // TODO
         _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
       } else {
-        val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" // TODO
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
+        val errorMessage = result.exceptionOrNull()?.message ?:  "${(R.string.error)}" // TODO
       }
     }
   }
@@ -164,10 +165,10 @@ constructor(
           val result =
               calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.INSTANCE_ONLY)
           if (result.isSuccess) {
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage("Событие успешно удалено")) // TODO
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage("Event ${eventToDelete.summary} was slayed ☠️")) // TODO
             _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
           } else {
-            val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" // TODO
+            val errorMessage = result.exceptionOrNull()?.message ?: "idk smth wrong happened 🙁" // TODO
             _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
           }
         }
@@ -182,10 +183,10 @@ constructor(
         viewModelScope.launch {
           val result = calendarRepository.deleteEvent(idForBackendCall, EventDeleteMode.DEFAULT)
           if (result.isSuccess) {
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage("События успешно удалены")) // TODO
+            _eventFlow.emit(EventManagementUiEvent.ShowMessage("ACE! Event series have been deleted 👻")) // TODO
             _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
           } else {
-            val errorMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка" // TODO
+            val errorMessage = result.exceptionOrNull()?.message ?: "Oopsie 🙁" // TODO
             _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
           }
         }

@@ -131,7 +131,7 @@ fun CreateEventScreen(
     viewModel.eventFlow.collect { event ->
       when (event) {
         is EventManagementUiEvent.ShowMessage -> {
-          Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+//          Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
         }
         is EventManagementUiEvent.OperationSuccess -> {
           onDismiss()

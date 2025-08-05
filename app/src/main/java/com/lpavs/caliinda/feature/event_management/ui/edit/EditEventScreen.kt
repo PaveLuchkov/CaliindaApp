@@ -169,21 +169,19 @@ fun EditEventScreen(
     return summaryError == null && validationError == null
   }
 
-    LaunchedEffect(key1 = true) { // key1 = true, чтобы эффект запустился один раз за композицию
+    LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is EventManagementUiEvent.ShowMessage -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
                 is EventManagementUiEvent.OperationSuccess -> {
-                    onDismiss() // Закрываем экран/диалог
+                    onDismiss()
                 }
             }
         }
     }
 
   val onSaveClick: () -> Unit = saveLambda@{
-      isLoading = true
     generalError = null
     if (validateInput()) {
       val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
@@ -259,9 +257,7 @@ fun EditEventScreen(
 
       viewModel.confirmEventUpdate(
           updatedEventData = updateRequest, modeFromUi = selectedUpdateMode)
-        isLoading = false
     } else {
-        isLoading = false
       Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
     }
   }
