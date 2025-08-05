@@ -90,7 +90,7 @@ fun EventDateTimePicker(
     onRequestShowStartTimePicker: () -> Unit,
     onRequestShowEndDatePicker: () -> Unit,
     onRequestShowEndTimePicker: () -> Unit,
-    onRequestShowRecurrenceEndDatePicker: () -> Unit
+    onRequestShowRecurrenceEndDatePicker: () -> Unit,
 ) {
   Log.d("EventDateTimePicker", "Received state: $state")
   var isAllDay by remember { mutableStateOf(state.isAllDay) }
@@ -339,7 +339,18 @@ fun EventDateTimePicker(
                                       deviceTimeFormatter,
                                       isLoading,
                                       onRequestShowStartTimePicker,
-                                      Modifier.width(100.dp))
+                                      Modifier.width(100.dp),
+                                      onLongClick = {
+                                          val selectedTime = LocalTime.now()
+                                          var newEndTime = state.endTime
+                                          if (state.startDate == state.endDate &&
+                                              state.endTime != null &&
+                                              !selectedTime.isBefore(state.endTime)) {
+                                              newEndTime = selectedTime.plusHours(1).withNano(0)
+                                          }
+                                          onStateChange(state.copy(startTime = selectedTime, endTime = newEndTime))
+                                      }
+                                  )
                                   Box(
                                       modifier =
                                           Modifier.width(10.dp)
@@ -350,7 +361,8 @@ fun EventDateTimePicker(
                                       deviceTimeFormatter,
                                       isLoading,
                                       onRequestShowEndTimePicker,
-                                      Modifier.width(100.dp))
+                                      Modifier.width(100.dp),
+                                      )
                                 }
                             DatePickerField(
                                 state.startDate,
@@ -371,7 +383,17 @@ fun EventDateTimePicker(
                                 deviceTimeFormatter,
                                 isLoading,
                                 onRequestShowStartTimePicker,
-                                Modifier.weight(1f))
+                                Modifier.weight(1f),
+                                onLongClick = {
+                                    val selectedTime = LocalTime.now()
+                                    var newEndTime = state.endTime
+                                    if (state.startDate == state.endDate &&
+                                        state.endTime != null &&
+                                        !selectedTime.isBefore(state.endTime)) {
+                                        newEndTime = selectedTime.plusHours(1).withNano(0)
+                                    }
+                                    onStateChange(state.copy(startTime = selectedTime, endTime = newEndTime))
+                                })
                             TimePickerField(
                                 state.endTime,
                                 deviceTimeFormatter,

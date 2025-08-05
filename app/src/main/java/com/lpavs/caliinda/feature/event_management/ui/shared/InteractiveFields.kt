@@ -2,6 +2,7 @@ package com.lpavs.caliinda.feature.event_management.ui.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.ui.theme.cuid
@@ -103,12 +106,14 @@ internal fun TimePickerField(
     timeFormatter: DateTimeFormatter,
     isLoading: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
 ) {
   ModernClickableTextField(
       value = time?.format(timeFormatter) ?: "--:--",
       isLoading = isLoading,
       onClick = onClick,
+      onLongClick = onLongClick,
       modifier = modifier)
 }
 
@@ -118,7 +123,9 @@ private fun ModernClickableTextField(
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
 ) {
+    val haptics = LocalHapticFeedback.current
   Box(
       modifier =
           modifier
@@ -128,11 +135,16 @@ private fun ModernClickableTextField(
         Row(
             modifier =
                 Modifier.fillMaxSize()
-                    .clickable(
+                    .combinedClickable(
                         enabled = !isLoading,
                         onClick = onClick,
+                        onLongClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onLongClick?.invoke()
+                        },
                         indication = null,
-                        interactionSource = remember { MutableInteractionSource() }),
+                        interactionSource = remember { MutableInteractionSource() }
+                    ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically) {
               Text(text = value, color = colorScheme.onSecondaryContainer)
