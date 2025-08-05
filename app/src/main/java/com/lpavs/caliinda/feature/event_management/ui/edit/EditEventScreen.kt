@@ -44,6 +44,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,8 +94,9 @@ fun EditEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  var isLoading by remember { mutableStateOf(false) }
-  var generalError by remember { mutableStateOf<String?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+
+    var generalError by remember { mutableStateOf<String?>(null) }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
     
   val context = LocalContext.current
@@ -290,10 +292,10 @@ fun EditEventScreen(
 
               Button(
                   onClick = onSaveClick,
-                  enabled = !isLoading,
+                  enabled = !uiState.isLoading,
                   modifier = Modifier.heightIn(size),
                   contentPadding = ButtonDefaults.contentPaddingFor(size)) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                       LoadingIndicator(
                           color = colorScheme.onPrimary,
                           modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
@@ -316,7 +318,7 @@ fun EditEventScreen(
           summaryError = summaryError,
           onSummaryChange = { summary = it },
           onSummaryErrorChange = { summaryError = it },
-          isLoading = isLoading)
+          isLoading = uiState.isLoading)
     }
     AdaptiveContainer {
       EventDateTimePicker(
@@ -325,7 +327,7 @@ fun EditEventScreen(
             eventDateTimeState = newState
             validationError = null
           },
-          isLoading = isLoading,
+          isLoading = uiState.isLoading,
           onRequestShowStartDatePicker = { showStartDatePicker = true },
           onRequestShowStartTimePicker = { showStartTimePicker = true },
           onRequestShowEndDatePicker = { showEndDatePicker = true },
@@ -342,7 +344,7 @@ fun EditEventScreen(
           label = { Text(stringResource(R.string.description)) },
           modifier = Modifier.fillMaxWidth().height(100.dp),
           maxLines = 4,
-          enabled = !isLoading,
+          enabled = !uiState.isLoading,
           shape = RoundedCornerShape(25.dp))
       OutlinedTextField(
           value = location,
@@ -350,7 +352,7 @@ fun EditEventScreen(
           label = { Text(stringResource(R.string.location)) },
           modifier = Modifier.fillMaxWidth(),
           singleLine = true,
-          enabled = !isLoading,
+          enabled = !uiState.isLoading,
           shape = RoundedCornerShape(25.dp))
     }
     generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }

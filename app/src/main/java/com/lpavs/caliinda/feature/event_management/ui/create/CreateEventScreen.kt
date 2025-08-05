@@ -44,6 +44,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +65,11 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameS
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
+import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiState
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -90,11 +95,10 @@ fun CreateEventScreen(
   var summaryError by remember { mutableStateOf<String?>(null) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  var isLoading by remember { mutableStateOf(false) }
   var generalError by remember { mutableStateOf<String?>(null) }
 
   val context = LocalContext.current
-
+    val uiState by viewModel.uiState.collectAsState()
   // Состояния для управления видимостью диалогов M3
   var showStartDatePicker by remember { mutableStateOf(false) }
   var showStartTimePicker by remember { mutableStateOf(false) }
@@ -196,7 +200,6 @@ fun CreateEventScreen(
   }
 
   val onSaveClick: () -> Unit = saveLambda@{
-      isLoading = true
     generalError = null
     if (validateInput()) {
       val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
@@ -272,11 +275,9 @@ fun CreateEventScreen(
               recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
 
       viewModel.createEvent(request)
-        isLoading = false
 
     } else {
       Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
-        isLoading = false
     }
   }
 
@@ -308,10 +309,10 @@ fun CreateEventScreen(
 
               Button(
                   onClick = onSaveClick,
-                  enabled = !isLoading,
+                  enabled = !uiState.isLoading,
                   modifier = Modifier.heightIn(size),
                   contentPadding = ButtonDefaults.contentPaddingFor(size)) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                       LoadingIndicator(
                           color = colorScheme.onPrimary,
                           modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
@@ -337,7 +338,7 @@ fun CreateEventScreen(
               summaryError = summaryError,
               onSummaryChange = { summary = it },
               onSummaryErrorChange = { summaryError = it },
-              isLoading = isLoading)
+              isLoading = uiState.isLoading)
         }
         AdaptiveContainer {
           EventDateTimePicker(
@@ -346,7 +347,7 @@ fun CreateEventScreen(
                 eventDateTimeState = newState
                 validationError = null
               },
-              isLoading = isLoading,
+              isLoading = uiState.isLoading,
               onRequestShowStartDatePicker = { showStartDatePicker = true },
               onRequestShowStartTimePicker = { showStartTimePicker = true },
               onRequestShowEndDatePicker = { showEndDatePicker = true },
@@ -363,7 +364,7 @@ fun CreateEventScreen(
               label = { Text(stringResource(R.string.description)) },
               modifier = Modifier.fillMaxWidth().height(100.dp),
               maxLines = 4,
-              enabled = !isLoading,
+              enabled = !uiState.isLoading,
               shape = RoundedCornerShape(25.dp))
           OutlinedTextField(
               value = location,
@@ -371,7 +372,7 @@ fun CreateEventScreen(
               label = { Text(stringResource(R.string.location)) },
               modifier = Modifier.fillMaxWidth(),
               singleLine = true,
-              enabled = !isLoading,
+              enabled = !uiState.isLoading,
               shape = RoundedCornerShape(25.dp))
         }
         generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
