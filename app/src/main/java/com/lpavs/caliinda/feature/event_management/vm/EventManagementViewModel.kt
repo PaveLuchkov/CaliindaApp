@@ -146,7 +146,7 @@ constructor(
       }
 
       val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
-
+        _uiState.update { it.copy(isLoading = false) }
       if (result.isSuccess) {
         val message = FunMessages.getEventDeletedMessage(eventToDelete.summary)
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
@@ -175,6 +175,8 @@ constructor(
         viewModelScope.launch {
           val result =
               calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.INSTANCE_ONLY)
+            _uiState.update { it.copy(isLoading = false) }
+
           if (result.isSuccess) {
             val message = FunMessages.getSeriesDeletedMessage()
             _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
@@ -196,6 +198,8 @@ constructor(
         val idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
         viewModelScope.launch {
           val result = calendarRepository.deleteEvent(idForBackendCall, EventDeleteMode.DEFAULT)
+            _uiState.update { it.copy(isLoading = false) }
+
           if (result.isSuccess) {
             val message = FunMessages.getSeriesDeletedMessage()
             _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
@@ -272,6 +276,7 @@ constructor(
               eventId = masterEventId,
               updateData = updateRequest,
               mode = EventUpdateMode.ALL_IN_SERIES)
+        _uiState.update { it.copy(isLoading = false) }
       if (result.isSuccess) {
         val message = FunMessages.getSeriesDeletedMessage()
         _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))

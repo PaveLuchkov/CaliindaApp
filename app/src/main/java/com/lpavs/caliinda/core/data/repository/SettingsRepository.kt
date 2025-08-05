@@ -24,10 +24,9 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
   val botTemperFlow: Flow<String> =
       dataStore.data
           .catch { exception ->
-            // Обработка ошибок чтения DataStore
             if (exception is IOException) {
               Log.e(TAG, "Error reading preferences.", exception)
-              emit(emptyPreferences()) // Возвращаем пустые преференсы при ошибке IO
+              emit(emptyPreferences())
             } else {
               throw exception
             }
