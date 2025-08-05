@@ -54,6 +54,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils
@@ -64,12 +66,9 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateT
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiState
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -81,7 +80,8 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CreateEventScreen(
-    viewModel: EventManagementViewModel,
+    viewModel: EventManagementViewModel = hiltViewModel(),
+    suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
     userTimeZone: String,
     initialDate: LocalDate,
     onDismiss: () -> Unit,
@@ -131,7 +131,8 @@ fun CreateEventScreen(
             recurrenceRule = null))
   }
 
-  LaunchedEffect(key1 = true) {
+
+    LaunchedEffect(key1 = true) {
     viewModel.eventFlow.collect { event ->
       when (event) {
         is EventManagementUiEvent.ShowMessage -> {
@@ -143,6 +144,10 @@ fun CreateEventScreen(
       }
     }
   }
+    LaunchedEffect(eventDateTimeState.startTime) {
+        suggestionsViewModel.updateSortContext(eventDateTimeState.startTime, eventDateTimeState.isAllDay)
+    }
+    val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
   fun formatEventTimesForSaving(
       state: EventDateTimeState,
@@ -338,7 +343,9 @@ fun CreateEventScreen(
               summaryError = summaryError,
               onSummaryChange = { summary = it },
               onSummaryErrorChange = { summaryError = it },
-              isLoading = uiState.isLoading)
+              isLoading = uiState.isLoading,
+              suggestedChips = suggestedChips
+          )
         }
         AdaptiveContainer {
           EventDateTimePicker(

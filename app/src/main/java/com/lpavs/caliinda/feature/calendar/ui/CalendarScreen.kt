@@ -343,7 +343,6 @@ fun CalendarScreen(
         sheetState = sheetState,
         contentWindowInsets = { WindowInsets.navigationBars }) {
           CreateEventScreen(
-              viewModel = eventManagementViewModel,
               userTimeZone = timeZone.value,
               initialDate = selectedDateForSheet,
               onDismiss = {

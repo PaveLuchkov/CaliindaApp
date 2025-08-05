@@ -54,6 +54,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
@@ -66,6 +68,7 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateT
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.DayOfWeek
@@ -81,6 +84,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun EditEventScreen(
     viewModel: EventManagementViewModel,
+    suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
     userTimeZone: String,
     eventToEdit: EventDto,
     selectedUpdateMode: EventUpdateMode,
@@ -182,6 +186,10 @@ fun EditEventScreen(
             }
         }
     }
+    LaunchedEffect(eventDateTimeState.startTime) {
+        suggestionsViewModel.updateSortContext(eventDateTimeState.startTime, eventDateTimeState.isAllDay)
+    }
+    val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null
@@ -318,7 +326,8 @@ fun EditEventScreen(
           summaryError = summaryError,
           onSummaryChange = { summary = it },
           onSummaryErrorChange = { summaryError = it },
-          isLoading = uiState.isLoading)
+          isLoading = uiState.isLoading,
+          suggestedChips = suggestedChips)
     }
     AdaptiveContainer {
       EventDateTimePicker(

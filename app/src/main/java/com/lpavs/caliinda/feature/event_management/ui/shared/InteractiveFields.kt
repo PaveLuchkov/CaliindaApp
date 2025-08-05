@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,14 +66,15 @@ fun CustomOutlinedTextField(
 }
 
 @Composable
-fun ChipsRow(chips: List<SugNameChips>, onChipClick: (String) -> Unit, enabled: Boolean) {
+fun ChipsRow(chips: List<SugNameChips>, onChipClick: (SugNameChips) -> Unit, enabled: Boolean, lazyListState: LazyListState) {
   LazyRow(
+      state = lazyListState,
       modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
       horizontalArrangement = Arrangement.spacedBy(cuid.padding),
       contentPadding = PaddingValues(cuid.padding)) {
         items(chips, key = { it.name }) { chip ->
           SuggestionChip(
-              onClick = { onChipClick(chip.fullText) },
+              onClick = { onChipClick(chip)  },
               label = { Text(chip.name) },
               modifier = Modifier.height(35.dp),
               enabled = enabled)
