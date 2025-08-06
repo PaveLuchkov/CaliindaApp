@@ -93,8 +93,8 @@ fun DayEventsPage(
                               }
                       },
                       onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
-                      onDetailsClick = { eventManagementViewModel.requestEventDetails(event) },
                       onEditClick = { eventManagementViewModel.requestEditEvent(event) },
+                      onDetailsClick = { viewModel.requestEventDetails(event) },
                   )
                 Spacer(modifier = Modifier.height(6.dp))
               }
@@ -108,7 +108,7 @@ fun DayEventsPage(
               listState = listState,
               onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
               onEditRequest = eventManagementViewModel::requestEditEvent,
-              onDetailsRequest = eventManagementViewModel::requestEventDetails,
+              onDetailsRequest = viewModel::requestEventDetails,
           )
       } else if (pageState.allDayEvents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

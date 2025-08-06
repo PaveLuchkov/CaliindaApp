@@ -69,7 +69,7 @@ import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
-import kotlin.math.abs
+import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)

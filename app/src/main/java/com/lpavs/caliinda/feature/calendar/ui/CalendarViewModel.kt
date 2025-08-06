@@ -11,9 +11,9 @@ import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
+import com.lpavs.caliinda.feature.calendar.data.EventUiDetailsModelMapper
 import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
 import com.lpavs.caliinda.feature.calendar.ui.components.events.DayPageUiState
-import com.lpavs.caliinda.feature.calendar.ui.components.events.EventUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -33,8 +33,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
-import javax.inject.Inject
 import java.time.ZoneId
+import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel
@@ -46,6 +46,7 @@ constructor(
     settingsRepository: SettingsRepository,
     private val dateTimeUtils: IDateTimeUtils,
     private val eventUiModelMapper: EventUiModelMapper,
+    private val eventUiDetailsModelMapper: EventUiDetailsModelMapper,
 
 ) : ViewModel() {
 
@@ -145,24 +146,6 @@ constructor(
   }
 
 
-
-  fun getEventsUiModelsForDate(date: LocalDate): Flow<List<EventUiModel>> {
-    val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
-
-    return calendarRepository.getEventsFlowForDate(date)
-      .combine(timeTicker.currentTime) { events, now -> Pair(events, now) }
-      .combine(timeZoneIdFlow) { (events, now), zoneId ->
-        eventUiModelMapper.mapToUiModels(
-          events = events,
-          currentTime = now,
-          timeZoneId = zoneId.toString(),
-          date = date
-        )
-      }
-      .flowOn(Dispatchers.Default)
-      .distinctUntilChanged()
-  }
-
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
     val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
     val rangeNetworkStateFlow = calendarRepository.rangeNetworkState
@@ -172,20 +155,15 @@ constructor(
       .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
       .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
 
-        // !!! ВСЯ ЛОГИКА ИЗ DayEventsPage ПЕРЕЕЗЖАЕТ СЮДА !!!
-
         val isToday = date == LocalDate.now()
         val zoneId = zoneId.toString()
 
-        // 1. Разделяем события
         val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
 
-        // 2. Сортируем события со временем
         val sortedTimedDtos = timedDtos.sortedBy { event ->
           dateTimeUtils.parseToInstant(event.startTime, zoneId) ?: Instant.MAX
         }
 
-        // 3. Вычисляем nextStartTime (промежуточный шаг)
         val nextStartTime: Instant? = if (!isToday) {
           null
         } else {
@@ -195,7 +173,6 @@ constructor(
           }
         }
 
-        // 4. ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ
         val scrollIndex = if (!isToday || sortedTimedDtos.isEmpty()) {
           -1
         } else {
@@ -223,7 +200,6 @@ constructor(
           date = date
         )
 
-        // 6. Возвращаем полностью готовый стейт для страницы
         DayPageUiState(
           isLoading = networkState is EventNetworkState.Loading,
           allDayEvents = allDayDtos,
@@ -249,9 +225,20 @@ constructor(
     viewModelScope.launch { calendarRepository.setCurrentVisibleDate(newDate) }
   }
 
-  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
-      calendarRepository.getEventsFlowForDate(date)
+  fun requestEventDetails(event: EventDto) {
+    _uiState.update { currentState ->
+      val eventForDetails = eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
+      currentState.copy(eventForDetailedView = eventForDetails, showEventDetailedView = true)
+    }
+    Log.d(TAG, "Requested event details for event ID: ${event.id}")
+  }
 
+  fun cancelEventDetails() {
+    _uiState.update { currentState ->
+      currentState.copy(eventForDetailedView = null, showEventDetailedView = false)
+    }
+    Log.d(TAG, "Cancelled event details view.")
+  }
   fun refreshCurrentVisibleDate() {
     viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value) }
   }

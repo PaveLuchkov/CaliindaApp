@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.ui.components.events
 
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 
 data class DayPageUiState(
     val isLoading: Boolean = true,

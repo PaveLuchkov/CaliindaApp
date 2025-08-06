@@ -1,8 +1,7 @@
-package com.lpavs.caliinda.feature.calendar.ui.components.events
+package com.lpavs.caliinda.feature.calendar.data
 
 import androidx.compose.ui.unit.Dp
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
 
 data class EventUiModel(
     val id: String,
@@ -18,5 +17,12 @@ data class EventUiModel(
     val isNext: Boolean,
     val proximityRatio: Float,
     val shapeParams: GeneratedShapeParams,
+    val originalEvent: EventDto
+)
+
+data class EventDetailsUiModel(
+    val summary: String,
+    val formattedTimeString: String,
+    val isCurrent: Boolean,
     val originalEvent: EventDto
 )

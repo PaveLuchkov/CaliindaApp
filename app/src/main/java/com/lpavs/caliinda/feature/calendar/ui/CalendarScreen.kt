@@ -53,9 +53,9 @@ import com.lpavs.caliinda.feature.agent.vm.AgentUiEvent
 import com.lpavs.caliinda.feature.agent.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.CalendarAppBar
+import com.lpavs.caliinda.feature.calendar.ui.components.details.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.ui.components.events.DayEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
-import com.lpavs.caliinda.feature.calendar.ui.components.details.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
@@ -415,12 +415,11 @@ fun CalendarScreen(
           }
     }
   }
-  if (eventManagementState.showEventDetailedView &&
-      eventManagementState.eventForDetailedView != null) {
+  if (calendarState.showEventDetailedView &&
+      calendarState.eventForDetailedView != null) {
     CustomEventDetailsDialog(
-        event = eventManagementState.eventForDetailedView!!, // Передаем событие
-        onDismissRequest = { eventManagementViewModel.cancelEventDetails() },
-        viewModel = calendarViewModel,
+        event = calendarState.eventForDetailedView!!,
+        onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone.value,
         eventManagementViewModel = eventManagementViewModel)
   }

@@ -34,51 +34,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
-import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
+import com.lpavs.caliinda.core.ui.util.formatRRule
+import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CustomEventDetailsDialog(
-    event: EventDto,
+    event: EventDetailsUiModel,
     userTimeZone: String,
     onDismissRequest: () -> Unit,
-    viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel
 ) {
-  val context = LocalContext.current
-  val currentLocale = LocalConfiguration.current.getLocales().get(0)
-  val timeFormatterLambda: (EventDto) -> String =
-      remember(viewModel, userTimeZone, currentLocale) {
-        { event ->
-          DateTimeFormatterUtil.formatEventDetailsTime(context, event, userTimeZone, currentLocale)
-        }
-      }
-  val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
-  val isCurrent =
-      remember(currentTime, event.startTime, event.endTime) {
-        val start = parseToInstant(event.startTime, userTimeZone)
-        val end = parseToInstant(event.endTime, userTimeZone)
-        start != null && end != null && !currentTime.isBefore(start) && currentTime.isBefore(end)
-      }
   Dialog(
       onDismissRequest = onDismissRequest,
       properties =
@@ -89,10 +66,10 @@ fun CustomEventDetailsDialog(
         Surface(
             modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
             shape = RoundedCornerShape(25.dp),
-            color = if (!isCurrent) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
+            color = if (!event.isCurrent) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
             tonalElevation = 8.dp) {
               val onCardText =
-                  if (!isCurrent) colorScheme.onPrimaryContainer
+                  if (!!event.isCurrent) colorScheme.onPrimaryContainer
                   else colorScheme.onTertiaryContainer
               Box(modifier = Modifier.fillMaxWidth()) {
                 Box(
@@ -119,30 +96,30 @@ fun CustomEventDetailsDialog(
                       Spacer(modifier = Modifier.height(2.dp))
                       Row {
                         Text(
-                            text = timeFormatterLambda(event),
+                            text = event.formattedTimeString,
                             color = onCardText,
                             style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
                             maxLines = 2)
                       }
                       Spacer(modifier = Modifier.height(16.dp))
 
-                      if (!event.description.isNullOrBlank()) {
+                      if (!event.originalEvent.description.isNullOrBlank()) {
                         Text(
-                            text = event.description,
+                            text = event.originalEvent.description,
                             style = typography.bodyMedium,
                             color = onCardText)
                         Spacer(modifier = Modifier.height(16.dp))
                       }
 
-                      if (!event.location.isNullOrBlank()) {
-                        DetailRow(Icons.Filled.LocationOn, event.location, color = onCardText)
+                      if (!event.originalEvent.location.isNullOrBlank()) {
+                        DetailRow(Icons.Filled.LocationOn, event.originalEvent.location, color = onCardText)
                         Spacer(modifier = Modifier.height(16.dp))
                       }
 
-                      if (!event.recurrenceRule.isNullOrEmpty()) {
+                      if (!event.originalEvent.recurrenceRule.isNullOrEmpty()) {
                         DetailRow(
                             Icons.Filled.Repeat,
-                            formatRRule(event.recurrenceRule, zoneIdString = userTimeZone),
+                            formatRRule(event.originalEvent.recurrenceRule, zoneIdString = userTimeZone),
                             color = onCardText)
                       }
                       Spacer(modifier = Modifier.height(20.dp))
@@ -151,7 +128,7 @@ fun CustomEventDetailsDialog(
                           verticalAlignment = Alignment.CenterVertically,
                           horizontalArrangement = Arrangement.End) {
                             Button(
-                                onClick = { eventManagementViewModel.requestEditEvent(event) },
+                                onClick = { eventManagementViewModel.requestEditEvent(event.originalEvent) },
                                 contentPadding = PaddingValues(horizontal = 12.dp)) {
                                   Icon(Icons.Filled.Edit, contentDescription = "Edit")
                                   Spacer(Modifier.size(ButtonDefaults.IconSpacing))
@@ -160,7 +137,7 @@ fun CustomEventDetailsDialog(
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
                                 onClick = {
-                                  eventManagementViewModel.requestDeleteConfirmation(event)
+                                  eventManagementViewModel.requestDeleteConfirmation(event.originalEvent)
                                 },
                                 modifier =
                                     Modifier.minimumInteractiveComponentSize()

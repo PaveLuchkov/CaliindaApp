@@ -1,9 +1,8 @@
 package com.lpavs.caliinda.feature.calendar.ui
 
-import android.app.PendingIntent
-import android.net.Uri
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
 import java.time.LocalDate
 
 data class CalendarState(
@@ -11,6 +10,8 @@ data class CalendarState(
     val isLoading: Boolean = false,
     val message: String? = "Требуется вход.",
     val showSignInRequiredDialog: Boolean = false,
+    val eventForDetailedView: EventDetailsUiModel? = null,
+    val showEventDetailedView: Boolean = false,
 )
 
 sealed interface SheetState {
