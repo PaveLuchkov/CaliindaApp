@@ -44,11 +44,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.feature.agent.ui.AiVisualizer
+import com.lpavs.caliinda.feature.agent.vm.AgentUiEvent
+import com.lpavs.caliinda.feature.agent.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.ui.components.DayEventsPage
@@ -70,17 +73,18 @@ import java.time.temporal.ChronoUnit
 fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
     onNavigateToSettings: () -> Unit,
-    eventManagementViewModel: EventManagementViewModel
+    eventManagementViewModel: EventManagementViewModel = hiltViewModel(),
+    agentViewModel: AgentViewModel = hiltViewModel()
 ) {
   val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
-  val aiState by calendarViewModel.aiState.collectAsState()
+  val aiState by agentViewModel.aiState.collectAsState()
   val eventManagementState by eventManagementViewModel.uiState.collectAsState()
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val snackbarHostState = remember { SnackbarHostState() }
   val isTextInputVisible by remember { mutableStateOf(false) }
-  val aiMessage by calendarViewModel.aiMessage.collectAsState()
+  val aiMessage by agentViewModel.aiMessage.collectAsState()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
   val today = remember { LocalDate.now() }
@@ -148,6 +152,16 @@ fun CalendarScreen(
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
 
+    LaunchedEffect(key1 = true) {
+        agentViewModel.eventFlow.collect { event ->
+            when (event) {
+                is AgentUiEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(event.message.asString(context))
+                }
+            }
+        }
+    }
+
   LaunchedEffect(key1 = true) {
     calendarViewModel.eventFlow.collect { event ->
       when (event) {
@@ -175,7 +189,7 @@ fun CalendarScreen(
     val hasPermission =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
-    calendarViewModel.updatePermissionStatus(hasPermission)
+      agentViewModel.updatePermissionStatus(hasPermission)
   }
 
   if (eventManagementState.showRecurringEditOptionsDialog &&
@@ -256,20 +270,20 @@ fun CalendarScreen(
           aiState = aiState,
           aiMessage = aiMessage,
           modifier = Modifier.fillMaxSize(),
-          onResultShownTimeout = { calendarViewModel.resetAiStateAfterResult() },
-          onAskingShownTimeout = { calendarViewModel.resetAiStateAfterAsking() })
+          onResultShownTimeout = { agentViewModel.resetAiStateAfterResult() },
+          onAskingShownTimeout = { agentViewModel.resetAiStateAfterAsking() })
       BottomBar(
           uiState = calendarState, // Передаем весь uiState, т.к. Bar зависит от многих полей
           textFieldValue = textFieldState,
           onTextChanged = { textFieldState = it },
           onSendClick = {
-            calendarViewModel.sendTextMessage(textFieldState.text)
+              agentViewModel.sendTextMessage(textFieldState.text)
             textFieldState = TextFieldValue("") // Очищаем поле после отправки
           },
-          onRecordStart = { calendarViewModel.startListening() }, // Передаем лямбды для записи
-          onRecordStopAndSend = { calendarViewModel.stopListening() },
+          onRecordStart = { agentViewModel.startListening() }, // Передаем лямбды для записи
+          onRecordStopAndSend = { agentViewModel.stopListening() },
           onUpdatePermissionResult = { granted ->
-            calendarViewModel.updatePermissionStatus(granted)
+              agentViewModel.updatePermissionStatus(granted)
           }, // Передаем лямбду для обновления разрешений
           isTextInputVisible = isTextInputVisible,
           modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),

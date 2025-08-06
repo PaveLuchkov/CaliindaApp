@@ -33,7 +33,6 @@ class CalendarViewModel
 constructor(
     private val authManager: AuthManager,
     private val calendarRepository: CalendarRepository,
-    private val aiInteractionManager: AiInteractionManager,
     private val dateTimeUtils: IDateTimeUtils,
     timeTicker: ITimeTicker,
 ) : ViewModel() {
@@ -55,14 +54,8 @@ constructor(
   private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()
   val eventFlow: SharedFlow<CalendarUiEvent> = _eventFlow.asSharedFlow()
 
-  // Состояния AI
-  val aiState: StateFlow<AiVisualizerState> = aiInteractionManager.aiState
-  val aiMessage: StateFlow<String?> =
-      aiInteractionManager.aiMessage // Сообщение от AI (Asking/Result)
-
   init {
     observeAuthState()
-    observeAiState()
     observeCalendarNetworkState()
   }
 
@@ -106,23 +99,6 @@ constructor(
     }
   }
 
-  private fun observeAiState() {
-    viewModelScope.launch {
-      aiInteractionManager.aiState.collect { ai ->
-        _uiState.update { currentUiState ->
-          // Обновляем только состояние isLoading и isListening
-          currentUiState.copy(
-              isListening = ai == AiVisualizerState.LISTENING,
-              isLoading = calculateIsLoading(aiState = ai))
-        }
-        if (ai == AiVisualizerState.RESULT) {
-          Log.d(TAG, "AI observer: Interaction finished with RESULT, triggering calendar refresh.")
-          refreshCurrentVisibleDate()
-        }
-      }
-    }
-  }
-
   private fun observeCalendarNetworkState() {
     viewModelScope.launch {
       calendarRepository.rangeNetworkState.collect { network ->
@@ -143,12 +119,10 @@ constructor(
       authLoading: Boolean =
           authManager.authState.value.isLoading, // Берем текущие значения по умолчанию
       networkState: EventNetworkState = calendarRepository.rangeNetworkState.value,
-      aiState: AiVisualizerState = aiInteractionManager.aiState.value,
   ): Boolean {
     val calendarLoading = networkState is EventNetworkState.Loading
-    val aiThinking = aiState == AiVisualizerState.THINKING
 
-    return authLoading || calendarLoading || aiThinking
+    return authLoading || calendarLoading
   }
 
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
@@ -191,45 +165,6 @@ constructor(
 
   fun refreshCurrentVisibleDate() {
     viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value) }
-  }
-
-  // --- ДЕЙСТВИЯ AI ---
-  fun startListening() {
-    if (!_uiState.value.isPermissionGranted) {
-      viewModelScope.launch {
-        _eventFlow.emit(CalendarUiEvent.ShowMessage("Нет разрешения на запись аудио"))
-      }
-      return
-    }
-    aiInteractionManager.startListening()
-  }
-
-  fun stopListening() = aiInteractionManager.stopListening()
-
-  fun sendTextMessage(text: String) {
-    if (!_uiState.value.isSignedIn) {
-      Log.w(TAG, "Cannot send message: Not signed in.")
-      return
-    }
-    aiInteractionManager.sendTextMessage(text)
-  }
-
-  fun resetAiStateAfterResult() = aiInteractionManager.resetAiState()
-
-  fun resetAiStateAfterAsking() = aiInteractionManager.resetAiState()
-
-  // --- ОБРАБОТКА UI СОБЫТИЙ / РАЗРЕШЕНИЙ ---
-  fun updatePermissionStatus(isGranted: Boolean) {
-    if (_uiState.value.isPermissionGranted != isGranted) {
-      _uiState.update { it.copy(isPermissionGranted = isGranted) }
-      Log.d(TAG, "Audio permission status updated to: $isGranted")
-    }
-  }
-
-  // --- LIFECYCLE ---
-  override fun onCleared() {
-    super.onCleared()
-    aiInteractionManager.destroy() // Вызываем очистку менеджера AI
   }
 
   // --- COMPANION ---

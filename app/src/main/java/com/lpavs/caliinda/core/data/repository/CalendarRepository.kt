@@ -74,7 +74,7 @@ constructor(
   }
     init {
     managerScope.launch {
-        authManager.authEvents.collect() { event ->
+        authManager.authEvents.collect { event ->
             when (event) {
                 AuthEvent.SignedOut -> clearLocalDataOnSignOut()
             }
