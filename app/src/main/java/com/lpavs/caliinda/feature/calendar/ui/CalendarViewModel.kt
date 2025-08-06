@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
@@ -43,6 +44,7 @@ constructor(
     private val authManager: AuthManager,
     private val calendarRepository: CalendarRepository,
     private val timeTicker: ITimeTicker,
+    private val calendarStateHolder: ICalendarStateHolder,
     settingsRepository: SettingsRepository,
     private val dateTimeUtils: IDateTimeUtils,
     private val eventUiModelMapper: EventUiModelMapper,
@@ -221,7 +223,7 @@ constructor(
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
   fun onVisibleDateChanged(newDate: LocalDate) {
     if (newDate == _currentVisibleDate.value) return
-    _currentVisibleDate.value = newDate
+    calendarStateHolder.setCurrentVisibleDate(newDate)
     viewModelScope.launch { calendarRepository.setCurrentVisibleDate(newDate) }
   }
 

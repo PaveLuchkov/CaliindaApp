@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
+import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.agent.data.AgentManager
 import com.lpavs.caliinda.feature.agent.data.model.AgentState
@@ -24,7 +26,8 @@ import javax.inject.Inject
 class AgentViewModel @Inject constructor(
     private val agentManager: AgentManager,
     private val authManager: AuthManager,
-    private val calendarViewModel: CalendarViewModel,
+    private val calendarRepository: CalendarRepository,
+    private val calendarStateHolder: ICalendarStateHolder
 ): ViewModel() {
     val aiState: StateFlow<AgentState> = agentManager.aiState
     val aiMessage: StateFlow<String?> = agentManager.aiMessage
@@ -46,7 +49,8 @@ class AgentViewModel @Inject constructor(
                 }
                 if (ai == AgentState.RESULT) {
                     Log.d(TAG, "AI observer: Interaction finished with RESULT, triggering calendar refresh.")
-                    viewModelScope.launch { calendarViewModel.refreshCurrentVisibleDate() }
+                    val dateToRefresh = calendarStateHolder.currentVisibleDate.value
+                    viewModelScope.launch { calendarRepository.refreshDate(dateToRefresh) }
                 }
             }
         }
