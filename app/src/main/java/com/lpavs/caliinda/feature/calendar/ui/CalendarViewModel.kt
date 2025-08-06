@@ -12,7 +12,10 @@ import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
+import com.lpavs.caliinda.feature.calendar.ui.components.events.DayPageUiState
+import com.lpavs.caliinda.feature.calendar.ui.components.events.EventUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,13 +24,16 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
-import java.time.Duration
 import java.time.ZoneId
 
 @HiltViewModel
@@ -36,10 +42,11 @@ class CalendarViewModel
 constructor(
     private val authManager: AuthManager,
     private val calendarRepository: CalendarRepository,
+    private val timeTicker: ITimeTicker,
+    settingsRepository: SettingsRepository,
     private val dateTimeUtils: IDateTimeUtils,
-    timeTicker: ITimeTicker,
-    private val settingsRepository: SettingsRepository,
-    private val eventUiModelMapper: EventUiModelMapper
+    private val eventUiModelMapper: EventUiModelMapper,
+
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -50,6 +57,11 @@ constructor(
 
   // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
+
+  val timeZone: StateFlow<String> =
+    settingsRepository.timeZoneFlow.stateIn(
+      viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id
+    )
 
   // Состояния Календаря
   private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
@@ -63,6 +75,7 @@ constructor(
     observeAuthState()
     observeCalendarNetworkState()
   }
+
 
   private fun observeAuthState() {
     viewModelScope.launch {
@@ -117,10 +130,8 @@ constructor(
   }
 
 
-  val timeZone: StateFlow<String> =
-    settingsRepository.timeZoneFlow.stateIn(
-      viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id
-    )
+
+
   // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
   /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
   private fun calculateIsLoading(
@@ -131,6 +142,97 @@ constructor(
     val calendarLoading = networkState is EventNetworkState.Loading
 
     return authLoading || calendarLoading
+  }
+
+
+
+  fun getEventsUiModelsForDate(date: LocalDate): Flow<List<EventUiModel>> {
+    val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
+
+    return calendarRepository.getEventsFlowForDate(date)
+      .combine(timeTicker.currentTime) { events, now -> Pair(events, now) }
+      .combine(timeZoneIdFlow) { (events, now), zoneId ->
+        eventUiModelMapper.mapToUiModels(
+          events = events,
+          currentTime = now,
+          timeZoneId = zoneId.toString(),
+          date = date
+        )
+      }
+      .flowOn(Dispatchers.Default)
+      .distinctUntilChanged()
+  }
+
+  fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
+    val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
+    val rangeNetworkStateFlow = calendarRepository.rangeNetworkState
+
+    return calendarRepository.getEventsFlowForDate(date)
+      .combine(currentTime) { events, now -> events to now }
+      .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
+      .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
+
+        // !!! ВСЯ ЛОГИКА ИЗ DayEventsPage ПЕРЕЕЗЖАЕТ СЮДА !!!
+
+        val isToday = date == LocalDate.now()
+        val zoneId = zoneId.toString()
+
+        // 1. Разделяем события
+        val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
+
+        // 2. Сортируем события со временем
+        val sortedTimedDtos = timedDtos.sortedBy { event ->
+          dateTimeUtils.parseToInstant(event.startTime, zoneId) ?: Instant.MAX
+        }
+
+        // 3. Вычисляем nextStartTime (промежуточный шаг)
+        val nextStartTime: Instant? = if (!isToday) {
+          null
+        } else {
+          sortedTimedDtos.firstNotNullOfOrNull { event ->
+            val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
+            if (start != null && start.isAfter(now)) start else null
+          }
+        }
+
+        // 4. ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ
+        val scrollIndex = if (!isToday || sortedTimedDtos.isEmpty()) {
+          -1
+        } else {
+          val currentEventIndex = sortedTimedDtos.indexOfFirst { event ->
+            val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
+            val end = dateTimeUtils.parseToInstant(event.endTime, zoneId)
+            start != null && end != null && !now.isBefore(start) && now.isBefore(end)
+          }
+          if (currentEventIndex != -1) {
+            currentEventIndex
+          } else if (nextStartTime != null) {
+            sortedTimedDtos.indexOfFirst { event ->
+              val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
+              start != null && start == nextStartTime
+            }
+          } else {
+            -1
+          }
+        }
+
+        val timedUiModels = eventUiModelMapper.mapToUiModels(
+          events = sortedTimedDtos,
+          currentTime = now,
+          timeZoneId = zoneId.toString(),
+          date = date
+        )
+
+        // 6. Возвращаем полностью готовый стейт для страницы
+        DayPageUiState(
+          isLoading = networkState is EventNetworkState.Loading,
+          allDayEvents = allDayDtos,
+          timedEvents = timedUiModels,
+          targetScrollIndex = scrollIndex
+        )
+      }
+      .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
+      .distinctUntilChanged()
   }
 
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---

@@ -26,22 +26,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.common.EventNetworkState
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
-import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -52,96 +47,39 @@ fun DayEventsPage(
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel
 ) {
-  val eventsFlow = remember(date) { viewModel.getEventsFlowForDate(date) }
-  val eventsState = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
-  val events = eventsState.value
-  Log.d(
-      "DayEventsPage",
-      "Events received from flow: ${events.joinToString { it.summary + " (allDay=" + it.isAllDay + ")" }}")
-  val calendarState by viewModel.state.collectAsStateWithLifecycle()
+    val pageState by viewModel.getDayPageUiState(date)
+        .collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
+    val listState = rememberLazyListState()
+
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
-  val currentTimeZoneId by eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
 
-  val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()
-
-  val isToday = date == LocalDate.now()
-
-  val (allDayEvents, timedEvents) =
-      remember(events, currentTimeZoneId) { // Добавим зависимость от пояса
-        val (allDay, timed) = events.partition { it.isAllDay } // Используем флаг isAllDay
-        val sortedTimed =
-            timed.sortedBy { event ->
-              DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId) ?: Instant.MAX
-            }
-        allDay to sortedTimed
-      }
-  Log.d("DayEventsPage", "Partitioned: AllDay=${allDayEvents.size}, Timed=${timedEvents.size}")
-
-  val nextStartTime: Instant? =
-      remember(timedEvents, currentTime, isToday, currentTimeZoneId) {
-        if (!isToday) null
-        else {
-          timedEvents.firstNotNullOfOrNull { event ->
-            val start = DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
-            if (start != null && start.isAfter(currentTime)) start else null
-          }
-        }
-      }
-  val context = LocalContext.current
-
-  // --- ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ ---
-  val targetScrollIndex =
-      remember(timedEvents, currentTime, nextStartTime, isToday, currentTimeZoneId) {
-        if (!isToday || timedEvents.isEmpty()) -1
-        else {
-          val currentEventIndex =
-              timedEvents.indexOfFirst { event ->
-                val start = DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
-                val end = DateTimeUtils.parseToInstant(event.endTime, currentTimeZoneId)
-                start != null &&
-                    end != null &&
-                    !currentTime.isBefore(start) &&
-                    currentTime.isBefore(end)
-              }
-          if (currentEventIndex != -1) currentEventIndex
-          else if (nextStartTime != null) {
-            timedEvents.indexOfFirst { event ->
-              val start = DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
-              start != null && start == nextStartTime
-            }
-          } else -1
-        }
-      }
-
-  // --- СОЗДАЕМ И ЗАПОМИНАЕМ СОСТОЯНИЕ СПИСКА ---
-  val listState = rememberLazyListState()
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
-  val isListening = calendarState.isListening
 
-  LaunchedEffect(targetScrollIndex, isToday) {
-    if (isToday && targetScrollIndex != -1) {
+  LaunchedEffect(pageState.targetScrollIndex) {
+    if (pageState.targetScrollIndex != -1) {
       launch {
         try {
-          listState.animateScrollToItem(index = targetScrollIndex)
+          listState.animateScrollToItem(index = pageState.targetScrollIndex)
         } catch (e: Exception) {
-          Log.e("DayEventsPageScroll", "Error scrolling to index $targetScrollIndex", e)
+          Log.e("DayEventsPageScroll", "Error scrolling to index ${pageState.targetScrollIndex}", e)
         }
       }
     }
   }
+
   var expandedAllDayEventId by remember { mutableStateOf<String?>(null) }
 
   Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize()) {
       Spacer(modifier = Modifier.height(3.dp))
-      if (allDayEvents.isNotEmpty()) {
+      if (pageState.allDayEvents.isNotEmpty()) {
         Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовка даты
         Column(
             modifier =
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp) // Общий горизонтальный отступ
             ) {
-              allDayEvents.forEach { event ->
+            pageState.allDayEvents.forEach { event ->
                 val isExpanded = event.id == expandedAllDayEventId
                   AllDayEventItem(
                       event = event,
@@ -164,28 +102,17 @@ fun DayEventsPage(
       }
       Spacer(modifier = Modifier.height(8.dp))
 
-      if (timedEvents.isNotEmpty()) {
-        val timeFormatterLambda: (EventDto) -> String =
-            remember(viewModel, currentTimeZoneId) {
-              { event ->
-                DateTimeFormatterUtil.formatEventListTime(context, event, currentTimeZoneId)
-              }
-            }
+      if (pageState.timedEvents.isNotEmpty()) {
           CardsList(
-              events = timedEvents,
-              timeFormatter = timeFormatterLambda,
-              isToday = isToday,
-              nextStartTime = nextStartTime,
-              currentTime = currentTime,
+              events = pageState.timedEvents,
               listState = listState,
               onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
               onEditRequest = eventManagementViewModel::requestEditEvent,
               onDetailsRequest = eventManagementViewModel::requestEventDetails,
-              currentTimeZoneId = currentTimeZoneId
           )
-      } else if (allDayEvents.isEmpty()) {
+      } else if (pageState.allDayEvents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-          if (isBusy && !isListening) {
+          if (isBusy) {
             LoadingIndicator(modifier = Modifier.size(80.dp))
           } else {
             Box(

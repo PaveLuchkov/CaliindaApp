@@ -19,9 +19,3 @@ data class EventUiModel(
     val shapeParams: GeneratedShapeParams,
     val originalEvent: EventDto
 )
-
-data class AllDayEventUiModel(
-    val id: String,
-    val summary: String,
-    val originalEvent: EventDto
-)

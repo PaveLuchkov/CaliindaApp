@@ -1,0 +1,10 @@
+package com.lpavs.caliinda.feature.calendar.ui.components.events
+
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
+
+data class DayPageUiState(
+    val isLoading: Boolean = true,
+    val allDayEvents: List<EventDto> = emptyList(),
+    val timedEvents: List<EventUiModel> = emptyList(),
+    val targetScrollIndex: Int = -1
+)

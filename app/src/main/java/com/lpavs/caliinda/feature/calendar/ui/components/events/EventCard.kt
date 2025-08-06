@@ -68,46 +68,27 @@ import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
-import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
 fun EventItem(
-    event: EventDto,
-    timeFormatter: (EventDto) -> String,
-    isCurrentEvent: Boolean,
-    isNextEvent: Boolean,
-    proximityRatio: Float,
-    isMicroEventFromList: Boolean,
-    targetHeightFromList: Dp,
+    uiModel: EventUiModel,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
     onEditClickFromList: () -> Unit,
     modifier: Modifier = Modifier,
-    currentTimeZoneId: String
 ) {
-  val eventDurationMinutes =
-      remember(event.startTime, event.endTime, currentTimeZoneId) {
-        val start = parseToInstant(event.startTime, currentTimeZoneId)
-        val end = parseToInstant(event.endTime, currentTimeZoneId)
-        if (start != null && end != null && end.isAfter(start)) {
-          Duration.between(start, end).toMinutes()
-        } else {
-          0L
-        }
-      }
   val haptic = LocalHapticFeedback.current
+    val current = uiModel.isCurrent
+    val micro = uiModel.isMicroEvent
 
-  val shapeParams =
-      remember(event.id) {
-        generateShapeParams(event.id) // Use helper
-      }
+
+  val shapeParams = uiModel.shapeParams
 
   val starShape =
       remember(shapeParams.numVertices, shapeParams.radiusSeed) {
@@ -117,13 +98,14 @@ fun EventItem(
             innerRadius = cuid.SHAPEINNERRADIUS,
             rounding = CornerRounding(cuid.ShapeCornerRounding))
       }
+
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
   val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
 
   val starContainerSize =
-      remember(eventDurationMinutes, isMicroEventFromList) {
-        if (isMicroEventFromList || eventDurationMinutes <= 0L) 0.dp
-        else calculateShapeContainerSize(eventDurationMinutes)
+      remember(uiModel.durationMinutes, micro) {
+        if (micro || uiModel.durationMinutes <= 0L) 0.dp
+        else calculateShapeContainerSize(uiModel.durationMinutes)
       }
 
   // Compute the transitionColor
@@ -131,38 +113,38 @@ fun EventItem(
       lerpOkLab(
           start = colorScheme.primaryContainer,
           stop = colorScheme.tertiaryContainer,
-          fraction = proximityRatio)
+          fraction = uiModel.proximityRatio)
   val darkerShadowColor = Color.Black
 
   // --- Параметры текущего события (получаем isCurrentEvent) ---
   //   val fixedColors = LocalFixedAccentColors.current
 
-  val cardElevation = if (isCurrentEvent) cuid.CurrentEventElevation else 0.dp
+  val cardElevation = if (current) cuid.CurrentEventElevation else 0.dp
   val starBackground =
       when {
-        isCurrentEvent -> colorScheme.tertiaryContainer // Выделяем текущее
-        isNextEvent -> transitionColorCard // Слегка выделяем следующее (пример)
+          current -> colorScheme.tertiaryContainer // Выделяем текущее
+        uiModel.isNext -> transitionColorCard // Слегка выделяем следующее (пример)
         else -> colorScheme.primaryContainer // Обычный фон
       }
   val cardBackground by
       animateColorAsState(
-          if (isCurrentEvent) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
+          if (current) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
           label = "card color")
 
   val cardTextColor =
       when {
-        isCurrentEvent -> colorScheme.onTertiaryContainer // Выделяем текущее
+          current -> colorScheme.onTertiaryContainer // Выделяем текущее
         else -> colorScheme.onPrimaryContainer // Обычный фон
       }
   val textStyle =
       when {
-        !isMicroEventFromList ->
-            if (isCurrentEvent) Typography.headlineSmallEmphasized else Typography.headlineSmall
-        else -> if (isCurrentEvent) Typography.bodyLargeEmphasized else Typography.bodyLarge
+        !micro ->
+            if (current) Typography.headlineSmallEmphasized else Typography.headlineSmall
+        else -> if (current) Typography.bodyLargeEmphasized else Typography.bodyLarge
       }
   val cardFontFamily =
       when {
-        isCurrentEvent ->
+          current ->
             FontFamily(
                 Font(
                     R.font.robotoflex_variable,
@@ -195,8 +177,8 @@ fun EventItem(
                   spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
-              .height(targetHeightFromList)
-              .pointerInput(event.id) {
+              .height(uiModel.baseHeight)
+              .pointerInput(uiModel.id) {
                 detectTapGestures(
                     onTap = { onToggleExpand() },
                     onLongPress = {
@@ -213,11 +195,11 @@ fun EventItem(
                       .padding(
                           horizontal = cuid.ItemHorizontalPadding,
                           vertical =
-                              if (isMicroEventFromList) cuid.MicroItemContentVerticalPadding
+                              if (micro) cuid.MicroItemContentVerticalPadding
                               else cuid.StandardItemContentVerticalPadding),
               // Выравнивание контента можно оставить TopStart или изменить на Center, если нужно
               contentAlignment = Alignment.TopStart) {
-                if (!isMicroEventFromList && starContainerSize > 0.dp) {
+                if (!micro && starContainerSize > 0.dp) {
                   val density = LocalDensity.current
                   val starOffsetY = starContainerSize * shapeParams.offestParam
                   val starOffsetX = starContainerSize * -shapeParams.offestParam
@@ -251,12 +233,12 @@ fun EventItem(
                               .clip(clipStar)
                               .background(starBackground.copy(alpha = cuid.ShapeMainAlpha)))
                 }
-                if (isMicroEventFromList) {
+                if (micro) {
                   Row(
                       modifier = Modifier.fillMaxSize(),
                       verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = event.summary,
+                            text = uiModel.summary,
                             color = cardTextColor,
                             style = textStyle,
                             fontFamily = cardFontFamily,
@@ -265,7 +247,7 @@ fun EventItem(
                             modifier = Modifier.weight(1f, fill = false))
                         Spacer(modifier = Modifier.width(cuid.padding))
                         Text(
-                            text = timeFormatter(event),
+                            text = uiModel.formattedTimeString,
                             color = cardTextColor,
                             style = typography.labelMedium,
                             maxLines = 1)
@@ -273,7 +255,7 @@ fun EventItem(
                 } else {
                   Column(verticalArrangement = Arrangement.Top) {
                     Text(
-                        text = event.summary,
+                        text = uiModel.summary,
                         color = cardTextColor,
                         style = textStyle,
                         fontFamily = cardFontFamily,
@@ -282,12 +264,12 @@ fun EventItem(
                     Spacer(modifier = Modifier.height(2.dp))
                     Row {
                       Text(
-                          text = timeFormatter(event),
+                          text = uiModel.formattedTimeString,
                           color = cardTextColor,
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                           maxLines = 1)
                       Spacer(modifier = Modifier.width(8.dp))
-                      event.location?.let {
+                        uiModel.location?.let {
                         Text(
                             text = it,
                             color = cardTextColor,
@@ -465,24 +447,6 @@ fun AllDayEventItem(
       }
 }
 
-fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
-  return if (isMicroEvent) {
-    cuid.MicroEventHeight
-  } else {
-    val minHeight = cuid.MinEventHeight
-    val maxHeight = cuid.MaxEventHeight
-    val durationDouble = durationMinutes.toDouble()
-    val heightRange = maxHeight - minHeight
-
-    val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
-    val k = cuid.HeightSigmoidSteepness
-    val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
-
-    val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
-    calculatedHeight.coerceIn(minHeight, maxHeight)
-  }
-}
-
 fun calculateShapeContainerSize(durationMinutes: Long): Dp {
   val minStarContainerSize = cuid.MinStarContainerSize
   val maxStarContainerSize = cuid.MaxStarContainerSize
@@ -495,37 +459,6 @@ fun calculateShapeContainerSize(durationMinutes: Long): Dp {
 
   val calculatedHeight = minStarContainerSize + (heightRange * sigmoidOutput.toFloat())
   return calculatedHeight.coerceIn(minStarContainerSize, maxStarContainerSize)
-}
-
-fun generateShapeParams(eventId: String): GeneratedShapeParams {
-  val hashCode = eventId.hashCode()
-  val absHashCode = abs(hashCode)
-
-  val numVertices = (absHashCode % cuid.ShapeMaxVerticesDelta) + cuid.ShapeMinVertices
-
-  val shadowOffsetXSeed = absHashCode % cuid.ShapeShadowOffsetXMaxModulo
-  val shadowOffsetYSeed =
-      absHashCode % cuid.ShapeShadowOffsetYMaxModulo + cuid.ShapeShadowOffsetYMin
-
-  val offsetParam = (absHashCode % 4 + 1) * cuid.ShapeOffsetParamMultiplier
-
-  val radiusBaseHash = absHashCode / 3 + 42
-  val radiusSeed =
-      ((radiusBaseHash % cuid.ShapeRadiusSeedRangeModulo) * cuid.ShapeRadiusSeedRange) +
-          cuid.ShapeRadiusSeedMin
-  val coercedRadiusSeed = radiusSeed.coerceIn(cuid.ShapeRadiusSeedMin, cuid.ShapeMaxRadius)
-
-  val angleSeed = (abs(hashCode) / 5 - 99).mod(cuid.ShapeRotationMaxDegrees)
-  val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees)
-
-  return GeneratedShapeParams(
-      numVertices = numVertices,
-      radiusSeed = coercedRadiusSeed,
-      rotationAngle = rotationAngle,
-      shadowOffsetXSeed = shadowOffsetXSeed.dp,
-      shadowOffsetYSeed = shadowOffsetYSeed.dp,
-      offestParam = offsetParam
-  )
 }
 
 fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
