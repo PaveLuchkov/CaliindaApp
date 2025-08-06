@@ -13,7 +13,7 @@ import com.lpavs.caliinda.app.di.MainDispatcher
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
+import com.lpavs.caliinda.feature.agent.data.model.AgentState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AiInteractionManager
+class AgentManager
 @Inject
 constructor(
     @ApplicationContext private val context: Context,
@@ -54,8 +54,8 @@ constructor(
   private val TAG = "AiInteractionManager"
   private val managerScope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
-  private val _aiState = MutableStateFlow(AiVisualizerState.IDLE)
-  val aiState: StateFlow<AiVisualizerState> = _aiState.asStateFlow()
+  private val _aiState = MutableStateFlow(AgentState.IDLE)
+  val aiState: StateFlow<AgentState> = _aiState.asStateFlow()
 
   private val _aiMessage = MutableStateFlow<String?>(null)
   val aiMessage: StateFlow<String?> = _aiMessage.asStateFlow()
@@ -89,7 +89,7 @@ constructor(
       initializeSpeechRecognizer()
       if (!isRecognizerInitialized) {
         Log.e(TAG, "Cannot start listening: SpeechRecognizer failed to initialize.")
-        _aiState.value = AiVisualizerState.IDLE
+        _aiState.value = AgentState.IDLE
         return
       }
     }
@@ -98,7 +98,7 @@ constructor(
     managerScope.launch(mainDispatcher) {
       try {
         isListening = true
-        _aiState.value = AiVisualizerState.LISTENING
+        _aiState.value = AgentState.LISTENING
         _aiMessage.value = null
         speechRecognizer?.startListening(speechRecognizerIntent)
         Log.d(TAG, "Called startListening on SpeechRecognizer")
@@ -127,22 +127,22 @@ constructor(
 
   fun sendTextMessage(text: String) {
     if (text.isBlank()) return
-    if (_aiState.value == AiVisualizerState.LISTENING ||
-        _aiState.value == AiVisualizerState.THINKING) {
+    if (_aiState.value == AgentState.LISTENING ||
+        _aiState.value == AgentState.THINKING) {
       Log.w(TAG, "Cannot send text message while listening or thinking.")
       return
     }
 
     Log.d(TAG, "Sending text message: '$text'")
-    _aiState.value = AiVisualizerState.THINKING
+    _aiState.value = AgentState.THINKING
     _aiMessage.value = null
     managerScope.launch { processText(text) }
   }
 
   fun resetAiState() {
-    if (_aiState.value == AiVisualizerState.ASKING || _aiState.value == AiVisualizerState.RESULT) {
+    if (_aiState.value == AgentState.ASKING || _aiState.value == AgentState.RESULT) {
       Log.d(TAG, "Resetting AI state from ${_aiState.value} to IDLE")
-      _aiState.value = AiVisualizerState.IDLE
+      _aiState.value = AgentState.IDLE
       _aiMessage.value = null
     }
   }
@@ -188,12 +188,12 @@ constructor(
   private fun processRecognizedText(text: String) {
     if (text.isBlank()) {
       Log.w(TAG, "processRecognizedText called with blank text.")
-      _aiState.value = AiVisualizerState.IDLE
+      _aiState.value = AgentState.IDLE
       return
     }
     Log.i(TAG, "Processing recognized text: '$text'")
-    if (_aiState.value != AiVisualizerState.THINKING) {
-      _aiState.value = AiVisualizerState.THINKING
+    if (_aiState.value != AgentState.THINKING) {
+      _aiState.value = AgentState.THINKING
       _aiMessage.value = null
     }
     managerScope.launch {
@@ -271,12 +271,12 @@ constructor(
       }
 
   private fun handleProcessResponse(responseBody: String?) {
-    var finalAiState: AiVisualizerState
+    var finalAiState: AgentState
     var messageForVisualizer: String? = null
 
     if (responseBody.isNullOrBlank()) {
       Log.w(TAG, "Empty success response from /process")
-      finalAiState = AiVisualizerState.IDLE
+      finalAiState = AgentState.IDLE
     } else {
       try {
         val json = JSONObject(responseBody)
@@ -286,42 +286,42 @@ constructor(
         when (status) {
           "success" -> {
             messageForVisualizer = "Success!"
-            finalAiState = AiVisualizerState.RESULT
+            finalAiState = AgentState.RESULT
             Log.i(TAG, "Backend status: success. Message: $message")
           }
           "clarification_needed" -> {
             messageForVisualizer = message
-            finalAiState = AiVisualizerState.ASKING
+            finalAiState = AgentState.ASKING
             Log.i(TAG, "Backend status: clarification_needed. Message: $message")
           }
           "info",
           "unsupported" -> {
             messageForVisualizer = message
-            finalAiState = AiVisualizerState.RESULT
+            finalAiState = AgentState.RESULT
             Log.i(TAG, "Backend status: $status. Message: $message")
           }
           "error" -> {
             Log.e(TAG, "Backend processing error: $message")
-            finalAiState = AiVisualizerState.IDLE
+            finalAiState = AgentState.IDLE
           }
           else -> {
             Log.w(TAG, "Unknown status from backend: $status")
-            finalAiState = AiVisualizerState.IDLE
+            finalAiState = AgentState.IDLE
           }
         }
       } catch (e: JSONException) {
         Log.e(TAG, "Error parsing /process response", e)
-        finalAiState = AiVisualizerState.IDLE
+        finalAiState = AgentState.IDLE
       } catch (e: Exception) {
         Log.e(TAG, "Error handling /process response content", e)
-        finalAiState = AiVisualizerState.IDLE
+        finalAiState = AgentState.IDLE
       }
     }
 
     _aiMessage.value = messageForVisualizer
     _aiState.value = finalAiState
 
-    if (_aiState.value == AiVisualizerState.IDLE) {
+    if (_aiState.value == AgentState.IDLE) {
       _aiMessage.value = null
     }
   }
@@ -329,13 +329,13 @@ constructor(
   private fun handleRecognitionError(errorMessage: String) {
     Log.e(TAG, "Recognition error: $errorMessage")
     isListening = false
-    _aiState.value = AiVisualizerState.IDLE
+    _aiState.value = AgentState.IDLE
     _aiMessage.value = null
   }
 
   private fun handleBackendError(errorMessage: String) {
     Log.e(TAG, "Backend processing error: $errorMessage")
-    _aiState.value = AiVisualizerState.IDLE
+    _aiState.value = AgentState.IDLE
     _aiMessage.value = null
   }
 
@@ -359,7 +359,7 @@ constructor(
           Log.d(TAG, "Listener: onEndOfSpeech")
           if (isListening) {
             isListening = false
-            _aiState.value = AiVisualizerState.THINKING
+            _aiState.value = AgentState.THINKING
             _aiMessage.value = null
             Log.d(TAG, "Listener: Switched state to THINKING")
           }

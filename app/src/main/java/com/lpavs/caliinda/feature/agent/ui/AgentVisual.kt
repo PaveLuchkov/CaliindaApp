@@ -1,3 +1,4 @@
+
 package com.lpavs.caliinda.feature.agent.ui
 
 import androidx.compose.animation.AnimatedVisibility
@@ -46,13 +47,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
+import com.lpavs.caliinda.feature.agent.data.model.AgentState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun AiVisualizer(
-    aiState: AiVisualizerState,
+    aiState: AgentState,
     aiMessage: String?,
     modifier: Modifier = Modifier,
     onResultShownTimeout: () -> Unit,
@@ -62,14 +63,14 @@ fun AiVisualizer(
 
   // --- LaunchedEffect для задержки перед IDLE ---
   LaunchedEffect(targetState) { // Запускается при смене targetState
-    if (targetState == AiVisualizerState.RESULT) {
+    if (targetState == AgentState.RESULT) {
       delay(5000L) // Ждем 5 секунд
       onResultShownTimeout() // Вызываем колбэк после задержки
     }
   }
 
   LaunchedEffect(targetState) { // Запускается при смене targetState
-    if (targetState == AiVisualizerState.ASKING) {
+    if (targetState == AgentState.ASKING) {
       delay(15000L) // Ждем 15 секунд
       onAskingShownTimeout() // Вызываем колбэк после задержки
     }
@@ -80,17 +81,17 @@ fun AiVisualizer(
   // LaunchedEffect для вращения остается без изменений...
   LaunchedEffect(targetState) {
     val shouldRotate =
-        targetState == AiVisualizerState.THINKING || targetState == AiVisualizerState.LISTENING
+        targetState == AgentState.THINKING || targetState == AgentState.LISTENING
     if (shouldRotate) {
       val duration =
           when (targetState) {
-            AiVisualizerState.THINKING -> 7000
-            AiVisualizerState.LISTENING -> 80000
+            AgentState.THINKING -> 7000
+            AgentState.LISTENING -> 80000
             else -> 5000 // На всякий случай
           }
       if (!rotationAngle.isRunning &&
-          (targetState == AiVisualizerState.THINKING ||
-              targetState == AiVisualizerState.LISTENING)) {
+          (targetState == AgentState.THINKING ||
+              targetState == AgentState.LISTENING)) {
         launch {
           rotationAngle.animateTo(
               targetValue = rotationAngle.value + 360f,
@@ -127,12 +128,12 @@ fun AiVisualizer(
           transitionSpec = { spring(stiffness = Spring.StiffnessMediumLow) },
           label = "scaleFactor") { state ->
             when (state) {
-              AiVisualizerState.IDLE -> 0f
-              AiVisualizerState.LISTENING -> 5f
-              AiVisualizerState.THINKING -> 1f
-              AiVisualizerState.ASKING -> 5f
-              AiVisualizerState.RESULT -> 5f
-              AiVisualizerState.ERROR -> 0f
+              AgentState.IDLE -> 0f
+              AgentState.LISTENING -> 5f
+              AgentState.THINKING -> 1f
+              AgentState.ASKING -> 5f
+              AgentState.RESULT -> 5f
+              AgentState.ERROR -> 0f
             }
           }
 
@@ -144,12 +145,12 @@ fun AiVisualizer(
           transitionSpec = { spring(stiffness = Spring.StiffnessMedium) },
           label = "offsetYRatio") { state ->
             when (state) {
-              AiVisualizerState.IDLE -> 0.6f
-              AiVisualizerState.LISTENING -> 0.75f
-              AiVisualizerState.THINKING -> 0.55f
-              AiVisualizerState.ASKING,
-              AiVisualizerState.RESULT -> 0.55f
-              AiVisualizerState.ERROR -> 0.6f
+              AgentState.IDLE -> 0.6f
+              AgentState.LISTENING -> 0.75f
+              AgentState.THINKING -> 0.55f
+              AgentState.ASKING,
+              AgentState.RESULT -> 0.55f
+              AgentState.ERROR -> 0.6f
             }
           }
 
@@ -157,21 +158,21 @@ fun AiVisualizer(
       transition.animateColor(transitionSpec = { tween(durationMillis = 500) }, label = "color") {
           state ->
         when (state) {
-          AiVisualizerState.LISTENING -> colorScheme.primaryContainer
-          AiVisualizerState.THINKING -> colorScheme.secondary
-          AiVisualizerState.ASKING -> colorScheme.tertiary
-          AiVisualizerState.RESULT -> colorScheme.primary
+          AgentState.LISTENING -> colorScheme.primaryContainer
+          AgentState.THINKING -> colorScheme.secondary
+          AgentState.ASKING -> colorScheme.tertiary
+          AgentState.RESULT -> colorScheme.primary
           else -> colorScheme.surface
         }
       }
 
   // Видимость всего компонента
   val isComponentVisible =
-      targetState != AiVisualizerState.IDLE && targetState != AiVisualizerState.ERROR
+      targetState != AgentState.IDLE && targetState != AgentState.ERROR
 
   // Видимость бабла
   val isBubbleVisible =
-      (targetState == AiVisualizerState.ASKING || targetState == AiVisualizerState.RESULT) &&
+      (targetState == AgentState.ASKING || targetState == AgentState.RESULT) &&
           !aiMessage.isNullOrEmpty()
 
   // Общий контейнер для позиционирования по Y и анимации появления/исчезания

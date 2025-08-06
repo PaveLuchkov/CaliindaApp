@@ -1,6 +1,6 @@
 package com.lpavs.caliinda.feature.agent.data.model
 
-enum class AiVisualizerState {
+enum class AgentState {
   IDLE,
   LISTENING,
   THINKING,
