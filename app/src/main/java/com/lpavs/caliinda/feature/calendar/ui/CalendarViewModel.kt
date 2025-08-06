@@ -11,6 +11,7 @@ import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
+import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -151,17 +152,6 @@ constructor(
 
   fun refreshCurrentVisibleDate() {
     viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value) }
-  }
-
-
-  fun calculateEventDurationMinutes(event: EventDto, currentTimeZoneId: String): Long {
-    val start = dateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
-    val end = dateTimeUtils.parseToInstant(event.endTime, currentTimeZoneId)
-    return if (start != null && end != null && end.isAfter(start)) {
-      Duration.between(start, end).toMinutes()
-    } else {
-      0L
-    }
   }
 
   // --- COMPANION ---

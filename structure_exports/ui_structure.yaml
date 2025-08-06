@@ -1,0 +1,1404 @@
+project_info:
+  name: "ui"
+  path: "/Users/paveluckov/StudioProjects/CaliindaApp/app/src/main/java/com/lpavs/caliinda/feature/calendar/ui"
+  generatedAt: "2025-08-06T11:43:03.60855"
+  totalFiles: 10
+  totalSize: 106103
+structure:
+  "CalendarScreen.kt":
+    type: "file"
+    info:
+      "size": "18806"
+      "last_modified": "2025-08-06T11:43:03.586876"
+      "mime_type": "text/plain"
+      "extension": ".kt"
+    children: null
+  "CalendarState.kt":
+    type: "file"
+    info:
+      "size": "552"
+      "last_modified": "2025-08-06T11:43:03.592365"
+      "mime_type": "text/plain"
+      "extension": ".kt"
+    children: null
+  "components":
+    type: null
+    info: null
+    children:
+      "DayEventsPage.kt":
+        type: "file"
+        info:
+          "size": "10153"
+          "last_modified": "2025-08-06T11:43:03.594461"
+          "mime_type": "text/plain"
+          "extension": ".kt"
+        children: null
+      "CardsList.kt":
+        type: "file"
+        info:
+          "size": "9611"
+          "last_modified": "2025-08-06T11:43:03.596676"
+          "mime_type": "text/plain"
+          "extension": ".kt"
+        children: null
+      "FunMessages.kt":
+        type: "file"
+        info:
+          "size": "11519"
+          "last_modified": "2025-08-06T11:43:03.598362"
+          "mime_type": "text/plain"
+          "extension": ".kt"
+        children: null
+      "details":
+        type: null
+        info: null
+        children:
+          "EventDetailsDialog.kt":
+            type: "file"
+            info:
+              "size": "9273"
+              "last_modified": "2025-08-06T11:43:03.600212"
+              "mime_type": "text/plain"
+              "extension": ".kt"
+            children: null
+      "bars":
+        type: null
+        info: null
+        children:
+          "BottomBar.kt":
+            type: "file"
+            info:
+              "size": "8494"
+              "last_modified": "2025-08-06T11:43:03.601974"
+              "mime_type": "text/plain"
+              "extension": ".kt"
+            children: null
+          "CalendarAppBar.kt":
+            type: "file"
+            info:
+              "size": "5502"
+              "last_modified": "2025-08-06T11:43:03.603592"
+              "mime_type": "text/plain"
+              "extension": ".kt"
+            children: null
+      "EventCard.kt":
+        type: "file"
+        info:
+          "size": "25024"
+          "last_modified": "2025-08-06T11:43:03.605306"
+          "mime_type": "text/plain"
+          "extension": ".kt"
+        children: null
+  "CalendarViewModel.kt":
+    type: "file"
+    info:
+      "size": "7169"
+      "last_modified": "2025-08-06T11:43:03.607165"
+      "mime_type": "text/plain"
+      "extension": ".kt"
+    children: null
+files:
+- path: "CalendarScreen.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui\n\nimport android.Manifest\n\
+    import android.app.Activity\nimport android.util.Log\nimport androidx.activity.compose.rememberLauncherForActivityResult\n\
+    import androidx.activity.result.IntentSenderRequest\nimport androidx.activity.result.contract.ActivityResultContracts\n\
+    import androidx.compose.animation.core.Spring\nimport androidx.compose.animation.core.spring\n\
+    import androidx.compose.foundation.layout.Box\nimport androidx.compose.foundation.layout.WindowInsets\n\
+    import androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.navigationBars\n\
+    import androidx.compose.foundation.layout.offset\nimport androidx.compose.foundation.layout.padding\n\
+    import androidx.compose.foundation.pager.PagerDefaults\nimport androidx.compose.foundation.pager.VerticalPager\n\
+    import androidx.compose.foundation.pager.rememberPagerState\nimport androidx.compose.material3.DatePicker\n\
+    import androidx.compose.material3.DatePickerDialog\nimport androidx.compose.material3.ExperimentalMaterial3Api\n\
+    import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\nimport androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset\n\
+    import androidx.compose.material3.ModalBottomSheet\nimport androidx.compose.material3.Scaffold\n\
+    import androidx.compose.material3.SnackbarHost\nimport androidx.compose.material3.SnackbarHostState\n\
+    import androidx.compose.material3.Text\nimport androidx.compose.material3.TextButton\n\
+    import androidx.compose.material3.rememberDatePickerState\nimport androidx.compose.material3.rememberModalBottomSheetState\n\
+    import androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\n\
+    import androidx.compose.runtime.collectAsState\nimport androidx.compose.runtime.getValue\n\
+    import androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\
+    import androidx.compose.runtime.rememberCoroutineScope\nimport androidx.compose.runtime.setValue\n\
+    import androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport\
+    \ androidx.compose.ui.platform.LocalContext\nimport androidx.compose.ui.res.stringResource\n\
+    import androidx.compose.ui.text.input.TextFieldValue\nimport androidx.core.content.ContextCompat\n\
+    import androidx.hilt.navigation.compose.hiltViewModel\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\n\
+    import com.lpavs.caliinda.R\nimport com.lpavs.caliinda.core.ui.util.BackgroundShapeContext\n\
+    import com.lpavs.caliinda.core.ui.util.BackgroundShapes\nimport com.lpavs.caliinda.feature.agent.ui.AiVisualizer\n\
+    import com.lpavs.caliinda.feature.agent.vm.AgentUiEvent\nimport com.lpavs.caliinda.feature.agent.vm.AgentViewModel\n\
+    import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar\nimport\
+    \ com.lpavs.caliinda.feature.calendar.ui.components.bars.CalendarAppBar\nimport\
+    \ com.lpavs.caliinda.feature.calendar.ui.components.DayEventsPage\nimport com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen\n\
+    import com.lpavs.caliinda.feature.calendar.ui.components.details.CustomEventDetailsDialog\n\
+    import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen\nimport\
+    \ com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog\n\
+    import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent\n\
+    import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel\n\
+    import com.lpavs.caliinda.feature.settings.ui.LogInScreenDialog\nimport kotlinx.coroutines.launch\n\
+    import java.time.Instant\nimport java.time.LocalDate\nimport java.time.ZoneId\n\
+    import java.time.temporal.ChronoUnit\n\n@OptIn(ExperimentalMaterial3Api::class,\
+    \ ExperimentalMaterial3ExpressiveApi::class)\n@Composable\nfun CalendarScreen(\n\
+    \    calendarViewModel: CalendarViewModel,\n    onNavigateToSettings: () -> Unit,\n\
+    \    eventManagementViewModel: EventManagementViewModel = hiltViewModel(),\n \
+    \   agentViewModel: AgentViewModel = hiltViewModel()\n) {\n  val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()\n\
+    \  val userTimeZoneId = remember { ZoneId.of(timeZone.value) }\n  val calendarState\
+    \ by calendarViewModel.state.collectAsStateWithLifecycle()\n  val aiState by agentViewModel.aiState.collectAsState()\n\
+    \  val eventManagementState by eventManagementViewModel.uiState.collectAsState()\n\
+    \  var textFieldState by remember { mutableStateOf(TextFieldValue(\"\")) }\n \
+    \ val snackbarHostState = remember { SnackbarHostState() }\n  val isTextInputVisible\
+    \ by remember { mutableStateOf(false) }\n  val aiMessage by agentViewModel.aiMessage.collectAsState()\n\
+    \  val context = LocalContext.current\n  val scope = rememberCoroutineScope()\n\
+    \  val today = remember { LocalDate.now() }\n  val initialPageIndex = remember\
+    \ { Int.MAX_VALUE / 2 }\n  val pagerState = rememberPagerState(initialPage = initialPageIndex,\
+    \ pageCount = { Int.MAX_VALUE })\n  val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()\n\
+    \  val activity = context as? Activity\n  val authorizationLauncher =\n      rememberLauncherForActivityResult(\n\
+    \          contract = ActivityResultContracts.StartIntentSenderForResult()) {\
+    \ result ->\n            if (result.resultCode == Activity.RESULT_OK) {\n    \
+    \          result.data?.let { calendarViewModel.handleAuthorizationResult(it)\
+    \ }\n            } else {\n              Log.w(\"MainScreen\", \"Authorization\
+    \ flow was cancelled by user.\")\n              calendarViewModel.signOut()\n\
+    \            }\n          }\n  val isOverallLoading = calendarState.isLoading\
+    \ || eventManagementState.isLoading\n\n  LaunchedEffect(calendarState.authorizationIntent)\
+    \ {\n    calendarState.authorizationIntent?.let { pendingIntent ->\n      try\
+    \ {\n        val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()\n\
+    \        authorizationLauncher.launch(intentSenderRequest)\n        calendarViewModel.clearAuthorizationIntent()\n\
+    \      } catch (e: Exception) {\n        Log.e(\"MainScreen\", \"Couldn't start\
+    \ authorization UI\", e)\n      }\n    }\n  }\n\n  var showDatePicker by remember\
+    \ { mutableStateOf(false) }\n  val datePickerState =\n      rememberDatePickerState(\n\
+    \          initialSelectedDateMillis =\n              currentVisibleDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),\n\
+    \      )\n\n  // --- НОВОЕ: Настройка flingBehavior ---\n  val customFlingBehavior\
+    \ =\n      PagerDefaults.flingBehavior(\n          state = pagerState,\n     \
+    \     // ---\n          snapPositionalThreshold = 0.2f,\n          // ---\n  \
+    \        snapAnimationSpec =\n              spring(\n                  stiffness\
+    \ = Spring.StiffnessLow, // По умолчанию Spring.StiffnessMediumLow\n         \
+    \     ))\n\n  val sheetState =\n      rememberModalBottomSheetState(\n       \
+    \   skipPartiallyExpanded = false // Чтобы лист либо полностью открыт, либо за\
+    крыт\n          )\n  var showCreateEventSheet by remember { mutableStateOf(false)\
+    \ }\n  var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today)\
+    \ }\n\n  var showEditEventSheet by remember { mutableStateOf(false) }\n  val editSheetState\
+    \ = rememberModalBottomSheetState(skipPartiallyExpanded = false)\n\n  // --- Н\
+    ОВОЕ: Эффект для синхронизации Pager -> ViewModel ---\n  LaunchedEffect(pagerState.targetPage)\
+    \ { // Реагируем, когда страница \"устаканилась\"\n    val settledDate = today.plusDays((pagerState.targetPage\
+    \ - initialPageIndex).toLong())\n    Log.d(\"CalendarScreen\", \"Pager settled\
+    \ on page ${pagerState.targetPage}, date: $settledDate\")\n    calendarViewModel.onVisibleDateChanged(settledDate)\n\
+    \  }\n\n    LaunchedEffect(key1 = true) {\n        agentViewModel.eventFlow.collect\
+    \ { event ->\n            when (event) {\n                is AgentUiEvent.ShowMessage\
+    \ -> {\n                    snackbarHostState.showSnackbar(event.message.asString(context))\n\
+    \                }\n            }\n        }\n    }\n\n  LaunchedEffect(key1 =\
+    \ true) {\n    calendarViewModel.eventFlow.collect { event ->\n      when (event)\
+    \ {\n        is CalendarUiEvent.ShowMessage -> {\n          snackbarHostState.showSnackbar(event.message)\n\
+    \        }\n      }\n    }\n  }\n\n  // события от EventManagementViewModel (у\
+    спех/ошибка CRUD операций)\n  LaunchedEffect(key1 = true) {\n    eventManagementViewModel.eventFlow.collect\
+    \ { event ->\n      when (event) {\n        is EventManagementUiEvent.ShowMessage\
+    \ -> {\n          snackbarHostState.showSnackbar(event.message.asString(context))\n\
+    \        }\n        is EventManagementUiEvent.OperationSuccess -> {}\n      }\n\
+    \    }\n  }\n  // TODO: Добавь обработку rangeNetworkState.Error, если нужно п\
+    оказывать снекбар и для этого\n\n  LaunchedEffect(Unit) {\n    val hasPermission\
+    \ =\n        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)\
+    \ ==\n            android.content.pm.PackageManager.PERMISSION_GRANTED\n     \
+    \ agentViewModel.updatePermissionStatus(hasPermission)\n  }\n\n  if (eventManagementState.showRecurringEditOptionsDialog\
+    \ &&\n      eventManagementState.eventBeingEdited != null) {\n    RecurringEventEditOptionsDialog(\
+    \ // Вам нужно создать этот Composable\n        eventName = eventManagementState.eventBeingEdited!!.summary,\n\
+    \        onDismiss = {\n          eventManagementViewModel.cancelEditEvent()\n\
+    \        }, // Если пользователь закрыл диалог\n        onOptionSelected = { choice\
+    \ ->\n          eventManagementViewModel.onRecurringEditOptionSelected(choice)\n\
+    \        })\n  }\n\n  LaunchedEffect(eventManagementState.showEditEventDialog,\
+    \ eventManagementState.eventBeingEdited) {\n    if (eventManagementState.showEditEventDialog\
+    \ && eventManagementState.eventBeingEdited != null) {\n      showEditEventSheet\
+    \ = true\n    } else {\n      if (showEditEventSheet) {\n        scope\n     \
+    \       .launch { editSheetState.hide() }\n            .invokeOnCompletion {\n\
+    \              if (!editSheetState.isVisible) {\n                showEditEventSheet\
+    \ = false\n              }\n            }\n      }\n    }\n  }\n  LaunchedEffect(editSheetState.isVisible)\
+    \ {\n    if (!editSheetState.isVisible && showEditEventSheet) {\n      showEditEventSheet\
+    \ = false\n      eventManagementViewModel.cancelEditEvent()\n    }\n  }\n\n  Scaffold(\n\
+    \      snackbarHost = { SnackbarHost(snackbarHostState) },\n      topBar = {\n\
+    \        CalendarAppBar(\n            onNavigateToSettings = onNavigateToSettings,\n\
+    \            onGoToTodayClick = {\n              scope.launch {\n            \
+    \    if (pagerState.currentPage != initialPageIndex) {\n                  calendarViewModel.onVisibleDateChanged(today)\n\
+    \                  pagerState.animateScrollToPage(initialPageIndex)\n        \
+    \        } else {\n                  calendarViewModel.refreshCurrentVisibleDate()\n\
+    \                }\n              }\n            },\n            onTitleClick\
+    \ = {\n              datePickerState.selectableDates\n\n              showDatePicker\
+    \ = true\n            },\n            date = currentVisibleDate)\n      },\n \
+    \ ) { paddingValues ->\n    Box(modifier = Modifier.padding(paddingValues).fillMaxSize())\
+    \ {\n      BackgroundShapes(BackgroundShapeContext.Main)\n\n      VerticalPager(\n\
+    \          state = pagerState,\n          modifier = Modifier.fillMaxSize(),\n\
+    \          key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay()\
+    \ },\n          flingBehavior = customFlingBehavior) { pageIndex ->\n        \
+    \    val pageDate =\n                remember(pageIndex) { today.plusDays((pageIndex\
+    \ - initialPageIndex).toLong()) }\n\n            DayEventsPage(\n            \
+    \    isLoading = isOverallLoading,\n                date = pageDate,\n       \
+    \         viewModel = calendarViewModel,\n                eventManagementViewModel\
+    \ = eventManagementViewModel)\n          }\n      AiVisualizer(\n          aiState\
+    \ = aiState,\n          aiMessage = aiMessage,\n          modifier = Modifier.fillMaxSize(),\n\
+    \          onResultShownTimeout = { agentViewModel.resetAiStateAfterResult() },\n\
+    \          onAskingShownTimeout = { agentViewModel.resetAiStateAfterAsking() })\n\
+    \      BottomBar(\n          uiState = calendarState, // Передаем весь uiState,\
+    \ т.к. Bar зависит от многих полей\n          textFieldValue = textFieldState,\n\
+    \          onTextChanged = { textFieldState = it },\n          onSendClick = {\n\
+    \              agentViewModel.sendTextMessage(textFieldState.text)\n         \
+    \   textFieldState = TextFieldValue(\"\") // Очищаем поле после отправки\n   \
+    \       },\n          onRecordStart = { agentViewModel.startListening() }, //\
+    \ Передаем лямбды для записи\n          onRecordStopAndSend = { agentViewModel.stopListening()\
+    \ },\n          onUpdatePermissionResult = { granted ->\n              agentViewModel.updatePermissionStatus(granted)\n\
+    \          }, // Передаем лямбду для обновления разрешений\n          isTextInputVisible\
+    \ = isTextInputVisible,\n          modifier = Modifier.align(Alignment.BottomCenter).offset(y\
+    \ = -ScreenOffset),\n          onCreateEventClick = {\n            selectedDateForSheet\
+    \ = currentVisibleDate\n            showCreateEventSheet = true\n          })\n\
+    \    } // End основной Box\n  } // End Scaffold\n\n  if (showDatePicker) {\n \
+    \   DatePickerDialog(\n        onDismissRequest = { showDatePicker = false },\n\
+    \        confirmButton = {\n          TextButton(\n              onClick = {\n\
+    \                showDatePicker = false\n                val selectedMillis =\
+    \ datePickerState.selectedDateMillis\n                if (selectedMillis != null)\
+    \ {\n                  val selectedDate =\n                      Instant.ofEpochMilli(selectedMillis).atZone(userTimeZoneId).toLocalDate()\n\
+    \n                  // Проверяем, изменилась ли дата\n                  if (selectedDate\
+    \ != currentVisibleDate) {\n                    // 1. Сообщаем ViewModel о нов\
+    ой дате *до* скролла\n                    Log.d(\"DatePicker\", \"Date selected:\
+    \ $selectedDate. Updating ViewModel.\")\n                    calendarViewModel.onVisibleDateChanged(selectedDate)\n\
+    \n                    // 2. Рассчитываем целевую страницу\n                  \
+    \  val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)\n       \
+    \             val targetPageIndex =\n                        (initialPageIndex\
+    \ + daysDifference)\n                            // Ограничиваем индекс на вся\
+    кий случай\n                            .coerceIn(0L, Int.MAX_VALUE.toLong() -\
+    \ 1L)\n                            .toInt()\n\n                    // 3. Запус\
+    каем скролл к странице (используем scrollToPage для мгновенного\n            \
+    \        // перехода)\n                    scope.launch {\n                  \
+    \    Log.d(\"DatePicker\", \"Scrolling Pager to page index: $targetPageIndex\"\
+    )\n                      pagerState.scrollToPage(targetPageIndex)\n          \
+    \          }\n                  } else {\n                    Log.d(\n       \
+    \                 \"DatePicker\",\n                        \"Selected date $selectedDate\
+    \ is the same as current $currentVisibleDate. No action.\")\n                \
+    \  }\n                } else {\n                  Log.w(\"DatePicker\", \"Confirm\
+    \ clicked but selectedDateMillis is null.\")\n                }\n            \
+    \  },\n              // Кнопка активна, только если дата выбрана\n           \
+    \   enabled = datePickerState.selectedDateMillis != null) {\n                Text(\"\
+    OK\") // Используем Text из M3\n              }\n        },\n        dismissButton\
+    \ = {\n          TextButton(onClick = { showDatePicker = false }) {\n        \
+    \    Text(stringResource(R.string.cancel)) // Используем Text из M3\n        \
+    \  }\n        }) {\n          // Сам DatePicker\n          DatePicker(state =\
+    \ datePickerState)\n        }\n  }\n  if (showCreateEventSheet) {\n    ModalBottomSheet(\n\
+    \        onDismissRequest = { showCreateEventSheet = false },\n        sheetState\
+    \ = sheetState,\n        contentWindowInsets = { WindowInsets.navigationBars })\
+    \ {\n          CreateEventScreen(\n              userTimeZone = timeZone.value,\n\
+    \              initialDate = selectedDateForSheet,\n              onDismiss =\
+    \ {\n                scope\n                    .launch { sheetState.hide() }\n\
+    \                    .invokeOnCompletion {\n                      if (!sheetState.isVisible)\
+    \ {\n                        showCreateEventSheet = false\n                  \
+    \    }\n                    }\n              },\n              currentSheetValue\
+    \ = sheetState.currentValue)\n        }\n  }\n  if (showEditEventSheet) {\n  \
+    \  val eventToEdit = eventManagementState.eventBeingEdited\n    val mode = eventManagementState.selectedUpdateMode\n\
+    \n    if (eventToEdit != null && mode != null) {\n      ModalBottomSheet(\n  \
+    \        onDismissRequest = {\n            scope\n                .launch { editSheetState.hide()\
+    \ }\n                .invokeOnCompletion {\n                  if (!editSheetState.isVisible)\
+    \ {\n                    showEditEventSheet = false\n                    eventManagementViewModel.cancelEditEvent()\n\
+    \                  }\n                }\n          },\n          sheetState =\
+    \ editSheetState,\n          contentWindowInsets = { WindowInsets.navigationBars\
+    \ }) {\n            EditEventScreen(\n                viewModel = eventManagementViewModel,\n\
+    \                userTimeZone = timeZone.value,\n                eventToEdit =\
+    \ eventToEdit,\n                selectedUpdateMode = mode,\n                onDismiss\
+    \ = {\n                  scope\n                      .launch { editSheetState.hide()\
+    \ }\n                      .invokeOnCompletion {\n                        if (!editSheetState.isVisible)\
+    \ {\n                          showEditEventSheet = false\n                  \
+    \        eventManagementViewModel.cancelEditEvent()\n                        }\n\
+    \                      }\n                },\n                currentSheetValue\
+    \ = editSheetState.currentValue)\n          }\n    }\n  }\n  if (eventManagementState.showEventDetailedView\
+    \ &&\n      eventManagementState.eventForDetailedView != null) {\n    CustomEventDetailsDialog(\n\
+    \        event = eventManagementState.eventForDetailedView!!, // Передаем собы\
+    тие\n        onDismissRequest = { eventManagementViewModel.cancelEventDetails()\
+    \ },\n        viewModel = calendarViewModel,\n        userTimeZone = timeZone.value,\n\
+    \        eventManagementViewModel = eventManagementViewModel)\n  }\n  if (calendarState.showSignInRequiredDialog)\
+    \ {\n    LogInScreenDialog(\n        onDismissRequest = { calendarViewModel.onSignInRequiredDialogDismissed()\
+    \ },\n        onSignInClick = {\n          if (activity != null) {\n         \
+    \   calendarViewModel.signIn(activity)\n          } else {\n            Log.e(\"\
+    MainScreen\", \"Activity is null, cannot start sign-in flow.\")\n          }\n\
+    \        })\n  }\n\n  LaunchedEffect(sheetState.isVisible) {\n    if (!sheetState.isVisible\
+    \ && showCreateEventSheet) {\n      showCreateEventSheet = false\n    }\n  }\n\
+    }\n"
+  info:
+    "size": "18806"
+    "last_modified": "2025-08-06T11:43:03.586876"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "CalendarState.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui\n\nimport android.app.PendingIntent\n\
+    import android.net.Uri\n\ndata class CalendarState(\n    val isSignedIn: Boolean\
+    \ = false,\n    val userEmail: String? = null,\n    val displayName: String? =\
+    \ null,\n    val photo: Uri? = null,\n    val isLoading: Boolean = false,\n  \
+    \  val isListening: Boolean = false,\n    val isPermissionGranted: Boolean = false,\n\
+    \    val message: String? = \"Требуется вход.\",\n    val showSignInRequiredDialog:\
+    \ Boolean = false,\n    val authorizationIntent: PendingIntent? = null,\n)\n"
+  info:
+    "size": "552"
+    "last_modified": "2025-08-06T11:43:03.592365"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/DayEventsPage.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components\n\nimport android.util.Log\n\
+    import androidx.compose.foundation.background\nimport androidx.compose.foundation.layout.Box\n\
+    import androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.Spacer\n\
+    import androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.fillMaxWidth\n\
+    import androidx.compose.foundation.layout.height\nimport androidx.compose.foundation.layout.padding\n\
+    import androidx.compose.foundation.layout.size\nimport androidx.compose.foundation.lazy.rememberLazyListState\n\
+    import androidx.compose.foundation.shape.RoundedCornerShape\nimport androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\n\
+    import androidx.compose.material3.LoadingIndicator\nimport androidx.compose.material3.MaterialTheme\n\
+    import androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\n\
+    import androidx.compose.runtime.LaunchedEffect\nimport androidx.compose.runtime.getValue\n\
+    import androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\
+    import androidx.compose.runtime.setValue\nimport androidx.compose.ui.Alignment\n\
+    import androidx.compose.ui.Modifier\nimport androidx.compose.ui.draw.clip\nimport\
+    \ androidx.compose.ui.draw.shadow\nimport androidx.compose.ui.platform.LocalContext\n\
+    import androidx.compose.ui.res.stringResource\nimport androidx.compose.ui.unit.dp\n\
+    import androidx.lifecycle.compose.collectAsStateWithLifecycle\nimport com.lpavs.caliinda.R\n\
+    import com.lpavs.caliinda.core.common.EventNetworkState\nimport com.lpavs.caliinda.core.data.remote.dto.EventDto\n\
+    import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults\nimport com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil\n\
+    import com.lpavs.caliinda.core.ui.util.DateTimeUtils\nimport com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel\n\
+    import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog\n\
+    import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog\n\
+    import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel\n\
+    import kotlinx.coroutines.launch\nimport java.time.Instant\nimport java.time.LocalDate\n\
+    \n@OptIn(ExperimentalMaterial3ExpressiveApi::class)\n@Composable\nfun DayEventsPage(\n\
+    \    isLoading: Boolean,\n    date: LocalDate,\n    viewModel: CalendarViewModel,\n\
+    \    eventManagementViewModel: EventManagementViewModel\n) {\n  val eventsFlow\
+    \ = remember(date) { viewModel.getEventsFlowForDate(date) }\n  val eventsState\
+    \ = eventsFlow.collectAsStateWithLifecycle(initialValue = emptyList())\n  val\
+    \ events = eventsState.value\n  Log.d(\n      \"DayEventsPage\",\n      \"Events\
+    \ received from flow: ${events.joinToString { it.summary + \" (allDay=\" + it.isAllDay\
+    \ + \")\" }}\")\n  val calendarState by viewModel.state.collectAsStateWithLifecycle()\n\
+    \  val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()\n\
+    \  val currentTimeZoneId by eventManagementViewModel.timeZone.collectAsStateWithLifecycle()\n\
+    \n  val currentTime by viewModel.currentTime.collectAsStateWithLifecycle()\n\n\
+    \  val isToday = date == LocalDate.now()\n\n  val (allDayEvents, timedEvents)\
+    \ =\n      remember(events, currentTimeZoneId) { // Добавим зависимость от поя\
+    са\n        val (allDay, timed) = events.partition { it.isAllDay } // Использу\
+    ем флаг isAllDay\n        val sortedTimed =\n            timed.sortedBy { event\
+    \ ->\n              DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)\
+    \ ?: Instant.MAX\n            }\n        allDay to sortedTimed\n      }\n  Log.d(\"\
+    DayEventsPage\", \"Partitioned: AllDay=${allDayEvents.size}, Timed=${timedEvents.size}\"\
+    )\n\n  val nextStartTime: Instant? =\n      remember(timedEvents, currentTime,\
+    \ isToday, currentTimeZoneId) {\n        if (!isToday) null\n        else {\n\
+    \          timedEvents.firstNotNullOfOrNull { event ->\n            val start\
+    \ = DateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)\n       \
+    \     if (start != null && start.isAfter(currentTime)) start else null\n     \
+    \     }\n        }\n      }\n  val context = LocalContext.current\n\n  // ---\
+    \ ОПРЕДЕЛЯЕМ ЦЕЛЕВОЙ ИНДЕКС ДЛЯ ПРОКРУТКИ ---\n  val targetScrollIndex =\n   \
+    \   remember(timedEvents, currentTime, nextStartTime, isToday, currentTimeZoneId)\
+    \ {\n        if (!isToday || timedEvents.isEmpty()) -1\n        else {\n     \
+    \     val currentEventIndex =\n              timedEvents.indexOfFirst { event\
+    \ ->\n                val start = DateTimeUtils.parseToInstant(event.startTime,\
+    \ currentTimeZoneId)\n                val end = DateTimeUtils.parseToInstant(event.endTime,\
+    \ currentTimeZoneId)\n                start != null &&\n                    end\
+    \ != null &&\n                    !currentTime.isBefore(start) &&\n          \
+    \          currentTime.isBefore(end)\n              }\n          if (currentEventIndex\
+    \ != -1) currentEventIndex\n          else if (nextStartTime != null) {\n    \
+    \        timedEvents.indexOfFirst { event ->\n              val start = DateTimeUtils.parseToInstant(event.startTime,\
+    \ currentTimeZoneId)\n              start != null && start == nextStartTime\n\
+    \            }\n          } else -1\n        }\n      }\n\n  // --- СОЗДАЕМ И\
+    \ ЗАПОМИНАЕМ СОСТОЯНИЕ СПИСКА ---\n  val listState = rememberLazyListState()\n\
+    \  val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()\n\
+    \  val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading\n\
+    \  val isListening = calendarState.isListening\n\n  LaunchedEffect(targetScrollIndex,\
+    \ isToday) {\n    if (isToday && targetScrollIndex != -1) {\n      launch {\n\
+    \        try {\n          listState.animateScrollToItem(index = targetScrollIndex)\n\
+    \        } catch (e: Exception) {\n          Log.e(\"DayEventsPageScroll\", \"\
+    Error scrolling to index $targetScrollIndex\", e)\n        }\n      }\n    }\n\
+    \  }\n  var expandedAllDayEventId by remember { mutableStateOf<String?>(null)\
+    \ }\n\n  Box(modifier = Modifier.fillMaxSize()) {\n    Column(modifier = Modifier.fillMaxSize())\
+    \ {\n      Spacer(modifier = Modifier.height(3.dp))\n      if (allDayEvents.isNotEmpty())\
+    \ {\n        Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовк\
+    а даты\n        Column(\n            modifier =\n                Modifier.fillMaxWidth().padding(horizontal\
+    \ = 16.dp) // Общий горизонтальный отступ\n            ) {\n              allDayEvents.forEach\
+    \ { event ->\n                val isExpanded = event.id == expandedAllDayEventId\n\
+    \                AllDayEventItem(\n                    event = event,\n      \
+    \              isExpanded = isExpanded,\n                    onToggleExpand =\
+    \ {\n                      expandedAllDayEventId =\n                         \
+    \ if (expandedAllDayEventId == event.id) {\n                            null\n\
+    \                          } else {\n                            event.id\n  \
+    \                        }\n                    },\n                    onDeleteClick\
+    \ = { eventManagementViewModel.requestDeleteConfirmation(event) },\n         \
+    \           onDetailsClick = { eventManagementViewModel.requestEventDetails(event)\
+    \ },\n                    onEditClick = { eventManagementViewModel.requestEditEvent(event)\
+    \ },\n                )\n                Spacer(modifier = Modifier.height(6.dp))\n\
+    \              }\n            }\n      }\n      Spacer(modifier = Modifier.height(8.dp))\n\
+    \n      if (timedEvents.isNotEmpty()) {\n        val timeFormatterLambda: (EventDto)\
+    \ -> String =\n            remember(viewModel, currentTimeZoneId) {\n        \
+    \      { event ->\n                DateTimeFormatterUtil.formatEventListTime(context,\
+    \ event, currentTimeZoneId)\n              }\n            }\n        CardsList(\n\
+    \            events = timedEvents,\n            timeFormatter = timeFormatterLambda,\n\
+    \            isToday = isToday,\n            nextStartTime = nextStartTime,\n\
+    \            currentTime = currentTime,\n            listState = listState,\n\
+    \            onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,\n\
+    \            onEditRequest = eventManagementViewModel::requestEditEvent,\n   \
+    \         onDetailsRequest = eventManagementViewModel::requestEventDetails,\n\
+    \            currentTimeZoneId = currentTimeZoneId)\n      } else if (allDayEvents.isEmpty())\
+    \ {\n        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center)\
+    \ {\n          if (isBusy && !isListening) {\n            LoadingIndicator(modifier\
+    \ = Modifier.size(80.dp))\n          } else {\n            Box(\n            \
+    \    modifier =\n                    Modifier.shadow(\n                      \
+    \      elevation = 5.dp,\n                            shape = RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius),\n\
+    \                            clip = false,\n                        )\n      \
+    \                  .clip(RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius))\n\
+    \                        .background(color = MaterialTheme.colorScheme.secondaryContainer)\n\
+    \                        .padding(16.dp),\n                contentAlignment =\
+    \ Alignment.Center // Центрируем сообщение\n                ) {\n            \
+    \      Text(\n                      stringResource(R.string.no_events),\n    \
+    \                  style = MaterialTheme.typography.bodyLarge,\n             \
+    \         color = MaterialTheme.colorScheme.onSecondaryContainer)\n          \
+    \      }\n          }\n        }\n      } else {\n        Spacer(modifier = Modifier.weight(1f))\n\
+    \      }\n      if (eventManagementState.showDeleteConfirmationDialog &&\n   \
+    \       eventManagementState.eventPendingDeletion != null) {\n        DeleteConfirmationDialog(\n\
+    \            onConfirm = { eventManagementViewModel.confirmDeleteEvent() },\n\
+    \            onDismiss = { eventManagementViewModel.cancelDelete() })\n      }\
+    \ else if (eventManagementState.showRecurringDeleteOptionsDialog &&\n        \
+    \  eventManagementState.eventPendingDeletion != null) {\n        RecurringEventDeleteOptionsDialog(\n\
+    \            eventName = eventManagementState.eventPendingDeletion!!.summary,\n\
+    \            onDismiss = { eventManagementViewModel.cancelDelete() },\n      \
+    \      onOptionSelected = { choice ->\n              eventManagementViewModel.confirmRecurringDelete(choice)\n\
+    \            })\n      }\n    }\n  }\n}\n"
+  info:
+    "size": "10153"
+    "last_modified": "2025-08-06T11:43:03.594461"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/CardsList.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components\n\nimport androidx.compose.animation.AnimatedVisibility\n\
+    import androidx.compose.animation.core.Spring\nimport androidx.compose.animation.core.animateDpAsState\n\
+    import androidx.compose.animation.core.spring\nimport androidx.compose.animation.core.tween\n\
+    import androidx.compose.animation.fadeOut\nimport androidx.compose.animation.slideInVertically\n\
+    import androidx.compose.animation.slideOutVertically\nimport androidx.compose.foundation.layout.Box\n\
+    import androidx.compose.foundation.layout.PaddingValues\nimport androidx.compose.foundation.layout.fillMaxSize\n\
+    import androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.height\n\
+    import androidx.compose.foundation.layout.padding\nimport androidx.compose.foundation.lazy.LazyColumn\n\
+    import androidx.compose.foundation.lazy.LazyListState\nimport androidx.compose.foundation.lazy.items\n\
+    import androidx.compose.runtime.Composable\nimport androidx.compose.runtime.getValue\n\
+    import androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\
+    import androidx.compose.runtime.setValue\nimport androidx.compose.ui.Modifier\n\
+    import androidx.compose.ui.unit.Dp\nimport androidx.compose.ui.unit.IntOffset\n\
+    import androidx.compose.ui.unit.dp\nimport com.lpavs.caliinda.core.data.remote.dto.EventDto\n\
+    import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults\nimport com.lpavs.caliinda.core.ui.theme.cuid\n\
+    import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant\nimport java.time.Duration\n\
+    import java.time.Instant\n\ndata class GeneratedShapeParams(\n    val numVertices:\
+    \ Int,\n    val radiusSeed: Float,\n    val rotationAngle: Float,\n    val shadowOffsetYSeed:\
+    \ Dp,\n    val shadowOffsetXSeed: Dp,\n    val offestParam: Float,\n)\n\n@Composable\n\
+    fun CardsList(\n    events: List<EventDto>,\n    timeFormatter: (EventDto) ->\
+    \ String,\n    currentTime: Instant,\n    isToday: Boolean,\n    currentTimeZoneId:\
+    \ String,\n    listState: LazyListState,\n    nextStartTime: Instant?,\n    onDeleteRequest:\
+    \ (EventDto) -> Unit,\n    onEditRequest: (EventDto) -> Unit,\n    onDetailsRequest:\
+    \ (EventDto) -> Unit,\n) {\n  val transitionWindowDurationMillis = remember {\n\
+    \    Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()\n  }\n\
+    \  var expandedEventId by remember { mutableStateOf<String?>(null) }\n\n  LazyColumn(\n\
+    \      modifier = Modifier.fillMaxSize(),\n      state = listState,\n      contentPadding\
+    \ = PaddingValues(bottom = 100.dp)) {\n        items(items = events, key = { event\
+    \ -> event.id }) { event ->\n          val fadeSpringSpec =\n              spring<Float>(\n\
+    \                  dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)\n\
+    \          val sliderSpringSpec =\n              spring<IntOffset>(\n        \
+    \          dampingRatio = Spring.DampingRatioHighBouncy,\n                  stiffness\
+    \ = Spring.StiffnessMediumLow)\n          val popUndUpSpec =\n              spring<IntOffset>(\n\
+    \                  dampingRatio = Spring.DampingRatioMediumBouncy,\n         \
+    \         stiffness = Spring.StiffnessMediumLow)\n          AnimatedVisibility(\n\
+    \              visible = true,\n              enter =\n                  slideInVertically(initialOffsetY\
+    \ = { it / 2 }, animationSpec = sliderSpringSpec),\n              exit =\n   \
+    \               fadeOut(animationSpec = fadeSpringSpec) +\n                  \
+    \    slideOutVertically(\n                          targetOffsetY = { it / 2 },\
+    \ animationSpec = sliderSpringSpec),\n              modifier =\n             \
+    \     Modifier.animateItem(\n                      placementSpec = popUndUpSpec,\n\
+    \                      fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),\n\
+    \                      fadeOutSpec = spring(stiffness = Spring.StiffnessHigh)))\
+    \ {\n                val isExpanded = event.id == expandedEventId\n\n        \
+    \        val eventDurationMinutes =\n                    remember(event.startTime,\
+    \ event.endTime, currentTimeZoneId) {\n                      val start = parseToInstant(event.startTime,\
+    \ currentTimeZoneId)\n                      val end = parseToInstant(event.endTime,\
+    \ currentTimeZoneId)\n                      if (start != null && end != null &&\
+    \ end.isAfter(start)) {\n                        Duration.between(start, end).toMinutes()\n\
+    \                      } else {\n                        0L\n                \
+    \      }\n                    }\n\n                val isMicroEvent =\n      \
+    \              remember(eventDurationMinutes) {\n                      eventDurationMinutes\
+    \ > 0 &&\n                          eventDurationMinutes <= cuid.MicroEventMaxDurationMinutes\n\
+    \                    }\n\n                val baseHeight =\n                 \
+    \   remember(isMicroEvent, eventDurationMinutes) {\n                      calculateEventHeight(eventDurationMinutes,\
+    \ isMicroEvent)\n                    }\n\n                val buttonsRowHeight\
+    \ = 56.dp\n                val expandedAdditionalHeight =\n                  \
+    \  remember(isMicroEvent) {\n                      if (isMicroEvent && baseHeight\
+    \ < buttonsRowHeight * 1.5f) {\n                        buttonsRowHeight * 1.2f\n\
+    \                      } else {\n                        buttonsRowHeight\n  \
+    \                    }\n                    }\n\n                val expandedCalculatedHeight\
+    \ =\n                    remember(baseHeight, expandedAdditionalHeight) {\n  \
+    \                    if (eventDurationMinutes > 120 && !isMicroEvent) {\n    \
+    \                    (baseHeight + expandedAdditionalHeight * 0.9f).coerceAtLeast(baseHeight)\n\
+    \                      } else {\n                        baseHeight + expandedAdditionalHeight\n\
+    \                      }\n                    }\n\n                val animatedHeight\
+    \ by\n                    animateDpAsState(\n                        targetValue\
+    \ = if (isExpanded) expandedCalculatedHeight else baseHeight,\n              \
+    \          animationSpec = tween(durationMillis = 250),\n                    \
+    \    label = \"eventItemHeightAnimation\")\n\n                val isCurrent =\n\
+    \                    remember(currentTime, event.startTime, event.endTime, currentTimeZoneId)\
+    \ {\n                      val start = parseToInstant(event.startTime, currentTimeZoneId)\n\
+    \                      val end = parseToInstant(event.endTime, currentTimeZoneId)\n\
+    \                      start != null &&\n                          end != null\
+    \ &&\n                          !currentTime.isBefore(start) &&\n            \
+    \              currentTime.isBefore(end)\n                    }\n            \
+    \    val isNext =\n                    remember(event.startTime, nextStartTime,\
+    \ currentTimeZoneId) {\n                      if (nextStartTime == null) false\n\
+    \                      else {\n                        val currentEventStart =\
+    \ parseToInstant(event.startTime, currentTimeZoneId)\n                       \
+    \ currentEventStart != null && currentEventStart == nextStartTime\n          \
+    \            }\n                    }\n\n                val proximityRatio =\n\
+    \                    remember(\n                        currentTime,\n       \
+    \                 event.startTime,\n                        isToday,\n       \
+    \                 currentTimeZoneId,\n                        transitionWindowDurationMillis)\
+    \ {\n                          if (!isToday) {\n                            0f\n\
+    \                          } else {\n                            val start = parseToInstant(event.startTime,\
+    \ currentTimeZoneId)\n                            if (start == null || currentTime.isAfter(start))\
+    \ {\n                              0f\n                            } else {\n\
+    \                              val timeUntilStartMillis =\n                  \
+    \                Duration.between(currentTime, start).toMillis()\n           \
+    \                   if (timeUntilStartMillis > transitionWindowDurationMillis\
+    \ ||\n                                  transitionWindowDurationMillis <= 0) {\n\
+    \                                0f\n                              } else {\n\
+    \                                (1.0f -\n                                   \
+    \     (timeUntilStartMillis.toFloat() /\n                                    \
+    \        transitionWindowDurationMillis.toFloat()))\n                        \
+    \            .coerceIn(0f, 1f)\n                              }\n            \
+    \                }\n                          }\n                        }\n\n\
+    \                EventItem(\n                    event = event,\n            \
+    \        timeFormatter = timeFormatter,\n                    isCurrentEvent =\
+    \ isCurrent,\n                    isNextEvent = isNext,\n                    proximityRatio\
+    \ = proximityRatio,\n                    isMicroEventFromList = isMicroEvent,\n\
+    \                    targetHeightFromList = animatedHeight,\n                \
+    \    isExpanded = isExpanded,\n                    onToggleExpand = {\n      \
+    \                expandedEventId =\n                          if (expandedEventId\
+    \ == event.id) {\n                            null\n                         \
+    \ } else {\n                            event.id\n                          }\n\
+    \                    },\n                    onDeleteClickFromList = { onDeleteRequest(event)\
+    \ },\n                    onEditClickFromList = { onEditRequest(event) },\n  \
+    \                  onDetailsClickFromList = { onDetailsRequest(event) },\n   \
+    \                 // --------------------------------\n                    modifier\
+    \ =\n                        Modifier.fillMaxWidth()\n                       \
+    \     .padding(\n                                horizontal = CalendarUiDefaults.ItemHorizontalPadding,\n\
+    \                                vertical = CalendarUiDefaults.ItemVerticalPadding),\n\
+    \                    currentTimeZoneId = currentTimeZoneId)\n              }\n\
+    \        }\n      }\n  Box(modifier = Modifier.height(70.dp))\n}\n"
+  info:
+    "size": "9611"
+    "last_modified": "2025-08-06T11:43:03.596676"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/FunMessages.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components\n\nimport com.lpavs.caliinda.R\n\
+    import com.lpavs.caliinda.core.data.utils.UiText\nimport java.util.Calendar\n\
+    import javax.inject.Inject\nimport javax.inject.Singleton\n\ninterface IFunMessages\
+    \ {\n    fun resetSession()\n    fun getEventCreatedMessage(eventName: String?\
+    \ = null): UiText\n    fun getEventUpdatedMessage(eventName: String? = null):\
+    \ UiText\n    fun getEventDeletedMessage(eventName: String? = null): UiText\n\
+    \    fun getSeriesDeletedMessage(): UiText\n    fun getGenericErrorMessage():\
+    \ UiText\n    fun getCreateErrorMessage(): UiText\n    fun getUpdateErrorMessage():\
+    \ UiText\n    fun getDeleteErrorMessage(): UiText\n    fun getSeasonalMessage():\
+    \ UiText\n}\n\n@Singleton\nclass FunMessagesImpl @Inject constructor() : IFunMessages\
+    \ {\n\n    private var isFirstMessageOfSession = true\n    private var lastSessionTimestamp\
+    \ = 0L\n    private val SESSION_TIMEOUT_MS = 30 * 60 * 1000L // 30 минут\n\n \
+    \   override fun resetSession() {\n        isFirstMessageOfSession = true\n  \
+    \      lastSessionTimestamp = System.currentTimeMillis()\n    }\n\n    private\
+    \ fun checkSessionTimeout() {\n        val currentTime = System.currentTimeMillis()\n\
+    \        if (currentTime - lastSessionTimestamp > SESSION_TIMEOUT_MS) {\n    \
+    \        isFirstMessageOfSession = true\n        }\n        lastSessionTimestamp\
+    \ = currentTime\n    }\n\n    private val eventCreatedMessages =\n        listOf(\n\
+    \            R.string.event_created_spawned,\n            R.string.event_created_dropped,\n\
+    \            R.string.event_created_deployed,\n            R.string.event_created_baked,\n\
+    \            R.string.event_created_nailed\n        )\n\n    private val eventUpdatedMessages\
+    \ =\n        listOf(\n            R.string.event_updated_glow_up,\n          \
+    \  R.string.event_updated_upgraded,\n            R.string.event_updated_makeover,\n\
+    \            R.string.event_updated_leveled,\n            R.string.event_updated_live\n\
+    \        )\n\n    private val eventDeletedMessages =\n        listOf(\n      \
+    \      R.string.event_deleted_slayed,\n            R.string.event_deleted_shadow_realm,\n\
+    \            R.string.event_deleted_left_chat,\n            R.string.event_deleted_yeeted,\n\
+    \            R.string.event_deleted_vanished\n        )\n\n    private val seriesDeletedMessages\
+    \ =\n        listOf(\n            R.string.series_deleted_ace,\n            R.string.series_deleted_bloodline,\n\
+    \            R.string.series_deleted_dynasty,\n            R.string.series_deleted_nuked,\n\
+    \            R.string.series_deleted_family_tree\n        )\n\n    private val\
+    \ eventCreatedWithNameMessages =\n        listOf(\n            R.string.event_created_with_name_spawned,\n\
+    \            R.string.event_created_with_name_deployed,\n            R.string.event_created_with_name_live,\n\
+    \            R.string.event_created_with_name_complete,\n            R.string.event_created_with_name_entered_chat\n\
+    \        )\n\n    private val eventUpdatedWithNameMessages =\n        listOf(\n\
+    \            R.string.event_updated_with_name_glow_up,\n            R.string.event_updated_with_name_upgraded,\n\
+    \            R.string.event_updated_with_name_makeover,\n            R.string.event_updated_with_name_leveled,\n\
+    \            R.string.event_updated_with_name_live\n        )\n\n    private val\
+    \ eventDeletedWithNameMessages =\n        listOf(\n            R.string.event_deleted_with_name_slayed,\n\
+    \            R.string.event_deleted_with_name_shadow_realm,\n            R.string.event_deleted_with_name_left_chat,\n\
+    \            R.string.event_deleted_with_name_yeeted,\n            R.string.event_deleted_with_name_vanished\n\
+    \        )\n\n    private val genericErrorMessages =\n        listOf(\n      \
+    \      R.string.error_generic_idk,\n            R.string.error_generic_oopsie,\n\
+    \            R.string.error_generic_sus,\n            R.string.error_generic_mission_failed,\n\
+    \            R.string.error_generic_motivation_404,\n            R.string.error_generic_spaghetti,\n\
+    \            R.string.error_generic_calendar_gods,\n            R.string.error_generic_houston,\n\
+    \            R.string.error_generic_task_failed,\n            R.string.error_generic_computer_says_no\n\
+    \        )\n\n    private val createErrorMessages =\n        listOf(\n       \
+    \     R.string.error_create_spectacular,\n            R.string.error_create_rejected,\n\
+    \            R.string.error_create_spawning,\n            R.string.error_create_cook_failed\n\
+    \        )\n\n    private val updateErrorMessages =\n        listOf(\n       \
+    \     R.string.error_update_makeover_wrong,\n            R.string.error_update_mission_aborted,\n\
+    \            R.string.error_update_refused,\n            R.string.error_update_glow_up_failed\n\
+    \        )\n\n    private val deleteErrorMessages =\n        listOf(\n       \
+    \     R.string.error_delete_refused_slayed,\n            R.string.error_delete_blocked,\n\
+    \            R.string.error_delete_immortal,\n            R.string.error_delete_rights_revoked\n\
+    \        )\n\n    private fun getEventCreatedMessageWithTime(eventName: String?\
+    \ = null): UiText {\n        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)\n\
+    \n        return when {\n            eventName != null -> {\n                when\
+    \ (hour) {\n                    in 6..11 -> UiText.from(R.string.morning_event_created,\
+    \ eventName)\n                    in 12..17 -> UiText.from(R.string.afternoon_event_created,\
+    \ eventName)\n                    in 18..22 -> UiText.from(R.string.evening_event_created,\
+    \ eventName)\n                    else -> UiText.from(R.string.night_event_created,\
+    \ eventName)\n                }\n            }\n            else -> {\n      \
+    \          when (hour) {\n                    in 6..11 -> UiText.from(R.string.morning_event_created_simple)\n\
+    \                    in 12..17 -> UiText.from(R.string.afternoon_event_created_simple)\n\
+    \                    in 18..22 -> UiText.from(R.string.evening_event_created_simple)\n\
+    \                    else -> UiText.from(R.string.night_event_created_simple)\n\
+    \                }\n            }\n        }\n    }\n\n    private fun getEventUpdatedMessageWithTime(eventName:\
+    \ String? = null): UiText {\n        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)\n\
+    \n        return when {\n            eventName != null -> {\n                when\
+    \ (hour) {\n                    in 6..11 -> UiText.from(R.string.morning_event_updated,\
+    \ eventName)\n                    in 12..17 -> UiText.from(R.string.afternoon_event_updated,\
+    \ eventName)\n                    in 18..22 -> UiText.from(R.string.evening_event_updated,\
+    \ eventName)\n                    else -> UiText.from(R.string.night_event_updated,\
+    \ eventName)\n                }\n            }\n            else -> {\n      \
+    \          when (hour) {\n                    in 6..11 -> UiText.from(R.string.morning_event_updated_simple)\n\
+    \                    in 12..17 -> UiText.from(R.string.afternoon_event_updated_simple)\n\
+    \                    in 18..22 -> UiText.from(R.string.evening_event_updated_simple)\n\
+    \                    else -> UiText.from(R.string.night_event_updated_simple)\n\
+    \                }\n            }\n        }\n    }\n\n    private fun getEventDeletedMessageWithTime(eventName:\
+    \ String? = null): UiText {\n        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)\n\
+    \n        return when {\n            eventName != null -> {\n                when\
+    \ (hour) {\n                    in 6..11 -> UiText.from(R.string.morning_event_deleted,\
+    \ eventName)\n                    in 12..17 -> UiText.from(R.string.afternoon_event_deleted,\
+    \ eventName)\n                    in 18..22 -> UiText.from(R.string.evening_event_deleted,\
+    \ eventName)\n                    else -> UiText.from(R.string.night_event_deleted,\
+    \ eventName)\n                }\n            }\n            else -> {\n      \
+    \          when (hour) {\n                    in 6..11 -> UiText.from(R.string.morning_event_deleted_simple)\n\
+    \                    in 12..17 -> UiText.from(R.string.afternoon_event_deleted_simple)\n\
+    \                    in 18..22 -> UiText.from(R.string.evening_event_deleted_simple)\n\
+    \                    else -> UiText.from(R.string.night_event_deleted_simple)\n\
+    \                }\n            }\n        }\n    }\n\n    override fun getEventCreatedMessage(eventName:\
+    \ String?): UiText {\n        checkSessionTimeout()\n\n        return if (isFirstMessageOfSession)\
+    \ {\n            isFirstMessageOfSession = false\n            getEventCreatedMessageWithTime(eventName)\n\
+    \        } else {\n            if (eventName != null) {\n                val safeEventName\
+    \ = eventName.takeIf { it.isNotBlank() } ?: \"Untitled Event\"\n             \
+    \   UiText.from(eventCreatedWithNameMessages.random(), safeEventName)\n      \
+    \      } else {\n                UiText.from(eventCreatedMessages.random())\n\
+    \            }\n        }\n    }\n\n    override fun getEventUpdatedMessage(eventName:\
+    \ String?): UiText {\n        checkSessionTimeout()\n\n        return if (isFirstMessageOfSession)\
+    \ {\n            isFirstMessageOfSession = false\n            getEventUpdatedMessageWithTime(eventName)\n\
+    \        } else {\n            if (eventName != null) {\n                val safeEventName\
+    \ = eventName.takeIf { it.isNotBlank() } ?: \"Event\"\n                UiText.from(eventUpdatedWithNameMessages.random(),\
+    \ safeEventName)\n            } else {\n                UiText.from(eventUpdatedMessages.random())\n\
+    \            }\n        }\n    }\n\n    override fun getEventDeletedMessage(eventName:\
+    \ String?): UiText {\n        checkSessionTimeout()\n\n        return if (isFirstMessageOfSession)\
+    \ {\n            isFirstMessageOfSession = false\n            getEventDeletedMessageWithTime(eventName)\n\
+    \        } else {\n            if (eventName != null) {\n                val safeEventName\
+    \ = eventName.takeIf { it.isNotBlank() } ?: \"Event\"\n                UiText.from(eventDeletedWithNameMessages.random(),\
+    \ safeEventName)\n            } else {\n                UiText.from(eventDeletedMessages.random())\n\
+    \            }\n        }\n    }\n\n    override fun getSeriesDeletedMessage():\
+    \ UiText = UiText.from(seriesDeletedMessages.random())\n\n    override fun getGenericErrorMessage():\
+    \ UiText = UiText.from(genericErrorMessages.random())\n\n    override fun getCreateErrorMessage():\
+    \ UiText = UiText.from(createErrorMessages.random())\n\n    override fun getUpdateErrorMessage():\
+    \ UiText = UiText.from(updateErrorMessages.random())\n\n    override fun getDeleteErrorMessage():\
+    \ UiText = UiText.from(deleteErrorMessages.random())\n\n    override fun getSeasonalMessage():\
+    \ UiText {\n        val month = Calendar.getInstance().get(Calendar.MONTH)\n \
+    \       return when (month) {\n            11, 0, 1 ->\n                UiText.from(\n\
+    \                    listOf(\n                        R.string.seasonal_winter_magic,\n\
+    \                        R.string.seasonal_ho_ho_ho,\n                       \
+    \ R.string.seasonal_frosty_success\n                    ).random()\n         \
+    \       )\n            2, 3, 4 ->\n                UiText.from(\n            \
+    \        listOf(\n                        R.string.seasonal_spring_vibes,\n  \
+    \                      R.string.seasonal_fresh_start,\n                      \
+    \  R.string.seasonal_blooming_success\n                    ).random()\n      \
+    \          )\n            5, 6, 7 ->\n                UiText.from(\n         \
+    \           listOf(\n                        R.string.seasonal_summer_heat,\n\
+    \                        R.string.seasonal_beach_mode,\n                     \
+    \   R.string.seasonal_sweet_success\n                    ).random()\n        \
+    \        )\n            else ->\n                UiText.from(\n              \
+    \      listOf(\n                        R.string.seasonal_autumn_magic,\n    \
+    \                    R.string.seasonal_spooky_success,\n                     \
+    \   R.string.seasonal_fall_vibes\n                    ).random()\n           \
+    \     )\n        }\n    }\n}"
+  info:
+    "size": "11519"
+    "last_modified": "2025-08-06T11:43:03.598362"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/details/EventDetailsDialog.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components.details\n\n\
+    import androidx.compose.foundation.background\nimport androidx.compose.foundation.border\n\
+    import androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Box\n\
+    import androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.PaddingValues\n\
+    import androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.Spacer\n\
+    import androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.height\n\
+    import androidx.compose.foundation.layout.offset\nimport androidx.compose.foundation.layout.padding\n\
+    import androidx.compose.foundation.layout.size\nimport androidx.compose.foundation.layout.wrapContentHeight\n\
+    import androidx.compose.foundation.shape.RoundedCornerShape\nimport androidx.compose.material.icons.Icons\n\
+    import androidx.compose.material.icons.filled.Delete\nimport androidx.compose.material.icons.filled.Edit\n\
+    import androidx.compose.material.icons.filled.LocationOn\nimport androidx.compose.material.icons.filled.Repeat\n\
+    import androidx.compose.material3.Button\nimport androidx.compose.material3.ButtonDefaults\n\
+    import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\nimport androidx.compose.material3.FilledIconButton\n\
+    import androidx.compose.material3.Icon\nimport androidx.compose.material3.IconButtonDefaults\n\
+    import androidx.compose.material3.MaterialShapes\nimport androidx.compose.material3.MaterialTheme.colorScheme\n\
+    import androidx.compose.material3.MaterialTheme.typography\nimport androidx.compose.material3.Surface\n\
+    import androidx.compose.material3.Text\nimport androidx.compose.material3.minimumInteractiveComponentSize\n\
+    import androidx.compose.material3.toShape\nimport androidx.compose.runtime.Composable\n\
+    import androidx.compose.runtime.getValue\nimport androidx.compose.runtime.remember\n\
+    import androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport\
+    \ androidx.compose.ui.draw.clip\nimport androidx.compose.ui.draw.rotate\nimport\
+    \ androidx.compose.ui.graphics.Color\nimport androidx.compose.ui.graphics.vector.ImageVector\n\
+    import androidx.compose.ui.platform.LocalConfiguration\nimport androidx.compose.ui.platform.LocalContext\n\
+    import androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.unit.dp\n\
+    import androidx.compose.ui.window.Dialog\nimport androidx.compose.ui.window.DialogProperties\n\
+    import androidx.lifecycle.compose.collectAsStateWithLifecycle\nimport com.lpavs.caliinda.core.data.remote.dto.EventDto\n\
+    import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil\nimport com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant\n\
+    import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel\nimport com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel\n\
+    \n@OptIn(ExperimentalMaterial3ExpressiveApi::class)\n@Composable\nfun CustomEventDetailsDialog(\n\
+    \    event: EventDto,\n    userTimeZone: String,\n    onDismissRequest: () ->\
+    \ Unit,\n    viewModel: CalendarViewModel,\n    eventManagementViewModel: EventManagementViewModel\n\
+    ) {\n  val context = LocalContext.current\n  val currentLocale = LocalConfiguration.current.getLocales().get(0)\n\
+    \  val timeFormatterLambda: (EventDto) -> String =\n      remember(viewModel,\
+    \ userTimeZone, currentLocale) {\n        { event ->\n          DateTimeFormatterUtil.formatEventDetailsTime(context,\
+    \ event, userTimeZone, currentLocale)\n        }\n      }\n  val currentTime by\
+    \ viewModel.currentTime.collectAsStateWithLifecycle()\n  val isCurrent =\n   \
+    \   remember(currentTime, event.startTime, event.endTime) {\n        val start\
+    \ = parseToInstant(event.startTime, userTimeZone)\n        val end = parseToInstant(event.endTime,\
+    \ userTimeZone)\n        start != null && end != null && !currentTime.isBefore(start)\
+    \ && currentTime.isBefore(end)\n      }\n  Dialog(\n      onDismissRequest = onDismissRequest,\n\
+    \      properties =\n          DialogProperties(\n              dismissOnBackPress\
+    \ = true,\n              dismissOnClickOutside = true,\n              usePlatformDefaultWidth\
+    \ = false)) {\n        Surface(\n            modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),\n\
+    \            shape = RoundedCornerShape(25.dp),\n            color = if (!isCurrent)\
+    \ colorScheme.primaryContainer else colorScheme.tertiaryContainer,\n         \
+    \   tonalElevation = 8.dp) {\n              val onCardText =\n               \
+    \   if (!isCurrent) colorScheme.onPrimaryContainer\n                  else colorScheme.onTertiaryContainer\n\
+    \              Box(modifier = Modifier.fillMaxWidth()) {\n                Box(\n\
+    \                    modifier =\n                        Modifier.align(Alignment.BottomEnd)\n\
+    \                            .size(250.dp)\n                            .rotate(75f)\n\
+    \                            .offset(y = (-50).dp, x = 50.dp)\n              \
+    \              .clip(MaterialShapes.Cookie7Sided.toShape())\n                \
+    \            .border(\n                                width = 2.dp,\n       \
+    \                         color = onCardText.copy(alpha = 0.2f),\n           \
+    \                     shape = MaterialShapes.Cookie7Sided.toShape())\n       \
+    \                     .background(onCardText.copy(alpha = 0f))) {}\n\n       \
+    \         Column(\n                    modifier =\n                        Modifier.padding(top\
+    \ = 24.dp, start = 24.dp, end = 24.dp, bottom = 12.dp),\n                    horizontalAlignment\
+    \ = Alignment.Start) {\n                      Text(\n                        \
+    \  text = event.summary,\n                          style = typography.displaySmall.copy(fontWeight\
+    \ = FontWeight.SemiBold),\n                          color = onCardText)\n   \
+    \                   Spacer(modifier = Modifier.height(2.dp))\n               \
+    \       Row {\n                        Text(\n                            text\
+    \ = timeFormatterLambda(event),\n                            color = onCardText,\n\
+    \                            style = typography.headlineSmall.copy(fontWeight\
+    \ = FontWeight.Normal),\n                            maxLines = 2)\n         \
+    \             }\n                      Spacer(modifier = Modifier.height(16.dp))\n\
+    \n                      if (!event.description.isNullOrBlank()) {\n          \
+    \              Text(\n                            text = event.description,\n\
+    \                            style = typography.bodyMedium,\n                \
+    \            color = onCardText)\n                        Spacer(modifier = Modifier.height(16.dp))\n\
+    \                      }\n\n                      if (!event.location.isNullOrBlank())\
+    \ {\n                        DetailRow(Icons.Filled.LocationOn, event.location,\
+    \ color = onCardText)\n                        Spacer(modifier = Modifier.height(16.dp))\n\
+    \                      }\n\n                      if (!event.recurrenceRule.isNullOrEmpty())\
+    \ {\n                        DetailRow(\n                            Icons.Filled.Repeat,\n\
+    \                            formatRRule(event.recurrenceRule, zoneIdString =\
+    \ userTimeZone),\n                            color = onCardText)\n          \
+    \            }\n                      Spacer(modifier = Modifier.height(20.dp))\n\
+    \                      Row(\n                          modifier = Modifier.fillMaxWidth(),\n\
+    \                          verticalAlignment = Alignment.CenterVertically,\n \
+    \                         horizontalArrangement = Arrangement.End) {\n       \
+    \                     Button(\n                                onClick = { eventManagementViewModel.requestEditEvent(event)\
+    \ },\n                                contentPadding = PaddingValues(horizontal\
+    \ = 12.dp)) {\n                                  Icon(Icons.Filled.Edit, contentDescription\
+    \ = \"Edit\")\n                                  Spacer(Modifier.size(ButtonDefaults.IconSpacing))\n\
+    \                                  Text(\"Edit\") // Или локализованная строка\
+    \n                                }\n                            //          \
+    \          Spacer(modifier = Modifier.width(4.dp))\n                         \
+    \   FilledIconButton(\n                                onClick = {\n         \
+    \                         eventManagementViewModel.requestDeleteConfirmation(event)\n\
+    \                                },\n                                modifier\
+    \ =\n                                    Modifier.minimumInteractiveComponentSize()\n\
+    \                                        .size(\n                            \
+    \                IconButtonDefaults.smallContainerSize(\n                    \
+    \                            IconButtonDefaults.IconButtonWidthOption.Narrow)),\n\
+    \                                shape = IconButtonDefaults.smallRoundShape) {\n\
+    \                                  Icon(\n                                   \
+    \   imageVector = Icons.Filled.Delete,\n                                     \
+    \ contentDescription = \"Delete\",\n                                  )\n    \
+    \                            }\n                          }\n                \
+    \    }\n              }\n            }\n      }\n}\n\n@Composable\nprivate fun\
+    \ DetailRow(icon: ImageVector, value: String, color: Color) {\n  Row(modifier\
+    \ = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {\n\
+    \    Icon(imageVector = icon, contentDescription = \"Описание иконки\")\n    Spacer(Modifier.size(ButtonDefaults.IconSpacing))\n\
+    \    Text(text = value, style = typography.bodyLarge, color = color)\n    Spacer(modifier\
+    \ = Modifier.height(8.dp))\n  }\n}\n"
+  info:
+    "size": "9273"
+    "last_modified": "2025-08-06T11:43:03.600212"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/bars/BottomBar.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components.bars\n\nimport\
+    \ android.util.Log\nimport androidx.compose.animation.AnimatedContent\nimport\
+    \ androidx.compose.animation.SizeTransform\nimport androidx.compose.animation.core.Spring\n\
+    import androidx.compose.animation.core.spring\nimport androidx.compose.animation.fadeIn\n\
+    import androidx.compose.animation.fadeOut\nimport androidx.compose.animation.togetherWith\n\
+    import androidx.compose.foundation.layout.width\nimport androidx.compose.foundation.text.KeyboardActions\n\
+    import androidx.compose.foundation.text.KeyboardOptions\nimport androidx.compose.material.icons.Icons\n\
+    import androidx.compose.material.icons.automirrored.filled.ArrowBack\nimport androidx.compose.material.icons.automirrored.filled.Send\n\
+    import androidx.compose.material.icons.filled.AddCircle\nimport androidx.compose.material.icons.filled.Keyboard\n\
+    import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\nimport androidx.compose.material3.FloatingActionButton\n\
+    import androidx.compose.material3.HorizontalFloatingToolbar\nimport androidx.compose.material3.Icon\n\
+    import androidx.compose.material3.IconButton\nimport androidx.compose.material3.MaterialTheme.colorScheme\n\
+    import androidx.compose.material3.OutlinedTextField\nimport androidx.compose.material3.OutlinedTextFieldDefaults\n\
+    import androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\n\
+    import androidx.compose.runtime.LaunchedEffect\nimport androidx.compose.runtime.getValue\n\
+    import androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\
+    import androidx.compose.runtime.saveable.rememberSaveable\nimport androidx.compose.runtime.setValue\n\
+    import androidx.compose.ui.Modifier\nimport androidx.compose.ui.focus.FocusRequester\n\
+    import androidx.compose.ui.graphics.Color\nimport androidx.compose.ui.platform.LocalSoftwareKeyboardController\n\
+    import androidx.compose.ui.res.stringResource\nimport androidx.compose.ui.text.input.ImeAction\n\
+    import androidx.compose.ui.text.input.TextFieldValue\nimport androidx.compose.ui.unit.IntSize\n\
+    import androidx.compose.ui.unit.dp\nimport com.lpavs.caliinda.R\nimport com.lpavs.caliinda.feature.agent.ui.RecordButton\n\
+    import com.lpavs.caliinda.feature.calendar.ui.CalendarState\n\n@ExperimentalMaterial3ExpressiveApi\n\
+    @Composable\nfun BottomBar(\n    uiState: CalendarState, // Принимаем весь сте\
+    йт\n    textFieldValue: TextFieldValue,\n    onTextChanged: (TextFieldValue) ->\
+    \ Unit,\n    onSendClick: () -> Unit,\n    onRecordStart: () -> Unit, // Лямбд\
+    а для начала записи\n    onRecordStopAndSend: () -> Unit, // Лямбда для остано\
+    вки/отправки\n    onUpdatePermissionResult: (Boolean) -> Unit, // Лямбда для о\
+    бновления разрешения\n    isTextInputVisible: Boolean,\n    modifier: Modifier\
+    \ = Modifier,\n    onCreateEventClick: () -> Unit,\n) {\n  val focusRequester\
+    \ = remember { FocusRequester() }\n  val keyboardController = LocalSoftwareKeyboardController.current\n\
+    \  val isSendEnabled =\n      textFieldValue.text.isNotBlank() &&\n          uiState.isSignedIn\
+    \ &&\n          !uiState.isLoading &&\n          !uiState.isListening\n  var expanded\
+    \ by rememberSaveable { mutableStateOf(true) }\n  var onKeyboardToggle by remember\
+    \ { mutableStateOf(true) }\n\n  // Request focus when text input becomes visible\n\
+    \  LaunchedEffect(isTextInputVisible) {\n    if (isTextInputVisible) {\n     \
+    \ // kotlinx.coroutines.delay(100) // Small delay might be needed if focus doesn't\
+    \ work\n      // immediately\n      try {\n        focusRequester.requestFocus()\n\
+    \        keyboardController?.show()\n        Log.d(\"ChatInputBar\", \"Focus requested\
+    \ and keyboard show attempted.\")\n      } catch (e: Exception) {\n        Log.e(\"\
+    ChatInputBar\", \"Error requesting focus or showing keyboard\", e)\n      }\n\
+    \    } else {\n      keyboardController?.hide()\n    }\n  }\n  AnimatedContent(\n\
+    \      modifier = modifier,\n      targetState = onKeyboardToggle,\n      transitionSpec\
+    \ = {\n        // Общая спецификация spring для контента\n        val fadeSpringSpec\
+    \ =\n            spring<Float>(\n                dampingRatio = Spring.DampingRatioLowBouncy,\
+    \ stiffness = Spring.StiffnessMedium)\n        val sizeTransformSpringSpec =\n\
+    \            spring<IntSize>(\n                dampingRatio =\n              \
+    \      Spring\n                        .DampingRatioLowBouncy, // Можно немног\
+    о \"резиновости\" для изменения размера\n                stiffness = Spring.StiffnessMediumLow)\n\
+    \        if (targetState) {\n              (fadeIn(animationSpec = fadeSpringSpec)).togetherWith(\n\
+    \                  fadeOut(animationSpec = fadeSpringSpec))\n            } else\
+    \ {\n              (fadeIn(animationSpec = fadeSpringSpec)).togetherWith(\n  \
+    \                fadeOut(animationSpec = fadeSpringSpec))\n            }\n   \
+    \         .using(\n                SizeTransform(\n                    clip =\
+    \ false, sizeAnimationSpec = { _, _ -> sizeTransformSpringSpec }))\n      }) {\n\
+    \        if (!it) {\n          HorizontalFloatingToolbar(\n              expanded\
+    \ = expanded,\n              //                colors = vibrantColors,\n     \
+    \         floatingActionButton = {\n                FloatingActionButton(\n  \
+    \                  onClick = onSendClick,\n                    contentColor =\
+    \ colorScheme.onPrimary,\n                    containerColor = colorScheme.primary)\
+    \ {\n                      Icon(\n                          imageVector = Icons.AutoMirrored.Filled.Send,\n\
+    \                          contentDescription = \"Отправить\")\n             \
+    \       }\n              },\n              content = {\n                IconButton(\n\
+    \                    onClick = {\n                      onKeyboardToggle = !onKeyboardToggle\n\
+    \                    }, // Эта функция теперь будет ПОКАЗЫВАТЬ текстовое поле\n\
+    \                ) {\n                  Icon(\n                      imageVector\
+    \ = Icons.AutoMirrored.Filled.ArrowBack,\n                      contentDescription\
+    \ = \"Убрать ввод текста\")\n                }\n                OutlinedTextField(\n\
+    \                    // Или TextField, или BasicTextField + кастомное оформлен\
+    ие\n                    value = textFieldValue,\n                    onValueChange\
+    \ = onTextChanged,\n                    modifier = Modifier.width(200.dp),\n \
+    \                   placeholder = { Text(stringResource(R.string.type_message))\
+    \ },\n                    maxLines = 1,\n                    keyboardOptions =\
+    \ KeyboardOptions.Default.copy(imeAction = ImeAction.Send),\n                \
+    \    keyboardActions =\n                        KeyboardActions(\n           \
+    \                 onSend = {\n                              if (isSendEnabled)\
+    \ {\n                                onSendClick()\n                         \
+    \     }\n                            }),\n                    colors =\n     \
+    \                   OutlinedTextFieldDefaults.colors(\n                      \
+    \      focusedBorderColor = Color.Transparent,\n                            unfocusedBorderColor\
+    \ = Color.Transparent,\n                            //                       \
+    \     focusedTextColor =\n                            // colorScheme.onSecondaryContainer,\n\
+    \                        ),\n                    singleLine = true,\n        \
+    \        )\n              },\n          )\n        } else {\n          HorizontalFloatingToolbar(\n\
+    \              expanded = expanded,\n              //                colors =\
+    \ vibrantColors,\n              floatingActionButton = {\n                RecordButton(\n\
+    \                    uiState = uiState, // Передаем стейт\n                  \
+    \  onStartRecording = onRecordStart, // Передаем лямбды\n                    onStopRecordingAndSend\
+    \ = onRecordStopAndSend,\n                    onUpdatePermissionResult = onUpdatePermissionResult,\n\
+    \                )\n              },\n              content = {\n            \
+    \    IconButton(\n                    onClick = onCreateEventClick,\n        \
+    \            // enabled = isKeyboardToggleEnabled\n                ) {\n     \
+    \             Icon(imageVector = Icons.Filled.AddCircle, contentDescription =\
+    \ \"Create event\")\n                }\n                IconButton(\n        \
+    \            onClick = { onKeyboardToggle = !onKeyboardToggle },\n           \
+    \     ) {\n                  Icon(\n                      imageVector = Icons.Filled.Keyboard,\n\
+    \                      contentDescription = \"Показать клавиатуру\")\n       \
+    \         }\n              },\n          )\n        }\n      }\n}\n"
+  info:
+    "size": "8494"
+    "last_modified": "2025-08-06T11:43:03.601974"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/bars/CalendarAppBar.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components.bars\n\nimport\
+    \ androidx.compose.foundation.background\nimport androidx.compose.foundation.clickable\n\
+    import androidx.compose.foundation.layout.Box\nimport androidx.compose.foundation.layout.Row\n\
+    import androidx.compose.foundation.layout.fillMaxWidth\nimport androidx.compose.foundation.layout.padding\n\
+    import androidx.compose.foundation.layout.size\nimport androidx.compose.foundation.shape.RoundedCornerShape\n\
+    import androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Settings\n\
+    import androidx.compose.material.icons.filled.Today\nimport androidx.compose.material3.CenterAlignedTopAppBar\n\
+    import androidx.compose.material3.ExperimentalMaterial3Api\nimport androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\n\
+    import androidx.compose.material3.FilledIconButton\nimport androidx.compose.material3.Icon\n\
+    import androidx.compose.material3.IconButtonDefaults\nimport androidx.compose.material3.MaterialTheme.colorScheme\n\
+    import androidx.compose.material3.Text\nimport androidx.compose.material3.TopAppBarDefaults.topAppBarColors\n\
+    import androidx.compose.material3.minimumInteractiveComponentSize\nimport androidx.compose.runtime.Composable\n\
+    import androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport\
+    \ androidx.compose.ui.draw.clip\nimport androidx.compose.ui.graphics.Color\nimport\
+    \ androidx.compose.ui.platform.LocalConfiguration\nimport androidx.compose.ui.text.ExperimentalTextApi\n\
+    import androidx.compose.ui.text.font.Font\nimport androidx.compose.ui.text.font.FontFamily\n\
+    import androidx.compose.ui.text.font.FontVariation\nimport androidx.compose.ui.text.style.TextAlign\n\
+    import androidx.compose.ui.unit.dp\nimport androidx.compose.ui.unit.sp\nimport\
+    \ com.lpavs.caliinda.R\nimport com.lpavs.caliinda.core.ui.theme.Typography\nimport\
+    \ java.time.LocalDate\nimport java.time.format.DateTimeFormatter\n\n@OptIn(\n\
+    \    ExperimentalMaterial3Api::class,\n    ExperimentalMaterial3ExpressiveApi::class,\n\
+    \    ExperimentalTextApi::class)\n@Composable\nfun CalendarAppBar(\n    onNavigateToSettings:\
+    \ () -> Unit,\n    onGoToTodayClick: () -> Unit,\n    onTitleClick: () -> Unit,\n\
+    \    date: LocalDate\n) {\n  val isToday = date == LocalDate.now()\n  val headerBackgroundColor\
+    \ =\n      if (isToday) {\n        colorScheme.tertiary\n      } else {\n    \
+    \    colorScheme.secondary\n      }\n  val headerTextColor =\n      if (isToday)\
+    \ {\n        colorScheme.onTertiary\n      } else {\n        colorScheme.onSecondary\n\
+    \      }\n  val headerTextStyle =\n      when {\n        isToday -> Typography.titleLargeEmphasized\n\
+    \        else -> Typography.titleLarge\n      }\n  val headerFontFamily =\n  \
+    \    when {\n        isToday ->\n            FontFamily(\n                Font(\n\
+    \                    R.font.robotoflex_variable,\n                    variationSettings\
+    \ =\n                        FontVariation.Settings(\n                       \
+    \     FontVariation.weight(750),\n                        )))\n        else ->\n\
+    \            FontFamily(\n                Font(\n                    R.font.robotoflex_variable,\n\
+    \                    variationSettings =\n                        FontVariation.Settings(\n\
+    \                            FontVariation.weight(600),\n                    \
+    \    )))\n      }\n  val currentLocale = LocalConfiguration.current.getLocales().get(0)\n\
+    \  val formatterWithShortDay = DateTimeFormatter.ofPattern(\"E, d MMMM yyyy\"\
+    , currentLocale)\n  CenterAlignedTopAppBar(\n      title = {\n        Box(\n \
+    \           modifier =\n                Modifier.fillMaxWidth()\n            \
+    \        .padding(horizontal = 16.dp)\n                    .clip(RoundedCornerShape(25.dp))\n\
+    \                    .background(color = headerBackgroundColor)\n            \
+    \        .clickable(onClick = onTitleClick),\n        ) {\n          Text(\n \
+    \             text = date.format(formatterWithShortDay),\n              style\
+    \ = headerTextStyle,\n              fontFamily = headerFontFamily,\n         \
+    \     color = headerTextColor,\n              modifier =\n                  Modifier.padding(horizontal\
+    \ = 16.dp, vertical = 4.dp)\n                      .fillMaxWidth(), // Больше\
+    \ отступы\n              textAlign = TextAlign.Center,\n              fontSize\
+    \ = 16.sp,\n          )\n        }\n      },\n      navigationIcon = {\n     \
+    \   FilledIconButton(\n            onClick = onGoToTodayClick,\n            modifier\
+    \ =\n                Modifier.minimumInteractiveComponentSize()\n            \
+    \        .size(\n                        IconButtonDefaults.smallContainerSize(\n\
+    \                            IconButtonDefaults.IconButtonWidthOption.Wide)),\n\
+    \            shape = IconButtonDefaults.smallRoundShape) {\n              Icon(\n\
+    \                  Icons.Filled.Today,\n                  contentDescription =\
+    \ \"Перейти к сегодня\",\n              )\n            }\n      },\n      actions\
+    \ = {\n        Row(verticalAlignment = Alignment.CenterVertically) {\n       \
+    \   FilledIconButton(\n              onClick = onNavigateToSettings,\n       \
+    \       modifier =\n                  Modifier.minimumInteractiveComponentSize()\n\
+    \                      .size(\n                          IconButtonDefaults.smallContainerSize(\n\
+    \                              IconButtonDefaults.IconButtonWidthOption.Wide)),\n\
+    \              shape = IconButtonDefaults.smallRoundShape) {\n               \
+    \ Icon(\n                    imageVector = Icons.Filled.Settings,\n          \
+    \          contentDescription = \"Настройки\",\n                )\n          \
+    \    }\n        }\n      },\n      colors = topAppBarColors(containerColor = Color.Transparent))\n\
+    }\n"
+  info:
+    "size": "5502"
+    "last_modified": "2025-08-06T11:43:03.603592"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "components/EventCard.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui.components\n\nimport androidx.compose.animation.AnimatedVisibility\n\
+    import androidx.compose.animation.animateColorAsState\nimport androidx.compose.animation.core.tween\n\
+    import androidx.compose.animation.expandVertically\nimport androidx.compose.animation.fadeIn\n\
+    import androidx.compose.animation.fadeOut\nimport androidx.compose.animation.shrinkVertically\n\
+    import androidx.compose.foundation.background\nimport androidx.compose.foundation.gestures.detectTapGestures\n\
+    import androidx.compose.foundation.layout.Arrangement\nimport androidx.compose.foundation.layout.Box\n\
+    import androidx.compose.foundation.layout.Column\nimport androidx.compose.foundation.layout.PaddingValues\n\
+    import androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.Spacer\n\
+    import androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.foundation.layout.fillMaxWidth\n\
+    import androidx.compose.foundation.layout.height\nimport androidx.compose.foundation.layout.padding\n\
+    import androidx.compose.foundation.layout.requiredSize\nimport androidx.compose.foundation.layout.size\n\
+    import androidx.compose.foundation.layout.width\nimport androidx.compose.foundation.shape.RoundedCornerShape\n\
+    import androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Delete\n\
+    import androidx.compose.material.icons.filled.Edit\nimport androidx.compose.material.icons.filled.Info\n\
+    import androidx.compose.material3.Button\nimport androidx.compose.material3.ButtonDefaults\n\
+    import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\nimport androidx.compose.material3.FilledIconButton\n\
+    import androidx.compose.material3.Icon\nimport androidx.compose.material3.IconButtonDefaults\n\
+    import androidx.compose.material3.MaterialTheme.colorScheme\nimport androidx.compose.material3.MaterialTheme.typography\n\
+    import androidx.compose.material3.Text\nimport androidx.compose.material3.minimumInteractiveComponentSize\n\
+    import androidx.compose.runtime.Composable\nimport androidx.compose.runtime.getValue\n\
+    import androidx.compose.runtime.remember\nimport androidx.compose.ui.Alignment\n\
+    import androidx.compose.ui.Modifier\nimport androidx.compose.ui.draw.clip\nimport\
+    \ androidx.compose.ui.draw.shadow\nimport androidx.compose.ui.graphics.Color\n\
+    import androidx.compose.ui.graphics.colorspace.ColorSpaces\nimport androidx.compose.ui.graphics.graphicsLayer\n\
+    import androidx.compose.ui.hapticfeedback.HapticFeedbackType\nimport androidx.compose.ui.input.pointer.pointerInput\n\
+    import androidx.compose.ui.platform.LocalDensity\nimport androidx.compose.ui.platform.LocalHapticFeedback\n\
+    import androidx.compose.ui.text.ExperimentalTextApi\nimport androidx.compose.ui.text.font.Font\n\
+    import androidx.compose.ui.text.font.FontFamily\nimport androidx.compose.ui.text.font.FontVariation\n\
+    import androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.text.style.TextAlign\n\
+    import androidx.compose.ui.text.style.TextOverflow\nimport androidx.compose.ui.unit.Dp\n\
+    import androidx.compose.ui.unit.dp\nimport androidx.graphics.shapes.CornerRounding\n\
+    import androidx.graphics.shapes.RoundedPolygon\nimport androidx.graphics.shapes.star\n\
+    import com.lpavs.caliinda.R\nimport com.lpavs.caliinda.core.data.remote.dto.EventDto\n\
+    import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults\nimport com.lpavs.caliinda.core.ui.theme.Typography\n\
+    import com.lpavs.caliinda.core.ui.theme.cuid\nimport com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant\n\
+    import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape\nimport java.time.Duration\n\
+    import kotlin.math.abs\nimport kotlin.math.exp\n\n@OptIn(ExperimentalMaterial3ExpressiveApi::class,\
+    \ ExperimentalTextApi::class)\n@Composable\nfun EventItem(\n    event: EventDto,\n\
+    \    timeFormatter: (EventDto) -> String,\n    isCurrentEvent: Boolean,\n    isNextEvent:\
+    \ Boolean,\n    proximityRatio: Float,\n    isMicroEventFromList: Boolean,\n \
+    \   targetHeightFromList: Dp,\n    isExpanded: Boolean,\n    onToggleExpand: ()\
+    \ -> Unit,\n    onDetailsClickFromList: () -> Unit,\n    onDeleteClickFromList:\
+    \ () -> Unit,\n    onEditClickFromList: () -> Unit,\n    modifier: Modifier =\
+    \ Modifier,\n    currentTimeZoneId: String\n) {\n  val eventDurationMinutes =\n\
+    \      remember(event.startTime, event.endTime, currentTimeZoneId) {\n       \
+    \ val start = parseToInstant(event.startTime, currentTimeZoneId)\n        val\
+    \ end = parseToInstant(event.endTime, currentTimeZoneId)\n        if (start !=\
+    \ null && end != null && end.isAfter(start)) {\n          Duration.between(start,\
+    \ end).toMinutes()\n        } else {\n          0L\n        }\n      }\n  val\
+    \ haptic = LocalHapticFeedback.current\n\n  val shapeParams =\n      remember(event.id)\
+    \ {\n        generateShapeParams(event.id) // Use helper\n      }\n\n  val starShape\
+    \ =\n      remember(shapeParams.numVertices, shapeParams.radiusSeed) {\n     \
+    \   RoundedPolygon.star(\n            numVerticesPerRadius = shapeParams.numVertices,\n\
+    \            radius = shapeParams.radiusSeed,\n            innerRadius = cuid.SHAPEINNERRADIUS,\n\
+    \            rounding = CornerRounding(cuid.ShapeCornerRounding))\n      }\n \
+    \ val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape)\
+    \ }\n  val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape)\
+    \ }\n\n  val starContainerSize =\n      remember(eventDurationMinutes, isMicroEventFromList)\
+    \ {\n        if (isMicroEventFromList || eventDurationMinutes <= 0L) 0.dp\n  \
+    \      else calculateShapeContainerSize(eventDurationMinutes)\n      }\n\n  //\
+    \ Compute the transitionColor\n  val transitionColorCard =\n      lerpOkLab(\n\
+    \          start = colorScheme.primaryContainer,\n          stop = colorScheme.tertiaryContainer,\n\
+    \          fraction = proximityRatio)\n  val darkerShadowColor = Color.Black\n\
+    \n  // --- Параметры текущего события (получаем isCurrentEvent) ---\n  //   val\
+    \ fixedColors = LocalFixedAccentColors.current\n\n  val cardElevation = if (isCurrentEvent)\
+    \ cuid.CurrentEventElevation else 0.dp\n  val starBackground =\n      when {\n\
+    \        isCurrentEvent -> colorScheme.tertiaryContainer // Выделяем текущее\n\
+    \        isNextEvent -> transitionColorCard // Слегка выделяем следующее (прим\
+    ер)\n        else -> colorScheme.primaryContainer // Обычный фон\n      }\n  val\
+    \ cardBackground by\n      animateColorAsState(\n          if (isCurrentEvent)\
+    \ colorScheme.tertiaryContainer else colorScheme.primaryContainer,\n         \
+    \ label = \"card color\")\n\n  val cardTextColor =\n      when {\n        isCurrentEvent\
+    \ -> colorScheme.onTertiaryContainer // Выделяем текущее\n        else -> colorScheme.onPrimaryContainer\
+    \ // Обычный фон\n      }\n  val textStyle =\n      when {\n        !isMicroEventFromList\
+    \ ->\n            if (isCurrentEvent) Typography.headlineSmallEmphasized else\
+    \ Typography.headlineSmall\n        else -> if (isCurrentEvent) Typography.bodyLargeEmphasized\
+    \ else Typography.bodyLarge\n      }\n  val cardFontFamily =\n      when {\n \
+    \       isCurrentEvent ->\n            FontFamily(\n                Font(\n  \
+    \                  R.font.robotoflex_variable,\n                    variationSettings\
+    \ =\n                        FontVariation.Settings(\n                       \
+    \     FontVariation.weight(700),\n                            FontVariation.grade(70),\n\
+    \                            FontVariation.width(65f),\n                     \
+    \       FontVariation.slant(-5f),\n                        )))\n        else ->\n\
+    \            FontFamily(\n                Font(\n                    R.font.robotoflex_variable,\n\
+    \                    variationSettings =\n                        FontVariation.Settings(\n\
+    \                            FontVariation.weight(600),\n                    \
+    \        FontVariation.width(100f),\n                        )))\n      }\n  //\
+    \ --- Композиция UI ---\n  Box( // Корневой Box для тени, фона, высоты и клика\
+    бельности\n      modifier =\n          modifier\n              .shadow(\n    \
+    \              elevation = cardElevation,\n                  shape = RoundedCornerShape(cuid.EventItemCornerRadius),\n\
+    \                  clip = false,\n                  ambientColor = if (cardElevation\
+    \ > 0.dp) darkerShadowColor else Color.Transparent,\n                  spotColor\
+    \ = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)\n    \
+    \          .clip(RoundedCornerShape(cuid.EventItemCornerRadius))\n           \
+    \   .background(cardBackground)\n              .height(targetHeightFromList)\n\
+    \              .pointerInput(event.id) {\n                detectTapGestures(\n\
+    \                    onTap = { onToggleExpand() },\n                    onLongPress\
+    \ = {\n                      haptic.performHapticFeedback(HapticFeedbackType.LongPress)\n\
+    \                      onDetailsClickFromList()\n                    })\n    \
+    \          }) {\n        Column(modifier = Modifier.fillMaxSize()) {\n       \
+    \   Box(\n              modifier =\n                  Modifier.weight(1f) // З\
+    анимает все место, ОСТАВЛЯЯ место для кнопок снизу\n                      .fillMaxWidth()\n\
+    \                      // Внутренние отступы для текста и звезды\n           \
+    \           .padding(\n                          horizontal = cuid.ItemHorizontalPadding,\n\
+    \                          vertical =\n                              if (isMicroEventFromList)\
+    \ cuid.MicroItemContentVerticalPadding\n                              else cuid.StandardItemContentVerticalPadding),\n\
+    \              // Выравнивание контента можно оставить TopStart или изменить н\
+    а Center, если нужно\n              contentAlignment = Alignment.TopStart) {\n\
+    \                if (!isMicroEventFromList && starContainerSize > 0.dp) {\n  \
+    \                val density = LocalDensity.current\n                  val starOffsetY\
+    \ = starContainerSize * shapeParams.offestParam\n                  val starOffsetX\
+    \ = starContainerSize * -shapeParams.offestParam\n                  val rotationAngle\
+    \ = shapeParams.rotationAngle\n                  val shadowColor = Color.Black.copy(alpha\
+    \ = 0.3f) // Переместил\n\n                  Box( // Тень\n                  \
+    \    modifier =\n                          Modifier.align(Alignment.CenterEnd)\
+    \ // Позиционирование звезды\n                              .graphicsLayer(\n\
+    \                                  translationX =\n                          \
+    \            with(density) {\n                                        (starOffsetX\
+    \ + shapeParams.shadowOffsetXSeed).toPx()\n                                  \
+    \    },\n                                  translationY =\n                  \
+    \                    with(density) {\n                                       \
+    \ (starOffsetY - shapeParams.shadowOffsetYSeed).toPx()\n                     \
+    \                 },\n                                  rotationZ = rotationAngle)\n\
+    \                              .requiredSize(starContainerSize)\n            \
+    \                  .clip(clip2Star)\n                              .background(shadowColor))\n\
+    \                  Box( // Основная фигура\n                      modifier =\n\
+    \                          Modifier.align(Alignment.CenterEnd) // Позициониров\
+    ание звезды\n                              .graphicsLayer(\n                 \
+    \                 translationX = with(density) { starOffsetX.toPx() },\n     \
+    \                             translationY = with(density) { starOffsetY.toPx()\
+    \ },\n                                  rotationZ = rotationAngle)\n         \
+    \                     .requiredSize(starContainerSize)\n                     \
+    \         .clip(clipStar)\n                              .background(starBackground.copy(alpha\
+    \ = cuid.ShapeMainAlpha)))\n                }\n                if (isMicroEventFromList)\
+    \ {\n                  Row(\n                      modifier = Modifier.fillMaxSize(),\n\
+    \                      verticalAlignment = Alignment.CenterVertically) {\n   \
+    \                     Text(\n                            text = event.summary,\n\
+    \                            color = cardTextColor,\n                        \
+    \    style = textStyle,\n                            fontFamily = cardFontFamily,\n\
+    \                            maxLines = 1,\n                            overflow\
+    \ = TextOverflow.Ellipsis,\n                            modifier = Modifier.weight(1f,\
+    \ fill = false))\n                        Spacer(modifier = Modifier.width(cuid.padding))\n\
+    \                        Text(\n                            text = timeFormatter(event),\n\
+    \                            color = cardTextColor,\n                        \
+    \    style = typography.labelMedium,\n                            maxLines = 1)\n\
+    \                      }\n                } else {\n                  Column(verticalArrangement\
+    \ = Arrangement.Top) {\n                    Text(\n                        text\
+    \ = event.summary,\n                        color = cardTextColor,\n         \
+    \               style = textStyle,\n                        fontFamily = cardFontFamily,\n\
+    \                        maxLines = 1,\n                        overflow = TextOverflow.Ellipsis)\n\
+    \                    Spacer(modifier = Modifier.height(2.dp))\n              \
+    \      Row {\n                      Text(\n                          text = timeFormatter(event),\n\
+    \                          color = cardTextColor,\n                          style\
+    \ = typography.labelSmall.copy(fontWeight = FontWeight.Normal),\n            \
+    \              maxLines = 1)\n                      Spacer(modifier = Modifier.width(8.dp))\n\
+    \                      event.location?.let {\n                        Text(\n\
+    \                            text = it,\n                            color = cardTextColor,\n\
+    \                            style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),\n\
+    \                            maxLines = 1)\n                      }\n        \
+    \            }\n                  }\n                }\n              }\n    \
+    \      AnimatedVisibility(\n              visible = isExpanded,\n            \
+    \  enter =\n                  fadeIn(animationSpec = tween(durationMillis = 150,\
+    \ delayMillis = 100)) +\n                      expandVertically(\n           \
+    \               animationSpec = tween(durationMillis = 250, delayMillis = 50),\n\
+    \                          expandFrom = Alignment.Top),\n              exit =\n\
+    \                  shrinkVertically(\n                      animationSpec = tween(durationMillis\
+    \ = 250), shrinkTowards = Alignment.Top) +\n                      fadeOut(animationSpec\
+    \ = tween(durationMillis = 150))) {\n                Row(\n                  \
+    \  modifier =\n                        Modifier.fillMaxWidth()\n             \
+    \               .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp),\n\
+    \                    horizontalArrangement = Arrangement.End,\n              \
+    \      verticalAlignment = Alignment.CenterVertically) {\n                   \
+    \   FilledIconButton(\n                          onClick = {\n               \
+    \             onDetailsClickFromList()\n                            onToggleExpand()\n\
+    \                          },\n                          modifier =\n        \
+    \                      Modifier.minimumInteractiveComponentSize()\n          \
+    \                        .size(\n                                      IconButtonDefaults.smallContainerSize(\n\
+    \                                          IconButtonDefaults.IconButtonWidthOption.Uniform)),\n\
+    \                          shape = IconButtonDefaults.smallRoundShape) {\n   \
+    \                         Icon(\n                                imageVector =\
+    \ Icons.Filled.Info,\n                                contentDescription = \"\
+    info\",\n                            )\n                          }\n        \
+    \              Spacer(modifier = Modifier.width(4.dp))\n                     \
+    \ Button(\n                          onClick = { onEditClickFromList() },\n  \
+    \                        contentPadding = PaddingValues(horizontal = 12.dp)) {\n\
+    \                            Icon(Icons.Filled.Edit, contentDescription = \"Edit\"\
+    )\n                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))\n\
+    \                            Text(\"Edit\")\n                          }\n   \
+    \                   FilledIconButton(\n                          onClick = { onDeleteClickFromList()\
+    \ },\n                          modifier =\n                              Modifier.minimumInteractiveComponentSize()\n\
+    \                                  .size(\n                                  \
+    \    IconButtonDefaults.smallContainerSize(\n                                \
+    \          IconButtonDefaults.IconButtonWidthOption.Narrow)),\n              \
+    \            shape = IconButtonDefaults.smallRoundShape) {\n                 \
+    \           Icon(\n                                imageVector = Icons.Filled.Delete,\n\
+    \                                contentDescription = \"Delete\",\n          \
+    \                  )\n                          }\n                    }\n   \
+    \           } // Конец AnimatedVisibility\n        }\n      } // Конец Column\
+    \ (контент + кнопки)\n} // Конец корневого Box\n\n@Composable\nfun AllDayEventItem(\n\
+    \    event: EventDto,\n    isExpanded: Boolean,\n    onToggleExpand: () -> Unit,\n\
+    \    onDeleteClick: () -> Unit,\n    onEditClick: () -> Unit,\n    onDetailsClick:\
+    \ () -> Unit,\n    modifier: Modifier = Modifier\n) {\n  val cardBackground =\
+    \ colorScheme.tertiaryContainer\n  val cardTextColor = colorScheme.onTertiaryContainer\n\
+    \  val haptic = LocalHapticFeedback.current\n\n  Box(\n      modifier =\n    \
+    \      modifier\n              .fillMaxWidth()\n              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))\n\
+    \              .background(cardBackground)\n              .pointerInput(event.id)\
+    \ {\n                detectTapGestures(\n                    onTap = { onToggleExpand()\
+    \ },\n                    onLongPress = {\n                      haptic.performHapticFeedback(HapticFeedbackType.LongPress)\n\
+    \                      onDetailsClick()\n                    })\n            \
+    \  }) {\n        Column(\n            modifier =\n                Modifier.fillMaxWidth()\n\
+    \                    .padding(\n                        horizontal = CalendarUiDefaults.AllDayItemPadding,\n\
+    \                        vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding))\
+    \ {\n              Text(\n                  text = event.summary,\n          \
+    \        style = typography.bodyLarge,\n                  fontWeight = FontWeight.Medium,\n\
+    \                  color = cardTextColor,\n                  textAlign = TextAlign.Center,\n\
+    \                  modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),\n\
+    \              )\n\n              AnimatedVisibility(\n                  visible\
+    \ = isExpanded,\n                  enter =\n                      fadeIn(animationSpec\
+    \ = tween(durationMillis = 150, delayMillis = 100)) +\n                      \
+    \    expandVertically(\n                              animationSpec = tween(durationMillis\
+    \ = 250, delayMillis = 50),\n                              expandFrom = Alignment.Top),\n\
+    \                  exit =\n                      shrinkVertically(\n         \
+    \                 animationSpec = tween(durationMillis = 250),\n             \
+    \             shrinkTowards = Alignment.Top) +\n                          fadeOut(animationSpec\
+    \ = tween(durationMillis = 150))) {\n                    Spacer(modifier = Modifier.height(8.dp))\n\
+    \                    Row(\n                        modifier = Modifier.fillMaxWidth().padding(vertical\
+    \ = 4.dp),\n                        horizontalArrangement = Arrangement.Center,\n\
+    \                        verticalAlignment = Alignment.CenterVertically) {\n \
+    \                         Button(\n                              onClick = {\n\
+    \                                onDetailsClick()\n                          \
+    \      onToggleExpand()\n                              },\n                  \
+    \            contentPadding = PaddingValues(horizontal = 12.dp),\n           \
+    \                   colors =\n                                  ButtonDefaults.buttonColors(\n\
+    \                                      containerColor = colorScheme.onTertiary,\n\
+    \                                      contentColor = colorScheme.tertiary)) {\n\
+    \                                Icon(\n                                    Icons.Filled.Info,\n\
+    \                                    contentDescription = \"Information\",\n \
+    \                                   modifier = Modifier.size(ButtonDefaults.IconSize))\n\
+    \                              }\n                          Spacer(modifier =\
+    \ Modifier.width(8.dp))\n                          Button(\n                 \
+    \             onClick = { onEditClick() },\n                              contentPadding\
+    \ = PaddingValues(horizontal = 12.dp),\n                              colors =\n\
+    \                                  ButtonDefaults.buttonColors(\n            \
+    \                          containerColor = colorScheme.onTertiary,\n        \
+    \                              contentColor = colorScheme.tertiary)) {\n     \
+    \                           Icon(\n                                    Icons.Filled.Edit,\n\
+    \                                    contentDescription = \"Редактировать\",\n\
+    \                                    modifier = Modifier.size(ButtonDefaults.IconSize))\n\
+    \                              }\n                          Spacer(modifier =\
+    \ Modifier.width(8.dp))\n                          Button(\n                 \
+    \             onClick = { onDeleteClick() },\n                              contentPadding\
+    \ = PaddingValues(horizontal = 12.dp),\n                              colors =\n\
+    \                                  ButtonDefaults.buttonColors(\n            \
+    \                          containerColor = colorScheme.onTertiary,\n        \
+    \                              contentColor = colorScheme.tertiary)) {\n     \
+    \                           Icon(\n                                    Icons.Filled.Delete,\n\
+    \                                    contentDescription = \"Удалить\",\n     \
+    \                               modifier = Modifier.size(ButtonDefaults.IconSize))\n\
+    \                              }\n                        }\n                \
+    \  }\n            }\n      }\n}\n\nfun calculateEventHeight(durationMinutes: Long,\
+    \ isMicroEvent: Boolean): Dp {\n  return if (isMicroEvent) {\n    cuid.MicroEventHeight\n\
+    \  } else {\n    val minHeight = cuid.MinEventHeight\n    val maxHeight = cuid.MaxEventHeight\n\
+    \    val durationDouble = durationMinutes.toDouble()\n    val heightRange = maxHeight\
+    \ - minHeight\n\n    val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes)\
+    \ / cuid.HeightSigmoidScaleFactor\n    val k = cuid.HeightSigmoidSteepness\n \
+    \   val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))\n\n    val calculatedHeight\
+    \ = minHeight + (heightRange * sigmoidOutput.toFloat())\n    calculatedHeight.coerceIn(minHeight,\
+    \ maxHeight)\n  }\n}\n\nfun calculateShapeContainerSize(durationMinutes: Long):\
+    \ Dp {\n  val minStarContainerSize = cuid.MinStarContainerSize\n  val maxStarContainerSize\
+    \ = cuid.MaxStarContainerSize\n  val durationDouble = durationMinutes.toDouble()\n\
+    \  val heightRange = maxStarContainerSize - minStarContainerSize\n\n  val x =\
+    \ (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor\n\
+    \  val k = cuid.HeightSigmoidSteepness\n  val sigmoidOutput = 1.0 / (1.0 + exp(-k\
+    \ * x))\n\n  val calculatedHeight = minStarContainerSize + (heightRange * sigmoidOutput.toFloat())\n\
+    \  return calculatedHeight.coerceIn(minStarContainerSize, maxStarContainerSize)\n\
+    }\n\nfun generateShapeParams(eventId: String): GeneratedShapeParams {\n  val hashCode\
+    \ = eventId.hashCode()\n  val absHashCode = abs(hashCode)\n\n  val numVertices\
+    \ = (absHashCode % cuid.ShapeMaxVerticesDelta) + cuid.ShapeMinVertices\n\n  val\
+    \ shadowOffsetXSeed = absHashCode % cuid.ShapeShadowOffsetXMaxModulo\n  val shadowOffsetYSeed\
+    \ =\n      absHashCode % cuid.ShapeShadowOffsetYMaxModulo + cuid.ShapeShadowOffsetYMin\n\
+    \n  val offsetParam = (absHashCode % 4 + 1) * cuid.ShapeOffsetParamMultiplier\n\
+    \n  val radiusBaseHash = absHashCode / 3 + 42\n  val radiusSeed =\n      ((radiusBaseHash\
+    \ % cuid.ShapeRadiusSeedRangeModulo) * cuid.ShapeRadiusSeedRange) +\n        \
+    \  cuid.ShapeRadiusSeedMin\n  val coercedRadiusSeed = radiusSeed.coerceIn(cuid.ShapeRadiusSeedMin,\
+    \ cuid.ShapeMaxRadius)\n\n  val angleSeed = (abs(hashCode) / 5 - 99).mod(cuid.ShapeRotationMaxDegrees)\n\
+    \  val rotationAngle = (angleSeed + cuid.ShapeRotationOffsetDegrees)\n\n  return\
+    \ GeneratedShapeParams(\n      numVertices = numVertices,\n      radiusSeed =\
+    \ coercedRadiusSeed,\n      rotationAngle = rotationAngle,\n      shadowOffsetXSeed\
+    \ = shadowOffsetXSeed.dp,\n      shadowOffsetYSeed = shadowOffsetYSeed.dp,\n \
+    \     offestParam = offsetParam)\n}\n\nfun lerpOkLab(start: Color, stop: Color,\
+    \ fraction: Float): Color {\n  val startOklab = start.convert(ColorSpaces.Oklab)\n\
+    \  val stopOklab = stop.convert(ColorSpaces.Oklab)\n\n  val l = startOklab.component1()\
+    \ + (stopOklab.component1() - startOklab.component1()) * fraction\n  val a = startOklab.component2()\
+    \ + (stopOklab.component2() - startOklab.component2()) * fraction\n  val b = startOklab.component3()\
+    \ + (stopOklab.component3() - startOklab.component3()) * fraction\n  val alpha\
+    \ = startOklab.alpha + (stopOklab.alpha - startOklab.alpha) * fraction\n\n  return\
+    \ Color(l, a, b, alpha, ColorSpaces.Oklab).convert(ColorSpaces.Srgb)\n}\n"
+  info:
+    "size": "25024"
+    "last_modified": "2025-08-06T11:43:03.605306"
+    "mime_type": "text/plain"
+    "extension": ".kt"
+- path: "CalendarViewModel.kt"
+  content: "package com.lpavs.caliinda.feature.calendar.ui\n\nimport android.app.Activity\n\
+    import android.content.Intent\nimport android.util.Log\nimport androidx.lifecycle.ViewModel\n\
+    import androidx.lifecycle.viewModelScope\nimport com.lpavs.caliinda.core.common.EventNetworkState\n\
+    import com.lpavs.caliinda.core.data.auth.AuthManager\nimport com.lpavs.caliinda.core.data.di.ITimeTicker\n\
+    import com.lpavs.caliinda.core.data.remote.dto.EventDto\nimport com.lpavs.caliinda.core.data.repository.CalendarRepository\n\
+    import com.lpavs.caliinda.core.ui.util.IDateTimeUtils\nimport com.lpavs.caliinda.feature.agent.data.AiInteractionManager\n\
+    import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState\nimport dagger.hilt.android.lifecycle.HiltViewModel\n\
+    import kotlinx.coroutines.flow.Flow\nimport kotlinx.coroutines.flow.MutableSharedFlow\n\
+    import kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutines.flow.SharedFlow\n\
+    import kotlinx.coroutines.flow.StateFlow\nimport kotlinx.coroutines.flow.asSharedFlow\n\
+    import kotlinx.coroutines.flow.asStateFlow\nimport kotlinx.coroutines.flow.update\n\
+    import kotlinx.coroutines.launch\nimport java.time.Instant\nimport java.time.LocalDate\n\
+    import javax.inject.Inject\nimport java.time.Duration\n\n@HiltViewModel\nclass\
+    \ CalendarViewModel\n@Inject\nconstructor(\n    private val authManager: AuthManager,\n\
+    \    private val calendarRepository: CalendarRepository,\n    private val dateTimeUtils:\
+    \ IDateTimeUtils,\n    timeTicker: ITimeTicker,\n) : ViewModel() {\n\n  // ---\
+    \ ОСНОВНОЕ СОСТОЯНИЕ UI ---\n  private val _uiState = MutableStateFlow(CalendarState())\n\
+    \  val state: StateFlow<CalendarState> = _uiState.asStateFlow()\n\n  private var\
+    \ initialAuthCheckCompletedAndProcessed = false\n\n  // --- ДЕЛЕГИРОВАННЫЕ И П\
+    РОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---\n  val currentTime: StateFlow<Instant> = timeTicker.currentTime\n\
+    \n  // Состояния Календаря\n  private val _currentVisibleDate = MutableStateFlow(LocalDate.now())\n\
+    \  val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()\n\
+    \  val rangeNetworkState: StateFlow<EventNetworkState> = calendarRepository.rangeNetworkState\n\
+    \n  private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()\n  val eventFlow:\
+    \ SharedFlow<CalendarUiEvent> = _eventFlow.asSharedFlow()\n\n  init {\n    observeAuthState()\n\
+    \    observeCalendarNetworkState()\n  }\n\n  private fun observeAuthState() {\n\
+    \    viewModelScope.launch {\n      authManager.authState.collect { authState\
+    \ ->\n        val previousUiState = _uiState.value\n        _uiState.update {\
+    \ currentState ->\n          currentState.copy(\n              isSignedIn = authState.isSignedIn,\n\
+    \              userEmail = authState.userEmail,\n              displayName = authState.displayName,\n\
+    \              photo = authState.photoUrl,\n              isLoading = calculateIsLoading(authLoading\
+    \ = authState.isLoading),\n              authorizationIntent = authState.authorizationIntent)\n\
+    \        }\n\n        authState.authError?.let { error ->\n          _eventFlow.emit(CalendarUiEvent.ShowMessage(error))\n\
+    \          authManager.clearAuthError()\n        }\n        if (!initialAuthCheckCompletedAndProcessed\
+    \ && !authState.isLoading) {\n          initialAuthCheckCompletedAndProcessed\
+    \ = true\n          Log.d(TAG, \"Initial auth check completed and processed.\"\
+    )\n          if (!authState.isSignedIn && authState.authError == null) {\n   \
+    \         Log.d(TAG, \"Initial auth check: Showing sign-in required dialog.\"\
+    )\n            _uiState.update { it.copy(showSignInRequiredDialog = true) }\n\
+    \          }\n        }\n        if (authState.isSignedIn && _uiState.value.showSignInRequiredDialog)\
+    \ {\n          _uiState.update { it.copy(showSignInRequiredDialog = false) }\n\
+    \        }\n        if (authState.isSignedIn && !previousUiState.isSignedIn) {\n\
+    \          _uiState.update { it.copy(showSignInRequiredDialog = false) }\n   \
+    \     }\n        if (authState.isSignedIn && !previousUiState.isSignedIn) {\n\
+    \          Log.d(TAG, \"Auth observer: User signed in. Triggering calendar refresh\"\
+    )\n          calendarRepository.setCurrentVisibleDate(currentVisibleDate.value,\
+    \ forceRefresh = true)\n        }\n      }\n    }\n  }\n\n  private fun observeCalendarNetworkState()\
+    \ {\n    viewModelScope.launch {\n      calendarRepository.rangeNetworkState.collect\
+    \ { network ->\n        _uiState.update { it.copy(isLoading = calculateIsLoading(networkState\
+    \ = network)) }\n\n        if (network is EventNetworkState.Error) {\n       \
+    \   if (authManager.authState.value.authError == null) {\n            _eventFlow.emit(CalendarUiEvent.ShowMessage(network.message))\n\
+    \          }\n        }\n      }\n    }\n  }\n\n  // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ\
+    \ РАСЧЕТА ОБЩЕГО isLoading ---\n  /** Рассчитывает общее состояние загрузки, к\
+    омбинируя состояния менеджеров */\n  private fun calculateIsLoading(\n      authLoading:\
+    \ Boolean =\n          authManager.authState.value.isLoading, // Берем текущие\
+    \ значения по умолчанию\n      networkState: EventNetworkState = calendarRepository.rangeNetworkState.value,\n\
+    \  ): Boolean {\n    val calendarLoading = networkState is EventNetworkState.Loading\n\
+    \n    return authLoading || calendarLoading\n  }\n\n  // --- ДЕЙСТВИЯ АУТЕНТИФ\
+    ИКАЦИИ ---\n  fun signIn(activity: Activity) {\n    if (_uiState.value.showSignInRequiredDialog)\
+    \ {\n      _uiState.update { it.copy(showSignInRequiredDialog = false) }\n   \
+    \ }\n    authManager.signIn(activity)\n  }\n\n  fun handleAuthorizationResult(intent:\
+    \ Intent) {\n    authManager.handleAuthorizationResult(intent)\n  }\n\n  fun signOut()\
+    \ {\n    if (_uiState.value.showSignInRequiredDialog) {\n      _uiState.update\
+    \ { it.copy(showSignInRequiredDialog = false) }\n    }\n    authManager.signOut()\n\
+    \  }\n\n  fun clearAuthorizationIntent() {\n    authManager.clearAuthorizationIntent()\n\
+    \  }\n\n  fun onSignInRequiredDialogDismissed() {\n    _uiState.update { it.copy(showSignInRequiredDialog\
+    \ = false) }\n    Log.d(TAG, \"Sign-in required dialog was dismissed by the user.\"\
+    )\n  }\n\n  // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---\n  fun onVisibleDateChanged(newDate:\
+    \ LocalDate) {\n    if (newDate == _currentVisibleDate.value) return\n    _currentVisibleDate.value\
+    \ = newDate\n    viewModelScope.launch { calendarRepository.setCurrentVisibleDate(newDate)\
+    \ }\n  }\n\n  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>>\
+    \ =\n      calendarRepository.getEventsFlowForDate(date)\n\n  fun refreshCurrentVisibleDate()\
+    \ {\n    viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value)\
+    \ }\n  }\n\n\n  fun calculateEventDurationMinutes(event: EventDto, currentTimeZoneId:\
+    \ String): Long {\n    val start = dateTimeUtils.parseToInstant(event.startTime,\
+    \ currentTimeZoneId)\n    val end = dateTimeUtils.parseToInstant(event.endTime,\
+    \ currentTimeZoneId)\n    return if (start != null && end != null && end.isAfter(start))\
+    \ {\n      Duration.between(start, end).toMinutes()\n    } else {\n      0L\n\
+    \    }\n  }\n\n  // --- COMPANION ---\n  companion object {\n    private const\
+    \ val TAG = \"CalendarViewModel\" // Используем один TAG\n  }\n}\n\nsealed class\
+    \ CalendarUiEvent {\n  data class ShowMessage(val message: String) : CalendarUiEvent()\n\
+    }\n"
+  info:
+    "size": "7169"
+    "last_modified": "2025-08-06T11:43:03.607165"
+    "mime_type": "text/plain"
+    "extension": ".kt"
