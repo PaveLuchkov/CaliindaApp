@@ -3,6 +3,7 @@ package com.lpavs.caliinda.core.data.repository
 import android.util.Log
 import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.core.common.EventNetworkState
+import com.lpavs.caliinda.core.data.auth.AuthEvent
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
 import com.lpavs.caliinda.core.data.remote.CalendarRemoteDataSource
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
@@ -70,6 +72,15 @@ constructor(
     const val JUMP_DETECTION_BUFFER_DAYS = 10L
     private const val TAG = "CalendarDataManager"
   }
+    init {
+    managerScope.launch {
+        authManager.authEvents.collect() { event ->
+            when (event) {
+                AuthEvent.SignedOut -> clearLocalDataOnSignOut()
+            }
+        }
+    }
+    }
 
   // --- Секция Предоставление данных ---
   /** Предоставляет Flow событий из БД для указанной даты */

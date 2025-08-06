@@ -21,6 +21,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
+import com.lpavs.caliinda.core.data.auth.AuthEvent
 import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.core.data.di.WebClientId
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
@@ -29,8 +30,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -54,7 +58,6 @@ constructor(
     private val okHttpClient: OkHttpClient,
     @BackendUrl private val backendBaseUrl: String,
     @WebClientId private val webClientId: String,
-    private val calendarDataManager: Lazy<CalendarRepository>,
     private val sharedPreferences: SharedPreferences
 ) {
   private val TAG = "AuthManager"
@@ -70,6 +73,9 @@ constructor(
 
   private val _authState = MutableStateFlow(AuthState())
   val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+  private val _authEvents = MutableSharedFlow<AuthEvent>()
+  val authEvents: SharedFlow<AuthEvent> = _authEvents.asSharedFlow()
 
   // --- Google Sign-In Клиент ---
   private val credentialManager: CredentialManager = CredentialManager.create(context)
@@ -253,10 +259,10 @@ constructor(
       try {
         credentialManager.clearCredentialState(ClearCredentialStateRequest())
         Log.i(TAG, "Successfully cleared credentials.")
-        calendarDataManager.get().clearLocalDataOnSignOut()
       } catch (e: Exception) {
         Log.e(TAG, "Error clearing credentials", e)
       } finally {
+        _authEvents.emit(AuthEvent.SignedOut)
         signOutInternally("You have been signed out.")
       }
     }
@@ -450,4 +456,9 @@ constructor(
       Log.e(TAG, "❌ Exception while clearing user info", e)
     }
   }
+}
+
+
+sealed class AuthEvent {
+  object SignedOut : AuthEvent()
 }
