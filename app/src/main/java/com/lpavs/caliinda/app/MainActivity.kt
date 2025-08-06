@@ -31,9 +31,6 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-  private val calendarViewModel: CalendarViewModel by viewModels()
-
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
@@ -45,10 +42,5 @@ class MainActivity : ComponentActivity() {
         )
       }
     }
-  }
-
-  override fun onResume() {
-    super.onResume()
-    calendarViewModel.refreshCurrentVisibleDate()
   }
 }

@@ -69,7 +69,7 @@ fun CustomEventDetailsDialog(
             color = if (!event.isCurrent) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
             tonalElevation = 8.dp) {
               val onCardText =
-                  if (!!event.isCurrent) colorScheme.onPrimaryContainer
+                  if (!event.isCurrent) colorScheme.onPrimaryContainer
                   else colorScheme.onTertiaryContainer
               Box(modifier = Modifier.fillMaxWidth()) {
                 Box(

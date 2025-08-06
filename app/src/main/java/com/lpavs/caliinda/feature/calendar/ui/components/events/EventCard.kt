@@ -2,6 +2,7 @@ package com.lpavs.caliinda.feature.calendar.ui.components.events
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -86,10 +87,13 @@ fun EventItem(
   val haptic = LocalHapticFeedback.current
     val current = uiModel.isCurrent
     val micro = uiModel.isMicroEvent
-
-
   val shapeParams = uiModel.shapeParams
-
+    val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
+    val animatedHeight by animateDpAsState(
+        targetValue = targetHeight,
+        animationSpec = tween(durationMillis = 250),
+        label = "eventItemHeightAnimation"
+    )
   val starShape =
       remember(shapeParams.numVertices, shapeParams.radiusSeed) {
         RoundedPolygon.star(
@@ -108,23 +112,19 @@ fun EventItem(
         else calculateShapeContainerSize(uiModel.durationMinutes)
       }
 
-  // Compute the transitionColor
-  val transitionColorCard =
+    val transitionColorCard =
       lerpOkLab(
           start = colorScheme.primaryContainer,
           stop = colorScheme.tertiaryContainer,
           fraction = uiModel.proximityRatio)
   val darkerShadowColor = Color.Black
 
-  // --- Параметры текущего события (получаем isCurrentEvent) ---
-  //   val fixedColors = LocalFixedAccentColors.current
-
-  val cardElevation = if (current) cuid.CurrentEventElevation else 0.dp
+    val cardElevation = if (current) cuid.CurrentEventElevation else 0.dp
   val starBackground =
       when {
-          current -> colorScheme.tertiaryContainer // Выделяем текущее
-        uiModel.isNext -> transitionColorCard // Слегка выделяем следующее (пример)
-        else -> colorScheme.primaryContainer // Обычный фон
+          current -> colorScheme.tertiaryContainer
+          uiModel.isNext -> transitionColorCard
+          else -> colorScheme.primaryContainer
       }
   val cardBackground by
       animateColorAsState(
@@ -177,7 +177,7 @@ fun EventItem(
                   spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
-              .height(uiModel.baseHeight)
+              .height(animatedHeight)
               .pointerInput(uiModel.id) {
                 detectTapGestures(
                     onTap = { onToggleExpand() },
