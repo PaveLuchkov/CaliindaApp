@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components
+package com.lpavs.caliinda.feature.calendar.ui.components.events
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -143,21 +143,21 @@ fun DayEventsPage(
             ) {
               allDayEvents.forEach { event ->
                 val isExpanded = event.id == expandedAllDayEventId
-                AllDayEventItem(
-                    event = event,
-                    isExpanded = isExpanded,
-                    onToggleExpand = {
-                      expandedAllDayEventId =
-                          if (expandedAllDayEventId == event.id) {
-                            null
-                          } else {
-                            event.id
-                          }
-                    },
-                    onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
-                    onDetailsClick = { eventManagementViewModel.requestEventDetails(event) },
-                    onEditClick = { eventManagementViewModel.requestEditEvent(event) },
-                )
+                  AllDayEventItem(
+                      event = event,
+                      isExpanded = isExpanded,
+                      onToggleExpand = {
+                          expandedAllDayEventId =
+                              if (expandedAllDayEventId == event.id) {
+                                  null
+                              } else {
+                                  event.id
+                              }
+                      },
+                      onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
+                      onDetailsClick = { eventManagementViewModel.requestEventDetails(event) },
+                      onEditClick = { eventManagementViewModel.requestEditEvent(event) },
+                  )
                 Spacer(modifier = Modifier.height(6.dp))
               }
             }
@@ -171,17 +171,18 @@ fun DayEventsPage(
                 DateTimeFormatterUtil.formatEventListTime(context, event, currentTimeZoneId)
               }
             }
-        CardsList(
-            events = timedEvents,
-            timeFormatter = timeFormatterLambda,
-            isToday = isToday,
-            nextStartTime = nextStartTime,
-            currentTime = currentTime,
-            listState = listState,
-            onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
-            onEditRequest = eventManagementViewModel::requestEditEvent,
-            onDetailsRequest = eventManagementViewModel::requestEventDetails,
-            currentTimeZoneId = currentTimeZoneId)
+          CardsList(
+              events = timedEvents,
+              timeFormatter = timeFormatterLambda,
+              isToday = isToday,
+              nextStartTime = nextStartTime,
+              currentTime = currentTime,
+              listState = listState,
+              onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
+              onEditRequest = eventManagementViewModel::requestEditEvent,
+              onDetailsRequest = eventManagementViewModel::requestEventDetails,
+              currentTimeZoneId = currentTimeZoneId
+          )
       } else if (allDayEvents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           if (isBusy && !isListening) {

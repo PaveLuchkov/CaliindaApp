@@ -32,7 +32,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +53,7 @@ import com.lpavs.caliinda.feature.agent.vm.AgentUiEvent
 import com.lpavs.caliinda.feature.agent.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.CalendarAppBar
-import com.lpavs.caliinda.feature.calendar.ui.components.DayEventsPage
+import com.lpavs.caliinda.feature.calendar.ui.components.events.DayEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.calendar.ui.components.details.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen

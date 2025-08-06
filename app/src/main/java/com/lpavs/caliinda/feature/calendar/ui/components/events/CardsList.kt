@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components
+package com.lpavs.caliinda.feature.calendar.ui.components.events
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -110,7 +110,7 @@ fun CardsList(
 
                 val baseHeight =
                     remember(isMicroEvent, eventDurationMinutes) {
-                      calculateEventHeight(eventDurationMinutes, isMicroEvent)
+                        calculateEventHeight(eventDurationMinutes, isMicroEvent)
                     }
 
                 val buttonsRowHeight = 56.dp
@@ -185,33 +185,35 @@ fun CardsList(
                           }
                         }
 
-                EventItem(
-                    event = event,
-                    timeFormatter = timeFormatter,
-                    isCurrentEvent = isCurrent,
-                    isNextEvent = isNext,
-                    proximityRatio = proximityRatio,
-                    isMicroEventFromList = isMicroEvent,
-                    targetHeightFromList = animatedHeight,
-                    isExpanded = isExpanded,
-                    onToggleExpand = {
+              EventItem(
+                  event = event,
+                  timeFormatter = timeFormatter,
+                  isCurrentEvent = isCurrent,
+                  isNextEvent = isNext,
+                  proximityRatio = proximityRatio,
+                  isMicroEventFromList = isMicroEvent,
+                  targetHeightFromList = animatedHeight,
+                  isExpanded = isExpanded,
+                  onToggleExpand = {
                       expandedEventId =
                           if (expandedEventId == event.id) {
-                            null
+                              null
                           } else {
-                            event.id
+                              event.id
                           }
-                    },
-                    onDeleteClickFromList = { onDeleteRequest(event) },
-                    onEditClickFromList = { onEditRequest(event) },
-                    onDetailsClickFromList = { onDetailsRequest(event) },
-                    // --------------------------------
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(
-                                horizontal = CalendarUiDefaults.ItemHorizontalPadding,
-                                vertical = CalendarUiDefaults.ItemVerticalPadding),
-                    currentTimeZoneId = currentTimeZoneId)
+                  },
+                  onDeleteClickFromList = { onDeleteRequest(event) },
+                  onEditClickFromList = { onEditRequest(event) },
+                  onDetailsClickFromList = { onDetailsRequest(event) },
+                  // --------------------------------
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .padding(
+                              horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                              vertical = CalendarUiDefaults.ItemVerticalPadding
+                          ),
+                  currentTimeZoneId = currentTimeZoneId
+              )
               }
         }
       }

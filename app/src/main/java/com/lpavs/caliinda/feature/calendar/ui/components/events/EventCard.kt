@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components
+package com.lpavs.caliinda.feature.calendar.ui.components.events
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -524,7 +524,8 @@ fun generateShapeParams(eventId: String): GeneratedShapeParams {
       rotationAngle = rotationAngle,
       shadowOffsetXSeed = shadowOffsetXSeed.dp,
       shadowOffsetYSeed = shadowOffsetYSeed.dp,
-      offestParam = offsetParam)
+      offestParam = offsetParam
+  )
 }
 
 fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
