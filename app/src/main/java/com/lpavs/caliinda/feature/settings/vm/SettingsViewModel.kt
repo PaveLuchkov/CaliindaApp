@@ -43,8 +43,6 @@ constructor(
     viewModelScope.launch { settingsRepository.saveBotTemper(newTemper) }
   }
 
-
-
   companion object {
     private const val TAG = "SettingsViewModel"
   }

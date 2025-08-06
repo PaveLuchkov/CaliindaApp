@@ -42,13 +42,17 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.auth.AuthState
 import com.lpavs.caliinda.feature.agent.ui.RecordButton
+import com.lpavs.caliinda.feature.agent.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 fun BottomBar(
-    uiState: CalendarState, // Принимаем весь стейт
+    calendarState: CalendarState, // Принимаем весь стейт
+    authState: AuthState,
+    recordState: RecordingState,
     textFieldValue: TextFieldValue,
     onTextChanged: (TextFieldValue) -> Unit,
     onSendClick: () -> Unit,
@@ -63,9 +67,9 @@ fun BottomBar(
   val keyboardController = LocalSoftwareKeyboardController.current
   val isSendEnabled =
       textFieldValue.text.isNotBlank() &&
-          uiState.isSignedIn &&
-          !uiState.isLoading &&
-          !uiState.isListening
+              authState.isSignedIn &&
+          !recordState.isLoading &&
+          !recordState.isListening
   var expanded by rememberSaveable { mutableStateOf(true) }
   var onKeyboardToggle by remember { mutableStateOf(true) }
 
@@ -166,10 +170,11 @@ fun BottomBar(
               //                colors = vibrantColors,
               floatingActionButton = {
                 RecordButton(
-                    uiState = uiState, // Передаем стейт
+                    calendarState = calendarState, // Передаем стейт
                     onStartRecording = onRecordStart, // Передаем лямбды
                     onStopRecordingAndSend = onRecordStopAndSend,
                     onUpdatePermissionResult = onUpdatePermissionResult,
+                    recordState = recordState
                 )
               },
               content = {

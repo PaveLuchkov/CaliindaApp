@@ -44,7 +44,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
@@ -73,21 +72,27 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
-    onNavigateToSettings: () -> Unit,
     eventManagementViewModel: EventManagementViewModel,
     agentViewModel: AgentViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToSettings: () -> Unit,
 ) {
-  val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
+    val aiState by agentViewModel.aiState.collectAsStateWithLifecycle()
+    val recState by agentViewModel.recState.collectAsStateWithLifecycle()
+    val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
+
+    val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
-  val aiState by agentViewModel.aiState.collectAsState()
-  val eventManagementState by eventManagementViewModel.uiState.collectAsState()
+
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
+    val isTextInputVisible by remember { mutableStateOf(false) }
+
   val snackbarHostState = remember { SnackbarHostState() }
-  val isTextInputVisible by remember { mutableStateOf(false) }
-  val aiMessage by agentViewModel.aiMessage.collectAsState()
+
+  val aiMessage by agentViewModel.aiMessage.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
   val today = remember { LocalDate.now() }
@@ -107,8 +112,8 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
-  LaunchedEffect(calendarState.authorizationIntent) {
-    calendarState.authorizationIntent?.let { pendingIntent ->
+  LaunchedEffect(authState.authorizationIntent) {
+    authState.authorizationIntent?.let { pendingIntent ->
       try {
         val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
         authorizationLauncher.launch(intentSenderRequest)
@@ -276,7 +281,7 @@ fun CalendarScreen(
           onResultShownTimeout = { agentViewModel.resetAiStateAfterResult() },
           onAskingShownTimeout = { agentViewModel.resetAiStateAfterAsking() })
       BottomBar(
-          uiState = calendarState, // Передаем весь uiState, т.к. Bar зависит от многих полей
+          calendarState = calendarState, // Передаем весь uiState, т.к. Bar зависит от многих полей
           textFieldValue = textFieldState,
           onTextChanged = { textFieldState = it },
           onSendClick = {
@@ -293,7 +298,9 @@ fun CalendarScreen(
           onCreateEventClick = {
             selectedDateForSheet = currentVisibleDate
             showCreateEventSheet = true
-          })
+          },
+          recordState = recState,
+          authState = authState)
     } // End основной Box
   } // End Scaffold
 

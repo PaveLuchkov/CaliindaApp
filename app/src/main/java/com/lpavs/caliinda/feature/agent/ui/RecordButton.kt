@@ -39,12 +39,14 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import com.lpavs.caliinda.feature.agent.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 import kotlinx.coroutines.launch
 
 @Composable
 fun RecordButton(
-    uiState: CalendarState,
+    calendarState: CalendarState,
+    recordState: RecordingState,
     onStartRecording: () -> Unit, // Принимаем лямбды вместо ViewModel
     onStopRecordingAndSend: () -> Unit,
     onUpdatePermissionResult: (Boolean) -> Unit,
@@ -56,7 +58,7 @@ fun RecordButton(
 
   // --- Анимации и формы (без изменений) ---
   val targetBackgroundColor =
-      if (uiState.isListening) {
+      if (recordState.isListening) {
         colorScheme.error
       } else {
         colorScheme.primary
@@ -90,7 +92,7 @@ fun RecordButton(
           label = "animatedMorphRotation")
   val animatedScale by
       animateFloatAsState(
-          targetValue = if (isPressed || uiState.isListening) 1.45f else 1.0f,
+          targetValue = if (isPressed || recordState.isListening) 1.45f else 1.0f,
           animationSpec = tween(durationMillis = 300),
           label = "RecordButtonScale")
 
@@ -113,15 +115,15 @@ fun RecordButton(
 
   // Кнопка активна, если пользователь вошел и не идет загрузка/запись (для начала записи)
   // Сама логика pointerInput будет обрабатывать uiState.isListening для остановки
-  val isInteractionEnabled = uiState.isSignedIn && !uiState.isLoading
+  val isInteractionEnabled = calendarState.isSignedIn && !recordState.isLoading
 
   Log.d(
       "RecordButton",
-      "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${uiState.isListening}")
+      "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${recordState.isListening}")
   FloatingActionButton(
       onClick = {
         // Если нужно простое нажатие для запроса разрешения, если его нет
-        if (!uiState.isPermissionGranted && isInteractionEnabled) {
+        if (!recordState.isPermissionGranted && isInteractionEnabled) {
           scope.launch { requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
         }
         Log.d("RecordButton", "FAB onClick triggered (handled permission request if needed)")
@@ -132,7 +134,7 @@ fun RecordButton(
           modifier
               //                .fillMaxSize()
               .pointerInput(
-                  isInteractionEnabled, uiState.isPermissionGranted) { // Передаем зависимости в key
+                  isInteractionEnabled, recordState.isPermissionGranted) { // Передаем зависимости в key
                     if (!isInteractionEnabled) {
                       Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")
                       return@pointerInput // Не обрабатываем ввод, если кнопка неактивна
@@ -154,7 +156,7 @@ fun RecordButton(
 
                           if (hasPermission) {
                             // Если уже идет запись, нажатие игнорируем (остановка по отпусканию)
-                            if (!uiState.isListening) {
+                            if (!recordState.isListening) {
                               Log.d("RecordButton", "Permission granted, starting recording.")
                               down.consume() // Потребляем событие
                               scope.launch { onStartRecording() } // Вызываем лямбду начала записи
@@ -206,7 +208,7 @@ fun RecordButton(
                     }
                   }
               .clip(
-                  if (isPressed || uiState.isListening) {
+                  if (isPressed || recordState.isListening) {
                     // Используем CustomRotatingMorphShape из папки common
                     CustomRotatingMorphShape(
                         morph = morph,
@@ -227,7 +229,7 @@ fun RecordButton(
     Icon(
         imageVector = Icons.Filled.Mic,
         contentDescription =
-            if (uiState.isListening) "Идет запись (Отпустите для остановки)"
+            if (recordState.isListening) "Идет запись (Отпустите для остановки)"
             else "Начать запись (Нажмите и удерживайте)",
         tint = animatedContentColor)
   }

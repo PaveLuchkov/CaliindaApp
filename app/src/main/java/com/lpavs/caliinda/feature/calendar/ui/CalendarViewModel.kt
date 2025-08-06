@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.ui
 
-import android.app.Activity
-import android.content.Intent
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,21 +9,25 @@ import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
+import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import java.time.Duration
+import java.time.ZoneId
 
 @HiltViewModel
 class CalendarViewModel
@@ -34,6 +37,7 @@ constructor(
     private val calendarRepository: CalendarRepository,
     private val dateTimeUtils: IDateTimeUtils,
     timeTicker: ITimeTicker,
+    private val settingsRepository: SettingsRepository,
     private val eventUiModelMapper: EventUiModelMapper
 ) : ViewModel() {
 
@@ -66,8 +70,7 @@ constructor(
         _uiState.update { currentState ->
           currentState.copy(
               isSignedIn = authState.isSignedIn,
-              isLoading = calculateIsLoading(authLoading = authState.isLoading),
-              authorizationIntent = authState.authorizationIntent)
+              isLoading = calculateIsLoading(authLoading = authState.isLoading),)
         }
 
         authState.authError?.let { error ->
@@ -112,6 +115,11 @@ constructor(
     }
   }
 
+
+  val timeZone: StateFlow<String> =
+    settingsRepository.timeZoneFlow.stateIn(
+      viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id
+    )
   // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
   /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
   private fun calculateIsLoading(
