@@ -16,21 +16,11 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class UtilModule {
 
-    @Binds
-    @Singleton
-    abstract fun bindDateTimeUtils(
-        impl: DateTimeUtilsImpl
-    ): IDateTimeUtils
+  @Binds @Singleton abstract fun bindDateTimeUtils(impl: DateTimeUtilsImpl): IDateTimeUtils
 
-    @Binds
-    @Singleton
-    abstract fun bindDateTimeFormatterUtil(
-        impl: DateTimeFormatterUtilImpl
-    ): IDateTimeFormatterUtil
+  @Binds
+  @Singleton
+  abstract fun bindDateTimeFormatterUtil(impl: DateTimeFormatterUtilImpl): IDateTimeFormatterUtil
 
-    @Binds
-    @Singleton
-    abstract fun bindFunMessages(
-        impl: FunMessagesImpl
-    ): IFunMessages
+  @Binds @Singleton abstract fun bindFunMessages(impl: FunMessagesImpl): IFunMessages
 }

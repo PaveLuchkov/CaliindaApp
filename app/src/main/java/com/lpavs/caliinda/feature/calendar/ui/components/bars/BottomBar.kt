@@ -67,7 +67,7 @@ fun BottomBar(
   val keyboardController = LocalSoftwareKeyboardController.current
   val isSendEnabled =
       textFieldValue.text.isNotBlank() &&
-              authState.isSignedIn &&
+          authState.isSignedIn &&
           !recordState.isLoading &&
           !recordState.isListening
   var expanded by rememberSaveable { mutableStateOf(true) }
@@ -174,8 +174,7 @@ fun BottomBar(
                     onStartRecording = onRecordStart, // Передаем лямбды
                     onStopRecordingAndSend = onRecordStopAndSend,
                     onUpdatePermissionResult = onUpdatePermissionResult,
-                    recordState = recordState
-                )
+                    recordState = recordState)
               },
               content = {
                 IconButton(

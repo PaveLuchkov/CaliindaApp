@@ -7,8 +7,8 @@ import javax.inject.Inject
 
 @HiltAndroidApp
 class CaliindaApplication : Application() {
-  @Inject
-  lateinit var funMessages: IFunMessages
+  @Inject lateinit var funMessages: IFunMessages
+
   override fun onCreate() {
     super.onCreate()
     funMessages.resetSession()

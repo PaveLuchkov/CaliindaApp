@@ -134,7 +134,8 @@ fun RecordButton(
           modifier
               //                .fillMaxSize()
               .pointerInput(
-                  isInteractionEnabled, recordState.isPermissionGranted) { // Передаем зависимости в key
+                  isInteractionEnabled,
+                  recordState.isPermissionGranted) { // Передаем зависимости в key
                     if (!isInteractionEnabled) {
                       Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")
                       return@pointerInput // Не обрабатываем ввод, если кнопка неактивна

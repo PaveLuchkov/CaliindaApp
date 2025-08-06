@@ -81,7 +81,6 @@ fun EditEventScreen(
     selectedUpdateMode: EventUpdateMode,
     onDismiss: () -> Unit,
     currentSheetValue: SheetValue,
-
 ) {
   var summary by remember(eventToEdit.id) { mutableStateOf(eventToEdit.summary) }
   var description by remember(eventToEdit.id) { mutableStateOf(eventToEdit.description ?: "") }
@@ -97,9 +96,8 @@ fun EditEventScreen(
 
   val context = LocalContext.current
 
-    val initialEventDateTimeState = remember(eventToEdit.id) {
-        viewModel.parseEventToState(eventToEdit)
-    }
+  val initialEventDateTimeState =
+      remember(eventToEdit.id) { viewModel.parseEventToState(eventToEdit) }
   var eventDateTimeState by remember(eventToEdit.id) { mutableStateOf(initialEventDateTimeState) }
   LaunchedEffect(initialEventDateTimeState) {
     Log.d("EditEventScreen", "Initial EventDateTimeState for UI: $initialEventDateTimeState")
@@ -127,15 +125,14 @@ fun EditEventScreen(
   }
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
-    val onSaveClick: () -> Unit = {
-        viewModel.updateEvent(
-            summary = summary,
-            description = description,
-            location = location,
-            dateTimeState = eventDateTimeState,
-            updateMode = selectedUpdateMode
-        )
-    }
+  val onSaveClick: () -> Unit = {
+    viewModel.updateEvent(
+        summary = summary,
+        description = description,
+        location = location,
+        dateTimeState = eventDateTimeState,
+        updateMode = selectedUpdateMode)
+  }
 
   Row(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),

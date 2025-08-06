@@ -21,11 +21,8 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
-import com.lpavs.caliinda.core.data.auth.AuthEvent
 import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.core.data.di.WebClientId
-import com.lpavs.caliinda.core.data.repository.CalendarRepository
-import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -457,7 +454,6 @@ constructor(
     }
   }
 }
-
 
 sealed class AuthEvent {
   object SignedOut : AuthEvent()

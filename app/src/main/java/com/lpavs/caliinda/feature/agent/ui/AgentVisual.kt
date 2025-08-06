@@ -1,4 +1,3 @@
-
 package com.lpavs.caliinda.feature.agent.ui
 
 import androidx.compose.animation.AnimatedVisibility
@@ -80,8 +79,7 @@ fun AiVisualizer(
   val rotationAngle = remember { Animatable(0f) }
   // LaunchedEffect для вращения остается без изменений...
   LaunchedEffect(targetState) {
-    val shouldRotate =
-        targetState == AgentState.THINKING || targetState == AgentState.LISTENING
+    val shouldRotate = targetState == AgentState.THINKING || targetState == AgentState.LISTENING
     if (shouldRotate) {
       val duration =
           when (targetState) {
@@ -90,8 +88,7 @@ fun AiVisualizer(
             else -> 5000 // На всякий случай
           }
       if (!rotationAngle.isRunning &&
-          (targetState == AgentState.THINKING ||
-              targetState == AgentState.LISTENING)) {
+          (targetState == AgentState.THINKING || targetState == AgentState.LISTENING)) {
         launch {
           rotationAngle.animateTo(
               targetValue = rotationAngle.value + 360f,
@@ -167,8 +164,7 @@ fun AiVisualizer(
       }
 
   // Видимость всего компонента
-  val isComponentVisible =
-      targetState != AgentState.IDLE && targetState != AgentState.ERROR
+  val isComponentVisible = targetState != AgentState.IDLE && targetState != AgentState.ERROR
 
   // Видимость бабла
   val isBubbleVisible =

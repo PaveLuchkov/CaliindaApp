@@ -85,15 +85,15 @@ fun EventItem(
     modifier: Modifier = Modifier,
 ) {
   val haptic = LocalHapticFeedback.current
-    val current = uiModel.isCurrent
-    val micro = uiModel.isMicroEvent
+  val current = uiModel.isCurrent
+  val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
-    val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
-    val animatedHeight by animateDpAsState(
-        targetValue = targetHeight,
-        animationSpec = tween(durationMillis = 250),
-        label = "eventItemHeightAnimation"
-    )
+  val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
+  val animatedHeight by
+      animateDpAsState(
+          targetValue = targetHeight,
+          animationSpec = tween(durationMillis = 250),
+          label = "eventItemHeightAnimation")
   val starShape =
       remember(shapeParams.numVertices, shapeParams.radiusSeed) {
         RoundedPolygon.star(
@@ -112,19 +112,19 @@ fun EventItem(
         else calculateShapeContainerSize(uiModel.durationMinutes)
       }
 
-    val transitionColorCard =
+  val transitionColorCard =
       lerpOkLab(
           start = colorScheme.primaryContainer,
           stop = colorScheme.tertiaryContainer,
           fraction = uiModel.proximityRatio)
   val darkerShadowColor = Color.Black
 
-    val cardElevation = if (current) cuid.CurrentEventElevation else 0.dp
+  val cardElevation = if (current) cuid.CurrentEventElevation else 0.dp
   val starBackground =
       when {
-          current -> colorScheme.tertiaryContainer
-          uiModel.isNext -> transitionColorCard
-          else -> colorScheme.primaryContainer
+        current -> colorScheme.tertiaryContainer
+        uiModel.isNext -> transitionColorCard
+        else -> colorScheme.primaryContainer
       }
   val cardBackground by
       animateColorAsState(
@@ -133,18 +133,17 @@ fun EventItem(
 
   val cardTextColor =
       when {
-          current -> colorScheme.onTertiaryContainer // Выделяем текущее
+        current -> colorScheme.onTertiaryContainer // Выделяем текущее
         else -> colorScheme.onPrimaryContainer // Обычный фон
       }
   val textStyle =
       when {
-        !micro ->
-            if (current) Typography.headlineSmallEmphasized else Typography.headlineSmall
+        !micro -> if (current) Typography.headlineSmallEmphasized else Typography.headlineSmall
         else -> if (current) Typography.bodyLargeEmphasized else Typography.bodyLarge
       }
   val cardFontFamily =
       when {
-          current ->
+        current ->
             FontFamily(
                 Font(
                     R.font.robotoflex_variable,
@@ -269,7 +268,7 @@ fun EventItem(
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                           maxLines = 1)
                       Spacer(modifier = Modifier.width(8.dp))
-                        uiModel.location?.let {
+                      uiModel.location?.let {
                         Text(
                             text = it,
                             color = cardTextColor,

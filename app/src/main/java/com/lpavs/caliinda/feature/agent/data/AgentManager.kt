@@ -70,9 +70,7 @@ constructor(
     speechRecognizerIntent =
         Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
           putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-          putExtra(
-              RecognizerIntent.EXTRA_LANGUAGE,
-              Locale.getDefault().toString())
+          putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString())
           putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите...")
           putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         }
@@ -127,8 +125,7 @@ constructor(
 
   fun sendTextMessage(text: String) {
     if (text.isBlank()) return
-    if (_aiState.value == AgentState.LISTENING ||
-        _aiState.value == AgentState.THINKING) {
+    if (_aiState.value == AgentState.LISTENING || _aiState.value == AgentState.THINKING) {
       Log.w(TAG, "Cannot send text message while listening or thinking.")
       return
     }
@@ -196,9 +193,7 @@ constructor(
       _aiState.value = AgentState.THINKING
       _aiMessage.value = null
     }
-    managerScope.launch {
-      processText(text)
-    }
+    managerScope.launch { processText(text) }
   }
 
   private suspend fun processText(text: String) {
@@ -220,9 +215,9 @@ constructor(
               .setType(MultipartBody.FORM)
               .addFormDataPart("text", text)
               .addFormDataPart("time", LocalDateTime.now().toString())
-            .addFormDataPart("timeZone", timeZoneId)
-            .addFormDataPart("temper", currentTemper)
-            .build()
+              .addFormDataPart("timeZone", timeZoneId)
+              .addFormDataPart("temper", currentTemper)
+              .build()
         } catch (e: Exception) {
           Log.e(TAG, "Failed to build request body", e)
           handleBackendError("Ошибка подготовки запроса")
@@ -349,11 +344,9 @@ constructor(
           Log.d(TAG, "Listener: onBeginningOfSpeech")
         }
 
-        override fun onRmsChanged(rmsdB: Float) {
-        }
+        override fun onRmsChanged(rmsdB: Float) {}
 
-        override fun onBufferReceived(buffer: ByteArray?) {
-        }
+        override fun onBufferReceived(buffer: ByteArray?) {}
 
         override fun onEndOfSpeech() {
           Log.d(TAG, "Listener: onEndOfSpeech")
@@ -399,8 +392,7 @@ constructor(
           }
         }
 
-        override fun onEvent(eventType: Int, params: Bundle?) {
-        }
+        override fun onEvent(eventType: Int, params: Bundle?) {}
       }
 
   private fun getSpeechRecognizerErrorText(error: Int): String {

@@ -77,17 +77,16 @@ fun CalendarScreen(
     onNavigateToSettings: () -> Unit,
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
-    val aiState by agentViewModel.aiState.collectAsStateWithLifecycle()
-    val recState by agentViewModel.recState.collectAsStateWithLifecycle()
-    val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+  val aiState by agentViewModel.aiState.collectAsStateWithLifecycle()
+  val recState by agentViewModel.recState.collectAsStateWithLifecycle()
+  val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
+  val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-
-    val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
+  val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
 
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
-    val isTextInputVisible by remember { mutableStateOf(false) }
+  val isTextInputVisible by remember { mutableStateOf(false) }
 
   val snackbarHostState = remember { SnackbarHostState() }
 
@@ -106,7 +105,7 @@ fun CalendarScreen(
               result.data?.let { authViewModel.handleAuthorizationResult(it) }
             } else {
               Log.w("MainScreen", "Authorization flow was cancelled by user.")
-                authViewModel.signOut()
+              authViewModel.signOut()
             }
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
@@ -142,10 +141,7 @@ fun CalendarScreen(
                   stiffness = Spring.StiffnessLow, // По умолчанию Spring.StiffnessMediumLow
               ))
 
-  val sheetState =
-      rememberModalBottomSheetState(
-          skipPartiallyExpanded = false // Чтобы лист либо полностью открыт, либо закрыт
-          )
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
 
@@ -159,15 +155,15 @@ fun CalendarScreen(
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
 
-    LaunchedEffect(key1 = true) {
-        agentViewModel.eventFlow.collect { event ->
-            when (event) {
-                is AgentUiEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message.asString(context))
-                }
-            }
+  LaunchedEffect(key1 = true) {
+    agentViewModel.eventFlow.collect { event ->
+      when (event) {
+        is AgentUiEvent.ShowMessage -> {
+          snackbarHostState.showSnackbar(event.message.asString(context))
         }
+      }
     }
+  }
 
   LaunchedEffect(key1 = true) {
     calendarViewModel.eventFlow.collect { event ->
@@ -196,7 +192,7 @@ fun CalendarScreen(
     val hasPermission =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
-      agentViewModel.updatePermissionStatus(hasPermission)
+    agentViewModel.updatePermissionStatus(hasPermission)
   }
 
   if (eventManagementState.showRecurringEditOptionsDialog &&
@@ -284,13 +280,13 @@ fun CalendarScreen(
           textFieldValue = textFieldState,
           onTextChanged = { textFieldState = it },
           onSendClick = {
-              agentViewModel.sendTextMessage(textFieldState.text)
+            agentViewModel.sendTextMessage(textFieldState.text)
             textFieldState = TextFieldValue("") // Очищаем поле после отправки
           },
           onRecordStart = { agentViewModel.startListening() }, // Передаем лямбды для записи
           onRecordStopAndSend = { agentViewModel.stopListening() },
           onUpdatePermissionResult = { granted ->
-              agentViewModel.updatePermissionStatus(granted)
+            agentViewModel.updatePermissionStatus(granted)
           }, // Передаем лямбду для обновления разрешений
           isTextInputVisible = isTextInputVisible,
           modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
@@ -415,8 +411,7 @@ fun CalendarScreen(
           }
     }
   }
-  if (calendarState.showEventDetailedView &&
-      calendarState.eventForDetailedView != null) {
+  if (calendarState.showEventDetailedView && calendarState.eventForDetailedView != null) {
     CustomEventDetailsDialog(
         event = calendarState.eventForDetailedView!!,
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
@@ -428,7 +423,7 @@ fun CalendarScreen(
         onDismissRequest = { calendarViewModel.onSignInRequiredDialogDismissed() },
         onSignInClick = {
           if (activity != null) {
-              authViewModel.signIn(activity)
+            authViewModel.signIn(activity)
           } else {
             Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
           }

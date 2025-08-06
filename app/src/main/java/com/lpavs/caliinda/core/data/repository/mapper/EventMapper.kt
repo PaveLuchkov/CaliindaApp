@@ -10,9 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EventMapper @Inject constructor(
-    private val dateTimeUtils: IDateTimeUtils
-) {
+class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils) {
 
   private val TAG = "EventMapper"
 

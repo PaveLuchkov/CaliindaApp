@@ -138,14 +138,12 @@ fun CreateEventScreen(
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
   val onSaveClick: () -> Unit = saveLambda@{
-      viewModel.createEvent(
-          summary = summary,
-          description = description,
-          location = location,
-          dateTimeState = eventDateTimeState
-      )
-    }
-
+    viewModel.createEvent(
+        summary = summary,
+        description = description,
+        location = location,
+        dateTimeState = eventDateTimeState)
+  }
 
   Row(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),

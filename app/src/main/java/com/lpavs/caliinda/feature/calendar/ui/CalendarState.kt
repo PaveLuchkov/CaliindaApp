@@ -15,28 +15,40 @@ data class CalendarState(
 )
 
 sealed interface SheetState {
-    data object Hidden : SheetState
-    data object DatePicker : SheetState
-    data class CreateEvent(val initialDate: LocalDate) : SheetState
-    data class EditEvent(val event: EventDto, val mode: EventUpdateMode) : SheetState // Пример
-    data class EventDetails(val event: EventDto) : SheetState
-    data class ConfirmDelete(val event: EventDto) : SheetState
-    data class ConfirmRecurringEdit(val event: EventDto) : SheetState
-    data class ConfirmRecurringDelete(val event: EventDto) : SheetState
-    data object LoginRequired : SheetState
+  data object Hidden : SheetState
+
+  data object DatePicker : SheetState
+
+  data class CreateEvent(val initialDate: LocalDate) : SheetState
+
+  data class EditEvent(val event: EventDto, val mode: EventUpdateMode) : SheetState // Пример
+
+  data class EventDetails(val event: EventDto) : SheetState
+
+  data class ConfirmDelete(val event: EventDto) : SheetState
+
+  data class ConfirmRecurringEdit(val event: EventDto) : SheetState
+
+  data class ConfirmRecurringDelete(val event: EventDto) : SheetState
+
+  data object LoginRequired : SheetState
 }
 
 // События, которые UI отправляет в ViewModel
 sealed interface CalendarScreenEvent {
-    // Управление датой
-    data class PageChanged(val newDate: LocalDate) : CalendarScreenEvent
-    data object GoToTodayClicked : CalendarScreenEvent
-    data object AppBarTitleClicked : CalendarScreenEvent
-    data class DateFromPickerSelected(val date: LocalDate) : CalendarScreenEvent
+  // Управление датой
+  data class PageChanged(val newDate: LocalDate) : CalendarScreenEvent
 
-    // Управление окнами
-    data object DismissSheet : CalendarScreenEvent
-    data class CreateEventClicked(val onDate: LocalDate) : CalendarScreenEvent
+  data object GoToTodayClicked : CalendarScreenEvent
 
-    // ... и так далее для каждого действия пользователя
+  data object AppBarTitleClicked : CalendarScreenEvent
+
+  data class DateFromPickerSelected(val date: LocalDate) : CalendarScreenEvent
+
+  // Управление окнами
+  data object DismissSheet : CalendarScreenEvent
+
+  data class CreateEventClicked(val onDate: LocalDate) : CalendarScreenEvent
+
+  // ... и так далее для каждого действия пользователя
 }

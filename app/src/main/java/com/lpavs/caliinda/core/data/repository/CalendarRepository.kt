@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
@@ -72,15 +71,16 @@ constructor(
     const val JUMP_DETECTION_BUFFER_DAYS = 10L
     private const val TAG = "CalendarDataManager"
   }
-    init {
+
+  init {
     managerScope.launch {
-        authManager.authEvents.collect { event ->
-            when (event) {
-                AuthEvent.SignedOut -> clearLocalDataOnSignOut()
-            }
+      authManager.authEvents.collect { event ->
+        when (event) {
+          AuthEvent.SignedOut -> clearLocalDataOnSignOut()
         }
+      }
     }
-    }
+  }
 
   // --- Секция Предоставление данных ---
   /** Предоставляет Flow событий из БД для указанной даты */
@@ -395,7 +395,6 @@ constructor(
     }
     return result
   }
-
 
   /**
    * Очищает все локальные данные о событиях в БД. Вызывается при выходе пользователя из системы.

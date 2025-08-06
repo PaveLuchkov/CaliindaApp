@@ -69,33 +69,29 @@ fun CardsList(
                       fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                 val isExpanded = event.id == expandedEventId
 
-              EventItem(
-                  uiModel = event,
-                  isExpanded = isExpanded,
-                  onToggleExpand = {
+                EventItem(
+                    uiModel = event,
+                    isExpanded = isExpanded,
+                    onToggleExpand = {
                       expandedEventId =
                           if (expandedEventId == event.id) {
-                              null
+                            null
                           } else {
-                              event.id
+                            event.id
                           }
-                  },
-                  onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
-                  onEditClickFromList = { onEditRequest(event.originalEvent) },
-                  onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
-                  // --------------------------------
-                  modifier =
-                      Modifier
-                          .fillMaxWidth()
-                          .padding(
-                              horizontal = CalendarUiDefaults.ItemHorizontalPadding,
-                              vertical = CalendarUiDefaults.ItemVerticalPadding
-                          ),
-              )
+                    },
+                    onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
+                    onEditClickFromList = { onEditRequest(event.originalEvent) },
+                    onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
+                    // --------------------------------
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                                vertical = CalendarUiDefaults.ItemVerticalPadding),
+                )
               }
         }
       }
   Box(modifier = Modifier.height(70.dp))
 }
-
-

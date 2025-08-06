@@ -31,13 +31,13 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
-    val authViewModel: AuthViewModel = hiltViewModel()
+  val authViewModel: AuthViewModel = hiltViewModel()
   val context = LocalContext.current
   val activity = context as? Activity
 
   val onSignInClick: () -> Unit = {
     if (activity != null) {
-        authViewModel.signIn(activity)
+      authViewModel.signIn(activity)
     } else {
       Log.e("AppNavHost", "Activity is null, cannot perform sign-in.")
     }
@@ -64,9 +64,9 @@ fun AppNavHost(
         NavRoutes.Main.route,
     ) {
       val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
-        val calendarViewModel: CalendarViewModel = hiltViewModel()
-        val authViewModel: AuthViewModel = hiltViewModel()
-        val agentViewModel: AgentViewModel = hiltViewModel()
+      val calendarViewModel: CalendarViewModel = hiltViewModel()
+      val authViewModel: AuthViewModel = hiltViewModel()
+      val agentViewModel: AgentViewModel = hiltViewModel()
       CalendarScreen(
           calendarViewModel = calendarViewModel,
           onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) },

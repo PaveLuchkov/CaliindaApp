@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.feature.calendar.ui
 
-
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -49,7 +48,6 @@ constructor(
     private val dateTimeUtils: IDateTimeUtils,
     private val eventUiModelMapper: EventUiModelMapper,
     private val eventUiDetailsModelMapper: EventUiDetailsModelMapper,
-
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -62,9 +60,8 @@ constructor(
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
 
   val timeZone: StateFlow<String> =
-    settingsRepository.timeZoneFlow.stateIn(
-      viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id
-    )
+      settingsRepository.timeZoneFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
 
   // Состояния Календаря
   val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate
@@ -82,13 +79,13 @@ constructor(
   private fun observeVisibleDateChanges() {
     viewModelScope.launch {
       // Как только дата в холдере меняется...
-      calendarStateHolder.currentVisibleDate
-        .collect { newDate ->
-          Log.d("ViewModel", "Date changed to $newDate, telling repository to load.")
-          calendarRepository.ensureDateRangeLoadedAround(newDate)
-        }
+      calendarStateHolder.currentVisibleDate.collect { newDate ->
+        Log.d("ViewModel", "Date changed to $newDate, telling repository to load.")
+        calendarRepository.ensureDateRangeLoadedAround(newDate)
+      }
     }
   }
+
   private fun observeAuthState() {
     viewModelScope.launch {
       authManager.authState.collect { authState ->
@@ -96,7 +93,8 @@ constructor(
         _uiState.update { currentState ->
           currentState.copy(
               isSignedIn = authState.isSignedIn,
-              isLoading = calculateIsLoading(authLoading = authState.isLoading),)
+              isLoading = calculateIsLoading(authLoading = authState.isLoading),
+          )
         }
 
         authState.authError?.let { error ->
@@ -142,9 +140,6 @@ constructor(
     }
   }
 
-
-
-
   // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
   /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
   private fun calculateIsLoading(
@@ -157,70 +152,72 @@ constructor(
     return authLoading || calendarLoading
   }
 
-
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
     val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
     val rangeNetworkStateFlow = calendarRepository.rangeNetworkState
 
-    return calendarRepository.getEventsFlowForDate(date)
-      .combine(currentTime) { events, now -> events to now }
-      .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
-      .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
+    return calendarRepository
+        .getEventsFlowForDate(date)
+        .combine(currentTime) { events, now -> events to now }
+        .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
+        .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
+          val isToday = date == LocalDate.now()
+          val zoneId = zoneId.toString()
 
-        val isToday = date == LocalDate.now()
-        val zoneId = zoneId.toString()
+          val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
 
-        val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
+          val sortedTimedDtos =
+              timedDtos.sortedBy { event ->
+                dateTimeUtils.parseToInstant(event.startTime, zoneId) ?: Instant.MAX
+              }
 
-        val sortedTimedDtos = timedDtos.sortedBy { event ->
-          dateTimeUtils.parseToInstant(event.startTime, zoneId) ?: Instant.MAX
+          val nextStartTime: Instant? =
+              if (!isToday) {
+                null
+              } else {
+                sortedTimedDtos.firstNotNullOfOrNull { event ->
+                  val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
+                  if (start != null && start.isAfter(now)) start else null
+                }
+              }
+
+          val scrollIndex =
+              if (!isToday || sortedTimedDtos.isEmpty()) {
+                -1
+              } else {
+                val currentEventIndex =
+                    sortedTimedDtos.indexOfFirst { event ->
+                      val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
+                      val end = dateTimeUtils.parseToInstant(event.endTime, zoneId)
+                      start != null && end != null && !now.isBefore(start) && now.isBefore(end)
+                    }
+                if (currentEventIndex != -1) {
+                  currentEventIndex
+                } else if (nextStartTime != null) {
+                  sortedTimedDtos.indexOfFirst { event ->
+                    val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
+                    start != null && start == nextStartTime
+                  }
+                } else {
+                  -1
+                }
+              }
+
+          val timedUiModels =
+              eventUiModelMapper.mapToUiModels(
+                  events = sortedTimedDtos,
+                  currentTime = now,
+                  timeZoneId = zoneId.toString(),
+                  date = date)
+
+          DayPageUiState(
+              isLoading = networkState is EventNetworkState.Loading,
+              allDayEvents = allDayDtos,
+              timedEvents = timedUiModels,
+              targetScrollIndex = scrollIndex)
         }
-
-        val nextStartTime: Instant? = if (!isToday) {
-          null
-        } else {
-          sortedTimedDtos.firstNotNullOfOrNull { event ->
-            val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
-            if (start != null && start.isAfter(now)) start else null
-          }
-        }
-
-        val scrollIndex = if (!isToday || sortedTimedDtos.isEmpty()) {
-          -1
-        } else {
-          val currentEventIndex = sortedTimedDtos.indexOfFirst { event ->
-            val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
-            val end = dateTimeUtils.parseToInstant(event.endTime, zoneId)
-            start != null && end != null && !now.isBefore(start) && now.isBefore(end)
-          }
-          if (currentEventIndex != -1) {
-            currentEventIndex
-          } else if (nextStartTime != null) {
-            sortedTimedDtos.indexOfFirst { event ->
-              val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
-              start != null && start == nextStartTime
-            }
-          } else {
-            -1
-          }
-        }
-
-        val timedUiModels = eventUiModelMapper.mapToUiModels(
-          events = sortedTimedDtos,
-          currentTime = now,
-          timeZoneId = zoneId.toString(),
-          date = date
-        )
-
-        DayPageUiState(
-          isLoading = networkState is EventNetworkState.Loading,
-          allDayEvents = allDayDtos,
-          timedEvents = timedUiModels,
-          targetScrollIndex = scrollIndex
-        )
-      }
-      .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
-      .distinctUntilChanged()
+        .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
+        .distinctUntilChanged()
   }
 
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
@@ -237,7 +234,8 @@ constructor(
 
   fun requestEventDetails(event: EventDto) {
     _uiState.update { currentState ->
-      val eventForDetails = eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
+      val eventForDetails =
+          eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
       currentState.copy(eventForDetailedView = eventForDetails, showEventDetailedView = true)
     }
     Log.d(TAG, "Requested event details for event ID: ${event.id}")
@@ -249,8 +247,11 @@ constructor(
     }
     Log.d(TAG, "Cancelled event details view.")
   }
+
   fun refreshCurrentVisibleDate() {
-    viewModelScope.launch { calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value) }
+    viewModelScope.launch {
+      calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
+    }
   }
 
   // --- COMPANION ---

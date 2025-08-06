@@ -47,9 +47,11 @@ fun DayEventsPage(
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel
 ) {
-    val pageState by viewModel.getDayPageUiState(date)
-        .collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
-    val listState = rememberLazyListState()
+  val pageState by
+      viewModel
+          .getDayPageUiState(date)
+          .collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
+  val listState = rememberLazyListState()
 
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -79,23 +81,23 @@ fun DayEventsPage(
             modifier =
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp) // Общий горизонтальный отступ
             ) {
-            pageState.allDayEvents.forEach { event ->
+              pageState.allDayEvents.forEach { event ->
                 val isExpanded = event.id == expandedAllDayEventId
-                  AllDayEventItem(
-                      event = event,
-                      isExpanded = isExpanded,
-                      onToggleExpand = {
-                          expandedAllDayEventId =
-                              if (expandedAllDayEventId == event.id) {
-                                  null
-                              } else {
-                                  event.id
-                              }
-                      },
-                      onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
-                      onEditClick = { eventManagementViewModel.requestEditEvent(event) },
-                      onDetailsClick = { viewModel.requestEventDetails(event) },
-                  )
+                AllDayEventItem(
+                    event = event,
+                    isExpanded = isExpanded,
+                    onToggleExpand = {
+                      expandedAllDayEventId =
+                          if (expandedAllDayEventId == event.id) {
+                            null
+                          } else {
+                            event.id
+                          }
+                    },
+                    onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
+                    onEditClick = { eventManagementViewModel.requestEditEvent(event) },
+                    onDetailsClick = { viewModel.requestEventDetails(event) },
+                )
                 Spacer(modifier = Modifier.height(6.dp))
               }
             }
@@ -103,13 +105,13 @@ fun DayEventsPage(
       Spacer(modifier = Modifier.height(8.dp))
 
       if (pageState.timedEvents.isNotEmpty()) {
-          CardsList(
-              events = pageState.timedEvents,
-              listState = listState,
-              onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
-              onEditRequest = eventManagementViewModel::requestEditEvent,
-              onDetailsRequest = viewModel::requestEventDetails,
-          )
+        CardsList(
+            events = pageState.timedEvents,
+            listState = listState,
+            onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
+            onEditRequest = eventManagementViewModel::requestEditEvent,
+            onDetailsRequest = viewModel::requestEventDetails,
+        )
       } else if (pageState.allDayEvents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           if (isBusy) {

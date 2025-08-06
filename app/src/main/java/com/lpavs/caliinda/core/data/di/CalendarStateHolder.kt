@@ -11,28 +11,26 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface ICalendarStateHolder {
-    val currentVisibleDate: StateFlow<LocalDate>
-    fun setCurrentVisibleDate(newDate: LocalDate)
+  val currentVisibleDate: StateFlow<LocalDate>
+
+  fun setCurrentVisibleDate(newDate: LocalDate)
 }
 
 @Singleton
 class CalendarStateHolder @Inject constructor() : ICalendarStateHolder {
-    private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
-    override val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate
+  private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
+  override val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate
 
-    override fun setCurrentVisibleDate(newDate: LocalDate) {
-        _currentVisibleDate.value = newDate
-    }
+  override fun setCurrentVisibleDate(newDate: LocalDate) {
+    _currentVisibleDate.value = newDate
+  }
 }
-
 
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class CalendarState {
 
-    @Binds
-    @Singleton
-    abstract fun bindCalendarStateHolder(
-        impl: CalendarStateHolder
-    ): ICalendarStateHolder
+  @Binds
+  @Singleton
+  abstract fun bindCalendarStateHolder(impl: CalendarStateHolder): ICalendarStateHolder
 }

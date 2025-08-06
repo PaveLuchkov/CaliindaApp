@@ -66,7 +66,9 @@ fun CustomEventDetailsDialog(
         Surface(
             modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
             shape = RoundedCornerShape(25.dp),
-            color = if (!event.isCurrent) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
+            color =
+                if (!event.isCurrent) colorScheme.primaryContainer
+                else colorScheme.tertiaryContainer,
             tonalElevation = 8.dp) {
               val onCardText =
                   if (!event.isCurrent) colorScheme.onPrimaryContainer
@@ -112,14 +114,18 @@ fun CustomEventDetailsDialog(
                       }
 
                       if (!event.originalEvent.location.isNullOrBlank()) {
-                        DetailRow(Icons.Filled.LocationOn, event.originalEvent.location, color = onCardText)
+                        DetailRow(
+                            Icons.Filled.LocationOn,
+                            event.originalEvent.location,
+                            color = onCardText)
                         Spacer(modifier = Modifier.height(16.dp))
                       }
 
                       if (!event.originalEvent.recurrenceRule.isNullOrEmpty()) {
                         DetailRow(
                             Icons.Filled.Repeat,
-                            formatRRule(event.originalEvent.recurrenceRule, zoneIdString = userTimeZone),
+                            formatRRule(
+                                event.originalEvent.recurrenceRule, zoneIdString = userTimeZone),
                             color = onCardText)
                       }
                       Spacer(modifier = Modifier.height(20.dp))
@@ -128,7 +134,9 @@ fun CustomEventDetailsDialog(
                           verticalAlignment = Alignment.CenterVertically,
                           horizontalArrangement = Arrangement.End) {
                             Button(
-                                onClick = { eventManagementViewModel.requestEditEvent(event.originalEvent) },
+                                onClick = {
+                                  eventManagementViewModel.requestEditEvent(event.originalEvent)
+                                },
                                 contentPadding = PaddingValues(horizontal = 12.dp)) {
                                   Icon(Icons.Filled.Edit, contentDescription = "Edit")
                                   Spacer(Modifier.size(ButtonDefaults.IconSpacing))
@@ -137,7 +145,8 @@ fun CustomEventDetailsDialog(
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
                                 onClick = {
-                                  eventManagementViewModel.requestDeleteConfirmation(event.originalEvent)
+                                  eventManagementViewModel.requestDeleteConfirmation(
+                                      event.originalEvent)
                                 },
                                 modifier =
                                     Modifier.minimumInteractiveComponentSize()
