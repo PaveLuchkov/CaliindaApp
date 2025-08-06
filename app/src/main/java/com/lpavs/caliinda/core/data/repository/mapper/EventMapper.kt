@@ -3,14 +3,16 @@ package com.lpavs.caliinda.core.data.repository.mapper
 import android.util.Log
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarEventEntity
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils
+import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EventMapper @Inject constructor() {
+class EventMapper @Inject constructor(
+    private val dateTimeUtils: IDateTimeUtils
+) {
 
   private val TAG = "EventMapper"
 
@@ -18,7 +20,7 @@ class EventMapper @Inject constructor() {
   fun mapToEntity(event: EventDto, zoneIdString: String): CalendarEventEntity? {
     try {
       val isAllDayEvent = event.isAllDay
-      val startTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.startTime, zoneIdString)
+      val startTimeInstant: Instant? = dateTimeUtils.parseToInstant(event.startTime, zoneIdString)
 
       if (startTimeInstant == null) {
         Log.w(
@@ -28,7 +30,7 @@ class EventMapper @Inject constructor() {
       }
       val startTimeMillis = startTimeInstant.toEpochMilli()
 
-      val endTimeInstant: Instant? = DateTimeUtils.parseToInstant(event.endTime, zoneIdString)
+      val endTimeInstant: Instant? = dateTimeUtils.parseToInstant(event.endTime, zoneIdString)
 
       val endTimeMillis: Long =
           when {
@@ -64,8 +66,8 @@ class EventMapper @Inject constructor() {
   }
 
   fun mapToDomain(entity: CalendarEventEntity, zoneIdString: String): EventDto {
-    val startTimeStr = DateTimeUtils.formatMillisToIsoString(entity.startTimeMillis, zoneIdString)
-    val endTimeStr = DateTimeUtils.formatMillisToIsoString(entity.endTimeMillis, zoneIdString)
+    val startTimeStr = dateTimeUtils.formatMillisToIsoString(entity.startTimeMillis, zoneIdString)
+    val endTimeStr = dateTimeUtils.formatMillisToIsoString(entity.endTimeMillis, zoneIdString)
 
     return EventDto(
         id = entity.id,

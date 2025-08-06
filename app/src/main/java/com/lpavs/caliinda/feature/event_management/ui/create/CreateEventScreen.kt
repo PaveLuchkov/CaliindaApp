@@ -58,7 +58,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.dto.EventRequest
-import com.lpavs.caliinda.core.ui.util.DateTimeUtils
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -148,61 +147,6 @@ fun CreateEventScreen(
         eventDateTimeState.startTime, eventDateTimeState.isAllDay)
   }
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
-
-  fun formatEventTimesForSaving(
-      state: EventDateTimeState,
-      timeZoneId: String?
-  ): Pair<String?, String?> {
-    return if (state.isAllDay) {
-      val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-      val startDateStr =
-          try {
-            state.startDate.format(formatter)
-          } catch (_: Exception) {
-            null
-          }
-      val effectiveEndDate = state.endDate.plusDays(1)
-      val endDateStr =
-          try {
-            effectiveEndDate.format(formatter)
-          } catch (_: Exception) {
-            null
-          }
-      Log.d("CreateEvent", "Formatting All-Day: Start Date=$startDateStr, End Date=$endDateStr")
-      Pair(startDateStr, endDateStr)
-    } else {
-      if (timeZoneId == null) {
-        Log.e("CreateEvent", "Cannot format timed event without TimeZone ID!")
-        return Pair(null, null)
-      }
-      val startTimeIso =
-          DateTimeUtils.formatDateTimeToIsoWithOffset(
-              state.startDate, state.startTime!!, false, timeZoneId)
-      val endTimeIso =
-          DateTimeUtils.formatDateTimeToIsoWithOffset(
-              state.endDate, state.endTime!!, false, timeZoneId)
-      Log.d(
-          "CreateEvent", "Formatting Timed: Start DateTime=$startTimeIso, End DateTime=$endTimeIso")
-      Pair(startTimeIso, endTimeIso)
-    }
-  }
-
-  fun validateInput(): Boolean {
-    summaryError =
-        if (summary.isBlank()) R.string.error_summary_cannot_be_empty.toString() else null
-    validationError = null
-    val state = eventDateTimeState
-    if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
-      validationError = R.string.error_specify_start_and_end_time.toString()
-      return false
-    }
-    val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZone)
-    if (testStartTimeStr == null || testEndTimeStr == null) {
-      validationError = R.string.error_failed_to_format_datetime.toString()
-      return false
-    }
-    return summaryError == null && validationError == null
-  }
 
   val onSaveClick: () -> Unit = saveLambda@{
     generalError = null

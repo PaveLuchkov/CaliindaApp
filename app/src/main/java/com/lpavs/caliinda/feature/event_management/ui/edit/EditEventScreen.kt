@@ -121,60 +121,6 @@ fun EditEventScreen(
   var showEndTimePicker by remember { mutableStateOf(false) }
   var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
 
-  fun formatEventTimesForSaving(
-      state: EventDateTimeState,
-      timeZoneId: String?
-  ): Pair<String?, String?> {
-    return if (state.isAllDay) {
-      val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-      val startDateStr =
-          try {
-            state.startDate.format(formatter)
-          } catch (_: Exception) {
-            null
-          }
-      val effectiveEndDate = state.endDate.plusDays(1)
-      val endDateStr =
-          try {
-            effectiveEndDate.format(formatter)
-          } catch (_: Exception) {
-            null
-          }
-      Log.d("CreateEvent", "Formatting All-Day: Start Date=$startDateStr, End Date=$endDateStr")
-      Pair(startDateStr, endDateStr)
-    } else {
-      if (timeZoneId == null) {
-        Log.e("CreateEvent", "Cannot format timed event without TimeZone ID!")
-        return Pair(null, null)
-      }
-      val startTimeNaiveIso =
-          DateTimeUtils.formatLocalDateTimeToNaiveIsoString(state.startDate, state.startTime)
-      val endTimeNaiveIso =
-          DateTimeUtils.formatLocalDateTimeToNaiveIsoString(state.endDate, state.endTime)
-      Log.d(
-          "CreateEvent",
-          "Formatting Timed: Start DateTime=$startTimeNaiveIso, End DateTime=$endTimeNaiveIso")
-      Pair(startTimeNaiveIso, endTimeNaiveIso)
-    }
-  }
-
-  fun validateInput(): Boolean {
-    summaryError =
-        if (summary.isBlank()) R.string.error_summary_cannot_be_empty.toString() else null
-    validationError = null
-    val state = eventDateTimeState
-    if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
-      validationError = R.string.error_specify_start_and_end_time.toString()
-      return false
-    }
-    val (testStartTimeStr, testEndTimeStr) = formatEventTimesForSaving(state, userTimeZone)
-    if (testStartTimeStr == null || testEndTimeStr == null) {
-      validationError = R.string.error_failed_to_format_datetime.toString()
-      return false
-    }
-    return summaryError == null && validationError == null
-  }
-
   LaunchedEffect(key1 = true) {
     viewModel.eventFlow.collect { event ->
       when (event) {
