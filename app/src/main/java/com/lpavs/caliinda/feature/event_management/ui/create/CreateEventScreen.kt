@@ -1,8 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.create
 
 import android.text.format.DateFormat
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -57,24 +55,19 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.dto.EventRequest
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
-import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -98,15 +91,11 @@ fun CreateEventScreen(
 
   val context = LocalContext.current
   val uiState by viewModel.uiState.collectAsState()
-  // Состояния для управления видимостью диалогов M3
   var showStartDatePicker by remember { mutableStateOf(false) }
   var showStartTimePicker by remember { mutableStateOf(false) }
   var showEndDatePicker by remember { mutableStateOf(false) }
   var showEndTimePicker by remember { mutableStateOf(false) }
   var showRecurrenceEndDatePicker by remember { mutableStateOf(false) }
-
-  // Форматер
-  val untilFormatter = remember { DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'") }
 
   var eventDateTimeState by remember {
     val defaultStartTime = LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
@@ -149,88 +138,14 @@ fun CreateEventScreen(
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
   val onSaveClick: () -> Unit = saveLambda@{
-    generalError = null
-    if (validateInput()) {
-      val (startStr, endStr) = formatEventTimesForSaving(eventDateTimeState, userTimeZone)
-
-      if (startStr == null || endStr == null) {
-        validationError = R.string.error_failed_to_format_datetime.toString()
-        Log.e(
-            "CreateEvent",
-            "Failed to format strings based on state: $eventDateTimeState and TimeZone: $userTimeZoneId")
-        return@saveLambda
-      }
-      val baseRule = eventDateTimeState.recurrenceRule?.takeIf { it.isNotBlank() }
-      var finalRecurrenceRule: String? = null
-
-      if (baseRule != null) {
-        val ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
-
-        // Добавляем BYDAY, если нужно
-        if (baseRule == RecurrenceOption.Weekly.rruleValue &&
-            eventDateTimeState.selectedWeekdays.isNotEmpty()) {
-          val bydayString =
-              eventDateTimeState.selectedWeekdays.sorted().joinToString(",") { day ->
-                when (day) {
-                  DayOfWeek.MONDAY -> "MO"
-                  DayOfWeek.TUESDAY -> "TU"
-                  DayOfWeek.WEDNESDAY -> "WE"
-                  DayOfWeek.THURSDAY -> "TH"
-                  DayOfWeek.FRIDAY -> "FR"
-                  DayOfWeek.SATURDAY -> "SA"
-                  DayOfWeek.SUNDAY -> "SU"
-                }
-              }
-          ruleParts.add("BYDAY=$bydayString")
-        }
-
-        // Добавляем UNTIL или COUNT
-        when (eventDateTimeState.recurrenceEndType) {
-          RecurrenceEndType.DATE -> {
-            eventDateTimeState.recurrenceEndDate?.let { endDate ->
-              val userTimeZone = userTimeZoneId
-              endDate.atTime(LocalTime.MAX).atZone(userTimeZone)
-
-              val endDateTimeUtc =
-                  endDate
-                      .atTime(23, 59, 59)
-                      .atZone(userTimeZone)
-                      .withZoneSameInstant(ZoneOffset.UTC)
-
-              val untilString = untilFormatter.format(endDateTimeUtc)
-              ruleParts.add("UNTIL=$untilString")
-            }
-          }
-
-          RecurrenceEndType.COUNT -> {
-            eventDateTimeState.recurrenceCount?.let { count -> ruleParts.add("COUNT=$count") }
-          }
-
-          RecurrenceEndType.NEVER -> {
-            // Ничего не добавляем
-          }
-        }
-
-        // Собираем все части через точку с запятой
-        finalRecurrenceRule = ruleParts.joinToString(";")
-      }
-      Log.d("CreateEvent", "Final RRULE to send: $finalRecurrenceRule")
-      val request =
-          EventRequest(
-              summary = summary.trim(),
-              startTime = startStr,
-              endTime = endStr,
-              isAllDay = eventDateTimeState.isAllDay,
-              timeZoneId = if (eventDateTimeState.isAllDay) null else userTimeZone,
-              description = description.trim().takeIf { it.isNotEmpty() },
-              location = location.trim().takeIf { it.isNotEmpty() },
-              recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
-
-      viewModel.createEvent(request)
-    } else {
-      Toast.makeText(context, R.string.error_check_input_data, Toast.LENGTH_SHORT).show()
+      viewModel.createEvent(
+          summary = summary,
+          description = description,
+          location = location,
+          dateTimeState = eventDateTimeState
+      )
     }
-  }
+
 
   Row(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
