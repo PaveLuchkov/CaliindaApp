@@ -10,6 +10,7 @@ import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
+import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
 import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +34,7 @@ constructor(
     private val authManager: AuthManager,
     private val calendarRepository: CalendarRepository,
     private val aiInteractionManager: AiInteractionManager,
+    private val dateTimeUtils: IDateTimeUtils,
     timeTicker: ITimeTicker,
 ) : ViewModel() {
 

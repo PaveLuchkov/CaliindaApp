@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.event_management.ui.details
+package com.lpavs.caliinda.feature.calendar.ui.components.details
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,7 +51,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil
-import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtil.formatRRule
 import com.lpavs.caliinda.core.ui.util.DateTimeUtils.parseToInstant
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel

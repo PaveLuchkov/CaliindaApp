@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components
+package com.lpavs.caliinda.feature.calendar.ui.components.bars
 
 import android.util.Log
 import androidx.compose.animation.AnimatedContent

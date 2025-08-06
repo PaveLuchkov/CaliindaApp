@@ -49,11 +49,11 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.feature.agent.ui.AiVisualizer
-import com.lpavs.caliinda.feature.calendar.ui.components.BottomBar
-import com.lpavs.caliinda.feature.calendar.ui.components.CalendarAppBar
+import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar
+import com.lpavs.caliinda.feature.calendar.ui.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.ui.components.DayEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
-import com.lpavs.caliinda.feature.event_management.ui.details.CustomEventDetailsDialog
+import com.lpavs.caliinda.feature.calendar.ui.components.details.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent

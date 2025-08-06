@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components
+package com.lpavs.caliinda.feature.calendar.ui.components.bars
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
