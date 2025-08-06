@@ -21,21 +21,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
-
-
-data class GeneratedShapeParams(
-    val numVertices: Int,
-    val radiusSeed: Float,
-    val rotationAngle: Float,
-    val shadowOffsetYSeed: Dp,
-    val shadowOffsetXSeed: Dp,
-    val offestParam: Float,
-)
 
 @Composable
 fun CardsList(
@@ -107,3 +96,5 @@ fun CardsList(
       }
   Box(modifier = Modifier.height(70.dp))
 }
+
+

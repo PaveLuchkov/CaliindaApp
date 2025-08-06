@@ -8,7 +8,6 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.ui.components.events.EventUiModel
-import com.lpavs.caliinda.feature.calendar.ui.components.events.GeneratedShapeParams
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
 import java.time.Instant
@@ -168,3 +167,11 @@ class EventUiModelMapper @Inject constructor(
     }
 }
 
+data class GeneratedShapeParams(
+    val numVertices: Int,
+    val radiusSeed: Float,
+    val rotationAngle: Float,
+    val shadowOffsetYSeed: Dp,
+    val shadowOffsetXSeed: Dp,
+    val offestParam: Float,
+)
