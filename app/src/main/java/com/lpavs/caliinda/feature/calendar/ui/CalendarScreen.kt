@@ -47,6 +47,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.feature.agent.ui.AiVisualizer
@@ -73,12 +74,14 @@ import java.time.temporal.ChronoUnit
 fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
     onNavigateToSettings: () -> Unit,
-    eventManagementViewModel: EventManagementViewModel = hiltViewModel(),
-    agentViewModel: AgentViewModel = hiltViewModel()
+    eventManagementViewModel: EventManagementViewModel,
+    agentViewModel: AgentViewModel,
+    authViewModel: AuthViewModel
 ) {
   val timeZone = eventManagementViewModel.timeZone.collectAsStateWithLifecycle()
-  val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
+
+  val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val aiState by agentViewModel.aiState.collectAsState()
   val eventManagementState by eventManagementViewModel.uiState.collectAsState()
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
@@ -96,10 +99,10 @@ fun CalendarScreen(
       rememberLauncherForActivityResult(
           contract = ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-              result.data?.let { calendarViewModel.handleAuthorizationResult(it) }
+              result.data?.let { authViewModel.handleAuthorizationResult(it) }
             } else {
               Log.w("MainScreen", "Authorization flow was cancelled by user.")
-              calendarViewModel.signOut()
+                authViewModel.signOut()
             }
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
@@ -109,7 +112,7 @@ fun CalendarScreen(
       try {
         val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
         authorizationLauncher.launch(intentSenderRequest)
-        calendarViewModel.clearAuthorizationIntent()
+        authViewModel.clearAuthorizationIntent()
       } catch (e: Exception) {
         Log.e("MainScreen", "Couldn't start authorization UI", e)
       }
@@ -420,7 +423,7 @@ fun CalendarScreen(
         onDismissRequest = { calendarViewModel.onSignInRequiredDialogDismissed() },
         onSignInClick = {
           if (activity != null) {
-            calendarViewModel.signIn(activity)
+              authViewModel.signIn(activity)
           } else {
             Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
           }

@@ -11,8 +11,6 @@ import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
-import com.lpavs.caliinda.feature.agent.data.AiInteractionManager
-import com.lpavs.caliinda.feature.agent.data.model.AiVisualizerState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +24,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
+import java.time.Duration
 
 @HiltViewModel
 class CalendarViewModel
@@ -35,6 +34,7 @@ constructor(
     private val calendarRepository: CalendarRepository,
     private val dateTimeUtils: IDateTimeUtils,
     timeTicker: ITimeTicker,
+    private val eventUiModelMapper: EventUiModelMapper
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -66,9 +66,6 @@ constructor(
         _uiState.update { currentState ->
           currentState.copy(
               isSignedIn = authState.isSignedIn,
-              userEmail = authState.userEmail,
-              displayName = authState.displayName,
-              photo = authState.photoUrl,
               isLoading = calculateIsLoading(authLoading = authState.isLoading),
               authorizationIntent = authState.authorizationIntent)
         }
@@ -83,6 +80,8 @@ constructor(
           if (!authState.isSignedIn && authState.authError == null) {
             Log.d(TAG, "Initial auth check: Showing sign-in required dialog.")
             _uiState.update { it.copy(showSignInRequiredDialog = true) }
+          } else {
+            _uiState.update { it.copy(showSignInRequiredDialog = false) }
           }
         }
         if (authState.isSignedIn && _uiState.value.showSignInRequiredDialog) {
@@ -126,31 +125,10 @@ constructor(
   }
 
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
-  fun signIn(activity: Activity) {
-    if (_uiState.value.showSignInRequiredDialog) {
-      _uiState.update { it.copy(showSignInRequiredDialog = false) }
-    }
-    authManager.signIn(activity)
-  }
-
-  fun handleAuthorizationResult(intent: Intent) {
-    authManager.handleAuthorizationResult(intent)
-  }
-
-  fun signOut() {
-    if (_uiState.value.showSignInRequiredDialog) {
-      _uiState.update { it.copy(showSignInRequiredDialog = false) }
-    }
-    authManager.signOut()
-  }
-
-  fun clearAuthorizationIntent() {
-    authManager.clearAuthorizationIntent()
-  }
 
   fun onSignInRequiredDialogDismissed() {
     _uiState.update { it.copy(showSignInRequiredDialog = false) }
-    Log.d(TAG, "Sign-in required dialog was dismissed by the user.")
+    Log.d(TAG, "Sign-in dismissed")
   }
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
@@ -165,6 +143,17 @@ constructor(
 
   fun refreshCurrentVisibleDate() {
     viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value) }
+  }
+
+
+  fun calculateEventDurationMinutes(event: EventDto, currentTimeZoneId: String): Long {
+    val start = dateTimeUtils.parseToInstant(event.startTime, currentTimeZoneId)
+    val end = dateTimeUtils.parseToInstant(event.endTime, currentTimeZoneId)
+    return if (start != null && end != null && end.isAfter(start)) {
+      Duration.between(start, end).toMinutes()
+    } else {
+      0L
+    }
   }
 
   // --- COMPANION ---

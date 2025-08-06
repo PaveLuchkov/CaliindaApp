@@ -5,9 +5,6 @@ import android.net.Uri
 
 data class CalendarState(
     val isSignedIn: Boolean = false,
-    val userEmail: String? = null,
-    val displayName: String? = null,
-    val photo: Uri? = null,
     val isLoading: Boolean = false,
     val isListening: Boolean = false,
     val isPermissionGranted: Boolean = false,

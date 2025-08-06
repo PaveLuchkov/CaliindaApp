@@ -15,6 +15,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.lpavs.caliinda.core.data.auth.AuthViewModel
+import com.lpavs.caliinda.feature.agent.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.ui.CalendarScreen
 import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -28,14 +30,14 @@ import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    viewModel: CalendarViewModel,
 ) {
+    val authViewModel: AuthViewModel = hiltViewModel()
   val context = LocalContext.current
   val activity = context as? Activity
 
   val onSignInClick: () -> Unit = {
     if (activity != null) {
-      viewModel.signIn(activity)
+        authViewModel.signIn(activity)
     } else {
       Log.e("AppNavHost", "Activity is null, cannot perform sign-in.")
     }
@@ -62,18 +64,21 @@ fun AppNavHost(
         NavRoutes.Main.route,
     ) {
       val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
+        val calendarViewModel: CalendarViewModel = hiltViewModel()
+        val authViewModel: AuthViewModel = hiltViewModel()
+        val agentViewModel: AgentViewModel = hiltViewModel()
       CalendarScreen(
-          calendarViewModel = viewModel,
+          calendarViewModel = calendarViewModel,
           onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) },
-          eventManagementViewModel = eventManagementViewModel)
+          eventManagementViewModel = eventManagementViewModel,
+          agentViewModel = agentViewModel,
+          authViewModel = authViewModel)
     }
     composable(
         NavRoutes.Settings.route,
     ) {
-      val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
       SettingsScreen(
-          calendarViewModel = viewModel,
-          eventManagementViewModel = eventManagementViewModel,
+          authViewModel = authViewModel,
           onSignInClick = onSignInClick,
           onNavigateBack = { navController.popBackStack() },
           onNavigateToAISettings = { navController.navigate(NavRoutes.AISettings.route) },

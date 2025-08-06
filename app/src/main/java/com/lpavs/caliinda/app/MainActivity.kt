@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
     setContent {
       CaliindaTheme {
         AppNavHost(
-            viewModel = calendarViewModel,
             modifier = Modifier.background(colorScheme.background),
         )
       }

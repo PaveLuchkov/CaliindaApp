@@ -3,11 +3,15 @@ package com.lpavs.caliinda.feature.settings.vm
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import javax.inject.Inject
@@ -38,6 +42,8 @@ constructor(
   fun updateBotTemperSetting(newTemper: String) {
     viewModelScope.launch { settingsRepository.saveBotTemper(newTemper) }
   }
+
+
 
   companion object {
     private const val TAG = "SettingsViewModel"

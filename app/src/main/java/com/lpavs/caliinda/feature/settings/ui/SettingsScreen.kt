@@ -51,26 +51,26 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.auth.AuthState
+import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
-    calendarViewModel: CalendarViewModel,
-    eventManagementViewModel: EventManagementViewModel,
+    authViewModel: AuthViewModel,
     onSignInClick: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToAISettings: () -> Unit,
     onNavigateToTimeSettings: () -> Unit,
     onNavigateToTermsOfuse: () -> Unit
 ) {
-  val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
-  val snackbarHostState = remember { SnackbarHostState() }
-  val eventManagementState by eventManagementViewModel.uiState.collectAsState()
 
-  val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
+  val state by authViewModel.authState.collectAsState()
+  val snackbarHostState = remember { SnackbarHostState() }
+
+  val isOverallLoading = state.isLoading
 
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -88,14 +88,15 @@ fun SettingsScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(paddingValues).padding(16.dp).fillMaxWidth()) {
-              if (isOverallLoading && !calendarState.isSignedIn) {
+              if (isOverallLoading && !state.isSignedIn) {
                 LoadingIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
               }
               GoogleAccountSection(
-                  calendarViewModel = calendarViewModel,
-                  eventManagementViewModel = eventManagementViewModel,
+                  state = state,
+                  authViewModel = authViewModel,
                   onSignInClick = onSignInClick,
+
               )
 
               Spacer(modifier = Modifier.height(10.dp))
@@ -167,17 +168,15 @@ fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Uni
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun GoogleAccountSection(
-    calendarViewModel: CalendarViewModel,
-    eventManagementViewModel: EventManagementViewModel,
+    state: AuthState,
+    authViewModel: AuthViewModel,
     onSignInClick: () -> Unit,
 ) {
-  val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
-  val email = calendarState.userEmail ?: stringResource(R.string.loginplease)
-  val displayName = calendarState.displayName ?: email.substringBefore("@")
-  val photo: Uri? = calendarState.photo
+  val email = state.userEmail ?: stringResource(R.string.loginplease)
+  val displayName = state.displayName ?: email.substringBefore("@")
+  val photo: Uri? = state.photoUrl
   val cornerRadius = cuid.SettingsItemCornerRadius
-  val eventManagementState by eventManagementViewModel.uiState.collectAsState()
-  val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
+
   Box(
       modifier =
           Modifier.fillMaxWidth()
@@ -219,14 +218,14 @@ fun GoogleAccountSection(
               Spacer(Modifier.weight(1f))
               Box(modifier = Modifier.padding(6.dp)) {
                 Box {
-                  if (!calendarState.isSignedIn) {
+                  if (!state.isSignedIn) {
                     Button(
                         onClick = onSignInClick, // Вызываем лямбду
                     ) {
                       Text(stringResource(R.string.login))
                     }
                   } else {
-                    Button(onClick = { calendarViewModel.signOut() }, enabled = !isOverallLoading) {
+                    Button(onClick = { authViewModel.signOut() }, enabled = !state.isLoading) {
                       Icon(
                           Icons.AutoMirrored.Rounded.Logout,
                           tint = colorScheme.onPrimaryContainer,
