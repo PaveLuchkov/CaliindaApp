@@ -5,6 +5,7 @@ import com.lpavs.caliinda.app.di.IoDispatcher
 import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.data.auth.AuthEvent
 import com.lpavs.caliinda.core.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
 import com.lpavs.caliinda.core.data.remote.CalendarRemoteDataSource
 import com.lpavs.caliinda.core.data.remote.EventDeleteMode
@@ -47,6 +48,7 @@ constructor(
     private val remotreDataSource: CalendarRemoteDataSource,
     private val localDataSource: CalendarLocalDataSource,
     private val settingsRepository: SettingsRepository,
+    private val calendarStateHolder: ICalendarStateHolder,
     private val authManager: AuthManager,
     private val eventMapper: EventMapper,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
@@ -55,8 +57,6 @@ constructor(
   private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
   private var fetchJobHolder: JobHolder? = null
   private val fetchJobMutex = Mutex()
-
-  private var lastKnownVisibleDate = LocalDate.now()
 
   private data class JobHolder(val job: Job, val requestedRange: ClosedRange<LocalDate>)
 
@@ -291,7 +291,7 @@ constructor(
   }
 
   /** Проверяет, нужно ли загружать/расширять диапазон дат */
-  private suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean) =
+  suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean = false) =
       withContext(ioDispatcher) {
         val currentlyLoaded = _loadedDateRange.value
         val initialOrJumpTargetRange =
@@ -368,7 +368,7 @@ constructor(
   suspend fun createEvent(request: EventRequest): Result<Unit> {
     val result = remotreDataSource.createEvent(request)
     if (result.isSuccess) {
-      refreshDate(lastKnownVisibleDate)
+      refreshDate(calendarStateHolder.currentVisibleDate.value)
     }
     return result
   }
@@ -379,7 +379,7 @@ constructor(
   ): Result<Unit> {
     val result = remotreDataSource.deleteEvent(eventId, mode)
     if (result.isSuccess) {
-      refreshDate(lastKnownVisibleDate)
+      refreshDate(calendarStateHolder.currentVisibleDate.value)
     }
     return result
   }
@@ -391,30 +391,11 @@ constructor(
   ): Result<Unit> {
     val result = remotreDataSource.updateEvent(eventId, mode, updateData)
     if (result.isSuccess) {
-      refreshDate(lastKnownVisibleDate)
+      refreshDate(calendarStateHolder.currentVisibleDate.value)
     }
     return result
   }
 
-  fun setCurrentVisibleDate(newDate: LocalDate, forceRefresh: Boolean = false) {
-    Log.d(TAG, "setCurrentVisibleDate: CALLED with $newDate. Last known: $lastKnownVisibleDate")
-    val needsDateUpdate = newDate != lastKnownVisibleDate
-
-    if (!needsDateUpdate && !forceRefresh && _loadedDateRange.value != null) {
-      Log.d(TAG, "setCurrentVisibleDate: Date is the same, skipping.")
-      return
-    }
-    activeFetchJob?.cancel(
-        CancellationException("New date set: $newDate, forceRefresh=$forceRefresh"))
-    Log.d(TAG, "setCurrentVisibleDate: Previous activeFetchJob cancelled (if existed).")
-
-    if (needsDateUpdate) {
-      lastKnownVisibleDate = newDate
-    }
-    if (authManager.authState.value.isSignedIn) {
-      activeFetchJob = managerScope.launch { ensureDateRangeLoadedAround(newDate, forceRefresh) }
-    }
-  }
 
   /**
    * Очищает все локальные данные о событиях в БД. Вызывается при выходе пользователя из системы.

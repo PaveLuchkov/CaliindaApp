@@ -43,7 +43,7 @@ class CalendarViewModel
 constructor(
     private val authManager: AuthManager,
     private val calendarRepository: CalendarRepository,
-    private val timeTicker: ITimeTicker,
+    timeTicker: ITimeTicker,
     private val calendarStateHolder: ICalendarStateHolder,
     settingsRepository: SettingsRepository,
     private val dateTimeUtils: IDateTimeUtils,
@@ -67,8 +67,7 @@ constructor(
     )
 
   // Состояния Календаря
-  private val _currentVisibleDate = MutableStateFlow(LocalDate.now())
-  val currentVisibleDate: StateFlow<LocalDate> = _currentVisibleDate.asStateFlow()
+  val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate
   val rangeNetworkState: StateFlow<EventNetworkState> = calendarRepository.rangeNetworkState
 
   private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()
@@ -77,9 +76,19 @@ constructor(
   init {
     observeAuthState()
     observeCalendarNetworkState()
+    observeVisibleDateChanges()
   }
 
-
+  private fun observeVisibleDateChanges() {
+    viewModelScope.launch {
+      // Как только дата в холдере меняется...
+      calendarStateHolder.currentVisibleDate
+        .collect { newDate ->
+          Log.d("ViewModel", "Date changed to $newDate, telling repository to load.")
+          calendarRepository.ensureDateRangeLoadedAround(newDate)
+        }
+    }
+  }
   private fun observeAuthState() {
     viewModelScope.launch {
       authManager.authState.collect { authState ->
@@ -112,7 +121,8 @@ constructor(
         }
         if (authState.isSignedIn && !previousUiState.isSignedIn) {
           Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
-          calendarRepository.setCurrentVisibleDate(currentVisibleDate.value, forceRefresh = true)
+          val currentDate = calendarStateHolder.currentVisibleDate.value
+          calendarRepository.ensureDateRangeLoadedAround(currentDate)
         }
       }
     }
@@ -222,9 +232,7 @@ constructor(
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
   fun onVisibleDateChanged(newDate: LocalDate) {
-    if (newDate == _currentVisibleDate.value) return
     calendarStateHolder.setCurrentVisibleDate(newDate)
-    viewModelScope.launch { calendarRepository.setCurrentVisibleDate(newDate) }
   }
 
   fun requestEventDetails(event: EventDto) {
@@ -242,7 +250,7 @@ constructor(
     Log.d(TAG, "Cancelled event details view.")
   }
   fun refreshCurrentVisibleDate() {
-    viewModelScope.launch { calendarRepository.refreshDate(currentVisibleDate.value) }
+    viewModelScope.launch { calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value) }
   }
 
   // --- COMPANION ---
