@@ -37,7 +37,6 @@ class DateTimeUtilsImpl @Inject constructor() : IDateTimeUtils {
         try {
           ZoneId.of(zoneIdString.takeIf { it.isNotEmpty() } ?: ZoneId.systemDefault().id)
         } catch (e: Exception) {
-          Log.w("DateTimeUtils", "Invalid zoneId '$zoneIdString', using system default.", e)
           ZoneId.systemDefault()
         }
 
@@ -50,14 +49,10 @@ class DateTimeUtilsImpl @Inject constructor() : IDateTimeUtils {
         try {
           LocalDate.parse(dateTimeString).atStartOfDay(ZoneOffset.UTC).toInstant()
         } catch (_: DateTimeParseException) {
-          Log.w(
-              "DateTimeUtils",
-              "Could not parse '$dateTimeString' as OffsetDateTime, LocalDateTime, or LocalDate.")
           null
         }
       }
     } catch (e: Exception) {
-      Log.e("DateTimeUtils", "Generic error parsing date/time string: '$dateTimeString'", e)
       null
     }
   }
@@ -73,10 +68,6 @@ class DateTimeUtilsImpl @Inject constructor() : IDateTimeUtils {
     return try {
       Instant.ofEpochMilli(millis).atZone(zoneId).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     } catch (e: Exception) {
-      Log.e(
-          "DateTimeUtils",
-          "Error formatting millis $millis to ISO string for zone $zoneIdString",
-          e)
       null
     }
   }
@@ -93,14 +84,10 @@ class DateTimeUtilsImpl @Inject constructor() : IDateTimeUtils {
         try {
           ZoneId.of(zoneIdString.takeIf { it.isNotEmpty() } ?: ZoneId.systemDefault().id)
         } catch (e: Exception) {
-          Log.w("DateTimeUtils", "Invalid zoneId '$zoneIdString', using system default.", e)
           ZoneId.systemDefault()
         }
 
     if (time == null && !isAllDay) {
-      Log.w(
-          "DateTimeUtils",
-          "Time is required for non-all-day event formatting to ISO offset string.")
       return null
     }
 
@@ -110,14 +97,12 @@ class DateTimeUtilsImpl @Inject constructor() : IDateTimeUtils {
       val zonedDateTime = date.atTime(effectiveTime).atZone(zoneId)
       zonedDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     } catch (e: Exception) {
-      Log.e("DateTimeUtils", "Error formatting date/time to ISO offset string", e)
       null
     }
   }
 
   override fun formatLocalDateTimeToNaiveIsoString(date: LocalDate?, time: LocalTime?): String? {
     if (date == null || time == null) {
-      Log.w("DateTimeUtils", "Date and Time are required for formatting to naive ISO string.")
       return null
     }
 
@@ -125,7 +110,6 @@ class DateTimeUtilsImpl @Inject constructor() : IDateTimeUtils {
       val localDateTime = LocalDateTime.of(date, time)
       localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     } catch (e: Exception) {
-      Log.e("DateTimeUtils", "Error formatting LocalDateTime to naive ISO string", e)
       null
     }
   }
