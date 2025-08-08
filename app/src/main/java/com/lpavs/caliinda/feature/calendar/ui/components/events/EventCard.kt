@@ -179,7 +179,10 @@ fun EventItem(
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
                 detectTapGestures(
-                    onTap = { onToggleExpand() },
+                    onTap = {
+                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onToggleExpand()
+                            },
                     onLongPress = {
                       haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                       onDetailsClickFromList()
@@ -361,7 +364,10 @@ fun AllDayEventItem(
               .background(cardBackground)
               .pointerInput(event.id) {
                 detectTapGestures(
-                    onTap = { onToggleExpand() },
+                    onTap = {
+                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onToggleExpand()
+                            },
                     onLongPress = {
                       haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                       onDetailsClick()
