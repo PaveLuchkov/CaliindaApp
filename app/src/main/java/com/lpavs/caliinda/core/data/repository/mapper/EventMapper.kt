@@ -12,9 +12,10 @@ import javax.inject.Singleton
 @Singleton
 class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils) {
 
-  private val TAG = "EventMapper"
+    companion object {
+        private const val TAG = "EventMapper"
+    }
 
-  // Принимает ID часового пояса как параметр
   fun mapToEntity(event: EventDto, zoneIdString: String): CalendarEventEntity? {
     try {
       val isAllDayEvent = event.isAllDay
