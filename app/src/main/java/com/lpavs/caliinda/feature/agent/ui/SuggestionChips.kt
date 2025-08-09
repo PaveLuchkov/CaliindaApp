@@ -15,24 +15,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.ui.theme.cuid
 
-
 @Composable
 fun SuggestionChipsRow(
     chips: List<String>,
     enabled: Boolean,
 ) {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = cuid.padding),
-        horizontalArrangement = Arrangement.spacedBy(space = cuid.padding, alignment = Alignment.CenterHorizontally),
-        contentPadding = PaddingValues(cuid.padding)) {
+  LazyRow(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
+      horizontalArrangement =
+          Arrangement.spacedBy(space = cuid.padding, alignment = Alignment.CenterHorizontally),
+      contentPadding = PaddingValues(cuid.padding)) {
         items(chips) { chip ->
-            SuggestionChip(
-                onClick = { /* onChipClick(chip) */ },
-                label = { Text(chip) },
-                modifier = Modifier.height(35.dp),
-                enabled = enabled)
+          SuggestionChip(
+              onClick = { /* onChipClick(chip) */ },
+              label = { Text(chip) },
+              modifier = Modifier.height(35.dp),
+              enabled = enabled)
         }
-    }
+      }
 }
