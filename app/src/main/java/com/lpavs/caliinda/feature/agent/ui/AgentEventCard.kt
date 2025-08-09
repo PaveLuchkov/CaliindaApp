@@ -103,7 +103,8 @@ fun AgentItem() {
                         else -> typography.bodyMedium
                       },
                   fontFamily = cardFontFamily,
-                  onTextLayout = { layoutResult -> lineCount = layoutResult.lineCount })
+                  onTextLayout = { layoutResult -> lineCount = layoutResult.lineCount }
+              )
             }
       }
 }
