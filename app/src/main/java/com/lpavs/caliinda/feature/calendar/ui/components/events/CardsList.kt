@@ -9,9 +9,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -24,8 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
+import com.lpavs.caliinda.feature.agent.ui.AgentItem
 
 @Composable
 fun CardsList(
@@ -42,6 +40,7 @@ fun CardsList(
       modifier = Modifier.fillMaxSize(),
       state = listState,
       contentPadding = PaddingValues(bottom = 100.dp)) {
+      item {  AgentItem() }
         items(items = events, key = { event -> event.id }) { event ->
           val fadeSpringSpec =
               spring<Float>(
@@ -68,28 +67,27 @@ fun CardsList(
                       fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
                       fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                 val isExpanded = event.id == expandedEventId
-
-                EventItem(
-                    uiModel = event,
-                    isExpanded = isExpanded,
-                    onToggleExpand = {
+              EventItem(
+                  uiModel = event,
+                  isExpanded = isExpanded,
+                  onToggleExpand = {
                       expandedEventId =
                           if (expandedEventId == event.id) {
-                            null
+                              null
                           } else {
-                            event.id
+                              event.id
                           }
-                    },
-                    onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
-                    onEditClickFromList = { onEditRequest(event.originalEvent) },
-                    onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
-                    // --------------------------------
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(
-                                horizontal = CalendarUiDefaults.ItemHorizontalPadding,
-                                vertical = CalendarUiDefaults.ItemVerticalPadding),
-                )
+                  },
+                  onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
+                  onEditClickFromList = { onEditRequest(event.originalEvent) },
+                  onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
+//                  modifier =
+//                      Modifier.fillMaxWidth()
+//                          .padding(
+//                              horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+//                              vertical = CalendarUiDefaults.ItemVerticalPadding
+//                          ),
+              )
               }
         }
       }

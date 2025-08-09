@@ -58,6 +58,8 @@ fun DayEventsPage(
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
 
+    val isAgentDebug = true
+
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
       launch {
@@ -83,28 +85,28 @@ fun DayEventsPage(
             ) {
               pageState.allDayEvents.forEach { event ->
                 val isExpanded = event.id == expandedAllDayEventId
-                AllDayEventItem(
-                    event = event,
-                    isExpanded = isExpanded,
-                    onToggleExpand = {
-                      expandedAllDayEventId =
-                          if (expandedAllDayEventId == event.id) {
-                            null
-                          } else {
-                            event.id
-                          }
-                    },
-                    onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
-                    onEditClick = { eventManagementViewModel.requestEditEvent(event) },
-                    onDetailsClick = { viewModel.requestEventDetails(event) },
-                )
+                  AllDayEventItem(
+                      event = event,
+                      isExpanded = isExpanded,
+                      onToggleExpand = {
+                          expandedAllDayEventId =
+                              if (expandedAllDayEventId == event.id) {
+                                  null
+                              } else {
+                                  event.id
+                              }
+                      },
+                      onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
+                      onEditClick = { eventManagementViewModel.requestEditEvent(event) },
+                      onDetailsClick = { viewModel.requestEventDetails(event) },
+                  )
                 Spacer(modifier = Modifier.height(6.dp))
               }
             }
       }
       Spacer(modifier = Modifier.height(8.dp))
 
-      if (pageState.timedEvents.isNotEmpty()) {
+      if (pageState.timedEvents.isNotEmpty() or isAgentDebug) {
         CardsList(
             events = pageState.timedEvents,
             listState = listState,

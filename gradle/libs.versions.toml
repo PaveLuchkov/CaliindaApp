@@ -12,6 +12,7 @@ googleApiServicesCalendar = "v3-rev20231123-2.0.0"
 googleid = "1.1.1"
 graphicsShapes = "1.1.0-beta01"
 hiltAndroid = "2.57"
+hiltAndroidTesting = "2.56.2"
 hiltCompilerVersion = "2.57"
 hiltNavigationCompose = "1.2.0"
 kotlin = "2.0.21"
@@ -39,11 +40,13 @@ playServicesAuth = "21.4.0"
 playServicesTasks = "18.3.2"
 retrofit = "3.0.0"
 retrofit2KotlinxSerializationConverterVersion = "1.0.0"
+robolectric = "4.11.1"
 roomver = "2.7.2"
 securityCrypto = "1.1.0"
 truth = "1.4.4"
 turbine = "1.2.0"
-junitJupiter = "5.8.1"
+junitJupiter = "5.8.2"
+junitJunit = "4.12"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
@@ -69,6 +72,7 @@ google-api-client-android = { module = "com.google.api-client:google-api-client-
 google-api-services-calendar = { module = "com.google.apis:google-api-services-calendar", version.ref = "googleApiServicesCalendar" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
+hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hiltAndroidTesting" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -97,9 +101,11 @@ play-services-auth = { module = "com.google.android.gms:play-services-auth", ver
 play-services-tasks = { module = "com.google.android.gms:play-services-tasks", version.ref = "playServicesTasks" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofit2KotlinxSerializationConverterVersion" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -43,11 +43,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-    }
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
     }
 }
 java {
@@ -67,6 +70,7 @@ dependencies {
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.junit)
     ksp(libs.androidx.room.compiler)
     implementation(libs.hilt.android)
     ksp(libs.dagger.hilt.compiler)
@@ -115,7 +119,7 @@ dependencies {
 // Mockito for mocking
     testImplementation(libs.kotlin.mockito.kotlin) // Используй актуальную версию
     testImplementation(libs.mockito.inline) // Для мокания final классов/методов, если нужно
-
+    testImplementation(libs.robolectric)
 // Turbine for Flow testing
     testImplementation(libs.turbine) // Используй актуальную версию
 
@@ -124,4 +128,6 @@ dependencies {
 
 // Tasks API for mocking Google Play Services Tasks
     testImplementation(libs.play.services.tasks) // Используй версию, совместимую с твоей основной
+
+    testImplementation(libs.hilt.android.testing)
 }

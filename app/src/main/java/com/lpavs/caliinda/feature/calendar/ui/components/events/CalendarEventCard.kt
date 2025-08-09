@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
@@ -116,7 +117,8 @@ fun EventItem(
       lerpOkLab(
           start = colorScheme.primaryContainer,
           stop = colorScheme.tertiaryContainer,
-          fraction = uiModel.proximityRatio)
+          fraction = uiModel.proximityRatio
+      )
   val darkerShadowColor = Color.Black
 
   val cardElevation = if (current) cuid.CurrentEventElevation else 0.dp
@@ -152,6 +154,7 @@ fun EventItem(
                             FontVariation.weight(700),
                             FontVariation.grade(70),
                             FontVariation.width(65f),
+//                            FontVariation.opticalSizing(0.sp),
                             FontVariation.slant(-5f),
                         )))
         else ->
@@ -168,6 +171,10 @@ fun EventItem(
   Box( // Корневой Box для тени, фона, высоты и кликабельности
       modifier =
           modifier
+              .padding(
+                  horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                  vertical = CalendarUiDefaults.ItemVerticalPadding
+              )
               .shadow(
                   elevation = cardElevation,
                   shape = RoundedCornerShape(cuid.EventItemCornerRadius),
@@ -177,6 +184,7 @@ fun EventItem(
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
               .height(animatedHeight)
+
               .pointerInput(uiModel.id) {
                 detectTapGestures(
                     onTap = {
