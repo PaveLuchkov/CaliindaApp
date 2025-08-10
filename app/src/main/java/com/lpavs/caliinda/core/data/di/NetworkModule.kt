@@ -3,6 +3,7 @@ package com.lpavs.caliinda.core.data.di
 import android.content.Context
 import androidx.room.Room
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.lpavs.caliinda.core.data.auth.AuthApiService
 import com.lpavs.caliinda.core.data.local.AppDatabase
 import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
 import com.lpavs.caliinda.core.data.remote.CalendarApiService
@@ -11,13 +12,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.TimeUnit
+import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -50,6 +51,12 @@ object NetworkModule {
   @Singleton
   fun provideCalendarApiService(retrofit: Retrofit): CalendarApiService {
     return retrofit.create(CalendarApiService::class.java)
+  }
+
+  @Provides
+  @Singleton
+  fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+    return retrofit.create(AuthApiService::class.java)
   }
 }
 

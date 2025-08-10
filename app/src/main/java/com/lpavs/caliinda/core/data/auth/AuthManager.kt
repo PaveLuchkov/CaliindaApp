@@ -37,12 +37,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONException
-import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,6 +47,7 @@ class AuthManager
 @Inject
 constructor(
     @ApplicationContext private val context: Context,
+    private val authApiService: AuthApiService,
     private val okHttpClient: OkHttpClient,
     @BackendUrl private val backendBaseUrl: String,
     @WebClientId private val webClientId: String,
@@ -300,42 +296,27 @@ constructor(
   @WorkerThread
   private suspend fun sendAuthInfoToBackend(idToken: String, authCode: String): Boolean =
       withContext(Dispatchers.IO) {
-        Log.i(TAG, "Sending Auth Info (JSON) to /auth/google/exchange")
-        val jsonObject =
-            JSONObject().apply {
-              put("id_token", idToken)
-              put("auth_code", authCode)
-            }
-        val requestBody =
-            jsonObject.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-        val request =
-            Request.Builder().url("$backendBaseUrl/auth/google/exchange").post(requestBody).build()
+        Log.i(TAG, "Sending Auth Info to /auth/google/exchange")
 
         try {
-          okHttpClient.newCall(request).execute().use { response ->
-            val responseBodyString = response.body?.string()
-            if (!response.isSuccessful) {
-              Log.e(TAG, "Backend error exchanging code: ${response.code} - $responseBodyString")
-              false
+          val response = authApiService.exchangeAuthTokens(AuthBody(idToken, authCode))
+
+          if (response.isSuccessful) {
+            val body = response.body()
+            val backendToken = body?.token
+
+            return@withContext if (!backendToken.isNullOrBlank() && body.status == "success") {
+              saveBackendToken(backendToken)
+              Log.i(TAG, "Backend successfully exchanged tokens: ${body.message}")
+              true
             } else {
-              Log.i(TAG, "Backend successfully exchanged tokens. Response: $responseBodyString")
-              // ----- НОВАЯ ЛОГИКА: ИЗВЛЕКАЕМ И СОХРАНЯЕМ ТОКЕН -----
-              try {
-                val jsonResponse = responseBodyString?.let { JSONObject(it) }
-                val backendToken = jsonResponse?.optString("token", null.toString())
-                if (backendToken != null) { // Доп. проверка на строку "null" на всякий случай
-                  saveBackendToken(backendToken)
-                  true // Успех
-                } else {
-                  Log.e(
-                      TAG, "Backend response is successful, but 'token' field is missing or null.")
-                  false
-                }
-              } catch (e: JSONException) {
-                Log.e(TAG, "Failed to parse backend token response.", e)
-                false
-              }
+              Log.e(TAG, "Token missing or status != success: ${body?.status}")
+              false
             }
+          } else {
+            val errorText = response.errorBody()?.string()
+            Log.e(TAG, "Backend error exchanging code: ${response.code()} - $errorText")
+            false
           }
         } catch (e: Exception) {
           Log.e(TAG, "Error processing backend response for auth exchange", e)
