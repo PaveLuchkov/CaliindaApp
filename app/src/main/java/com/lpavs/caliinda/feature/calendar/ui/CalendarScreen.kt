@@ -295,7 +295,8 @@ fun CalendarScreen(
             showCreateEventSheet = true
           },
           recordState = recState,
-          authState = authState)
+          authState = authState,
+          suggestions = agentViewModel.mock_suggestions)
     } // End основной Box
   } // End Scaffold
 

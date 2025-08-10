@@ -40,6 +40,8 @@ constructor(
     observeAiState()
   }
 
+  val mock_suggestions = listOf("Delete", "Approve", "Create a meeting at 10 am")
+
   private fun observeAiState() {
     viewModelScope.launch {
       agentManager.aiState.collect { ai ->

@@ -69,6 +69,7 @@ fun BottomBar(
     isTextInputVisible: Boolean,
     modifier: Modifier = Modifier,
     onCreateEventClick: () -> Unit,
+    suggestions: List<String> = emptyList(),
 ) {
   val focusRequester = remember { FocusRequester() }
   val keyboardController = LocalSoftwareKeyboardController.current
@@ -97,7 +98,7 @@ fun BottomBar(
     }
   }
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    Box() { SuggestionChipsRow(listOf("Delete", "Approve"), enabled = true) }
+    Box() { SuggestionChipsRow(suggestions, enabled = true) }
     Spacer(modifier = Modifier.height(cuid.padding))
     AnimatedContent(
         modifier = modifier,
