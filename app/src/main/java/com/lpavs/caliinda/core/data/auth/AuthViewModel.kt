@@ -14,14 +14,7 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(private val authManager: AuthManager) : ViewModel() {
 
   /**
-   * Предоставляет состояние аутентификации для UI. Мы используем stateIn, чтобы превратить
-   * StateFlow из синглтона AuthManager в StateFlow, который живет в пределах viewModelScope. Это
-   * гарантирует, что поток будет активен, пока на него есть подписчики (UI), и остановится, когда
-   * ViewModel будет уничтожена, предотвращая утечки.
-   *
-   * SharingStarted.WhileSubscribed(5000) - стандартная практика: поток остается активным еще 5
-   * секунд после отписки последнего наблюдателя. Это помогает пережить быстрые смены конфигурации
-   * (например, поворот экрана) без перезапуска потока.
+   * Предоставляет состояние аутентификации для UI.
    */
   val authState: StateFlow<AuthState> =
       authManager.authState.stateIn(

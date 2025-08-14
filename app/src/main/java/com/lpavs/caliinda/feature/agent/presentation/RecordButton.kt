@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.ui
+package com.lpavs.caliinda.feature.agent.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -39,7 +39,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
-import com.lpavs.caliinda.feature.agent.vm.RecordingState
+import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 import kotlinx.coroutines.launch
 

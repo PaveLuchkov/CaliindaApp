@@ -49,9 +49,9 @@ import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthState
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.feature.agent.ui.RecordButton
-import com.lpavs.caliinda.feature.agent.ui.SuggestionChipsRow
-import com.lpavs.caliinda.feature.agent.vm.RecordingState
+import com.lpavs.caliinda.feature.agent.presentation.RecordButton
+import com.lpavs.caliinda.feature.agent.presentation.SuggestionChipsRow
+import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 
 @ExperimentalMaterial3ExpressiveApi

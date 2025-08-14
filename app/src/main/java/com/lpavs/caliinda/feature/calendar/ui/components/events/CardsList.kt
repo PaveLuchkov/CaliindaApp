@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
-import com.lpavs.caliinda.feature.agent.ui.AgentItem
+import com.lpavs.caliinda.feature.agent.presentation.AgentItem
 
 @Composable
 fun CardsList(

@@ -61,15 +61,13 @@ object NetworkModule {
 }
 
 @Module
-@InstallIn(SingletonComponent::class) // Живет пока живет приложение
+@InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
   @Provides
-  @Singleton // Гарантирует один экземпляр базы данных
+  @Singleton
   fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
     return Room.databaseBuilder(appContext, AppDatabase::class.java, "caliindar_database")
-        // ВНИМАНИЕ: Для разработки можно использовать .fallbackToDestructiveMigration()
-        // Но для production нужно реализовать правильные миграции!
         .fallbackToDestructiveMigration(false)
         .build()
   }

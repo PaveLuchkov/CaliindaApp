@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.ui
+package com.lpavs.caliinda.feature.agent.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

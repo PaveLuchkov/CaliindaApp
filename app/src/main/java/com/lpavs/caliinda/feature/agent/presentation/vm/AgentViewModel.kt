@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.vm
+package com.lpavs.caliinda.feature.agent.presentation.vm
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

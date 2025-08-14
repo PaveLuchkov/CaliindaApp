@@ -10,11 +10,11 @@ interface AuthApiService {
   suspend fun exchangeAuthTokens(@Body authBody: AuthBody): Response<AuthResponse>
 }
 
-@Serializable data class AuthBody(val id_token: String, val auth_code: String)
+@Serializable data class AuthBody(val idToken: String, val authCode: String)
 
 @Serializable
 data class AuthResponse(
     val status: String,
     val message: String,
-    val token: String? // делаем nullable на всякий случай
+    val token: String?
 )

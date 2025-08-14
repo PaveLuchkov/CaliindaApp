@@ -21,7 +21,6 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.api.services.calendar.CalendarScopes
-import com.lpavs.caliinda.core.data.di.BackendUrl
 import com.lpavs.caliinda.core.data.di.WebClientId
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +36,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,8 +46,6 @@ class AuthManager
 constructor(
     @ApplicationContext private val context: Context,
     private val authApiService: AuthApiService,
-    private val okHttpClient: OkHttpClient,
-    @BackendUrl private val backendBaseUrl: String,
     @WebClientId private val webClientId: String,
     private val sharedPreferences: SharedPreferences
 ) {
