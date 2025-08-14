@@ -33,14 +33,17 @@ fun CardsList(
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
 ) {
-
+    val agentVisivble = false
   var expandedEventId by remember { mutableStateOf<String?>(null) }
 
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
       state = listState,
       contentPadding = PaddingValues(bottom = 100.dp)) {
-      item {  AgentItem() }
+      if (agentVisivble)
+      {
+          item {  AgentItem() }
+      }
         items(items = events, key = { event -> event.id }) { event ->
           val fadeSpringSpec =
               spring<Float>(

@@ -274,18 +274,18 @@ fun CalendarScreen(
           modifier = Modifier.fillMaxSize()
       )
       BottomBar(
-          calendarState = calendarState, // Передаем весь uiState, т.к. Bar зависит от многих полей
+          calendarState = calendarState,
           textFieldValue = textFieldState,
           onTextChanged = { textFieldState = it },
           onSendClick = {
             agentViewModel.sendTextMessage(textFieldState.text)
-            textFieldState = TextFieldValue("") // Очищаем поле после отправки
+            textFieldState = TextFieldValue("")
           },
-          onRecordStart = { agentViewModel.startListening() }, // Передаем лямбды для записи
+          onRecordStart = { agentViewModel.startListening() },
           onRecordStopAndSend = { agentViewModel.stopListening() },
           onUpdatePermissionResult = { granted ->
             agentViewModel.updatePermissionStatus(granted)
-          }, // Передаем лямбду для обновления разрешений
+          },
           isTextInputVisible = isTextInputVisible,
           modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
           onCreateEventClick = {

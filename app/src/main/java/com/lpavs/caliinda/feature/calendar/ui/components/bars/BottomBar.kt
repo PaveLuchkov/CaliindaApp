@@ -71,6 +71,7 @@ fun BottomBar(
     onCreateEventClick: () -> Unit,
     suggestions: List<String> = emptyList(),
 ) {
+    val agentVisible = false
   val focusRequester = remember { FocusRequester() }
   val keyboardController = LocalSoftwareKeyboardController.current
   val isSendEnabled =
@@ -96,8 +97,11 @@ fun BottomBar(
     }
   }
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-    Box() { SuggestionChipsRow(suggestions, enabled = true) }
-    Spacer(modifier = Modifier.height(12.dp))
+      if (agentVisible){
+          Box() { SuggestionChipsRow(suggestions, enabled = true) }
+          Spacer(modifier = Modifier.height(12.dp))
+
+      }
     AnimatedContent(
         modifier = modifier,
         targetState = onKeyboardToggle,
