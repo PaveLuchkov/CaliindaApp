@@ -48,7 +48,7 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
-import com.lpavs.caliinda.feature.agent.presentation.AiVisualizer
+import com.lpavs.caliinda.feature.agent.presentation.indicators.AiVisualizer
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentUiEvent
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.presentation
+package com.lpavs.caliinda.feature.agent.presentation.indicators
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor

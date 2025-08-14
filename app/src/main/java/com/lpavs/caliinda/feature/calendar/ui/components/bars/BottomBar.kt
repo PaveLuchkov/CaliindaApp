@@ -49,8 +49,8 @@ import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthState
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.feature.agent.presentation.RecordButton
-import com.lpavs.caliinda.feature.agent.presentation.SuggestionChipsRow
+import com.lpavs.caliinda.feature.agent.presentation.input.RecordButton
+import com.lpavs.caliinda.feature.agent.presentation.input.SuggestionChipsRow
 import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 
@@ -84,8 +84,6 @@ fun BottomBar(
   // Request focus when text input becomes visible
   LaunchedEffect(isTextInputVisible) {
     if (isTextInputVisible) {
-      // kotlinx.coroutines.delay(100) // Small delay might be needed if focus doesn't work
-      // immediately
       try {
         focusRequester.requestFocus()
         keyboardController?.show()
@@ -99,12 +97,11 @@ fun BottomBar(
   }
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
     Box() { SuggestionChipsRow(suggestions, enabled = true) }
-    Spacer(modifier = Modifier.height(cuid.padding))
+    Spacer(modifier = Modifier.height(12.dp))
     AnimatedContent(
         modifier = modifier,
         targetState = onKeyboardToggle,
         transitionSpec = {
-          // Общая спецификация spring для контента
           val fadeSpringSpec =
               spring<Float>(
                   dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)

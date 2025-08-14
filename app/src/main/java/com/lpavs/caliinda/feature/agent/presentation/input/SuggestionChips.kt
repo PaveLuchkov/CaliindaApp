@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.presentation
+package com.lpavs.caliinda.feature.agent.presentation.input
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues

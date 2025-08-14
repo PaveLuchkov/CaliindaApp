@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.presentation
+package com.lpavs.caliinda.feature.agent.presentation.input
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -39,6 +39,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import com.lpavs.caliinda.feature.agent.presentation.indicators.CustomRotatingMorphShape
 import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.ui.CalendarState
 import kotlinx.coroutines.launch
@@ -211,10 +212,11 @@ fun RecordButton(
               .clip(
                   if (isPressed || recordState.isListening) {
                     // Используем CustomRotatingMorphShape из папки common
-                    CustomRotatingMorphShape(
-                        morph = morph,
-                        percentage = animatedProgress.value,
-                        rotation = animatedRotation.value)
+                      CustomRotatingMorphShape(
+                          morph = morph,
+                          percentage = animatedProgress.value,
+                          rotation = animatedRotation.value
+                      )
                   } else {
                     // Стандартная форма FAB обычно CircleShape, но оставим RoundedCornerShape, как
                     // было
