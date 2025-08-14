@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.presentation.indicators
+package com.lpavs.caliinda.feature.agent.presentation.input
 
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Matrix

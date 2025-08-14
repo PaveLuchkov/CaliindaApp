@@ -271,10 +271,8 @@ fun CalendarScreen(
           }
       AiVisualizer(
           aiState = aiState,
-          aiMessage = aiMessage,
-          modifier = Modifier.fillMaxSize(),
-          onResultShownTimeout = { agentViewModel.resetAiStateAfterResult() },
-          onAskingShownTimeout = { agentViewModel.resetAiStateAfterAsking() })
+          modifier = Modifier.fillMaxSize()
+      )
       BottomBar(
           calendarState = calendarState, // Передаем весь uiState, т.к. Bar зависит от многих полей
           textFieldValue = textFieldState,
