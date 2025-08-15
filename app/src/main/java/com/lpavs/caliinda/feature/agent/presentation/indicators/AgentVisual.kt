@@ -28,10 +28,13 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.feature.agent.data.model.AgentState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -115,7 +119,7 @@ fun AiVisualizer(
           label = "offsetYRatio") { state ->
             when (state) {
               AgentState.LISTENING -> 0.75f
-              AgentState.THINKING -> 0.5f
+              AgentState.THINKING -> 0.75f
               else -> 0f
             }
           }
@@ -133,15 +137,24 @@ fun AiVisualizer(
   val isComponentVisible = targetState != AgentState.IDLE && targetState != AgentState.ERROR
   // Общий контейнер для позиционирования по Y и анимации появления/исчезания
 
-    val breathingAmplitude: Dp = 150.dp
-
+    val breathingAmplitude: Dp = 300.dp
+    val animationDurationMillis = 650
     val infiniteTransition = rememberInfiniteTransition(label = "breathing_transition")
 
+    val emojis = listOf("🤔",  "🔎", "🧐", "🗓️")
+    var currentEmojiIndex by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(key1 = true) {
+        while (true) {
+            delay(animationDurationMillis.toLong() *2)
+            currentEmojiIndex = (currentEmojiIndex + 1) % emojis.size
+        }
+    }
     val breathingOffsetY by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = -breathingAmplitude.value,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 650, delayMillis = 650, easing = EaseOutCubic),
+            animation = tween(durationMillis = animationDurationMillis, easing = EaseInOutCubic),
             repeatMode = RepeatMode.Reverse
         ),
         label = "breathing_offset_y"
@@ -162,20 +175,27 @@ fun AiVisualizer(
         Box(
             contentAlignment = Alignment.Center,
             modifier =
-                Modifier.fillMaxSize().offset {
-                  IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 2).toInt())
-                }) {
+                Modifier
+                    .fillMaxSize()
+                    .offset {
+                        IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 2).toInt())
+                    }) {
               // --- 1. Анимированная Звезда (под баблом) ---
               Box(
                   modifier =
-                      Modifier.size(baseSizeDp).aspectRatio(1f).graphicsLayer {
-                        scaleX = animatedScaleFactor
-                        scaleY = animatedScaleFactor
-                        rotationZ = rotationAngle.value
-                        transformOrigin = TransformOrigin.Center
-                      }) {
+                      Modifier
+                          .size(baseSizeDp)
+                          .aspectRatio(1f)
+                          .graphicsLayer {
+                              scaleX = animatedScaleFactor
+                              scaleY = animatedScaleFactor
+                              rotationZ = rotationAngle.value
+                              transformOrigin = TransformOrigin.Center
+                          }) {
                     Surface(
-                        modifier = Modifier.matchParentSize().clip(AiStarShape),
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(AiStarShape),
                         color = animatedColor,
                     ) {}
                   }
@@ -197,15 +217,18 @@ fun AiVisualizer(
         Box(
             contentAlignment = Alignment.Center,
             modifier =
-                Modifier.fillMaxSize().offset {
-                  IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 3.5).toInt())
-                }) {
+                Modifier
+                    .fillMaxSize()
+                    .offset {
+                        IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 3.5).toInt())
+                    }) {
               // --- 1. Анимированная Звезда (под баблом) ---
             LoadingIndicator(
                 modifier = Modifier
                     .size(200.dp)
                     .offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) }
             )
+            Text(text = emojis[currentEmojiIndex], modifier = Modifier.offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) })
             }
       }
 }
