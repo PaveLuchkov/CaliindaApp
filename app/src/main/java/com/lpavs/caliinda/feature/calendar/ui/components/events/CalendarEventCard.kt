@@ -106,7 +106,7 @@ fun EventItem(
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
   val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
 
-  val starContainerSize =
+  val  starContainerSize =
       remember(uiModel.durationMinutes, micro) {
         if (micro || uiModel.durationMinutes <= 0L) 0.dp
         else calculateShapeContainerSize(uiModel.durationMinutes)

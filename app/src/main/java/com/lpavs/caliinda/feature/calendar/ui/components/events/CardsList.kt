@@ -24,14 +24,17 @@ import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import com.lpavs.caliinda.feature.agent.presentation.AgentItem
+import com.lpavs.caliinda.feature.settings.ui.LogInEvent
 
 @Composable
 fun CardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
+    isSignIn: Boolean,
     onDeleteRequest: (EventDto) -> Unit,
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
+    onSignInClick: () -> Unit,
 ) {
     val agentVisivble = false
   var expandedEventId by remember { mutableStateOf<String?>(null) }
@@ -40,59 +43,63 @@ fun CardsList(
       modifier = Modifier.fillMaxSize(),
       state = listState,
       contentPadding = PaddingValues(bottom = 100.dp)) {
-      if (agentVisivble)
-      {
-          item {  AgentItem() }
-      }
-        items(items = events, key = { event -> event.id }) { event ->
-          val fadeSpringSpec =
-              spring<Float>(
-                  dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-          val sliderSpringSpec =
-              spring<IntOffset>(
-                  dampingRatio = Spring.DampingRatioHighBouncy,
-                  stiffness = Spring.StiffnessMediumLow)
-          val popUndUpSpec =
-              spring<IntOffset>(
-                  dampingRatio = Spring.DampingRatioMediumBouncy,
-                  stiffness = Spring.StiffnessMediumLow)
-          AnimatedVisibility(
-              visible = true,
-              enter =
-                  slideInVertically(initialOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
-              exit =
-                  fadeOut(animationSpec = fadeSpringSpec) +
-                      slideOutVertically(
-                          targetOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
-              modifier =
-                  Modifier.animateItem(
-                      placementSpec = popUndUpSpec,
-                      fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                      fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
-                val isExpanded = event.id == expandedEventId
-              EventItem(
-                  uiModel = event,
-                  isExpanded = isExpanded,
-                  onToggleExpand = {
-                      expandedEventId =
-                          if (expandedEventId == event.id) {
-                              null
-                          } else {
-                              event.id
-                          }
-                  },
-                  onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
-                  onEditClickFromList = { onEditRequest(event.originalEvent) },
-                  onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
+      if (isSignIn){
+          item {  LogInEvent(onSignInClick = onSignInClick) }
+      } else {
+          if (agentVisivble)
+          {
+              item {  AgentItem() }
+          }
+          items(items = events, key = { event -> event.id }) { event ->
+              val fadeSpringSpec =
+                  spring<Float>(
+                      dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+              val sliderSpringSpec =
+                  spring<IntOffset>(
+                      dampingRatio = Spring.DampingRatioHighBouncy,
+                      stiffness = Spring.StiffnessMediumLow)
+              val popUndUpSpec =
+                  spring<IntOffset>(
+                      dampingRatio = Spring.DampingRatioMediumBouncy,
+                      stiffness = Spring.StiffnessMediumLow)
+              AnimatedVisibility(
+                  visible = true,
+                  enter =
+                      slideInVertically(initialOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
+                  exit =
+                      fadeOut(animationSpec = fadeSpringSpec) +
+                              slideOutVertically(
+                                  targetOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
+                  modifier =
+                      Modifier.animateItem(
+                          placementSpec = popUndUpSpec,
+                          fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                          fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
+                  val isExpanded = event.id == expandedEventId
+                  EventItem(
+                      uiModel = event,
+                      isExpanded = isExpanded,
+                      onToggleExpand = {
+                          expandedEventId =
+                              if (expandedEventId == event.id) {
+                                  null
+                              } else {
+                                  event.id
+                              }
+                      },
+                      onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
+                      onEditClickFromList = { onEditRequest(event.originalEvent) },
+                      onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
 //                  modifier =
 //                      Modifier.fillMaxWidth()
 //                          .padding(
 //                              horizontal = CalendarUiDefaults.ItemHorizontalPadding,
 //                              vertical = CalendarUiDefaults.ItemVerticalPadding
 //                          ),
-              )
+                  )
               }
-        }
+          }
+      }
       }
   Box(modifier = Modifier.height(70.dp))
 }

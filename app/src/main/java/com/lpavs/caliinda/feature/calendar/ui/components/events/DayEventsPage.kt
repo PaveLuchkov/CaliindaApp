@@ -43,9 +43,11 @@ import java.time.LocalDate
 @Composable
 fun DayEventsPage(
     isLoading: Boolean,
+    isSignIn: Boolean,
+    onSignInClick: () -> Unit,
     date: LocalDate,
     viewModel: CalendarViewModel,
-    eventManagementViewModel: EventManagementViewModel
+    eventManagementViewModel: EventManagementViewModel,
 ) {
   val pageState by
       viewModel
@@ -58,7 +60,7 @@ fun DayEventsPage(
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
 
-    val isAgentDebug = true
+    val isAgentDebug = false
 
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
@@ -106,13 +108,15 @@ fun DayEventsPage(
       }
       Spacer(modifier = Modifier.height(8.dp))
 
-      if (pageState.timedEvents.isNotEmpty() or isAgentDebug) {
+      if (pageState.timedEvents.isNotEmpty() or isAgentDebug or isSignIn) {
         CardsList(
             events = pageState.timedEvents,
             listState = listState,
+            isSignIn = isSignIn,
             onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
             onEditRequest = eventManagementViewModel::requestEditEvent,
             onDetailsRequest = viewModel::requestEventDetails,
+            onSignInClick = onSignInClick
         )
       } else if (pageState.allDayEvents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -265,9 +265,17 @@ fun CalendarScreen(
 
             DayEventsPage(
                 isLoading = isOverallLoading,
+                isSignIn = calendarState.showSignInRequiredDialog,
                 date = pageDate,
                 viewModel = calendarViewModel,
-                eventManagementViewModel = eventManagementViewModel)
+                eventManagementViewModel = eventManagementViewModel,
+                onSignInClick = {
+                    if (activity != null) {
+                        authViewModel.signIn(activity)
+                    } else {
+                        Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+                    }
+                })
           }
       AiVisualizer(
           aiState = aiState,
@@ -417,7 +425,7 @@ fun CalendarScreen(
         userTimeZone = timeZone.value,
         eventManagementViewModel = eventManagementViewModel)
   }
-  if (calendarState.showSignInRequiredDialog) {
+  if (false) {
     LogInScreenDialog(
         onDismissRequest = { calendarViewModel.onSignInRequiredDialogDismissed() },
         onSignInClick = {
