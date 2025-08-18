@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.data
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
@@ -97,7 +98,7 @@ constructor(
           }
 
       // Создаем и возвращаем готовую UI-модель
-      EventUiModel(
+      val event = EventUiModel(
           id = event.id,
           summary = event.summary,
           location = event.location,
@@ -113,6 +114,8 @@ constructor(
           proximityRatio = proximityRatio,
           shapeParams = generateShapeParams(event.id), // Твой генератор фигур
           originalEvent = event)
+//        Log.d("Model", "Event: $event")
+        event
     }
   }
 

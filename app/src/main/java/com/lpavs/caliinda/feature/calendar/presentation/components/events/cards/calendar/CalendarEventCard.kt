@@ -58,17 +58,21 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
+import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
 import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
@@ -368,4 +372,36 @@ fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
   val alpha = startOklab.alpha + (stopOklab.alpha - startOklab.alpha) * fraction
 
   return Color(l, a, b, alpha, ColorSpaces.Oklab).convert(ColorSpaces.Srgb)
+}
+
+
+
+val normalEvent = EventUiModel(
+    id = "1",
+    summary = "Попробуем например такое большое название",
+    isAllDay = false,
+    formattedTimeString = "17 - 17:45",
+    durationMinutes = 45,
+    isMicroEvent = false,
+    baseHeight = 65.dp,
+    expandedHeight = 121.dp,
+    isCurrent = true,
+    isNext = true,
+    proximityRatio = 1f,
+    shapeParams = GeneratedShapeParams(numVertices=6, radiusSeed=0.4f, rotationAngle=-41.0f, shadowOffsetYSeed=6.0.dp, shadowOffsetXSeed=6.0.dp, offestParam=0.2f),
+    location = null,
+    originalEvent = EventDto(id="qp919hj747psg010hiua4qvmho_20250818T140000Z", summary="SQL Practice: Query Building", startTime="2025-08-18T17:00:00+03:00", endTime="2025-08-18T17:45:00+03:00", description=null, location=null, isAllDay=false)
+)
+
+@Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
+@Composable
+fun LogInEventPreview() {
+    CalendarEventItem(
+        onToggleExpand = {},
+        onDetailsClickFromList = {},
+        isExpanded = false,
+        onEditClickFromList = {},
+        onDeleteClickFromList = {},
+        uiModel = normalEvent
+    )
 }
