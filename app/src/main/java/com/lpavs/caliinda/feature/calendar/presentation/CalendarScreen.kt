@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui
+package com.lpavs.caliinda.feature.calendar.presentation
 
 import android.Manifest
 import android.app.Activity
@@ -51,16 +51,15 @@ import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.feature.agent.presentation.indicators.AiVisualizer
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentUiEvent
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
-import com.lpavs.caliinda.feature.calendar.ui.components.bars.BottomBar
-import com.lpavs.caliinda.feature.calendar.ui.components.bars.CalendarAppBar
-import com.lpavs.caliinda.feature.calendar.ui.components.details.CustomEventDetailsDialog
-import com.lpavs.caliinda.feature.calendar.ui.components.events.DayEventsPage
+import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
+import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import com.lpavs.caliinda.feature.settings.ui.LogInScreenDialog
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -424,17 +423,6 @@ fun CalendarScreen(
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone.value,
         eventManagementViewModel = eventManagementViewModel)
-  }
-  if (false) {
-    LogInScreenDialog(
-        onDismissRequest = { calendarViewModel.onSignInRequiredDialogDismissed() },
-        onSignInClick = {
-          if (activity != null) {
-            authViewModel.signIn(activity)
-          } else {
-            Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
-          }
-        })
   }
 
   LaunchedEffect(sheetState.isVisible) {

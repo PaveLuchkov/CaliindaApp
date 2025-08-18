@@ -4,8 +4,8 @@ import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtilImpl
 import com.lpavs.caliinda.core.ui.util.DateTimeUtilsImpl
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
-import com.lpavs.caliinda.feature.calendar.ui.components.FunMessagesImpl
-import com.lpavs.caliinda.feature.calendar.ui.components.IFunMessages
+import com.lpavs.caliinda.feature.calendar.presentation.components.FunMessagesImpl
+import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

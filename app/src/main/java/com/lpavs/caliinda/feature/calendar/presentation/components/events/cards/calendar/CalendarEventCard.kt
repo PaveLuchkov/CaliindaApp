@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components.events
+package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -57,7 +57,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -65,7 +64,6 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
@@ -75,7 +73,7 @@ import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
-fun EventItem(
+fun CalendarEventItem(
     uiModel: EventUiModel,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
@@ -345,116 +343,6 @@ fun EventItem(
         }
       } // Конец Column (контент + кнопки)
 } // Конец корневого Box
-
-@Composable
-fun AllDayEventItem(
-    event: EventDto,
-    isExpanded: Boolean,
-    onToggleExpand: () -> Unit,
-    onDeleteClick: () -> Unit,
-    onEditClick: () -> Unit,
-    onDetailsClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  val cardBackground = colorScheme.tertiaryContainer
-  val cardTextColor = colorScheme.onTertiaryContainer
-  val haptic = LocalHapticFeedback.current
-
-  Box(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-              .background(cardBackground)
-              .pointerInput(event.id) {
-                detectTapGestures(
-                    onTap = {
-                      haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                      onToggleExpand()
-                    },
-                    onLongPress = {
-                      haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                      onDetailsClick()
-                    })
-              }) {
-        Column(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .padding(
-                        horizontal = CalendarUiDefaults.AllDayItemPadding,
-                        vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
-              Text(
-                  text = event.summary,
-                  style = typography.bodyLarge,
-                  fontWeight = FontWeight.Medium,
-                  color = cardTextColor,
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-              )
-
-              AnimatedVisibility(
-                  visible = isExpanded,
-                  enter =
-                      fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
-                          expandVertically(
-                              animationSpec = tween(durationMillis = 250, delayMillis = 50),
-                              expandFrom = Alignment.Top),
-                  exit =
-                      shrinkVertically(
-                          animationSpec = tween(durationMillis = 250),
-                          shrinkTowards = Alignment.Top) +
-                          fadeOut(animationSpec = tween(durationMillis = 150))) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically) {
-                          Button(
-                              onClick = {
-                                onDetailsClick()
-                                onToggleExpand()
-                              },
-                              contentPadding = PaddingValues(horizontal = 12.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = colorScheme.onTertiary,
-                                      contentColor = colorScheme.tertiary)) {
-                                Icon(
-                                    Icons.Filled.Info,
-                                    contentDescription = "Information",
-                                    modifier = Modifier.size(ButtonDefaults.IconSize))
-                              }
-                          Spacer(modifier = Modifier.width(8.dp))
-                          Button(
-                              onClick = { onEditClick() },
-                              contentPadding = PaddingValues(horizontal = 12.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = colorScheme.onTertiary,
-                                      contentColor = colorScheme.tertiary)) {
-                                Icon(
-                                    Icons.Filled.Edit,
-                                    contentDescription = "Редактировать",
-                                    modifier = Modifier.size(ButtonDefaults.IconSize))
-                              }
-                          Spacer(modifier = Modifier.width(8.dp))
-                          Button(
-                              onClick = { onDeleteClick() },
-                              contentPadding = PaddingValues(horizontal = 12.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = colorScheme.onTertiary,
-                                      contentColor = colorScheme.tertiary)) {
-                                Icon(
-                                    Icons.Filled.Delete,
-                                    contentDescription = "Удалить",
-                                    modifier = Modifier.size(ButtonDefaults.IconSize))
-                              }
-                        }
-                  }
-            }
-      }
-}
 
 fun calculateShapeContainerSize(durationMinutes: Long): Dp {
   val minStarContainerSize = cuid.MinStarContainerSize

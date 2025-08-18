@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components.bars
+package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
@@ -48,11 +48,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthState
-import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.agent.presentation.input.RecordButton
 import com.lpavs.caliinda.feature.agent.presentation.input.SuggestionChipsRow
 import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
-import com.lpavs.caliinda.feature.calendar.ui.CalendarState
+import com.lpavs.caliinda.feature.calendar.presentation.CalendarState
 
 @ExperimentalMaterial3ExpressiveApi
 @Composable

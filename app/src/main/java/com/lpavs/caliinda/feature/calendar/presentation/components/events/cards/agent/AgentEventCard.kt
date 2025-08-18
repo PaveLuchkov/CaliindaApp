@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.agent.presentation
+package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

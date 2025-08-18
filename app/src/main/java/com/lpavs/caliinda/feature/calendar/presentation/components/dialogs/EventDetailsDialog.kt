@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components.details
+package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

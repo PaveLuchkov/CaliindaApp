@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui
+package com.lpavs.caliinda.feature.calendar.presentation
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -13,7 +13,7 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.data.EventUiDetailsModelMapper
 import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
-import com.lpavs.caliinda.feature.calendar.ui.components.events.DayPageUiState
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayPageUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

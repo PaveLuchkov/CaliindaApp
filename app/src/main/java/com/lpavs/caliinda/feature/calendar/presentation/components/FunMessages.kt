@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui.components
+package com.lpavs.caliinda.feature.calendar.presentation.components
 
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.utils.UiText

@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.ui
+package com.lpavs.caliinda.feature.calendar.presentation
 
 import com.lpavs.caliinda.core.data.remote.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.dto.EventDto
