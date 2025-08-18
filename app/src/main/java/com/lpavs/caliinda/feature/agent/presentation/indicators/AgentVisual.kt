@@ -19,11 +19,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -222,13 +224,24 @@ fun AiVisualizer(
                     .offset {
                         IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 3.5).toInt())
                     }) {
-              // --- 1. Анимированная Звезда (под баблом) ---
-            LoadingIndicator(
-                modifier = Modifier
-                    .size(200.dp)
-                    .offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) }
-            )
-            Text(text = emojis[currentEmojiIndex], modifier = Modifier.offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) })
+            Box(
+                modifier = Modifier.offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) },
+                contentAlignment = Alignment.Center,
+            ){
+                LoadingIndicator(
+                    modifier = Modifier
+                        .size(200.dp)
+                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(shape = CircleShape)
+                        .background(color = colorScheme.onPrimary)
+                ){
+                    Text(text = emojis[currentEmojiIndex])
+                }
+            }
             }
       }
 }
