@@ -36,8 +36,8 @@ import com.lpavs.caliinda.feature.calendar.ui.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -60,7 +60,7 @@ fun DayEventsPage(
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
 
-    val isAgentDebug = false
+  val isAgentDebug = false
 
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
@@ -78,35 +78,32 @@ fun DayEventsPage(
 
   Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize()) {
-      Spacer(modifier = Modifier.height(3.dp))
       if (pageState.allDayEvents.isNotEmpty()) {
-        Spacer(modifier = Modifier.height(3.dp)) // Отступ после заголовка даты
         Column(
             modifier =
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp) // Общий горизонтальный отступ
             ) {
               pageState.allDayEvents.forEach { event ->
                 val isExpanded = event.id == expandedAllDayEventId
-                  AllDayEventItem(
-                      event = event,
-                      isExpanded = isExpanded,
-                      onToggleExpand = {
-                          expandedAllDayEventId =
-                              if (expandedAllDayEventId == event.id) {
-                                  null
-                              } else {
-                                  event.id
-                              }
-                      },
-                      onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
-                      onEditClick = { eventManagementViewModel.requestEditEvent(event) },
-                      onDetailsClick = { viewModel.requestEventDetails(event) },
-                  )
-                Spacer(modifier = Modifier.height(6.dp))
+                AllDayEventItem(
+                    event = event,
+                    isExpanded = isExpanded,
+                    onToggleExpand = {
+                      expandedAllDayEventId =
+                          if (expandedAllDayEventId == event.id) {
+                            null
+                          } else {
+                            event.id
+                          }
+                    },
+                    onDeleteClick = { eventManagementViewModel.requestDeleteConfirmation(event) },
+                    onEditClick = { eventManagementViewModel.requestEditEvent(event) },
+                    onDetailsClick = { viewModel.requestEventDetails(event) },
+                )
               }
             }
       }
-      Spacer(modifier = Modifier.height(8.dp))
+      Spacer(modifier = Modifier.height(2.dp))
 
       if (pageState.timedEvents.isNotEmpty() or isAgentDebug or isSignIn) {
         CardsList(
@@ -116,8 +113,7 @@ fun DayEventsPage(
             onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
             onEditRequest = eventManagementViewModel::requestEditEvent,
             onDetailsRequest = viewModel::requestEventDetails,
-            onSignInClick = onSignInClick
-        )
+            onSignInClick = onSignInClick)
       } else if (pageState.allDayEvents.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           if (isBusy) {
