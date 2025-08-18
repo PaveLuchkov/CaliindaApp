@@ -106,16 +106,16 @@ constructor(
           Log.d(TAG, "Initial auth check completed and processed.")
           if (!authState.isSignedIn && authState.authError == null) {
             Log.d(TAG, "Initial auth check: Showing sign-in required dialog.")
-            _uiState.update { it.copy(showSignInRequiredDialog = true) }
+            _uiState.update { it.copy(signInRequired = true) }
           } else {
-            _uiState.update { it.copy(showSignInRequiredDialog = false) }
+            _uiState.update { it.copy(signInRequired = false) }
           }
         }
-        if (authState.isSignedIn && _uiState.value.showSignInRequiredDialog) {
-          _uiState.update { it.copy(showSignInRequiredDialog = false) }
+        if (authState.isSignedIn && _uiState.value.signInRequired) {
+          _uiState.update { it.copy(signInRequired = false) }
         }
         if (authState.isSignedIn && !previousUiState.isSignedIn) {
-          _uiState.update { it.copy(showSignInRequiredDialog = false) }
+          _uiState.update { it.copy(signInRequired = false) }
         }
         if (authState.isSignedIn && !previousUiState.isSignedIn) {
           Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
@@ -223,7 +223,7 @@ constructor(
   // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
 
   fun onSignInRequiredDialogDismissed() {
-    _uiState.update { it.copy(showSignInRequiredDialog = false) }
+    _uiState.update { it.copy(signInRequired = false) }
     Log.d(TAG, "Sign-in dismissed")
   }
 

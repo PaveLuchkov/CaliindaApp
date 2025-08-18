@@ -264,7 +264,7 @@ fun CalendarScreen(
 
             DayEventsPage(
                 isLoading = isOverallLoading,
-                isSignIn = calendarState.showSignInRequiredDialog,
+                isSignIn = calendarState.signInRequired,
                 date = pageDate,
                 viewModel = calendarViewModel,
                 eventManagementViewModel = eventManagementViewModel,

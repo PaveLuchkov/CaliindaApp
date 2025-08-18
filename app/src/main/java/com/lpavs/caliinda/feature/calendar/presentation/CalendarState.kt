@@ -9,7 +9,7 @@ data class CalendarState(
     val isSignedIn: Boolean = false,
     val isLoading: Boolean = false,
     val message: String? = "Требуется вход.",
-    val showSignInRequiredDialog: Boolean = false,
+    val signInRequired: Boolean = false,
     val eventForDetailedView: EventDetailsUiModel? = null,
     val showEventDetailedView: Boolean = false,
 )
