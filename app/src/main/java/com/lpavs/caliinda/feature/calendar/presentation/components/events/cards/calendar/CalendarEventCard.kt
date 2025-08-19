@@ -378,7 +378,7 @@ fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
 
 val normalEvent = EventUiModel(
     id = "1",
-    summary = "Попробуем например такое большое название",
+    summary = "SQL Practice: Query Building",
     isAllDay = false,
     formattedTimeString = "17 - 17:45",
     durationMinutes = 45,
