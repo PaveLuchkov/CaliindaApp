@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,15 +55,29 @@ fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit,
 
   val scope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }
-  val currentSavedTimeZone by viewModel.timeZone.collectAsStateWithLifecycle()
-  var selectedTimeZoneId by
-      remember(currentSavedTimeZone) {
-        mutableStateOf(currentSavedTimeZone.takeIf { it.isNotEmpty() } ?: ZoneId.systemDefault().id)
-      }
+    val currentSavedTimeZone by viewModel.timeZone.collectAsStateWithLifecycle()
+    // Запоминаем ID системной таймзоны, чтобы не вызывать ZoneId.systemDefault().id постоянно
+    val systemDefaultTimeZoneId = remember { ZoneId.systemDefault().id }
+
+    // ГЛАВНОЕ ИЗМЕНЕНИЕ: Это наш единственный "источник правды" для Switch
+    var useSystemTimeZone by remember { mutableStateOf(true) }
+
+    // Состояние для отображаемой в поле таймзоны
+    var selectedTimeZoneId by remember { mutableStateOf(systemDefaultTimeZoneId) }
+
+    // Состояние для выпадающего меню
     var expanded by remember { mutableStateOf(false) }
-    var checked by remember { mutableStateOf(false) }
-  val allTimeZones = remember { ZoneId.getAvailableZoneIds().sorted() }
-    val enabled = if (selectedTimeZoneId == ZoneId.systemDefault().id) true else checked
+
+    // Этот эффект синхронизирует состояние UI с данными из ViewModel при первом запуске
+    // или когда данные в ViewModel изменятся.
+    LaunchedEffect(currentSavedTimeZone, systemDefaultTimeZoneId) {
+        val isSystem = currentSavedTimeZone.isEmpty() || currentSavedTimeZone == systemDefaultTimeZoneId
+        useSystemTimeZone = isSystem
+        selectedTimeZoneId = if (isSystem) systemDefaultTimeZoneId else currentSavedTimeZone
+    }
+
+    // Получаем список всех таймзон один раз
+    val allTimeZones = remember { ZoneId.getAvailableZoneIds().sorted() }
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -93,56 +108,71 @@ fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit,
                   ) {
                       Text(text = stringResource(R.string.use_system_time_zone))
                       Spacer(modifier = Modifier.weight(1f))
+
+                      // --- ШАГ 2: Упрощаем логику Switch ---
                       Switch(
-                          checked = enabled,
-                          onCheckedChange = {
-                              checked = it
-                              viewModel.updateTimeZoneSetting(ZoneId.systemDefault().id)
+                          checked = useSystemTimeZone, // Напрямую привязываем к нашему состоянию
+                          onCheckedChange = { isChecked ->
+                              useSystemTimeZone = isChecked // Обновляем состояние
+                              if (isChecked) {
+                                  // Если включили, то сразу сохраняем системную таймзону
+                                  selectedTimeZoneId = systemDefaultTimeZoneId
+                                  viewModel.updateTimeZoneSetting(systemDefaultTimeZoneId)
+                              }
+                              // Если выключили, ничего не делаем, ждем выбора пользователя
                           }
                       )
                   }
+
+                  // --- ШАГ 3: Управляем доступностью меню через useSystemTimeZone ---
                   ExposedDropdownMenuBox(
-                      expanded = expanded, onExpandedChange = { if (!enabled) expanded = !expanded }) {
+                      expanded = expanded,
+                      onExpandedChange = {
+                          // Разрешаем открывать меню, только если Switch выключен
+                          if (!useSystemTimeZone) {
+                              expanded = !expanded
+                          }
+                      }
+                  ) {
                       OutlinedTextField(
-                          readOnly = true, // Меню только для чтения
-                          enabled = !enabled,
-                          value = selectedTimeZoneId, // Показываем выбранный ID
-                          onValueChange = {}, // Пустой обработчик, т.к. readOnly
-                          label = {
-                              Text(stringResource(R.string.time_zone))
-                          }, // Используй Text() для label
+                          modifier = Modifier
+                              .menuAnchor() // menuAnchor без параметров - это стандартный способ
+                              .fillMaxWidth(),
+                          readOnly = true,
+                          // Меню заблокировано, если включен системный часовой пояс
+                          enabled = !useSystemTimeZone,
+                          value = selectedTimeZoneId,
+                          onValueChange = {},
+                          label = { Text(stringResource(R.string.time_zone)) },
                           trailingIcon = {
                               ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                           },
-                          modifier =
-                              Modifier
-                                  .menuAnchor(
-                                      type = PrimaryEditable, enabled = true
-                                  ) // Исправлено
-                                  .fillMaxWidth(),
-                          shape = RoundedCornerShape(cuid.SettingsItemCornerRadius))
+                          shape = RoundedCornerShape(12.dp)
+                      )
 
                       ExposedDropdownMenu(
-                          expanded = expanded, onDismissRequest = { expanded = false }) {
+                          expanded = expanded,
+                          onDismissRequest = { expanded = false }
+                      ) {
                           allTimeZones.forEach { timeZoneId ->
                               DropdownMenuItem(
-                                  enabled = !enabled,
                                   text = { Text(timeZoneId) },
                                   onClick = {
-                                      selectedTimeZoneId =
-                                          timeZoneId // Обновляем локальное состояние UI
+                                      selectedTimeZoneId = timeZoneId // Обновляем UI
                                       expanded = false // Закрываем меню
+                                      // Сохраняем выбор в ViewModel
+                                      viewModel.updateTimeZoneSetting(timeZoneId)
                                       scope.launch {
-                                          viewModel.updateTimeZoneSetting(timeZoneId) // Сохраняем выбор
-                                          snackbarHostState.showSnackbar("Time zone saved")
+                                          snackbarHostState.showSnackbar("Time zone saved: $timeZoneId")
                                       }
-                                  })
+                                  }
+                              )
                           }
                       }
                   }
               }
-              }
-          Spacer(modifier = Modifier.height(10.dp))
+          }
+            Spacer(modifier = Modifier.height(10.dp))
         }
-      }
+  }
 }
