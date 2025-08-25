@@ -89,7 +89,6 @@ fun CalendarScreen(
 
   val snackbarHostState = remember { SnackbarHostState() }
 
-  val aiMessage by agentViewModel.aiMessage.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
   val today = remember { LocalDate.now() }
