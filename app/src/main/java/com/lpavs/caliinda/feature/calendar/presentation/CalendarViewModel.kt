@@ -7,7 +7,7 @@ import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.di.ITimeTicker
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils

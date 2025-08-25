@@ -1,7 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.data
 
 import androidx.compose.ui.unit.Dp
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 
 data class EventUiModel(
     val id: String,

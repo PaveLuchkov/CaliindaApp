@@ -44,7 +44,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
 import com.lpavs.caliinda.core.ui.theme.cuid
 
 /**

@@ -1,7 +1,7 @@
-package com.lpavs.caliinda.core.data.remote
+package com.lpavs.caliinda.core.data.remote.calendar
 
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.core.data.remote.dto.EventRequest
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE

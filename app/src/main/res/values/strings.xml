@@ -358,4 +358,5 @@
     <string name="seasonal_fall_vibes">🍁 Fall vibes!</string>
     <string name="recurring_this_and_following_error">Something went wrong. Cannot perform this and following delete.</string>
     <string name="voice_no_permission">No permission for voice messaging</string>
+    <string name="use_system_time_zone">Use system time zone</string>
 </resources>

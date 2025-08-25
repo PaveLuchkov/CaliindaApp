@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.core.data.remote.dto
+package com.lpavs.caliinda.core.data.remote.calendar.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -18,7 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.AllDayEventItem
 
 @Composable

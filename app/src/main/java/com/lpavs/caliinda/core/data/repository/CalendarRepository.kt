@@ -7,11 +7,11 @@ import com.lpavs.caliinda.core.data.auth.AuthEvent
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
-import com.lpavs.caliinda.core.data.remote.CalendarRemoteDataSource
-import com.lpavs.caliinda.core.data.remote.EventDeleteMode
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.core.data.remote.dto.EventRequest
+import com.lpavs.caliinda.core.data.remote.calendar.CalendarRemoteDataSource
+import com.lpavs.caliinda.core.data.remote.calendar.EventDeleteMode
+import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
 import com.lpavs.caliinda.core.data.repository.mapper.EventMapper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

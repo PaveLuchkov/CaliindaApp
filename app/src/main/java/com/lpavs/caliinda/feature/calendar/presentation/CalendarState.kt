@@ -1,7 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
 import java.time.LocalDate
 

@@ -1,7 +1,7 @@
 package com.lpavs.caliinda.core.data.repository.mapper
 
 import android.util.Log
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarEventEntity
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import java.time.Instant

@@ -6,7 +6,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.lpavs.caliinda.core.data.auth.AuthApiService
 import com.lpavs.caliinda.core.data.local.AppDatabase
 import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
-import com.lpavs.caliinda.core.data.remote.CalendarApiService
+import com.lpavs.caliinda.core.data.remote.calendar.CalendarApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

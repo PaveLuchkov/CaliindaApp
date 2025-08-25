@@ -57,8 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker

@@ -4,10 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.EventDeleteMode
-import com.lpavs.caliinda.core.data.remote.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
-import com.lpavs.caliinda.core.data.remote.dto.EventRequest
+import com.lpavs.caliinda.core.data.remote.calendar.EventDeleteMode
+import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText

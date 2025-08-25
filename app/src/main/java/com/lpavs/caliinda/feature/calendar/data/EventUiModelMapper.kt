@@ -1,10 +1,9 @@
 package com.lpavs.caliinda.feature.calendar.data
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils

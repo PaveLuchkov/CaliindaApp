@@ -2,7 +2,7 @@ package com.lpavs.caliinda.feature.calendar.data
 
 import android.content.Context
 import androidx.core.os.ConfigurationCompat
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import dagger.hilt.android.qualifiers.ApplicationContext

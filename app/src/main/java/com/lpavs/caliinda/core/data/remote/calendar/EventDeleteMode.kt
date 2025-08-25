@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.core.data.remote
+package com.lpavs.caliinda.core.data.remote.calendar
 
 enum class EventDeleteMode(val value: String) {
   DEFAULT("default"),

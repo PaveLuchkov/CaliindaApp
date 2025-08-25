@@ -66,7 +66,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.dto.EventDto
+import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
