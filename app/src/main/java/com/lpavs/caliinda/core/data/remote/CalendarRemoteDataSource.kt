@@ -33,7 +33,7 @@ constructor(
       safeApiCall { apiCall("Bearer $token") }
     } else {
       Log.e(TAG, "Could not get fresh token")
-      Result.failure(Exception("Could not get fresh token"))
+      Result.failure(Exception("Authorization needed"))
     }
   }
 
