@@ -77,7 +77,7 @@ fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit,
     }
 
     // Получаем список всех таймзон один раз
-    val allTimeZones = remember { ZoneId.getAvailableZoneIds().sorted() }
+    val allTimeZones = remember { ZoneId.getAvailableZoneIds().sorted().filter { "/" in it } }
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -147,7 +147,7 @@ fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit,
                           trailingIcon = {
                               ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                           },
-                          shape = RoundedCornerShape(12.dp)
+                          shape = RoundedCornerShape(16.dp)
                       )
 
                       ExposedDropdownMenu(

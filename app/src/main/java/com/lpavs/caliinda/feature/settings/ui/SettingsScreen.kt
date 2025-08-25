@@ -225,9 +225,9 @@ fun GoogleAccountSection(
                     Button(onClick = { authViewModel.signOut() }, enabled = !state.isLoading) {
                       Icon(
                           Icons.AutoMirrored.Rounded.Logout,
-                          tint = colorScheme.onPrimaryContainer,
                           contentDescription = stringResource(R.string.account),
-                          modifier = Modifier.size(20.dp))
+                          modifier = Modifier.size(20.dp)
+                      )
                     }
                   }
                 }
