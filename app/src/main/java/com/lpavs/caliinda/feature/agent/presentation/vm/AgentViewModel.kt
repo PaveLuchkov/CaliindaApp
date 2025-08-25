@@ -31,7 +31,6 @@ constructor(
     private val calendarStateHolder: ICalendarStateHolder
 ) : ViewModel() {
   val aiState: StateFlow<AgentState> = agentManager.aiState
-  val aiMessage: StateFlow<String?> = agentManager.aiMessage
 
   private val recordingState = MutableStateFlow(RecordingState())
   val recState: StateFlow<RecordingState> = recordingState.asStateFlow()
@@ -81,10 +80,6 @@ constructor(
     }
     agentManager.sendTextMessage(text)
   }
-
-  fun resetAiStateAfterResult() = agentManager.resetAiState()
-
-  fun resetAiStateAfterAsking() = agentManager.resetAiState()
 
   // --- ОБРАБОТКА UI СОБЫТИЙ / РАЗРЕШЕНИЙ ---
   fun updatePermissionStatus(isGranted: Boolean) {

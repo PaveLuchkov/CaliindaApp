@@ -6,20 +6,18 @@ import com.lpavs.caliinda.core.common.ApiException
 import com.lpavs.caliinda.core.common.NetworkException
 import com.lpavs.caliinda.core.common.UnknownException
 import com.lpavs.caliinda.core.data.auth.AuthManager
-import com.lpavs.caliinda.core.data.remote.calendar.CalendarApiService
-import com.lpavs.caliinda.core.data.remote.calendar.EventDeleteMode
-import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-class AgentRequest
+
+interface AgentRepository {
+    suspend fun sendMessage(message: String): Result<Unit> // Можно изменить <Unit> на модель ответа, если она появится
+}
+
+class AgentRemoteDataSource
 @Inject
 constructor(
     private val apiService: AgentApiService,

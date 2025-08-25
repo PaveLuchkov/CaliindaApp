@@ -44,10 +44,8 @@ class AgentManager
 @Inject
 constructor(
     @ApplicationContext private val context: Context,
-    private val okHttpClient: OkHttpClient,
     private val authManager: AuthManager,
     private val settingsRepository: SettingsRepository,
-    @BackendUrl private val backendBaseUrl: String,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @MainDispatcher private val mainDispatcher: CoroutineDispatcher
 ) {
@@ -196,6 +194,8 @@ constructor(
     managerScope.launch { processText(text) }
   }
 
+
+
   private suspend fun processText(text: String) {
     val freshToken = authManager.getBackendAuthToken()
     if (freshToken == null) {
@@ -205,120 +205,9 @@ constructor(
     }
 
     val currentTemper = settingsRepository.botTemperFlow.first()
+
     val timeZoneId = settingsRepository.timeZoneFlow.first().ifEmpty { ZoneId.systemDefault().id }
 
-    Log.i(TAG, "Sending text to /process. Temper: $currentTemper, TimeZone: $timeZoneId")
-
-    val requestBody =
-        try {
-          MultipartBody.Builder()
-              .setType(MultipartBody.FORM)
-              .addFormDataPart("text", text)
-              .addFormDataPart("time", LocalDateTime.now().toString())
-              .addFormDataPart("timeZone", timeZoneId)
-              .addFormDataPart("temper", currentTemper)
-              .build()
-        } catch (e: Exception) {
-          Log.e(TAG, "Failed to build request body", e)
-          handleBackendError("Ошибка подготовки запроса")
-          return
-        }
-
-    val request =
-        Request.Builder()
-            .url("$backendBaseUrl/process")
-            .header("Authorization", "Bearer $freshToken")
-            .post(requestBody)
-            .build()
-
-    executeProcessRequest(request)
-  }
-
-  private suspend fun executeProcessRequest(request: Request) =
-      withContext(ioDispatcher) {
-        try {
-          val response = okHttpClient.newCall(request).execute()
-          val responseBodyString = response.body?.string()
-
-          if (!response.isSuccessful) {
-            Log.e(TAG, "Server error processing request: ${response.code} - $responseBodyString")
-            var errorDetail = "Server error: (${response.code})"
-            try {
-              if (!responseBodyString.isNullOrBlank()) {
-                val jsonError = JSONObject(responseBodyString)
-                errorDetail = jsonError.optString("detail", errorDetail)
-              }
-            } catch (e: JSONException) {
-              Log.w(TAG, "Could not parse error response body: $e")
-            }
-            handleBackendError(errorDetail)
-          } else {
-            Log.i(TAG, "Request processed successfully. Response: $responseBodyString")
-            handleProcessResponse(responseBodyString)
-          }
-        } catch (e: IOException) {
-          Log.e(TAG, "Network error during /process request", e)
-          handleBackendError("Network error: ${e.message}")
-        } catch (e: Exception) {
-          Log.e(TAG, "Error executing /process request", e)
-          handleBackendError("Request processing error: ${e.message}")
-        }
-      }
-
-  private fun handleProcessResponse(responseBody: String?) {
-    var finalAiState: AgentState
-    var messageForVisualizer: String? = null
-
-    if (responseBody.isNullOrBlank()) {
-      Log.w(TAG, "Empty success response from /process")
-      finalAiState = AgentState.IDLE
-    } else {
-      try {
-        val json = JSONObject(responseBody)
-        val status = json.optString("status")
-        val message = json.optString("message")
-
-        when (status) {
-          "success" -> {
-            messageForVisualizer = "Success!"
-            finalAiState = AgentState.RESULT
-            Log.i(TAG, "Backend status: success. Message: $message")
-          }
-          "clarification_needed" -> {
-            messageForVisualizer = message
-            finalAiState = AgentState.ASKING
-            Log.i(TAG, "Backend status: clarification_needed. Message: $message")
-          }
-          "info",
-          "unsupported" -> {
-            messageForVisualizer = message
-            finalAiState = AgentState.RESULT
-            Log.i(TAG, "Backend status: $status. Message: $message")
-          }
-          "error" -> {
-            Log.e(TAG, "Backend processing error: $message")
-            finalAiState = AgentState.IDLE
-          }
-          else -> {
-            Log.w(TAG, "Unknown status from backend: $status")
-            finalAiState = AgentState.IDLE
-          }
-        }
-      } catch (e: JSONException) {
-        Log.e(TAG, "Error parsing /process response", e)
-        finalAiState = AgentState.IDLE
-      } catch (e: Exception) {
-        Log.e(TAG, "Error handling /process response content", e)
-        finalAiState = AgentState.IDLE
-      }
-    }
-
-    _aiMessage.value = messageForVisualizer
-    _aiState.value = finalAiState
-
-    if (_aiState.value == AgentState.IDLE) {
-      _aiMessage.value = null
-    }
   }
 
   private fun handleRecognitionError(errorMessage: String) {
