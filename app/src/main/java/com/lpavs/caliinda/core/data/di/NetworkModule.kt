@@ -6,6 +6,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.lpavs.caliinda.core.data.auth.AuthApiService
 import com.lpavs.caliinda.core.data.local.AppDatabase
 import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
+import com.lpavs.caliinda.core.data.remote.agent.AgentApiService
 import com.lpavs.caliinda.core.data.remote.calendar.CalendarApiService
 import dagger.Module
 import dagger.Provides
@@ -58,7 +59,15 @@ object NetworkModule {
   fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
     return retrofit.create(AuthApiService::class.java)
   }
+
+    @Provides
+    @Singleton
+    fun provideAgentApiService(retrofit: Retrofit): AgentApiService {
+        return retrofit.create(AgentApiService::class.java)
+    }
 }
+
+
 
 @Module
 @InstallIn(SingletonComponent::class)

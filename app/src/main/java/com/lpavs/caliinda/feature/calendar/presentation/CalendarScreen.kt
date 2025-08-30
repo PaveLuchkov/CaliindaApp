@@ -76,7 +76,7 @@ fun CalendarScreen(
     onNavigateToSettings: () -> Unit,
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
-  val aiState by agentViewModel.aiState.collectAsStateWithLifecycle()
+  val agentState by agentViewModel.agentState.collectAsStateWithLifecycle()
   val recState by agentViewModel.recState.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
@@ -127,12 +127,11 @@ fun CalendarScreen(
               currentVisibleDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
       )
 
-  // --- НОВОЕ: Настройка flingBehavior ---
   val customFlingBehavior =
       PagerDefaults.flingBehavior(
           state = pagerState,
           // ---
-          snapPositionalThreshold = 0.2f,
+          snapPositionalThreshold = 0.05f,
           // ---
           snapAnimationSpec =
               spring(
@@ -257,7 +256,8 @@ fun CalendarScreen(
           state = pagerState,
           modifier = Modifier.fillMaxSize(),
           key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() },
-          flingBehavior = customFlingBehavior) { pageIndex ->
+          flingBehavior = customFlingBehavior,
+          beyondViewportPageCount = 1) { pageIndex ->
             val pageDate =
                 remember(pageIndex) { today.plusDays((pageIndex - initialPageIndex).toLong()) }
 
@@ -276,7 +276,7 @@ fun CalendarScreen(
                 })
           }
       AiVisualizer(
-          aiState = aiState,
+          aiState = agentState,
           modifier = Modifier.fillMaxSize()
       )
       BottomBar(
