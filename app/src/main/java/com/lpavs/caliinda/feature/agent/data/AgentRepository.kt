@@ -31,6 +31,6 @@ class AgentRepositoryImpl @Inject constructor(
             language = Locale.getDefault().language
         )
 
-        return remoteDataSource.run_chat(message, userContext)
+        return remoteDataSource.runChat(message, userContext)
     }
 }
