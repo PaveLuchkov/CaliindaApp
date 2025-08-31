@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -80,7 +83,9 @@ fun CreateEventScreen(
     currentSheetValue: SheetValue
 ) {
   var summary by remember { mutableStateOf("") }
-  var description by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var descriptionEnabled by remember { mutableStateOf(false) }
+    var dlocationEnabled by remember { mutableStateOf(false) }
   var location by remember { mutableStateOf("") }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
 
@@ -149,61 +154,37 @@ fun CreateEventScreen(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center) {
-        AnimatedContent(
-            targetState = currentSheetValue,
-            transitionSpec = {
-              (EnterTransition.None)
-                  .togetherWith(ExitTransition.None)
-                  .using(
-                      SizeTransform(
-                          clip = false,
-                          sizeAnimationSpec = { _, _ ->
-                            spring(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessMediumLow)
-                          }))
-            },
-            label = "SaveButtonAnimation") { targetSheetValue ->
-              val expandedSize = ButtonDefaults.LargeContainerHeight
-              val defaultSize = ButtonDefaults.MediumContainerHeight
-
-              val isNotCompactState = targetSheetValue == SheetValue.Expanded
-
-              val size = if (!isNotCompactState) defaultSize else expandedSize
-
-              Button(
-                  onClick = onSaveClick,
-                  enabled = !uiState.isLoading,
-                  modifier = Modifier.heightIn(size),
-                  contentPadding = ButtonDefaults.contentPaddingFor(size)) {
-                    if (uiState.isLoading) {
-                      LoadingIndicator(
-                          color = colorScheme.onPrimary,
-                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
-                    } else {
-                      Icon(
-                          imageVector = Icons.Filled.Check,
-                          contentDescription = "Сохранить",
-                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
-                    }
-                  }
+            Button(
+                onClick = onSaveClick,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),)
+            {
+                if (uiState.isLoading) {
+                    LoadingIndicator(
+                        color = colorScheme.onPrimary,
+                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
+                } else {
+                    Text(
+                        text = stringResource(R.string.save),
+                    )
+                }
             }
       }
 
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState())
-              .padding(horizontal = 16.dp, vertical = 4.dp)
+              .padding(horizontal = 16.dp)
               .fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AdaptiveContainer {
-          EventNameSection(
-              summary = summary,
-              summaryError = summaryError,
-              onSummaryChange = { summary = it },
-              onSummaryErrorChange = { summaryError = it },
-              isLoading = uiState.isLoading,
-              suggestedChips = suggestedChips)
+            EventNameSection(
+                summary = summary,
+                summaryError = summaryError,
+                onSummaryChange = { summary = it },
+                onSummaryErrorChange = { summaryError = it },
+                isLoading = uiState.isLoading,
+                suggestedChips = suggestedChips)
         }
         AdaptiveContainer {
           EventDateTimePicker(
