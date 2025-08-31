@@ -37,7 +37,6 @@ fun EventNameSection(
       supportingText = { if (summaryError != null) Text(summaryError) },
       enabled = !isLoading,
   )
-
   val lazyListState = rememberLazyListState()
   LaunchedEffect(suggestedChips) { lazyListState.animateScrollToItem(index = 0) }
   ChipsRow(

@@ -22,21 +22,29 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun CustomOutlinedTextField(
     value: String,
@@ -48,19 +56,26 @@ fun CustomOutlinedTextField(
     isError: Boolean = false,
     supportingText: (@Composable () -> Unit)? = null
 ) {
-  OutlinedTextField(
+  TextField(
       value = value,
       onValueChange = onValueChange,
-      label = { Text(text = label, textAlign = TextAlign.Center) },
+      label = { Text(text = label, textAlign = TextAlign.Start) },
       modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
-      shape = RoundedCornerShape(cuid.ContainerCornerRadius),
       colors =
           OutlinedTextFieldDefaults.colors(
-              focusedContainerColor = colorScheme.surfaceContainerLow,
-              unfocusedContainerColor = colorScheme.surfaceContainerLow,
+              focusedBorderColor = Color.Transparent,
+              unfocusedBorderColor = Color.Transparent,
+              focusedContainerColor = Color.Transparent,
+              unfocusedContainerColor = Color.Transparent,
           ),
       keyboardOptions = keyboardOptions,
-      textStyle = typography.headlineMedium.copy(textAlign = TextAlign.Center),
+      textStyle = typography.headlineMedium.copy(textAlign = TextAlign.Start, fontFamily = FontFamily(
+          Font(
+              R.font.robotoflex_variable,
+              variationSettings =
+                  FontVariation.Settings(
+                      FontVariation.weight(750),
+                  )))),
       enabled = enabled,
       singleLine = true,
       isError = isError,
@@ -78,7 +93,7 @@ fun ChipsRow(
       state = lazyListState,
       modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
       horizontalArrangement = Arrangement.spacedBy(cuid.padding),
-      contentPadding = PaddingValues(cuid.padding)) {
+      contentPadding = PaddingValues(bottom = cuid.padding)) {
         items(chips, key = { it.name }) { chip ->
           SuggestionChip(
               onClick = { onChipClick(chip) },
