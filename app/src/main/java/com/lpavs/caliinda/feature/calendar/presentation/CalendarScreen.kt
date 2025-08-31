@@ -127,17 +127,6 @@ fun CalendarScreen(
               currentVisibleDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
       )
 
-  val customFlingBehavior =
-      PagerDefaults.flingBehavior(
-          state = pagerState,
-          // ---
-          snapPositionalThreshold = 0.05f,
-          // ---
-          snapAnimationSpec =
-              spring(
-                  stiffness = Spring.StiffnessLow, // По умолчанию Spring.StiffnessMediumLow
-              ))
-
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
@@ -256,7 +245,8 @@ fun CalendarScreen(
           state = pagerState,
           modifier = Modifier.fillMaxSize(),
           key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() },
-          flingBehavior = customFlingBehavior,
+          flingBehavior = PagerDefaults.flingBehavior(state = pagerState, snapPositionalThreshold = 0.05f),
+          userScrollEnabled = !calendarState.signInRequired ,
           beyondViewportPageCount = 1) { pageIndex ->
             val pageDate =
                 remember(pageIndex) { today.plusDays((pageIndex - initialPageIndex).toLong()) }
