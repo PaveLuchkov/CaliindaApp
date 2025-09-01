@@ -27,8 +27,9 @@ class AgentViewModel
 @Inject
 constructor(
   private val agentRepository: AgentRepository,
-    private val speechRecognitionService: SpeechRecognitionService,
+  private val speechRecognitionService: SpeechRecognitionService,
 ) : ViewModel() {
+
   private val _agentState = MutableStateFlow(AgentState.IDLE)
   val agentState: StateFlow<AgentState> = _agentState.asStateFlow()
 
@@ -50,34 +51,67 @@ constructor(
         Log.d(TAG, "Speech Recognition State changed: $state")
         when (state) {
           is SpeechRecognitionState.Idle -> {
-            if (_agentState.value == AgentState.LISTENING) {
-              _agentState.value = AgentState.IDLE
+            _agentState.value = AgentState.IDLE
+            _recordingState.update {
+              it.copy(
+                isListening = false,
+                isLoading = false
+              )
             }
           }
           is SpeechRecognitionState.Listening -> {
             _agentState.value = AgentState.LISTENING
+            _recordingState.update {
+              it.copy(
+                isListening = true,
+                isLoading = false
+              )
+            }
           }
           is SpeechRecognitionState.Success -> {
+            // Сразу сбрасываем состояние прослушивания
+            _recordingState.update {
+              it.copy(
+                isListening = false,
+                isLoading = true
+              )
+            }
             processTextMessage(state.text)
           }
           is SpeechRecognitionState.Error -> {
             _agentState.value = AgentState.ERROR
             _agentMessage.value = state.message
+            _recordingState.update {
+              it.copy(
+                isListening = false,
+                isLoading = false
+              )
+            }
           }
         }
-        _recordingState.update { it.copy(isListening = state is SpeechRecognitionState.Listening) }
       }.launchIn(viewModelScope)
   }
 
   private fun processTextMessage(text: String) {
     if (text.isBlank()) {
       _agentState.value = AgentState.IDLE
+      _recordingState.update {
+        it.copy(
+          isListening = false,
+          isLoading = false
+        )
+      }
       return
     }
 
     viewModelScope.launch {
       _agentState.value = AgentState.THINKING
-      _recordingState.update { it.copy(isLoading = true) }
+      _recordingState.update {
+        it.copy(
+          isListening = false,
+          isLoading = true
+        )
+      }
 
       agentRepository.sendMessage(text)
         .onSuccess {
@@ -89,7 +123,12 @@ constructor(
           _agentMessage.value = error.message ?: "Неизвестная ошибка"
         }
 
-      _recordingState.update { it.copy(isLoading = false) }
+      _recordingState.update {
+        it.copy(
+          isListening = false,
+          isLoading = false
+        )
+      }
     }
   }
 
@@ -104,10 +143,15 @@ constructor(
       }
       return
     }
+
+    Log.d(TAG, "Starting speech recognition")
     speechRecognitionService.startListening()
   }
 
-  fun stopListening() = speechRecognitionService.stopListening()
+  fun stopListening() {
+    Log.d(TAG, "Stopping speech recognition")
+    speechRecognitionService.stopListening()
+  }
 
   fun sendTextMessage(text: String) {
     processTextMessage(text)
@@ -117,11 +161,20 @@ constructor(
   fun updatePermissionStatus(isGranted: Boolean) {
     _recordingState.update { it.copy(isPermissionGranted = isGranted) }
   }
+
   fun resetAiState() {
     val currentState = agentState.value
     if (currentState == AgentState.RESULT || currentState == AgentState.ERROR || currentState == AgentState.ASKING) {
       _agentState.value = AgentState.IDLE
       _agentMessage.value = null
+    }
+
+    // Также сбрасываем состояние записи
+    _recordingState.update {
+      it.copy(
+        isListening = false,
+        isLoading = false
+      )
     }
   }
 
@@ -131,16 +184,15 @@ constructor(
   }
 
   companion object {
-    private const val TAG = "AgentViewModel" // Используем один TAG
+    private const val TAG = "AgentViewModel"
   }
 }
 
-
 data class RecordingState(
-    val isLoading: Boolean = false,
-    val isListening: Boolean = false,
-    val isPermissionGranted: Boolean = false,
-    val message: String? = "Требуется вход.",
+  val isLoading: Boolean = false,
+  val isListening: Boolean = false,
+  val isPermissionGranted: Boolean = false,
+  val message: String? = "Требуется вход.",
 )
 
 sealed class AgentUiEvent {

@@ -36,6 +36,7 @@ class SpeechRecognitionService @Inject constructor(
     private val serviceScope = CoroutineScope(SupervisorJob() + mainDispatcher)
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private var isCurrentlyListening = false // Добавляем внутренний флаг
 
     private val _state = MutableStateFlow<SpeechRecognitionState>(SpeechRecognitionState.Idle)
     val state = _state.asStateFlow()
@@ -50,90 +51,163 @@ class SpeechRecognitionService @Inject constructor(
             _state.value = SpeechRecognitionState.Error("Сервис распознавания недоступен")
             return
         }
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-            setRecognitionListener(recognitionListener)
-        }
+        createNewRecognizer()
         Log.d(TAG, "SpeechRecognizer initialized.")
     }
 
+    private fun createNewRecognizer() {
+        // Уничтожаем старый если есть
+        speechRecognizer?.destroy()
+
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+            setRecognitionListener(recognitionListener)
+        }
+        isCurrentlyListening = false
+        Log.d(TAG, "New SpeechRecognizer created")
+    }
+
     fun startListening() {
-        if (_state.value is SpeechRecognitionState.Listening) {
-            Log.w(TAG, "Already listening.")
+        Log.d(TAG, "startListening called, current state: ${_state.value}, isCurrentlyListening: $isCurrentlyListening")
+
+        // Если уже слушаем - игнорируем
+        if (isCurrentlyListening || _state.value is SpeechRecognitionState.Listening) {
+            Log.w(TAG, "Already listening, ignoring start request")
             return
         }
+
+        // Создаем новый recognizer для надежности
+        createNewRecognizer()
 
         val recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         }
 
-        serviceScope.launch {
+        try {
+            isCurrentlyListening = true
             _state.value = SpeechRecognitionState.Listening
             speechRecognizer?.startListening(recognizerIntent)
-            Log.d(TAG, "Started listening.")
+            Log.d(TAG, "Started listening successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting recognition", e)
+            isCurrentlyListening = false
+            _state.value = SpeechRecognitionState.Error("Ошибка запуска распознавания: ${e.message}")
         }
     }
 
     fun stopListening() {
-        if (_state.value !is SpeechRecognitionState.Listening) return
-        serviceScope.launch {
+        Log.d(TAG, "stopListening called, isCurrentlyListening: $isCurrentlyListening")
+
+        if (!isCurrentlyListening) {
+            Log.w(TAG, "Not currently listening, ignoring stop request")
+            return
+        }
+
+        try {
             speechRecognizer?.stopListening()
-            Log.d(TAG, "Stopped listening by user.")
+            Log.d(TAG, "Stop listening command sent")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping recognition", e)
+            forceReset()
         }
     }
 
+    private fun forceReset() {
+        Log.d(TAG, "Force resetting speech recognizer")
+        isCurrentlyListening = false
+        _state.value = SpeechRecognitionState.Idle
+        createNewRecognizer()
+    }
+
     fun destroy() {
-        serviceScope.launch {
-            speechRecognizer?.destroy()
-            speechRecognizer = null
-            Log.d(TAG, "SpeechRecognizer destroyed.")
-        }
+        Log.d(TAG, "Destroying SpeechRecognitionService")
+        isCurrentlyListening = false
+        speechRecognizer?.destroy()
+        speechRecognizer = null
     }
 
     private val recognitionListener = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {
             Log.d(TAG, "onReadyForSpeech")
+            isCurrentlyListening = true
+            _state.value = SpeechRecognitionState.Listening
         }
 
         override fun onBeginningOfSpeech() {
             Log.d(TAG, "onBeginningOfSpeech")
+            isCurrentlyListening = true
+            _state.value = SpeechRecognitionState.Listening
         }
 
         override fun onEndOfSpeech() {
             Log.d(TAG, "onEndOfSpeech")
-            // Переход в состояние обработки произойдет после onResults
+            // НЕ сбрасываем isCurrentlyListening - дождемся onResults/onError
         }
 
         override fun onError(error: Int) {
             val errorMessage = getSpeechRecognizerErrorText(error)
             Log.e(TAG, "onError: $errorMessage (code: $error)")
-            // Игнорируем NO_MATCH, если это не единственная ошибка
-            if (error != SpeechRecognizer.ERROR_NO_MATCH) {
-                _state.value = SpeechRecognitionState.Error(errorMessage)
-            } else {
-                _state.value = SpeechRecognitionState.Idle // Не удалось ничего распознать
+
+            isCurrentlyListening = false
+
+            when (error) {
+                SpeechRecognizer.ERROR_NO_MATCH -> {
+                    _state.value = SpeechRecognitionState.Idle
+                }
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                    _state.value = SpeechRecognitionState.Idle
+                }
+                else -> {
+                    _state.value = SpeechRecognitionState.Error(errorMessage)
+                }
+            }
+
+            // Создаем новый recognizer для следующего использования
+            serviceScope.launch {
+                createNewRecognizer()
             }
         }
 
         override fun onResults(results: Bundle?) {
+            Log.d(TAG, "onResults called")
+            isCurrentlyListening = false
+
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             if (!matches.isNullOrEmpty()) {
-                _state.value = SpeechRecognitionState.Success(matches[0])
+                val recognizedText = matches[0]
+                Log.d(TAG, "Recognition successful: '$recognizedText'")
+                _state.value = SpeechRecognitionState.Success(recognizedText)
             } else {
-                Log.w(TAG, "No recognition results found.")
+                Log.w(TAG, "No recognition results found")
                 _state.value = SpeechRecognitionState.Idle
+            }
+
+            // Создаем новый recognizer для следующего использования
+            serviceScope.launch {
+                createNewRecognizer()
             }
         }
 
-        // Остальные методы можно оставить пустыми
-        override fun onRmsChanged(rmsdB: Float) {}
+        override fun onRmsChanged(rmsdB: Float) {
+            // Можно использовать для индикации уровня звука
+        }
+
         override fun onBufferReceived(buffer: ByteArray?) {}
-        override fun onPartialResults(partialResults: Bundle?) {}
-        override fun onEvent(eventType: Int, params: Bundle?) {}
+
+        override fun onPartialResults(partialResults: Bundle?) {
+            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            if (!matches.isNullOrEmpty()) {
+                Log.d(TAG, "Partial results: ${matches[0]}")
+            }
+        }
+
+        override fun onEvent(eventType: Int, params: Bundle?) {
+            Log.d(TAG, "onEvent: $eventType")
+        }
     }
 
-    // Этот метод можно скопировать из твоего AgentManager
     private fun getSpeechRecognizerErrorText(error: Int): String {
         return when (error) {
             SpeechRecognizer.ERROR_AUDIO -> "Ошибка аудио"
@@ -141,7 +215,7 @@ class SpeechRecognitionService @Inject constructor(
             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Недостаточно разрешений"
             SpeechRecognizer.ERROR_NETWORK -> "Ошибка сети"
             SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Таймаут сети"
-            SpeechRecognizer.ERROR_NO_MATCH -> "Ничего не распознано"
+            SpeechRecognizer.ERROR_NO_MATCH -> "Речь не распознана"
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Распознаватель занят"
             SpeechRecognizer.ERROR_SERVER -> "Ошибка сервера"
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Таймаут речи"

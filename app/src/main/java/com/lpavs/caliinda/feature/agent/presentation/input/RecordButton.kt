@@ -41,197 +41,174 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun RecordButton(
     calendarState: CalendarState,
     recordState: RecordingState,
-    onStartRecording: () -> Unit, // Принимаем лямбды вместо ViewModel
+    onStartRecording: () -> Unit,
     onStopRecordingAndSend: () -> Unit,
     onUpdatePermissionResult: (Boolean) -> Unit,
-    modifier: Modifier = Modifier // Принимаем внешний модификатор
+    modifier: Modifier = Modifier
 ) {
-  val context = LocalContext.current
-  val scope = rememberCoroutineScope()
-  var isPressed by remember { mutableStateOf(false) } // Для UI эффекта нажатия
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isPressed by remember { mutableStateOf(false) }
 
-  // --- Анимации и формы (без изменений) ---
-  val targetBackgroundColor =
-      if (recordState.isListening) {
+    val targetBackgroundColor = if (recordState.isListening) {
         colorScheme.error
-      } else {
+    } else {
         colorScheme.primary
-      }
-  val animatedBackgroundColor by
-      animateColorAsState(
-          targetValue = targetBackgroundColor,
-          animationSpec = tween(durationMillis = 300),
-          label = "RecordButtonBgColor")
-  val animatedContentColor = contentColorFor(animatedBackgroundColor)
+    }
 
-  // --- Определение форм (предполагаем, что Morph, RoundedPolygon, CornerRounding в util) ---
-  val shapeA = remember { RoundedPolygon(numVertices = 5, rounding = CornerRounding(0.5f)) }
-  val shapeB = remember { RoundedPolygon.star(9, rounding = CornerRounding(0.3f), radius = 4f) }
-  val morph = remember { Morph(shapeA, shapeB) }
+    val animatedBackgroundColor by animateColorAsState(
+        targetValue = targetBackgroundColor,
+        animationSpec = tween(durationMillis = 300),
+        label = "RecordButtonBgColor"
+    )
+    val animatedContentColor = contentColorFor(animatedBackgroundColor)
 
-  val infiniteTransition = rememberInfiniteTransition("morph_transition")
-  val animatedProgress =
-      infiniteTransition.animateFloat(
-          initialValue = 0f,
-          targetValue = 1f,
-          animationSpec =
-              infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
-          label = "animatedMorphProgress")
-  val animatedRotation =
-      infiniteTransition.animateFloat(
-          initialValue = 0f,
-          targetValue = 360f,
-          animationSpec =
-              infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Restart),
-          label = "animatedMorphRotation")
-  val animatedScale by
-      animateFloatAsState(
-          targetValue = if (isPressed || recordState.isListening) 1.45f else 1.0f,
-          animationSpec = tween(durationMillis = 300),
-          label = "RecordButtonScale")
+    val shapeA = remember { RoundedPolygon(numVertices = 5, rounding = CornerRounding(0.5f)) }
+    val shapeB = remember { RoundedPolygon.star(9, rounding = CornerRounding(0.3f), radius = 4f) }
+    val morph = remember { Morph(shapeA, shapeB) }
 
-  // Лаунчер для запроса разрешения
-  val requestPermissionLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-          isGranted: Boolean ->
-        onUpdatePermissionResult(isGranted) // Вызываем лямбду для обновления состояния в ViewModel
+    val infiniteTransition = rememberInfiniteTransition("morph_transition")
+    val animatedProgress = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
+        label = "animatedMorphProgress"
+    )
+    val animatedRotation = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Restart),
+        label = "animatedMorphRotation"
+    )
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed || recordState.isListening) 1.45f else 1.0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "RecordButtonScale"
+    )
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        onUpdatePermissionResult(isGranted)
         if (!isGranted) {
-          Toast.makeText(context, "Разрешение на запись отклонено.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Разрешение на запись отклонено.", Toast.LENGTH_LONG).show()
         } else {
-          Log.i("RecordButton", "Permission granted by user.")
-          Toast.makeText(
-                  context,
-                  "Разрешение получено. Нажмите и удерживайте для записи.",
-                  Toast.LENGTH_SHORT)
-              .show()
+            Log.i("RecordButton", "Permission granted by user.")
+            Toast.makeText(
+                context,
+                "Разрешение получено. Нажмите и удерживайте для записи.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-      }
+    }
 
-  // Кнопка активна, если пользователь вошел и не идет загрузка/запись (для начала записи)
-  // Сама логика pointerInput будет обрабатывать uiState.isListening для остановки
-  val isInteractionEnabled = calendarState.isSignedIn && !recordState.isLoading
+    val isInteractionEnabled = calendarState.isSignedIn && !recordState.isLoading
 
-  Log.d(
-      "RecordButton",
-      "Rendering FAB: isInteractionEnabled=$isInteractionEnabled, isPressed=$isPressed, isListening=${recordState.isListening}")
-  FloatingActionButton(
-      onClick = {
-        // Если нужно простое нажатие для запроса разрешения, если его нет
-        if (!recordState.isPermissionGranted && isInteractionEnabled) {
-          scope.launch { requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
-        }
-        Log.d("RecordButton", "FAB onClick triggered (handled permission request if needed)")
-      },
-      containerColor = animatedBackgroundColor,
-      contentColor = animatedContentColor,
-      modifier =
-          modifier
-              //                .fillMaxSize()
-              .pointerInput(
-                  isInteractionEnabled,
-                  recordState.isPermissionGranted) { // Передаем зависимости в key
-                    if (!isInteractionEnabled) {
-                      Log.d("RecordButton", "Interaction disabled, returning from pointerInput.")
-                      return@pointerInput // Не обрабатываем ввод, если кнопка неактивна
-                    }
-                    awaitPointerEventScope {
-                      while (true) {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        Log.d("RecordButton", "Pointer down detected.")
-                        isPressed = true
-                        try {
-                          // Проверяем разрешение прямо перед началом записи
-                          val hasPermission =
-                              ContextCompat.checkSelfPermission(
-                                  context, Manifest.permission.RECORD_AUDIO) ==
-                                  PackageManager.PERMISSION_GRANTED
+    Log.d(
+        "RecordButton",
+        "Render: enabled=$isInteractionEnabled, pressed=$isPressed, listening=${recordState.isListening}, loading=${recordState.isLoading}"
+    )
 
-                          // Обновляем статус разрешения в ViewModel на всякий случай
-                          onUpdatePermissionResult(hasPermission)
-
-                          if (hasPermission) {
-                            // Если уже идет запись, нажатие игнорируем (остановка по отпусканию)
-                            if (!recordState.isListening) {
-                              Log.d("RecordButton", "Permission granted, starting recording.")
-                              down.consume() // Потребляем событие
-                              scope.launch { onStartRecording() } // Вызываем лямбду начала записи
-                              try {
-                                waitForUpOrCancellation() // Ждем отпускания
-                                Log.d("RecordButton", "Pointer up detected, stopping recording.")
-                              } finally {
-                                // Всегда останавливаем запись при отпускании/отмене, если она была
-                                // начата
-                                scope.launch {
-                                  onStopRecordingAndSend()
-                                } // Вызываем лямбду остановки
-                              }
-                            } else {
-                              Log.d("RecordButton", "Already recording, waiting for up.")
-                              // Потребляем событие, чтобы оно не всплыло
-                              down.consume()
-                              // Просто ждем отпускания, чтобы остановить запись (логика в finally)
-                              try {
-                                waitForUpOrCancellation()
-                                Log.d(
-                                    "RecordButton",
-                                    "Pointer up detected while recording, stopping recording.")
-                              } finally {
-                                // Всегда останавливаем запись при отпускании/отмене
-                                scope.launch { onStopRecordingAndSend() }
-                              }
-                            }
-                          } else {
-                            Log.d("RecordButton", "Permission denied, requesting permission.")
-                            down.consume() // Потребляем событие, чтобы не начать запись
-                            scope.launch {
-                              requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
-                            try {
-                              waitForUpOrCancellation() // Ждем отпускания (ничего не делаем)
-                              Log.d("RecordButton", "Pointer up after permission request.")
-                            } finally {
-                              /* Ничего не делаем */
-                            }
-                          }
-                        } finally {
-                          Log.d(
-                              "RecordButton",
-                              "Pointer input block finished, setting isPressed=false.")
-                          isPressed = false // Сбрасываем состояние нажатия
+    FloatingActionButton(
+        onClick = {
+            // Только обрабатываем разрешения при простом клике
+            Log.d("RecordButton", "FAB onClick - handling permissions only")
+        },
+        containerColor = animatedBackgroundColor,
+        contentColor = animatedContentColor,
+        modifier = modifier
+            .pointerInput(isInteractionEnabled) {
+                awaitPointerEventScope {
+                    while (true) {
+                        if (!isInteractionEnabled) {
+                            Log.d("RecordButton", "Interaction disabled, skipping gesture handling")
+//                            delay(100) // Небольшая задержка чтобы не нагружать CPU
+                            continue
                         }
-                      }
+
+                        // Ждем нажатие
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        Log.d("RecordButton", "👇 Pointer DOWN")
+
+                        isPressed = true
+
+                        try {
+                            // Проверяем разрешения
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+
+                            onUpdatePermissionResult(hasPermission)
+
+                            if (!hasPermission) {
+                                Log.d("RecordButton", "❌ No permission, requesting...")
+                                down.consume()
+                                scope.launch {
+                                    requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                                waitForUpOrCancellation()
+                                Log.d("RecordButton", "👆 Released after permission request")
+                                continue
+                            }
+
+                            // Есть разрешения - начинаем запись
+                            Log.d("RecordButton", "🎙️ Starting recording")
+                            down.consume()
+
+                            // Запускаем запись в корутине
+                            val recordingJob = scope.launch {
+                                onStartRecording()
+                            }
+
+                            // Ждем отпускание кнопки
+                            val upEvent = waitForUpOrCancellation()
+                            Log.d("RecordButton", "👆 Pointer UP - stopping recording")
+
+                            // Останавливаем запись
+                            scope.launch {
+                                onStopRecordingAndSend()
+                            }
+
+                        } catch (e: Exception) {
+                            Log.e("RecordButton", "❌ Error in gesture handling", e)
+                        } finally {
+                            isPressed = false
+                            Log.d("RecordButton", "🔄 Reset isPressed = false")
+                        }
                     }
-                  }
-              .clip(
-                  if (isPressed || recordState.isListening) {
-                    // Используем CustomRotatingMorphShape из папки common
+                }
+            }
+            .clip(
+                if (isPressed || recordState.isListening) {
                     CustomRotatingMorphShape(
                         morph = morph,
                         percentage = animatedProgress.value,
-                        rotation = animatedRotation.value)
-                  } else {
-                    // Стандартная форма FAB обычно CircleShape, но оставим RoundedCornerShape, как
-                    // было
+                        rotation = animatedRotation.value
+                    )
+                } else {
                     FloatingActionButtonDefaults.shape
-                    //                        MaterialShapes.Cookie4Sided.toShape() // Используем
-                    // стандартную форму FAB
-                  })
-              .graphicsLayer { // Масштабируем и вращаем весь Box
+                }
+            )
+            .graphicsLayer {
                 scaleX = animatedScale
                 scaleY = animatedScale
-              },
-  ) {
-    Icon(
-        imageVector = Icons.Filled.Mic,
-        contentDescription =
-            if (recordState.isListening) "Идет запись (Отпустите для остановки)"
-            else "Начать запись (Нажмите и удерживайте)",
-        tint = animatedContentColor)
-  }
+            },
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Mic,
+            contentDescription = if (recordState.isListening) {
+                "Идет запись (Отпустите для остановки)"
+            } else {
+                "Начать запись (Нажмите и удерживайте)"
+            },
+            tint = animatedContentColor
+        )
+    }
 }
