@@ -1,9 +1,12 @@
 package com.lpavs.caliinda.feature.agent.presentation.vm
 
 import android.util.Log
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
+import com.lpavs.caliinda.core.data.remote.agent.MessageAuthor
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.agent.data.AgentRepository
 import com.lpavs.caliinda.feature.agent.data.SpeechRecognitionService
@@ -33,8 +36,8 @@ constructor(
   private val _agentState = MutableStateFlow(AgentState.IDLE)
   val agentState: StateFlow<AgentState> = _agentState.asStateFlow()
 
-  private val _agentMessage = MutableStateFlow<String?>(null)
-  val agentMessage: StateFlow<String?> = _agentMessage.asStateFlow()
+  private val _agentMessage = MutableStateFlow<ChatMessage?>(null)
+  val agentMessage: StateFlow<ChatMessage?> = _agentMessage.asStateFlow()
 
   private val _recordingState = MutableStateFlow(RecordingState())
   val recState: StateFlow<RecordingState> = _recordingState.asStateFlow()
@@ -80,7 +83,7 @@ constructor(
           }
           is SpeechRecognitionState.Error -> {
             _agentState.value = AgentState.ERROR
-            _agentMessage.value = state.message
+            _agentMessage.value = ChatMessage(text = "Recording error", author = MessageAuthor.AGENT)
             _recordingState.update {
               it.copy(
                 isListening = false,
@@ -114,13 +117,14 @@ constructor(
       }
 
       agentRepository.sendMessage(text)
-        .onSuccess {
+        .onSuccess { agentMessage ->
+          _agentMessage.value = agentMessage
           _agentState.value = AgentState.RESULT
         }
         .onFailure { error ->
           Log.e(TAG, "Failed to send message", error)
+          _agentMessage.value = ChatMessage(text = (error.message ?: (R.string.error)).toString(), author = MessageAuthor.AGENT)
           _agentState.value = AgentState.ERROR
-          _agentMessage.value = error.message ?: "Неизвестная ошибка"
         }
 
       _recordingState.update {
@@ -154,6 +158,7 @@ constructor(
   }
 
   fun sendTextMessage(text: String) {
+    _agentMessage.value = null
     processTextMessage(text)
   }
 
