@@ -263,7 +263,8 @@ fun CalendarScreen(
                     } else {
                         Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
                     }
-                })
+                },
+                agentViewModel = agentViewModel)
           }
       AiVisualizer(
           aiState = agentState,

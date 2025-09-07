@@ -26,15 +26,20 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.cuid
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
-fun AgentItem() {
+fun AgentItem(
+    message: String
+) {
   val darkerShadowColor = Color.Black
   val cardElevation = cuid.CurrentEventElevation
   val cardFontFamily =
@@ -51,19 +56,6 @@ fun AgentItem() {
   val cardTextColor = colorScheme.onTertiaryFixedVariant
   val cardBorderColor = colorScheme.onTertiaryFixed
 
-  val textSample1 = "Привет! Как дела? "
-  val textSample2 = "Это ИИ. Я готов помочь тебе с любым вопросом. Спрашивай!"
-  val textSample3 =
-      "Я — большая языковая модель, разработанная Google. Моя главная задача — помогать людям, предоставляя информацию и выполняя различные языковые задачи. Я постоянно учусь и развиваюсь."
-  val textSample4 =
-      "Искусственный интеллект (ИИ) — это область компьютерных наук, которая занимается созданием интеллектуальных агентов, то есть систем, способных воспринимать окружающую среду, обучаться и принимать решения для достижения поставленных целей. ИИ охватывает широкий спектр технологий, включая машинное обучение, обработку естественного языка, компьютерное зрение и робототехнику."
-    val textSamples =
-      listOf(
-          textSample1,
-          textSample2,
-          textSample3,
-          textSample4,)
-  var currentTextIndex by remember { mutableIntStateOf(0) }
   Box(
       modifier =
           Modifier.padding(
@@ -80,10 +72,8 @@ fun AgentItem() {
                   width = 2.dp,
                   color = cardBorderColor,
                   shape = RoundedCornerShape(cuid.EventItemCornerRadius))
-              .background(cardBackground)
-              .clickable(
-                  onClick = { currentTextIndex = (currentTextIndex + 1) % textSamples.size })) {
-        val currentText = textSamples[currentTextIndex]
+              .background(cardBackground)) {
+        val currentText = message
         var lineCount by remember { mutableIntStateOf(1) }
         Box(
             modifier =
@@ -107,4 +97,12 @@ fun AgentItem() {
               )
             }
       }
+}
+
+@Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
+@Composable
+fun AgentEventPreview() {
+    AgentItem(
+        message = "Привет! Как дела? "
+    )
 }

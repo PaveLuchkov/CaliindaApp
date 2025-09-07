@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.BodyCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
@@ -46,6 +47,7 @@ fun DayEventsPage(
     date: LocalDate,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
+    agentViewModel: AgentViewModel,
 ) {
   val pageState by
       viewModel
@@ -55,8 +57,7 @@ fun DayEventsPage(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
-  val isAgentDebug = false
-
+    val agentMessage by agentViewModel.agentMessage.collectAsStateWithLifecycle()
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
       launch {
@@ -79,7 +80,7 @@ fun DayEventsPage(
 
     Spacer(modifier = Modifier.height(2.dp))
 
-    if (pageState.timedEvents.isNotEmpty() or isAgentDebug or isSignIn) {
+    if (pageState.timedEvents.isNotEmpty() or isSignIn) {
       BodyCardsList(
           events = pageState.timedEvents,
           listState = listState,
@@ -87,7 +88,8 @@ fun DayEventsPage(
           onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
           onEditRequest = eventManagementViewModel::requestEditEvent,
           onDetailsRequest = viewModel::requestEventDetails,
-          onSignInClick = onSignInClick)
+          onSignInClick = onSignInClick,
+          agentMessage = agentMessage,)
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isBusy) {
