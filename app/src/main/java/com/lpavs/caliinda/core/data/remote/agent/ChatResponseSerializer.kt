@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.core.data.remote.agent
 
+import android.util.Log
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -15,7 +16,6 @@ object ChatResponseSerializer : KSerializer<Any> {
     override fun deserialize(decoder: Decoder): Any {
         val jsonDecoder = decoder as? JsonDecoder
             ?: error("This serializer can be used only with Json format")
-
         val jsonElement = jsonDecoder.decodeJsonElement()
 
         return when (jsonElement) {
@@ -26,11 +26,14 @@ object ChatResponseSerializer : KSerializer<Any> {
                     error("Unsupported primitive type in response: $jsonElement")
                 }
             }
-
             is JsonObject -> {
-                jsonDecoder.json.decodeFromJsonElement(StructuredResponse.serializer(), jsonElement)
+                try {
+                    jsonDecoder.json.decodeFromJsonElement(StructuredResponse.serializer(), jsonElement)
+                } catch (e: Exception) {
+                    Log.e("ChatResponseSerializer", "Failed to decode StructuredResponse", e)
+                    error("Failed to parse structured response object: ${e.message}")
+                }
             }
-
             else -> {
                 error("Unsupported JSON type in response: $jsonElement")
             }

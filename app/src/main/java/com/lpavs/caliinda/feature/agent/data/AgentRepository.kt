@@ -8,6 +8,7 @@ import com.lpavs.caliinda.core.data.remote.agent.AgentRemoteDataSource // Исп
 import com.lpavs.caliinda.core.data.remote.agent.ChatApiResponse
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
 import com.lpavs.caliinda.core.data.remote.agent.MessageAuthor
+import com.lpavs.caliinda.core.data.remote.agent.StructuredResponse
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 import java.util.Locale
@@ -49,31 +50,21 @@ class AgentRepositoryImpl @Inject constructor(
             is String -> {
                 ChatMessage(
                     text = responsePayload,
-                    author = MessageAuthor.AGENT
+                    author = MessageAuthor.AGENT,
+                    suggestions = emptyList()
                 )
             }
-            is Map<*, *> -> {
-                try {
-                    val messageData = responsePayload["message"] as Map<*, *>
-                    val text = messageData["message"] as String
-                    val suggestions = messageData["suggestions"] as? List<String> ?: emptyList()
-
-                    ChatMessage(
-                        text = text,
-                        author = MessageAuthor.AGENT,
-                        suggestions = suggestions
-                    )
-                } catch (e: Exception) {
-                    Log.e("AgentRepositoryImpl", "Failed to parse structured response", e)
-                    ChatMessage(
-                        text = "Ошибка при обработке ответа.",
-                        author = MessageAuthor.AGENT
-                    )
-                }
+            is StructuredResponse -> {
+                ChatMessage(
+                    text = responsePayload.message.message,
+                    author = MessageAuthor.AGENT,
+                    suggestions = responsePayload.message.suggestions
+                )
             }
             else -> {
+                Log.w("AgentRepositoryImpl", "Received an unexpected response type: ${responsePayload::class.java.name}")
                 ChatMessage(
-                    text = "Неподдерживаемый формат ответа.",
+                    text = "Неподдерживаемый формат ответа (внутренняя ошибка).",
                     author = MessageAuthor.AGENT
                 )
             }

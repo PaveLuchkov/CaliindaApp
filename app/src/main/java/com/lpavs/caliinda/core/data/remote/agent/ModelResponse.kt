@@ -1,8 +1,12 @@
 package com.lpavs.caliinda.core.data.remote.agent
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 
+
+@Serializable
+data class SearchInfo(
+    val search: List<String>
+)
 
 @Serializable
 data class ChatApiResponse(
@@ -19,7 +23,7 @@ data class ResponseMessage(
 
 @Serializable
 data class StructuredResponse(
-    val previews: JsonObject? = null,
+    val previews: Map<String, SearchInfo>? = null,
     val message: ResponseMessage
 )
 

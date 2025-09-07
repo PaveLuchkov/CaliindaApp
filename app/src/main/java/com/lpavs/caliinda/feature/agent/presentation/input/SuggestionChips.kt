@@ -17,20 +17,23 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 
 @Composable
 fun SuggestionChipsRow(
-    chips: List<String>,
+    chips: List<String>?,
     enabled: Boolean,
+    onChipClick: (String) -> Unit,
 ) {
   LazyRow(
       modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
       horizontalArrangement =
           Arrangement.spacedBy(space = cuid.padding, alignment = Alignment.CenterHorizontally),
       contentPadding = PaddingValues(cuid.padding)) {
-        items(chips) { chip ->
-          SuggestionChip(
-              onClick = { /* onChipClick(chip) */ },
-              label = { Text(chip) },
-              modifier = Modifier.height(35.dp),
-              enabled = enabled)
-        }
+      chips?.let{
+          items(chips) { chip ->
+              SuggestionChip(
+                  onClick = { onChipClick(chip) },
+                  label = { Text(chip) },
+                  modifier = Modifier.height(35.dp),
+                  enabled = enabled)
+          }
+      }
       }
 }

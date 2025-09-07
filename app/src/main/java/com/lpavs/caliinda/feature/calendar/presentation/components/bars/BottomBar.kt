@@ -56,21 +56,20 @@ import com.lpavs.caliinda.feature.calendar.presentation.CalendarState
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 fun BottomBar(
-    calendarState: CalendarState, // Принимаем весь стейт
+    calendarState: CalendarState,
     authState: AuthState,
     recordState: RecordingState,
     textFieldValue: TextFieldValue,
     onTextChanged: (TextFieldValue) -> Unit,
     onSendClick: () -> Unit,
-    onRecordStart: () -> Unit, // Лямбда для начала записи
-    onRecordStopAndSend: () -> Unit, // Лямбда для остановки/отправки
-    onUpdatePermissionResult: (Boolean) -> Unit, // Лямбда для обновления разрешения
+    onRecordStart: () -> Unit,
+    onRecordStopAndSend: () -> Unit,
+    onUpdatePermissionResult: (Boolean) -> Unit,
     isTextInputVisible: Boolean,
     modifier: Modifier = Modifier,
     onCreateEventClick: () -> Unit,
-    suggestions: List<String> = emptyList(),
+    suggestions: List<String>? = emptyList(),
 ) {
-    val agentVisible = false
   val focusRequester = remember { FocusRequester() }
   val keyboardController = LocalSoftwareKeyboardController.current
   val isSendEnabled =
@@ -81,8 +80,7 @@ fun BottomBar(
   var expanded by rememberSaveable { mutableStateOf(true) }
   var onKeyboardToggle by remember { mutableStateOf(true) }
 
-  // Request focus when text input becomes visible
-  LaunchedEffect(isTextInputVisible) {
+    LaunchedEffect(isTextInputVisible) {
     if (isTextInputVisible) {
       try {
         focusRequester.requestFocus()
@@ -96,8 +94,15 @@ fun BottomBar(
     }
   }
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-      if (agentVisible){
-          Box() { SuggestionChipsRow(suggestions, enabled = true) }
+      if (!suggestions.isNullOrEmpty()){
+          Box(
+          ) { SuggestionChipsRow(
+              suggestions,
+              enabled = !recordState.isLoading,
+              onChipClick = { suggestionText ->
+                  onTextChanged(TextFieldValue(suggestionText))
+              }
+          ) }
           Spacer(modifier = Modifier.height(12.dp))
 
       }
@@ -112,8 +117,7 @@ fun BottomBar(
               spring<IntSize>(
                   dampingRatio =
                       Spring
-                          .DampingRatioLowBouncy, // Можно немного "резиновости" для изменения
-                                                  // размера
+                          .DampingRatioLowBouncy,
                   stiffness = Spring.StiffnessMediumLow)
           if (targetState) {
                 (fadeIn(animationSpec = fadeSpringSpec)).togetherWith(
@@ -126,11 +130,9 @@ fun BottomBar(
                   SizeTransform(
                       clip = false, sizeAnimationSpec = { _, _ -> sizeTransformSpringSpec }))
         }) {
-          //      SuggestionChipsRow(listOf("Delete", "Approve"), enabled = true)
           if (!it) {
             HorizontalFloatingToolbar(
                 expanded = expanded,
-                //                colors = vibrantColors,
                 floatingActionButton = {
                   FloatingActionButton(
                       onClick = onSendClick,
@@ -145,14 +147,13 @@ fun BottomBar(
                   IconButton(
                       onClick = {
                         onKeyboardToggle = !onKeyboardToggle
-                      }, // Эта функция теперь будет ПОКАЗЫВАТЬ текстовое поле
+                      },
                   ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Убрать ввод текста")
                   }
                   OutlinedTextField(
-                      // Или TextField, или BasicTextField + кастомное оформление
                       value = textFieldValue,
                       onValueChange = onTextChanged,
                       modifier = Modifier.width(200.dp),
@@ -170,8 +171,6 @@ fun BottomBar(
                           OutlinedTextFieldDefaults.colors(
                               focusedBorderColor = Color.Transparent,
                               unfocusedBorderColor = Color.Transparent,
-                              //                            focusedTextColor =
-                              // colorScheme.onSecondaryContainer,
                           ),
                       singleLine = true,
                   )
@@ -180,11 +179,10 @@ fun BottomBar(
           } else {
             HorizontalFloatingToolbar(
                 expanded = expanded,
-                //                colors = vibrantColors,
                 floatingActionButton = {
                   RecordButton(
-                      calendarState = calendarState, // Передаем стейт
-                      onStartRecording = onRecordStart, // Передаем лямбды
+                      calendarState = calendarState,
+                      onStartRecording = onRecordStart,
                       onStopRecordingAndSend = onRecordStopAndSend,
                       onUpdatePermissionResult = onUpdatePermissionResult,
                       recordState = recordState)
@@ -192,7 +190,6 @@ fun BottomBar(
                 content = {
                   IconButton(
                       onClick = onCreateEventClick,
-                      // enabled = isKeyboardToggleEnabled
                   ) {
                     Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Create event")
                   }

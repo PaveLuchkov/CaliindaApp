@@ -80,7 +80,7 @@ fun AgentItem(
                 Modifier.fillMaxWidth()
                     .padding(
                         horizontal = cuid.ItemHorizontalPadding,
-                        vertical = cuid.StandardItemContentVerticalPadding),
+                        vertical = cuid.AgentCardVerticalPadding),
             contentAlignment = Alignment.CenterStart) {
               Text(
                   text = currentText,
@@ -103,6 +103,6 @@ fun AgentItem(
 @Composable
 fun AgentEventPreview() {
     AgentItem(
-        message = "Привет! Как дела? "
+        message = "Неподдерживаемый формат ответа."
     )
 }
