@@ -395,7 +395,7 @@ val normalEvent = EventUiModel(
 
 @Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
 @Composable
-fun LogInEventPreview() {
+fun CalendarEventPreview() {
     CalendarEventItem(
         onToggleExpand = {},
         onDetailsClickFromList = {},

@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentItem
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
@@ -36,8 +37,8 @@ fun BodyCardsList(
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
     onSignInClick: () -> Unit,
+    agentMessage: ChatMessage?,
 ) {
-  val agentVisivble = false
   var expandedEventId by remember { mutableStateOf<String?>(null) }
 
   LazyColumn(
@@ -47,9 +48,9 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
-          if (agentVisivble) {
-            item { AgentItem() }
-          }
+            agentMessage?.let{ message ->
+                item { AgentItem(message.text) }
+            }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
                 spring<Float>(

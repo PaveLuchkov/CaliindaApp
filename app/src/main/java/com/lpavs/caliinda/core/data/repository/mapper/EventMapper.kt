@@ -55,7 +55,7 @@ class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils)
           description = event.description,
           location = event.location,
           isAllDay = isAllDayEvent,
-          recurringEventId = event.recurringEventId, // Из event (domain)
+          recurringEventId = event.recurringEventId,
           originalStartTimeString = event.originalStartTime,
           recurrenceRuleString = event.recurrenceRule)
     } catch (e: Exception) {
