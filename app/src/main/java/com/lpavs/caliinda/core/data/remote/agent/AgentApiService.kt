@@ -10,5 +10,5 @@ interface AgentApiService {
   suspend fun run(
       @Header("Authorization") token: String,
       @Body request: ChatRequest
-  ): Response<Unit>
+  ): Response<ChatApiResponse>
 }

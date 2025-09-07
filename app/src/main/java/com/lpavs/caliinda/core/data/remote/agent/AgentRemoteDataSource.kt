@@ -20,7 +20,7 @@ class AgentRemoteDataSource @Inject constructor(
 ) {
     private val TAG = "AgentRemoteDataSource"
 
-    suspend fun runChat(message: String, context: UserContext): Result<Unit> {
+    suspend fun runChat(message: String, context: UserContext): Result<ChatApiResponse> {
         val token = authManager.getBackendAuthToken()
         if (token == null) {
             Log.e(TAG, "Could not get fresh token")
@@ -35,12 +35,14 @@ class AgentRemoteDataSource @Inject constructor(
         }
     }
 
-    private suspend fun safeApiCall(apiCall: suspend () -> Response<Unit>): Result<Unit> {
+    private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Result<T> {
         return withContext(ioDispatcher) {
             try {
                 val response = apiCall()
                 if (response.isSuccessful) {
-                    Result.success(Unit)
+                    response.body()?.let {
+                        Result.success(it)
+                    } ?: Result.failure(Exception("Response body is null"))
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "API call failed with code ${response.code()}: $errorBody")
