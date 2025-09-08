@@ -23,10 +23,8 @@ object ChatApiResponseSerializer : KSerializer<ChatApiResponse> {
     val responseElement = jsonObject["response"]
       ?: throw Exception("Response field is missing")
 
-    // 3. В зависимости от имени агента, выбираем, как парсить 'response'.
     val responseObject: Any = when (agentName) {
       "MAIN_Agent" -> {
-        // Этот агент всегда возвращает простую строку
         responseElement.jsonPrimitive.content
       }
       "PresentationLayer" -> {
@@ -42,18 +40,14 @@ object ChatApiResponseSerializer : KSerializer<ChatApiResponse> {
           else -> throw Exception("Unknown plan type '$planType' for agent '$agentName'")
         }
       }
-      // Добавь сюда других агентов, если они появятся
+
       else -> throw Exception("Unknown agent type: $agentName")
     }
 
-    // 4. Собираем финальный объект ChatApiResponse с уже правильно распарсенным 'response'.
     return ChatApiResponse(agent = agentName, response = responseObject)
   }
 
   override fun serialize(encoder: Encoder, value: ChatApiResponse) {
-    // Реализация не обязательна, если ты только получаешь данные
-    // Но если нужна, здесь будет обратная логика
-    TODO("Serialization not implemented")
   }
 }
 
