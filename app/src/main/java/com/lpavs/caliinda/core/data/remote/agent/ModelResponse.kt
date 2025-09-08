@@ -20,10 +20,10 @@ enum class PreviewAction {
   DELETE
 }
 
-@Serializable
+@Serializable(with = ChatApiResponseSerializer::class)
 data class ChatApiResponse(
     val agent: String,
-    @Serializable(with = ChatResponseSerializer::class) val response: Any
+    val response: Any
 )
 
 @Serializable
@@ -34,6 +34,22 @@ data class StructuredResponse(
     val previews: Map<String, PreviewType>? = null,
     val message: ResponseMessage
 )
+
+@Serializable
+@SerialName("days_plan")
+data class DaysPlanResponse(
+    val summary: String,
+    val days: List<DayPlan>
+) : AgentResponsePayload
+
+@Serializable
+@SerialName("suggestion_plan")
+data class SuggestionPlanResponse(
+    val summary: String,
+    val suggestions: List<Suggestion>,
+    @SerialName("general_advice")
+    val generalAdvice: GeneralAdvice? = null
+) : AgentResponsePayload
 
 data class EventPreview(val action: PreviewAction, val eventIds: List<String>)
 

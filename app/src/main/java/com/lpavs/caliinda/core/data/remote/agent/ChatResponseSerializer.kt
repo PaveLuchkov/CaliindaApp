@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.core.data.remote.agent
 
-import android.util.Log
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -8,51 +7,53 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
-object ChatResponseSerializer : KSerializer<Any> {
+object ChatApiResponseSerializer : KSerializer<ChatApiResponse> {
+  override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChatApiResponse")
 
-  override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChatResponse")
+  override fun deserialize(decoder: Decoder): ChatApiResponse {
+    val jsonDecoder = decoder as? JsonDecoder ?: error("This serializer can be used only with Json format")
+    val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
-  override fun deserialize(decoder: Decoder): Any {
-    val jsonDecoder =
-        decoder as? JsonDecoder ?: error("This serializer can be used only with Json format")
-    val jsonElement = jsonDecoder.decodeJsonElement()
+    val agentName = jsonObject["agent"]?.jsonPrimitive?.content
+      ?: throw Exception("Agent field is missing or not a string")
 
-    return when (jsonElement) {
-      is JsonPrimitive -> {
-        if (jsonElement.isString) {
-          jsonElement.content
-        } else {
-          error("Unsupported primitive type in response: $jsonElement")
+    val responseElement = jsonObject["response"]
+      ?: throw Exception("Response field is missing")
+
+    // 3. В зависимости от имени агента, выбираем, как парсить 'response'.
+    val responseObject: Any = when (agentName) {
+      "MAIN_Agent" -> {
+        // Этот агент всегда возвращает простую строку
+        responseElement.jsonPrimitive.content
+      }
+      "PresentationLayer" -> {
+          jsonDecoder.json.decodeFromJsonElement(StructuredResponse.serializer(), responseElement)
+      }
+      "TacticAgent", "StrategyAgent" -> {
+        val responseJsonObj = responseElement.jsonObject
+        val planType = responseJsonObj["response_type"]?.jsonPrimitive?.content
+
+        when (planType) {
+          "days_plan" -> jsonDecoder.json.decodeFromJsonElement(DaysPlanResponse.serializer(), responseJsonObj)
+          "suggestion_plan" -> jsonDecoder.json.decodeFromJsonElement(SuggestionPlanResponse.serializer(), responseJsonObj)
+          else -> throw Exception("Unknown plan type '$planType' for agent '$agentName'")
         }
       }
-      is JsonObject -> {
-        try {
-          jsonDecoder.json.decodeFromJsonElement(StructuredResponse.serializer(), jsonElement)
-        } catch (e: Exception) {
-          Log.e("ChatResponseSerializer", "Failed to decode StructuredResponse", e)
-          error("Failed to parse structured response object: ${e.message}")
-        }
-      }
-      else -> {
-        error("Unsupported JSON type in response: $jsonElement")
-      }
+      // Добавь сюда других агентов, если они появятся
+      else -> throw Exception("Unknown agent type: $agentName")
     }
+
+    // 4. Собираем финальный объект ChatApiResponse с уже правильно распарсенным 'response'.
+    return ChatApiResponse(agent = agentName, response = responseObject)
   }
 
-  override fun serialize(encoder: Encoder, value: Any) {
-    val jsonEncoder =
-        encoder as? JsonEncoder ?: error("This serializer can be used only with Json format")
-
-    when (value) {
-      is String -> jsonEncoder.encodeString(value)
-      is StructuredResponse ->
-          jsonEncoder.encodeSerializableValue(StructuredResponse.serializer(), value)
-      else -> error("Cannot serialize type ${value::class.simpleName}")
-    }
+  override fun serialize(encoder: Encoder, value: ChatApiResponse) {
+    // Реализация не обязательна, если ты только получаешь данные
+    // Но если нужна, здесь будет обратная логика
+    TODO("Serialization not implemented")
   }
 }
 
@@ -63,7 +64,6 @@ object PreviewTypeSerializer : KSerializer<PreviewType> {
     val jsonDecoder = decoder as? JsonDecoder ?: error("Can be deserialized only by Json")
     val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
-    // Получаем единственный ключ из объекта ("search", "update" и т.д.)
     val typeKey = jsonObject.keys.first()
 
     return when (typeKey) {
@@ -80,7 +80,6 @@ object PreviewTypeSerializer : KSerializer<PreviewType> {
   }
 
   override fun serialize(encoder: Encoder, value: PreviewType) {
-    // Сериализация пока не нужна, но лучше реализовать для полноты
     val jsonEncoder = encoder as? JsonEncoder ?: error("Can be serialized only by Json")
 
     when (value) {
