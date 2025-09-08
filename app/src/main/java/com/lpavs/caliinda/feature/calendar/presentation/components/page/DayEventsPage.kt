@@ -90,7 +90,9 @@ fun DayEventsPage(
           onDetailsRequest = viewModel::requestEventDetails,
           onSignInClick = onSignInClick,
           agentMessage = agentMessage,
-          highlightedEventInfo = highlightedInfo)
+          highlightedEventInfo = highlightedInfo,
+          onSessionDelete = agentViewModel::deleteSession
+      )
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isBusy) {

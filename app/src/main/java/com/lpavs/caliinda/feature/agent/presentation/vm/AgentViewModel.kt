@@ -48,6 +48,9 @@ constructor(
   private val _recordingState = MutableStateFlow(RecordingState())
   val recState: StateFlow<RecordingState> = _recordingState.asStateFlow()
 
+  private val _eventFlow = MutableSharedFlow<AgentUiEvent>()
+  val eventFlow: SharedFlow<AgentUiEvent> = _eventFlow.asSharedFlow()
+
   init {
     observeSpeechRecognition()
   }
@@ -153,8 +156,6 @@ constructor(
     }
   }
 
-  private val _eventFlow = MutableSharedFlow<AgentUiEvent>()
-  val eventFlow: SharedFlow<AgentUiEvent> = _eventFlow.asSharedFlow()
 
   // --- ДЕЙСТВИЯ AI ---
   fun startListening() {
@@ -176,6 +177,19 @@ constructor(
 
   fun sendTextMessage(text: String) {
     processTextMessage(text)
+  }
+
+  fun deleteSession() {
+    viewModelScope.launch {
+      agentRepository.deleteSession()
+        .onSuccess {
+          _agentMessage.value = null
+          _highlightedEventInfo.value = emptyMap()
+        }
+        .onFailure { error ->
+          Log.e(TAG, "Failed to delete session", error)
+        }
+    }
   }
 
   // --- ОБРАБОТКА UI СОБЫТИЙ / РАЗРЕШЕНИЙ ---

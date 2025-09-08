@@ -11,6 +11,7 @@ import com.lpavs.caliinda.core.data.remote.agent.EventPreview
 import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.agent.PreviewType
 import com.lpavs.caliinda.core.data.remote.agent.StructuredResponse
+import com.lpavs.caliinda.core.data.remote.calendar.EventDeleteMode
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 import java.util.Locale
@@ -19,6 +20,7 @@ import javax.inject.Singleton
 
 interface AgentRepository {
     suspend fun sendMessage(message: String): Result<ChatMessage>
+    suspend fun deleteSession(): Result<Unit>
 }
 
 @Singleton
@@ -43,6 +45,10 @@ class AgentRepositoryImpl @Inject constructor(
         return apiResult.map { apiResponse ->
             parseApiResponse(apiResponse)
         }
+    }
+    override suspend fun deleteSession(): Result<Unit> {
+        val result = remoteDataSource.deleteChat()
+        return result
     }
 
     private fun parseApiResponse(apiResponse: ChatApiResponse): ChatMessage {

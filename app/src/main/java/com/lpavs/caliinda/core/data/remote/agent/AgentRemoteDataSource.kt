@@ -35,14 +35,33 @@ class AgentRemoteDataSource @Inject constructor(
         }
     }
 
+    suspend fun deleteChat(): Result<Unit> {
+        val token = authManager.getBackendAuthToken()
+        if (token == null) {
+            Log.e(TAG, "Could not get fresh token")
+            return Result.failure(Exception("Authorization needed"))
+        }
+
+        return safeApiCall {
+            apiService.delete(
+                token = "Bearer $token",
+            )
+        }
+    }
+
     private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Result<T> {
         return withContext(ioDispatcher) {
             try {
                 val response = apiCall()
                 if (response.isSuccessful) {
-                    response.body()?.let {
-                        Result.success(it)
-                    } ?: Result.failure(Exception("Response body is null"))
+                    val body = response.body()
+                    if (body != null) {
+                        Result.success(body)
+                    } else if (response.code() == 204) {
+                        Result.success(Unit as T)
+                    } else {
+                        Result.failure(Exception("Response body is null for code ${response.code()}"))
+                    }
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "API call failed with code ${response.code()}: $errorBody")

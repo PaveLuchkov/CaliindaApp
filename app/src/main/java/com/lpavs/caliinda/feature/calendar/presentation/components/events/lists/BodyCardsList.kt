@@ -38,10 +38,12 @@ fun BodyCardsList(
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
     onSignInClick: () -> Unit,
+    onSessionDelete: () -> Unit,
     agentMessage: ChatMessage?,
     highlightedEventInfo: Map<String, PreviewAction>
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
+    var expandedAgent by remember { mutableStateOf(false) }
 
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
@@ -51,7 +53,14 @@ fun BodyCardsList(
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
             agentMessage?.let{ message ->
-                item { AgentItem(message.text) }
+                item { AgentItem(
+                    message = message.text,
+                    isExpanded = expandedAgent,
+                    onToggleExpand = { expandedAgent = !expandedAgent },
+                    onSessionDelete = onSessionDelete
+
+                )
+                }
             }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
