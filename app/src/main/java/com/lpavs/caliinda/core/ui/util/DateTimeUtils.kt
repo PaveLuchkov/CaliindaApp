@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.core.ui.util
 
-import android.util.Log
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime

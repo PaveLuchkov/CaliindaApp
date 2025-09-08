@@ -30,10 +30,10 @@ import javax.inject.Inject
 class AgentViewModel
 @Inject
 constructor(
-  private val agentRepository: AgentRepository,
-  private val calendarRepository: CalendarRepository,
-  private val speechRecognitionService: SpeechRecognitionService,
-  private val calendarStateHolder: ICalendarStateHolder,
+    private val agentRepository: AgentRepository,
+    private val calendarRepository: CalendarRepository,
+    private val speechRecognitionService: SpeechRecognitionService,
+    private val calendarStateHolder: ICalendarStateHolder,
 ) : ViewModel() {
 
   private val _agentState = MutableStateFlow(AgentState.IDLE)
@@ -43,7 +43,8 @@ constructor(
   val agentMessage: StateFlow<ChatMessage?> = _agentMessage.asStateFlow()
 
   private val _highlightedEventInfo = MutableStateFlow<Map<String, PreviewAction>>(emptyMap())
-  val highlightedEventInfo: StateFlow<Map<String, PreviewAction>> = _highlightedEventInfo.asStateFlow()
+  val highlightedEventInfo: StateFlow<Map<String, PreviewAction>> =
+      _highlightedEventInfo.asStateFlow()
 
   private val _recordingState = MutableStateFlow(RecordingState())
   val recState: StateFlow<RecordingState> = _recordingState.asStateFlow()
@@ -57,105 +58,71 @@ constructor(
 
   private fun observeSpeechRecognition() {
     speechRecognitionService.state
-      .onEach { state ->
-        Log.d(TAG, "Speech Recognition State changed: $state")
-        when (state) {
-          is SpeechRecognitionState.Idle -> {
-            _agentState.value = AgentState.IDLE
-            _recordingState.update {
-              it.copy(
-                isListening = false,
-                isLoading = false
-              )
+        .onEach { state ->
+          Log.d(TAG, "Speech Recognition State changed: $state")
+          when (state) {
+            is SpeechRecognitionState.Idle -> {
+              _agentState.value = AgentState.IDLE
+              _recordingState.update { it.copy(isListening = false, isLoading = false) }
             }
-          }
-          is SpeechRecognitionState.Listening -> {
-            _agentState.value = AgentState.LISTENING
-            _recordingState.update {
-              it.copy(
-                isListening = true,
-                isLoading = false
-              )
+            is SpeechRecognitionState.Listening -> {
+              _agentState.value = AgentState.LISTENING
+              _recordingState.update { it.copy(isListening = true, isLoading = false) }
             }
-          }
-          is SpeechRecognitionState.Success -> {
-            // Сразу сбрасываем состояние прослушивания
-            _recordingState.update {
-              it.copy(
-                isListening = false,
-                isLoading = true
-              )
+            is SpeechRecognitionState.Success -> {
+              // Сразу сбрасываем состояние прослушивания
+              _recordingState.update { it.copy(isListening = false, isLoading = true) }
+              processTextMessage(state.text)
             }
-            processTextMessage(state.text)
-          }
-          is SpeechRecognitionState.Error -> {
-            _agentState.value = AgentState.ERROR
-            _agentMessage.value = ChatMessage(text = "Recording error", author = "System")
-            _recordingState.update {
-              it.copy(
-                isListening = false,
-                isLoading = false
-              )
+            is SpeechRecognitionState.Error -> {
+              _agentState.value = AgentState.ERROR
+              _agentMessage.value = ChatMessage(text = "Recording error", author = "System")
+              _recordingState.update { it.copy(isListening = false, isLoading = false) }
             }
           }
         }
-      }.launchIn(viewModelScope)
+        .launchIn(viewModelScope)
   }
 
   private fun processTextMessage(text: String) {
     if (text.isBlank()) {
       _agentState.value = AgentState.IDLE
-      _recordingState.update {
-        it.copy(
-          isListening = false,
-          isLoading = false
-        )
-      }
+      _recordingState.update { it.copy(isListening = false, isLoading = false) }
       return
     }
 
     viewModelScope.launch {
       _agentState.value = AgentState.THINKING
-      _recordingState.update {
-        it.copy(
-          isListening = false,
-          isLoading = true
-        )
-      }
+      _recordingState.update { it.copy(isListening = false, isLoading = true) }
 
-      agentRepository.sendMessage(text)
-        .onSuccess { agentMessage ->
-          _agentMessage.value = null
-          _highlightedEventInfo.value = emptyMap()
-          _agentMessage.value = agentMessage
-          val infoMap = buildMap {
-            agentMessage.previews.forEach { preview ->
-              preview.eventIds.forEach { id ->
-                put(id, preview.action)
+      agentRepository
+          .sendMessage(text)
+          .onSuccess { agentMessage ->
+            _agentMessage.value = null
+            _highlightedEventInfo.value = emptyMap()
+            _agentMessage.value = agentMessage
+            val infoMap = buildMap {
+              agentMessage.previews.forEach { preview ->
+                preview.eventIds.forEach { id -> put(id, preview.action) }
               }
             }
+            _highlightedEventInfo.value = infoMap
+            _agentState.value = AgentState.RESULT
+            if (agentMessage.author == "Waiter_Action") {
+              calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
+            }
           }
-          _highlightedEventInfo.value = infoMap
-          _agentState.value = AgentState.RESULT
-          if (agentMessage.author == "Waiter_Action") {
-            calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
+          .onFailure { error ->
+            Log.e(TAG, "Failed to send message", error)
+            _agentMessage.value =
+                ChatMessage(
+                    text = (error.message ?: (R.string.error)).toString(), author = "System")
+            _agentState.value = AgentState.ERROR
           }
-        }
-        .onFailure { error ->
-          Log.e(TAG, "Failed to send message", error)
-          _agentMessage.value = ChatMessage(text = (error.message ?: (R.string.error)).toString(), author = "System")
-          _agentState.value = AgentState.ERROR
-        }
 
-      _recordingState.update {
-        it.copy(
-          isListening = false,
-          isLoading = false
-        )
-      }
+      _recordingState.update { it.copy(isListening = false, isLoading = false) }
     }
   }
-
 
   // --- ДЕЙСТВИЯ AI ---
   fun startListening() {
@@ -181,14 +148,13 @@ constructor(
 
   fun deleteSession() {
     viewModelScope.launch {
-      agentRepository.deleteSession()
-        .onSuccess {
-          _agentMessage.value = null
-          _highlightedEventInfo.value = emptyMap()
-        }
-        .onFailure { error ->
-          Log.e(TAG, "Failed to delete session", error)
-        }
+      agentRepository
+          .deleteSession()
+          .onSuccess {
+            _agentMessage.value = null
+            _highlightedEventInfo.value = emptyMap()
+          }
+          .onFailure { error -> Log.e(TAG, "Failed to delete session", error) }
     }
   }
 
@@ -199,18 +165,15 @@ constructor(
 
   fun resetAiState() {
     val currentState = agentState.value
-    if (currentState == AgentState.RESULT || currentState == AgentState.ERROR || currentState == AgentState.ASKING) {
+    if (currentState == AgentState.RESULT ||
+        currentState == AgentState.ERROR ||
+        currentState == AgentState.ASKING) {
       _agentState.value = AgentState.IDLE
       _agentMessage.value = null
     }
 
     // Также сбрасываем состояние записи
-    _recordingState.update {
-      it.copy(
-        isListening = false,
-        isLoading = false
-      )
-    }
+    _recordingState.update { it.copy(isListening = false, isLoading = false) }
   }
 
   override fun onCleared() {
@@ -224,10 +187,10 @@ constructor(
 }
 
 data class RecordingState(
-  val isLoading: Boolean = false,
-  val isListening: Boolean = false,
-  val isPermissionGranted: Boolean = false,
-  val message: String? = "Требуется вход.",
+    val isLoading: Boolean = false,
+    val isListening: Boolean = false,
+    val isPermissionGranted: Boolean = false,
+    val message: String? = "Требуется вход.",
 )
 
 sealed class AgentUiEvent {

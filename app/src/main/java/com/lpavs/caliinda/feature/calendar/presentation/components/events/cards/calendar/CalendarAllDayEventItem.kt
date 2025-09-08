@@ -57,113 +57,98 @@ fun AllDayEventItem(
   val cardTextColor = MaterialTheme.colorScheme.onTertiaryContainer
   val haptic = LocalHapticFeedback.current
 
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-                .background(cardBackground)
-                .pointerInput(event.id) {
-                    detectTapGestures(
-                        onTap = {
-                            haptic.performHapticFeedback(HapticFeedbackType.Companion.ContextClick)
-                            onToggleExpand()
-                        },
-                        onLongPress = {
-                            haptic.performHapticFeedback(HapticFeedbackType.Companion.LongPress)
-                            onDetailsClick()
-                        })
-                }) {
+  Box(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
+              .background(cardBackground)
+              .pointerInput(event.id) {
+                detectTapGestures(
+                    onTap = {
+                      haptic.performHapticFeedback(HapticFeedbackType.Companion.ContextClick)
+                      onToggleExpand()
+                    },
+                    onLongPress = {
+                      haptic.performHapticFeedback(HapticFeedbackType.Companion.LongPress)
+                      onDetailsClick()
+                    })
+              }) {
         Column(
             modifier =
                 Modifier.Companion.fillMaxWidth()
                     .padding(
                         horizontal = CalendarUiDefaults.AllDayItemPadding,
-                        vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding
-                    )
-        ) {
-            Text(
-                text = event.summary,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Companion.Medium,
-                color = cardTextColor,
-                textAlign = TextAlign.Companion.Center,
-                modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 3.dp),
-            )
+                        vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
+              Text(
+                  text = event.summary,
+                  style = MaterialTheme.typography.bodyLarge,
+                  fontWeight = FontWeight.Companion.Medium,
+                  color = cardTextColor,
+                  textAlign = TextAlign.Companion.Center,
+                  modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 3.dp),
+              )
 
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter =
-                    fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
-                            expandVertically(
-                                animationSpec = tween(durationMillis = 250, delayMillis = 50),
-                                expandFrom = Alignment.Companion.Top
-                            ),
-                exit =
-                    shrinkVertically(
-                        animationSpec = tween(durationMillis = 250),
-                        shrinkTowards = Alignment.Companion.Top
-                    ) +
-                            fadeOut(animationSpec = tween(durationMillis = 150))
-            ) {
-                Spacer(modifier = Modifier.Companion.height(8.dp))
-                Row(
-                    modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.Companion.CenterVertically
-                ) {
-                    Button(
-                        onClick = {
-                            onDetailsClick()
-                            onToggleExpand()
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onTertiary,
-                                contentColor = MaterialTheme.colorScheme.tertiary
-                            )
-                    ) {
-                        Icon(
-                            Icons.Filled.Info,
-                            contentDescription = "Information",
-                            modifier = Modifier.Companion.size(ButtonDefaults.IconSize)
-                        )
-                    }
-                    Spacer(modifier = Modifier.Companion.width(8.dp))
-                    Button(
-                        onClick = { onEditClick() },
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onTertiary,
-                                contentColor = MaterialTheme.colorScheme.tertiary
-                            )
-                    ) {
-                        Icon(
-                            Icons.Filled.Edit,
-                            contentDescription = "Редактировать",
-                            modifier = Modifier.Companion.size(ButtonDefaults.IconSize)
-                        )
-                    }
-                    Spacer(modifier = Modifier.Companion.width(8.dp))
-                    Button(
-                        onClick = { onDeleteClick() },
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onTertiary,
-                                contentColor = MaterialTheme.colorScheme.tertiary
-                            )
-                    ) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = "Удалить",
-                            modifier = Modifier.Companion.size(ButtonDefaults.IconSize)
-                        )
-                    }
-                }
+              AnimatedVisibility(
+                  visible = isExpanded,
+                  enter =
+                      fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                          expandVertically(
+                              animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                              expandFrom = Alignment.Companion.Top),
+                  exit =
+                      shrinkVertically(
+                          animationSpec = tween(durationMillis = 250),
+                          shrinkTowards = Alignment.Companion.Top) +
+                          fadeOut(animationSpec = tween(durationMillis = 150))) {
+                    Spacer(modifier = Modifier.Companion.height(8.dp))
+                    Row(
+                        modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.Companion.CenterVertically) {
+                          Button(
+                              onClick = {
+                                onDetailsClick()
+                                onToggleExpand()
+                              },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MaterialTheme.colorScheme.onTertiary,
+                                      contentColor = MaterialTheme.colorScheme.tertiary)) {
+                                Icon(
+                                    Icons.Filled.Info,
+                                    contentDescription = "Information",
+                                    modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
+                              }
+                          Spacer(modifier = Modifier.Companion.width(8.dp))
+                          Button(
+                              onClick = { onEditClick() },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MaterialTheme.colorScheme.onTertiary,
+                                      contentColor = MaterialTheme.colorScheme.tertiary)) {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = "Редактировать",
+                                    modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
+                              }
+                          Spacer(modifier = Modifier.Companion.width(8.dp))
+                          Button(
+                              onClick = { onDeleteClick() },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MaterialTheme.colorScheme.onTertiary,
+                                      contentColor = MaterialTheme.colorScheme.tertiary)) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = "Удалить",
+                                    modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
+                              }
+                        }
+                  }
             }
-        }
-    }
+      }
 }

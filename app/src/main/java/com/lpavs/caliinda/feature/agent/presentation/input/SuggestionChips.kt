@@ -26,14 +26,14 @@ fun SuggestionChipsRow(
       horizontalArrangement =
           Arrangement.spacedBy(space = cuid.padding, alignment = Alignment.CenterHorizontally),
       contentPadding = PaddingValues(cuid.padding)) {
-      chips?.let{
+        chips?.let {
           items(chips) { chip ->
-              SuggestionChip(
-                  onClick = { onChipClick(chip) },
-                  label = { Text(chip) },
-                  modifier = Modifier.height(35.dp),
-                  enabled = enabled)
+            SuggestionChip(
+                onClick = { onChipClick(chip) },
+                label = { Text(chip) },
+                modifier = Modifier.height(35.dp),
+                enabled = enabled)
           }
-      }
+        }
       }
 }

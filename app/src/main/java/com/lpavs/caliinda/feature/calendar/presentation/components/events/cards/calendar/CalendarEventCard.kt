@@ -108,17 +108,18 @@ fun CalendarEventItem(
             innerRadius = cuid.SHAPEINNERRADIUS,
             rounding = CornerRounding(cuid.ShapeCornerRounding))
       }
-    val borderColor = when (highlightAction) {
+  val borderColor =
+      when (highlightAction) {
         PreviewAction.SEARCH -> colorScheme.tertiary
         PreviewAction.DELETE -> colorScheme.error
         PreviewAction.UPDATE -> colorScheme.primaryContainer
         else -> Color.Transparent
-    }
+      }
 
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
   val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
 
-  val  starContainerSize =
+  val starContainerSize =
       remember(uiModel.durationMinutes, micro) {
         if (micro || uiModel.durationMinutes <= 0L) 0.dp
         else calculateShapeContainerSize(uiModel.durationMinutes)
@@ -191,7 +192,9 @@ fun CalendarEventItem(
                   ambientColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent,
                   spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-              .border(BorderStroke(2.dp, borderColor), shape = RoundedCornerShape(cuid.EventItemCornerRadius))
+              .border(
+                  BorderStroke(2.dp, borderColor),
+                  shape = RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
@@ -385,37 +388,47 @@ fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
   return Color(l, a, b, alpha, ColorSpaces.Oklab).convert(ColorSpaces.Srgb)
 }
 
+val normalEvent =
+    EventUiModel(
+        id = "1",
+        summary = "SQL Practice: Query Building",
+        isAllDay = false,
+        formattedTimeString = "17 - 17:45",
+        durationMinutes = 45,
+        isMicroEvent = false,
+        baseHeight = 65.dp,
+        expandedHeight = 121.dp,
+        isCurrent = true,
+        isNext = true,
+        proximityRatio = 1f,
+        shapeParams =
+            GeneratedShapeParams(
+                numVertices = 6,
+                radiusSeed = 0.4f,
+                rotationAngle = -41.0f,
+                shadowOffsetYSeed = 6.0.dp,
+                shadowOffsetXSeed = 6.0.dp,
+                offestParam = 0.2f),
+        location = null,
+        originalEvent =
+            EventDto(
+                id = "qp919hj747psg010hiua4qvmho_20250818T140000Z",
+                summary = "SQL Practice: Query Building",
+                startTime = "2025-08-18T17:00:00+03:00",
+                endTime = "2025-08-18T17:45:00+03:00",
+                description = null,
+                location = null,
+                isAllDay = false))
 
-
-val normalEvent = EventUiModel(
-    id = "1",
-    summary = "SQL Practice: Query Building",
-    isAllDay = false,
-    formattedTimeString = "17 - 17:45",
-    durationMinutes = 45,
-    isMicroEvent = false,
-    baseHeight = 65.dp,
-    expandedHeight = 121.dp,
-    isCurrent = true,
-    isNext = true,
-    proximityRatio = 1f,
-    shapeParams = GeneratedShapeParams(numVertices=6, radiusSeed=0.4f, rotationAngle=-41.0f, shadowOffsetYSeed=6.0.dp, shadowOffsetXSeed=6.0.dp, offestParam=0.2f),
-    location = null,
-    originalEvent = EventDto(id="qp919hj747psg010hiua4qvmho_20250818T140000Z", summary="SQL Practice: Query Building", startTime="2025-08-18T17:00:00+03:00", endTime="2025-08-18T17:45:00+03:00", description=null, location=null, isAllDay=false)
-)
-
-@Preview(showBackground = true,
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
-)
+@Preview(showBackground = true, wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE)
 @Composable
 fun CalendarEventPreview() {
-    CalendarEventItem(
-        onToggleExpand = {},
-        onDetailsClickFromList = {},
-        isExpanded = false,
-        onEditClickFromList = {},
-        onDeleteClickFromList = {},
-        uiModel = normalEvent,
-        highlightAction = PreviewAction.SEARCH
-    )
+  CalendarEventItem(
+      onToggleExpand = {},
+      onDetailsClickFromList = {},
+      isExpanded = false,
+      onEditClickFromList = {},
+      onDeleteClickFromList = {},
+      uiModel = normalEvent,
+      highlightAction = PreviewAction.SEARCH)
 }

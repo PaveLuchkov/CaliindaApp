@@ -12,9 +12,4 @@ interface AuthApiService {
 
 @Serializable data class AuthBody(val id_token: String, val auth_code: String)
 
-@Serializable
-data class AuthResponse(
-    val status: String,
-    val message: String,
-    val token: String?
-)
+@Serializable data class AuthResponse(val status: String, val message: String, val token: String?)

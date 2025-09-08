@@ -6,8 +6,6 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -82,7 +80,7 @@ fun CalendarScreen(
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
   val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
-    val agentMessage by agentViewModel.agentMessage.collectAsStateWithLifecycle()
+  val agentMessage by agentViewModel.agentMessage.collectAsStateWithLifecycle()
 
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val isTextInputVisible by remember { mutableStateOf(false) }
@@ -245,8 +243,9 @@ fun CalendarScreen(
           state = pagerState,
           modifier = Modifier.fillMaxSize(),
           key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() },
-          flingBehavior = PagerDefaults.flingBehavior(state = pagerState, snapPositionalThreshold = 0.05f),
-          userScrollEnabled = !calendarState.signInRequired ,
+          flingBehavior =
+              PagerDefaults.flingBehavior(state = pagerState, snapPositionalThreshold = 0.05f),
+          userScrollEnabled = !calendarState.signInRequired,
           beyondViewportPageCount = 1) { pageIndex ->
             val pageDate =
                 remember(pageIndex) { today.plusDays((pageIndex - initialPageIndex).toLong()) }
@@ -258,18 +257,15 @@ fun CalendarScreen(
                 viewModel = calendarViewModel,
                 eventManagementViewModel = eventManagementViewModel,
                 onSignInClick = {
-                    if (activity != null) {
-                        authViewModel.signIn(activity)
-                    } else {
-                        Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
-                    }
+                  if (activity != null) {
+                    authViewModel.signIn(activity)
+                  } else {
+                    Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+                  }
                 },
                 agentViewModel = agentViewModel)
           }
-      AiVisualizer(
-          aiState = agentState,
-          modifier = Modifier.fillMaxSize()
-      )
+      AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
       BottomBar(
           calendarState = calendarState,
           textFieldValue = textFieldState,
@@ -280,9 +276,7 @@ fun CalendarScreen(
           },
           onRecordStart = { agentViewModel.startListening() },
           onRecordStopAndSend = { agentViewModel.stopListening() },
-          onUpdatePermissionResult = { granted ->
-            agentViewModel.updatePermissionStatus(granted)
-          },
+          onUpdatePermissionResult = { granted -> agentViewModel.updatePermissionStatus(granted) },
           isTextInputVisible = isTextInputVisible,
           modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
           onCreateEventClick = {
@@ -291,8 +285,7 @@ fun CalendarScreen(
           },
           recordState = recState,
           authState = authState,
-          suggestions = agentMessage?.suggestions
-      )
+          suggestions = agentMessage?.suggestions)
     } // End основной Box
   } // End Scaffold
 

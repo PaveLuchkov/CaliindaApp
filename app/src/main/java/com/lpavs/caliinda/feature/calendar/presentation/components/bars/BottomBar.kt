@@ -80,7 +80,7 @@ fun BottomBar(
   var expanded by rememberSaveable { mutableStateOf(true) }
   var onKeyboardToggle by remember { mutableStateOf(true) }
 
-    LaunchedEffect(isTextInputVisible) {
+  LaunchedEffect(isTextInputVisible) {
     if (isTextInputVisible) {
       try {
         focusRequester.requestFocus()
@@ -94,18 +94,15 @@ fun BottomBar(
     }
   }
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-      if (!suggestions.isNullOrEmpty()){
-          Box(
-          ) { SuggestionChipsRow(
-              suggestions,
-              enabled = !recordState.isLoading,
-              onChipClick = { suggestionText ->
-                  onTextChanged(TextFieldValue(suggestionText))
-              }
-          ) }
-          Spacer(modifier = Modifier.height(12.dp))
-
+    if (!suggestions.isNullOrEmpty()) {
+      Box() {
+        SuggestionChipsRow(
+            suggestions,
+            enabled = !recordState.isLoading,
+            onChipClick = { suggestionText -> onTextChanged(TextFieldValue(suggestionText)) })
       }
+      Spacer(modifier = Modifier.height(12.dp))
+    }
     AnimatedContent(
         modifier = modifier,
         targetState = onKeyboardToggle,
@@ -115,9 +112,7 @@ fun BottomBar(
                   dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
           val sizeTransformSpringSpec =
               spring<IntSize>(
-                  dampingRatio =
-                      Spring
-                          .DampingRatioLowBouncy,
+                  dampingRatio = Spring.DampingRatioLowBouncy,
                   stiffness = Spring.StiffnessMediumLow)
           if (targetState) {
                 (fadeIn(animationSpec = fadeSpringSpec)).togetherWith(
@@ -145,9 +140,7 @@ fun BottomBar(
                 },
                 content = {
                   IconButton(
-                      onClick = {
-                        onKeyboardToggle = !onKeyboardToggle
-                      },
+                      onClick = { onKeyboardToggle = !onKeyboardToggle },
                   ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,

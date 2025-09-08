@@ -23,7 +23,8 @@ constructor(
     private val authManager: AuthManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
-    private val TAG = "CalendarRemoteDataSource"
+  private val TAG = "CalendarRemoteDataSource"
+
   private suspend inline fun <T> authenticatedApiCall(
       crossinline apiCall: suspend (String) -> T
   ): Result<T> {
@@ -107,40 +108,36 @@ constructor(
   private suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T> {
     Log.d(TAG, "safeApiCall started")
     return withContext(ioDispatcher) {
-        try {
-            Log.d(TAG, "safeApiCall executing apiCall")
-            val result = apiCall()
-            Log.d(TAG, "safeApiCall apiCall successful, result: $result")
-            Result.success(result)
-        } catch (e: Throwable) {
-            Log.e(TAG, "safeApiCall caught exception: ${e.javaClass.simpleName}", e)
-            when (e) {
-                is IOException -> {
-                    Log.e(TAG, "safeApiCall: IOException - Network issue", e)
-                    Result.failure(NetworkException("Network issue: ${e.message}"))
-                }
+      try {
+        Log.d(TAG, "safeApiCall executing apiCall")
+        val result = apiCall()
+        Log.d(TAG, "safeApiCall apiCall successful, result: $result")
+        Result.success(result)
+      } catch (e: Throwable) {
+        Log.e(TAG, "safeApiCall caught exception: ${e.javaClass.simpleName}", e)
+        when (e) {
+          is IOException -> {
+            Log.e(TAG, "safeApiCall: IOException - Network issue", e)
+            Result.failure(NetworkException("Network issue: ${e.message}"))
+          }
 
-                is HttpException -> {
-                    val errorBody = e.response()?.errorBody()?.string()
-                    Log.e(
-                        TAG,
-                        "safeApiCall: HttpException - code: ${e.code()}, errorBody: $errorBody",
-                        e
-                    )
-                    Result.failure(ApiException(e.code(), "Server error: ${e.code()}. $errorBody"))
-                }
+          is HttpException -> {
+            val errorBody = e.response()?.errorBody()?.string()
+            Log.e(TAG, "safeApiCall: HttpException - code: ${e.code()}, errorBody: $errorBody", e)
+            Result.failure(ApiException(e.code(), "Server error: ${e.code()}. $errorBody"))
+          }
 
-                is ApiException -> {
-                    Log.e(TAG, "safeApiCall: ApiException - code: ${e}, message: ${e}", e)
-                    Result.failure(e)
-                }
+          is ApiException -> {
+            Log.e(TAG, "safeApiCall: ApiException - code: ${e}, message: ${e}", e)
+            Result.failure(e)
+          }
 
-                else -> {
-                    Log.e(TAG, "safeApiCall: UnknownException - message: ${e.message}", e)
-                    Result.failure(UnknownException("Unknown error: ${e.message}"))
-                }
-            }
+          else -> {
+            Log.e(TAG, "safeApiCall: UnknownException - message: ${e.message}", e)
+            Result.failure(UnknownException("Unknown error: ${e.message}"))
+          }
         }
+      }
     }
   }
 }

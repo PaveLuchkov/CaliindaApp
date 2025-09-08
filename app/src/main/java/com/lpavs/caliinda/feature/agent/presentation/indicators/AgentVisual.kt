@@ -139,28 +139,29 @@ fun AiVisualizer(
   val isComponentVisible = targetState != AgentState.IDLE && targetState != AgentState.ERROR
   // Общий контейнер для позиционирования по Y и анимации появления/исчезания
 
-    val breathingAmplitude: Dp = 300.dp
-    val animationDurationMillis = 650
-    val infiniteTransition = rememberInfiniteTransition(label = "breathing_transition")
+  val breathingAmplitude: Dp = 300.dp
+  val animationDurationMillis = 650
+  val infiniteTransition = rememberInfiniteTransition(label = "breathing_transition")
 
-    val emojis = listOf("🤔",  "🔎", "🧐", "🗓️")
-    var currentEmojiIndex by remember { mutableIntStateOf(0) }
+  val emojis = listOf("🤔", "🔎", "🧐", "🗓️")
+  var currentEmojiIndex by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(key1 = true) {
-        while (true) {
-            delay(animationDurationMillis.toLong() *2)
-            currentEmojiIndex = (currentEmojiIndex + 1) % emojis.size
-        }
+  LaunchedEffect(key1 = true) {
+    while (true) {
+      delay(animationDurationMillis.toLong() * 2)
+      currentEmojiIndex = (currentEmojiIndex + 1) % emojis.size
     }
-    val breathingOffsetY by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -breathingAmplitude.value,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = animationDurationMillis, easing = EaseInOutCubic),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "breathing_offset_y"
-    )
+  }
+  val breathingOffsetY by
+      infiniteTransition.animateFloat(
+          initialValue = 0f,
+          targetValue = -breathingAmplitude.value,
+          animationSpec =
+              infiniteRepeatable(
+                  animation =
+                      tween(durationMillis = animationDurationMillis, easing = EaseInOutCubic),
+                  repeatMode = RepeatMode.Reverse),
+          label = "breathing_offset_y")
   AnimatedVisibility(
       visible = isComponentVisible,
       enter =
@@ -177,27 +178,20 @@ fun AiVisualizer(
         Box(
             contentAlignment = Alignment.Center,
             modifier =
-                Modifier
-                    .fillMaxSize()
-                    .offset {
-                        IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 2).toInt())
-                    }) {
+                Modifier.fillMaxSize().offset {
+                  IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 2).toInt())
+                }) {
               // --- 1. Анимированная Звезда (под баблом) ---
               Box(
                   modifier =
-                      Modifier
-                          .size(baseSizeDp)
-                          .aspectRatio(1f)
-                          .graphicsLayer {
-                              scaleX = animatedScaleFactor
-                              scaleY = animatedScaleFactor
-                              rotationZ = rotationAngle.value
-                              transformOrigin = TransformOrigin.Center
-                          }) {
+                      Modifier.size(baseSizeDp).aspectRatio(1f).graphicsLayer {
+                        scaleX = animatedScaleFactor
+                        scaleY = animatedScaleFactor
+                        rotationZ = rotationAngle.value
+                        transformOrigin = TransformOrigin.Center
+                      }) {
                     Surface(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clip(AiStarShape),
+                        modifier = Modifier.matchParentSize().clip(AiStarShape),
                         color = animatedColor,
                     ) {}
                   }
@@ -219,29 +213,23 @@ fun AiVisualizer(
         Box(
             contentAlignment = Alignment.Center,
             modifier =
-                Modifier
-                    .fillMaxSize()
-                    .offset {
-                        IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 3.5).toInt())
-                    }) {
-            Box(
-                modifier = Modifier.offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) },
-                contentAlignment = Alignment.Center,
-            ){
-                LoadingIndicator(
-                    modifier = Modifier
-                        .size(200.dp)
-                )
+                Modifier.fillMaxSize().offset {
+                  IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 3.5).toInt())
+                }) {
+              Box(
+                  modifier = Modifier.offset { IntOffset(x = 0, y = breathingOffsetY.toInt()) },
+                  contentAlignment = Alignment.Center,
+              ) {
+                LoadingIndicator(modifier = Modifier.size(200.dp))
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(shape = CircleShape)
-                        .background(color = colorScheme.onPrimary)
-                ){
-                    Text(text = emojis[currentEmojiIndex])
-                }
-            }
+                    modifier =
+                        Modifier.size(50.dp)
+                            .clip(shape = CircleShape)
+                            .background(color = colorScheme.onPrimary)) {
+                      Text(text = emojis[currentEmojiIndex])
+                    }
+              }
             }
       }
 }

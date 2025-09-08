@@ -70,18 +70,17 @@ fun AgentItem(
                   FontVariation.Settings(
                       FontVariation.weight(700),
                       FontVariation.width(100f),
-                      FontVariation.opticalSizing(100.sp)
-                  )))
+                      FontVariation.opticalSizing(100.sp))))
   val cardBackground = colorScheme.tertiaryFixed
   val cardTextColor = colorScheme.onTertiaryFixedVariant
   val cardBorderColor = colorScheme.onTertiaryFixed
-    val isShortText = message.length < 35
-    val style = if (isShortText) typography.headlineSmall else typography.bodyLarge
-    val textAlign = if (isShortText) TextAlign.Center else TextAlign.Start
-    val shape1 = MaterialShapes.SoftBurst.toShape()
-    val onDialog = colorScheme.onTertiaryFixedVariant
+  val isShortText = message.length < 35
+  val style = if (isShortText) typography.headlineSmall else typography.bodyLarge
+  val textAlign = if (isShortText) TextAlign.Center else TextAlign.Start
+  val shape1 = MaterialShapes.SoftBurst.toShape()
+  val onDialog = colorScheme.onTertiaryFixedVariant
 
-    Box(
+  Box(
       modifier =
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
@@ -98,11 +97,7 @@ fun AgentItem(
                   color = cardBorderColor,
                   shape = RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
-              .clickable(
-                  onClick = {
-                      onToggleExpand()
-                  }
-              )) {
+              .clickable(onClick = { onToggleExpand() })) {
         val currentText = message
         var lineCount by remember { mutableIntStateOf(1) }
         Box(
@@ -111,70 +106,61 @@ fun AgentItem(
                     .offset(y = (-10).dp, x = 10.dp)
                     .size(80.dp)
                     .rotate(75f)
-                    .border(
-                        width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
+                    .border(width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
                     .clip(shape1)
-                    .background(onDialog.copy(alpha = 0f))
-        )
+                    .background(onDialog.copy(alpha = 0f)))
         Column {
-            Box(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(
-                            horizontal = cuid.ItemHorizontalPadding,
-                            vertical = cuid.AgentCardVerticalPadding),
-                contentAlignment = Alignment.CenterStart) {
+          Box(
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .padding(
+                          horizontal = cuid.ItemHorizontalPadding,
+                          vertical = cuid.AgentCardVerticalPadding),
+              contentAlignment = Alignment.CenterStart) {
                 Text(
                     text = currentText,
                     color = cardTextColor,
                     textAlign = textAlign,
                     style = style,
                     fontFamily = cardFontFamily,
-                    onTextLayout = { layoutResult -> lineCount = layoutResult.lineCount }
-                )
-            }
+                    onTextLayout = { layoutResult -> lineCount = layoutResult.lineCount })
+              }
 
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter =
-                    fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
-                            expandVertically(
-                                animationSpec = tween(durationMillis = 250, delayMillis = 50),
-                                expandFrom = Alignment.Top // Убрал .Companion для чистоты кода
-                            ),
-                exit =
-                    shrinkVertically(
-                        animationSpec = tween(durationMillis = 250),
-                        shrinkTowards = Alignment.Top // Убрал .Companion
-                    ) +
-                            fadeOut(animationSpec = tween(durationMillis = 150))
-            ) {
+          AnimatedVisibility(
+              visible = isExpanded,
+              enter =
+                  fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                      expandVertically(
+                          animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                          expandFrom = Alignment.Top // Убрал .Companion для чистоты кода
+                          ),
+              exit =
+                  shrinkVertically(
+                      animationSpec = tween(durationMillis = 250),
+                      shrinkTowards = Alignment.Top // Убрал .Companion
+                      ) + fadeOut(animationSpec = tween(durationMillis = 150))) {
                 // Внутри AnimatedVisibility размещаем контент, который должен анимироваться
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = cuid.ItemHorizontalPadding,
-                            vertical = cuid.AgentCardVerticalPadding
-                        ),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    val size = ButtonDefaults.ExtraSmallContainerHeight
-                    Button(
-                        onClick = {
-                            onSessionDelete()
-                        },
-                        modifier = Modifier.heightIn(size),
-                        contentPadding = ButtonDefaults.contentPaddingFor(size),
-                    ) {
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                horizontal = cuid.ItemHorizontalPadding,
+                                vertical = cuid.AgentCardVerticalPadding),
+                    contentAlignment = Alignment.CenterEnd) {
+                      val size = ButtonDefaults.ExtraSmallContainerHeight
+                      Button(
+                          onClick = { onSessionDelete() },
+                          modifier = Modifier.heightIn(size),
+                          contentPadding = ButtonDefaults.contentPaddingFor(size),
+                      ) {
                         Icon(
                             Icons.Filled.DeleteForever,
                             contentDescription = "Localized description",
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
                         )
+                      }
                     }
-                }
-            }
+              }
         }
       }
 }
@@ -182,10 +168,9 @@ fun AgentItem(
 @Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
 @Composable
 fun AgentEventPreview() {
-    AgentItem(
-        message = "Неподдерживаемый формат.",
-        isExpanded = false,
-        onToggleExpand = {},
-        onSessionDelete = {}
-    )
+  AgentItem(
+      message = "Неподдерживаемый формат.",
+      isExpanded = false,
+      onToggleExpand = {},
+      onSessionDelete = {})
 }

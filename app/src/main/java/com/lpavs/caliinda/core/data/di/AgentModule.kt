@@ -11,7 +11,5 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class AgentModule {
-    @Binds
-    @Singleton
-    abstract fun bindAgentRepository(impl: AgentRepositoryImpl): AgentRepository
+  @Binds @Singleton abstract fun bindAgentRepository(impl: AgentRepositoryImpl): AgentRepository
 }

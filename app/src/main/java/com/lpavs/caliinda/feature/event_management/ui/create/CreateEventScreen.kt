@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.create
 
 import android.text.format.DateFormat
-import android.view.MenuItem
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,10 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
@@ -73,9 +70,9 @@ fun CreateEventScreen(
     currentSheetValue: SheetValue
 ) {
   var summary by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var descriptionEnabled by remember { mutableStateOf(false) }
-    var dlocationEnabled by remember { mutableStateOf(false) }
+  var description by remember { mutableStateOf("") }
+  var descriptionEnabled by remember { mutableStateOf(false) }
+  var dlocationEnabled by remember { mutableStateOf(false) }
   var location by remember { mutableStateOf("") }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
 
@@ -144,37 +141,35 @@ fun CreateEventScreen(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center) {
-            Button(
-                onClick = onSaveClick,
-                enabled = !uiState.isLoading,
-                modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),)
-            {
-                if (uiState.isLoading) {
-                    LoadingIndicator(
-                        color = colorScheme.onPrimary,
-                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
-                } else {
-                    Text(
-                        text = stringResource(R.string.save),
-                    )
-                }
-            }
+        Button(
+            onClick = onSaveClick,
+            enabled = !uiState.isLoading,
+            modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
+        ) {
+          if (uiState.isLoading) {
+            LoadingIndicator(
+                color = colorScheme.onPrimary,
+                modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
+          } else {
+            Text(
+                text = stringResource(R.string.save),
+            )
+          }
+        }
       }
 
   Column(
       modifier =
-          Modifier.verticalScroll(rememberScrollState())
-              .padding(horizontal = 16.dp)
-              .fillMaxWidth(),
+          Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AdaptiveContainer {
-            EventNameSection(
-                summary = summary,
-                summaryError = summaryError,
-                onSummaryChange = { summary = it },
-                onSummaryErrorChange = { summaryError = it },
-                isLoading = uiState.isLoading,
-                suggestedChips = suggestedChips)
+          EventNameSection(
+              summary = summary,
+              summaryError = summaryError,
+              onSummaryChange = { summary = it },
+              onSummaryErrorChange = { summaryError = it },
+              isLoading = uiState.isLoading,
+              suggestedChips = suggestedChips)
         }
         AdaptiveContainer {
           EventDateTimePicker(

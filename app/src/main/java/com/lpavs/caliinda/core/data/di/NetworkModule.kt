@@ -13,13 +13,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.util.concurrent.TimeUnit
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -60,14 +60,12 @@ object NetworkModule {
     return retrofit.create(AuthApiService::class.java)
   }
 
-    @Provides
-    @Singleton
-    fun provideAgentApiService(retrofit: Retrofit): AgentApiService {
-        return retrofit.create(AgentApiService::class.java)
-    }
+  @Provides
+  @Singleton
+  fun provideAgentApiService(retrofit: Retrofit): AgentApiService {
+    return retrofit.create(AgentApiService::class.java)
+  }
 }
-
-
 
 @Module
 @InstallIn(SingletonComponent::class)

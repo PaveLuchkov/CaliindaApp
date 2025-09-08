@@ -19,13 +19,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
 import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentItem
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
 
@@ -43,7 +45,8 @@ fun BodyCardsList(
     highlightedEventInfo: Map<String, PreviewAction>
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
-    var expandedAgent by remember { mutableStateOf(false) }
+  var expandedAgent by remember { mutableStateOf(false) }
+  val haptic = LocalHapticFeedback.current
 
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
@@ -52,16 +55,16 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
-            agentMessage?.let{ message ->
-                item { AgentItem(
-                    message = message.text,
-                    isExpanded = expandedAgent,
-                    onToggleExpand = { expandedAgent = !expandedAgent },
-                    onSessionDelete = onSessionDelete
-
-                )
-                }
+          agentMessage?.let { message ->
+            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+            item {
+              AgentItem(
+                  message = message.text,
+                  isExpanded = expandedAgent,
+                  onToggleExpand = { expandedAgent = !expandedAgent },
+                  onSessionDelete = onSessionDelete)
             }
+          }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
                 spring<Float>(
@@ -89,23 +92,23 @@ fun BodyCardsList(
                         fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                   val isExpanded = event.id == expandedEventId
-                val highlightAction = highlightedEventInfo[event.id]
-                CalendarEventItem(
-                    uiModel = event,
-                    isExpanded = isExpanded,
-                    highlightAction = highlightAction,
-                    onToggleExpand = {
+                  val highlightAction = highlightedEventInfo[event.id]
+                  CalendarEventItem(
+                      uiModel = event,
+                      isExpanded = isExpanded,
+                      highlightAction = highlightAction,
+                      onToggleExpand = {
                         expandedEventId =
                             if (expandedEventId == event.id) {
-                                null
+                              null
                             } else {
-                                event.id
+                              event.id
                             }
-                    },
-                    onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
-                    onEditClickFromList = { onEditRequest(event.originalEvent) },
-                    onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
-                )
+                      },
+                      onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
+                      onEditClickFromList = { onEditRequest(event.originalEvent) },
+                      onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
+                  )
                 }
           }
         }

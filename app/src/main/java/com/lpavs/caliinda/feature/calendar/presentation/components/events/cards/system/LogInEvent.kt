@@ -49,112 +49,103 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 @Composable
 fun LogInEvent(
     onSignInClick: () -> Unit,
-)
-{
-    val darkerShadowColor = Color.Black
-    val cardElevation = cuid.CurrentEventElevation
-    val cardFontFamily =
-        FontFamily(
-            Font(
-                R.font.robotoflex_variable,
-                variationSettings =
-                    FontVariation.Settings(
-                        FontVariation.weight(600),
-                        FontVariation.width(100f),
-                    )))
-    val cardBackground = colorScheme.tertiaryFixed
-    val cardTextColor = colorScheme.onTertiaryFixedVariant
-    val cardBorderColor = colorScheme.onSurface
-    val cardHeight = 100.dp
-    val textStyle = Typography.headlineSmall
-    val onDialog = colorScheme.onTertiaryFixedVariant
+) {
+  val darkerShadowColor = Color.Black
+  val cardElevation = cuid.CurrentEventElevation
+  val cardFontFamily =
+      FontFamily(
+          Font(
+              R.font.robotoflex_variable,
+              variationSettings =
+                  FontVariation.Settings(
+                      FontVariation.weight(600),
+                      FontVariation.width(100f),
+                  )))
+  val cardBackground = colorScheme.tertiaryFixed
+  val cardTextColor = colorScheme.onTertiaryFixedVariant
+  val cardBorderColor = colorScheme.onSurface
+  val cardHeight = 100.dp
+  val textStyle = Typography.headlineSmall
+  val onDialog = colorScheme.onTertiaryFixedVariant
 
-    val shape1 = MaterialShapes.Flower.toShape()
-    val shape2 = MaterialShapes.Cookie12Sided.toShape()
+  val shape1 = MaterialShapes.Flower.toShape()
+  val shape2 = MaterialShapes.Cookie12Sided.toShape()
 
-    Box(
-        modifier =
-            Modifier
-                .padding(
-                horizontal = CalendarUiDefaults.ItemHorizontalPadding,
-                vertical = CalendarUiDefaults.ItemVerticalPadding)
-                .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-                .shadow(
-                    elevation = cardElevation,
-                    shape = RoundedCornerShape(cuid.EventItemCornerRadius),
-                    clip = false,
-                    ambientColor = darkerShadowColor,
-                    spotColor = darkerShadowColor)
-                .border(
-                    width = 2.dp,
-                    color = cardBorderColor,
-                    shape = RoundedCornerShape(cuid.EventItemCornerRadius))
-                .background(cardBackground)
-                .height(cardHeight)) {
+  Box(
+      modifier =
+          Modifier.padding(
+                  horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                  vertical = CalendarUiDefaults.ItemVerticalPadding)
+              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
+              .shadow(
+                  elevation = cardElevation,
+                  shape = RoundedCornerShape(cuid.EventItemCornerRadius),
+                  clip = false,
+                  ambientColor = darkerShadowColor,
+                  spotColor = darkerShadowColor)
+              .border(
+                  width = 2.dp,
+                  color = cardBorderColor,
+                  shape = RoundedCornerShape(cuid.EventItemCornerRadius))
+              .background(cardBackground)
+              .height(cardHeight)) {
         Box(
             modifier =
                 Modifier.align(Alignment.BottomEnd)
                     .size(100.dp)
                     .offset(y = (10).dp, x = 10.dp)
                     .rotate(75f)
-                    .border(
-                        width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
+                    .border(width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
                     .clip(shape1)
-                    .background(onDialog.copy(alpha = 0f))
-        )
+                    .background(onDialog.copy(alpha = 0f)))
 
         Box(
             modifier =
-                Modifier
-                    .size(100.dp)
+                Modifier.size(100.dp)
                     .offset(y = (-10).dp, x = (-10).dp)
                     .rotate(30f)
-                    .border(
-                        width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape2)
+                    .border(width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape2)
                     .clip(shape2)
-                    .background(onDialog.copy(alpha = 0f))
-        )
+                    .background(onDialog.copy(alpha = 0f)))
         Column(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier =
-                Modifier.weight(1f)
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = cuid.ItemHorizontalPadding,
-                        vertical = cuid.StandardItemContentVerticalPadding),
-            contentAlignment = Alignment.TopStart) {
-
-            Column(verticalArrangement = Arrangement.Top) {
-                Text(
-                    text = "Log in with Google",
-                    color = cardTextColor,
-                    style = textStyle,
-                    fontFamily = cardFontFamily,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            }
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically) {
+          Box(
+              modifier =
+                  Modifier.weight(1f)
+                      .fillMaxWidth()
+                      .padding(
+                          horizontal = cuid.ItemHorizontalPadding,
+                          vertical = cuid.StandardItemContentVerticalPadding),
+              contentAlignment = Alignment.TopStart) {
+                Column(verticalArrangement = Arrangement.Top) {
+                  Text(
+                      text = "Log in with Google",
+                      color = cardTextColor,
+                      style = textStyle,
+                      fontFamily = cardFontFamily,
+                      maxLines = 1,
+                      overflow = TextOverflow.Ellipsis)
+                }
+              }
+          Row(
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp),
+              horizontalArrangement = Arrangement.End,
+              verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = { onSignInClick() },
                     contentPadding = PaddingValues(horizontal = 12.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.Login, contentDescription = "Log in")
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("Log in")
-                }
-            }
+                      Icon(Icons.AutoMirrored.Filled.Login, contentDescription = "Log in")
+                      Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                      Text("Log in")
+                    }
+              }
         }
-    }
+      }
 }
 
 @Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
 @Composable
 fun LogInEventPreview() {
-    LogInEvent(onSignInClick = {})
+  LogInEvent(onSignInClick = {})
 }

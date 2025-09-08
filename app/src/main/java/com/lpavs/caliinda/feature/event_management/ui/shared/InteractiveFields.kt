@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -69,13 +68,17 @@ fun CustomOutlinedTextField(
               unfocusedContainerColor = Color.Transparent,
           ),
       keyboardOptions = keyboardOptions,
-      textStyle = typography.headlineMedium.copy(textAlign = TextAlign.Start, fontFamily = FontFamily(
-          Font(
-              R.font.robotoflex_variable,
-              variationSettings =
-                  FontVariation.Settings(
-                      FontVariation.weight(750),
-                  )))),
+      textStyle =
+          typography.headlineMedium.copy(
+              textAlign = TextAlign.Start,
+              fontFamily =
+                  FontFamily(
+                      Font(
+                          R.font.robotoflex_variable,
+                          variationSettings =
+                              FontVariation.Settings(
+                                  FontVariation.weight(750),
+                              )))),
       enabled = enabled,
       singleLine = true,
       isError = isError,

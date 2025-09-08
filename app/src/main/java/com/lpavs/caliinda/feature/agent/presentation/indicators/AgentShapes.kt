@@ -29,13 +29,13 @@ object AiStarShape : Shape {
       layoutDirection: LayoutDirection,
       density: Density
   ): Outline {
-      matrix.reset()
-      val scale = minOf(size.width, size.height) / 2f
+    matrix.reset()
+    val scale = minOf(size.width, size.height) / 2f
     matrix.scale(scale, scale)
-      matrix.translate(size.width / (2f * scale), size.height / (2f * scale))
+    matrix.translate(size.width / (2f * scale), size.height / (2f * scale))
 
-      val path = starPolygon.toPath().asComposePath()
-      path.transform(matrix)
+    val path = starPolygon.toPath().asComposePath()
+    path.transform(matrix)
 
     return Outline.Generic(path)
   }

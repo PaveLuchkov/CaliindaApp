@@ -12,9 +12,9 @@ import javax.inject.Singleton
 @Singleton
 class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils) {
 
-    companion object {
-        private const val TAG = "EventMapper"
-    }
+  companion object {
+    private const val TAG = "EventMapper"
+  }
 
   fun mapToEntity(event: EventDto, zoneIdString: String): CalendarEventEntity? {
     try {

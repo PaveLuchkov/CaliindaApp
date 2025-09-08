@@ -13,68 +13,68 @@ import retrofit2.Response
 import java.io.IOException
 import javax.inject.Inject
 
-class AgentRemoteDataSource @Inject constructor(
+class AgentRemoteDataSource
+@Inject
+constructor(
     private val apiService: AgentApiService,
     private val authManager: AuthManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
-    private val TAG = "AgentRemoteDataSource"
+  private val TAG = "AgentRemoteDataSource"
 
-    suspend fun runChat(message: String, context: UserContext): Result<ChatApiResponse> {
-        val token = authManager.getBackendAuthToken()
-        if (token == null) {
-            Log.e(TAG, "Could not get fresh token")
-            return Result.failure(Exception("Authorization needed"))
-        }
-
-        return safeApiCall {
-            apiService.run(
-                token = "Bearer $token",
-                request = ChatRequest(message, context)
-            )
-        }
+  suspend fun runChat(message: String, context: UserContext): Result<ChatApiResponse> {
+    val token = authManager.getBackendAuthToken()
+    if (token == null) {
+      Log.e(TAG, "Could not get fresh token")
+      return Result.failure(Exception("Authorization needed"))
     }
 
-    suspend fun deleteChat(): Result<Unit> {
-        val token = authManager.getBackendAuthToken()
-        if (token == null) {
-            Log.e(TAG, "Could not get fresh token")
-            return Result.failure(Exception("Authorization needed"))
-        }
+    return safeApiCall {
+      apiService.run(token = "Bearer $token", request = ChatRequest(message, context))
+    }
+  }
 
-        return safeApiCall {
-            apiService.delete(
-                token = "Bearer $token",
-            )
-        }
+  suspend fun deleteChat(): Result<Unit> {
+    val token = authManager.getBackendAuthToken()
+    if (token == null) {
+      Log.e(TAG, "Could not get fresh token")
+      return Result.failure(Exception("Authorization needed"))
     }
 
-    private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Result<T> {
-        return withContext(ioDispatcher) {
-            try {
-                val response = apiCall()
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        Result.success(body)
-                    } else if (response.code() == 204) {
-                        Result.success(Unit as T)
-                    } else {
-                        Result.failure(Exception("Response body is null for code ${response.code()}"))
-                    }
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "API call failed with code ${response.code()}: $errorBody")
-                    Result.failure(ApiException(response.code(), "Server error: ${response.code()}. $errorBody"))
-                }
-            } catch (e: Throwable) {
-                Log.e(TAG, "API call exception: ${e.javaClass.simpleName}", e)
-                when (e) {
-                    is IOException -> Result.failure(NetworkException("Network issue: ${e.message}"))
-                    is HttpException -> Result.failure(ApiException(e.code(), "Http error: ${e.message()}"))
-                    else -> Result.failure(UnknownException("Unknown error: ${e.message}"))
-                }
-            }
-        }
+    return safeApiCall {
+      apiService.delete(
+          token = "Bearer $token",
+      )
     }
+  }
+
+  private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Result<T> {
+    return withContext(ioDispatcher) {
+      try {
+        val response = apiCall()
+        if (response.isSuccessful) {
+          val body = response.body()
+          if (body != null) {
+            Result.success(body)
+          } else if (response.code() == 204) {
+            Result.success(Unit as T)
+          } else {
+            Result.failure(Exception("Response body is null for code ${response.code()}"))
+          }
+        } else {
+          val errorBody = response.errorBody()?.string()
+          Log.e(TAG, "API call failed with code ${response.code()}: $errorBody")
+          Result.failure(
+              ApiException(response.code(), "Server error: ${response.code()}. $errorBody"))
+        }
+      } catch (e: Throwable) {
+        Log.e(TAG, "API call exception: ${e.javaClass.simpleName}", e)
+        when (e) {
+          is IOException -> Result.failure(NetworkException("Network issue: ${e.message}"))
+          is HttpException -> Result.failure(ApiException(e.code(), "Http error: ${e.message()}"))
+          else -> Result.failure(UnknownException("Unknown error: ${e.message}"))
+        }
+      }
+    }
+  }
 }

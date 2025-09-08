@@ -14,7 +14,5 @@ interface AgentApiService {
   ): Response<ChatApiResponse>
 
   @DELETE("agent/chat/delete")
-  suspend fun delete(
-      @Header("Authorization") token: String
-  ): Response<Unit>
+  suspend fun delete(@Header("Authorization") token: String): Response<Unit>
 }

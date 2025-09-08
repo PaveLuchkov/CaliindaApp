@@ -226,8 +226,7 @@ fun GoogleAccountSection(
                       Icon(
                           Icons.AutoMirrored.Rounded.Logout,
                           contentDescription = stringResource(R.string.account),
-                          modifier = Modifier.size(20.dp)
-                      )
+                          modifier = Modifier.size(20.dp))
                     }
                   }
                 }

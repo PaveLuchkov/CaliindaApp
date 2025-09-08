@@ -97,24 +97,25 @@ constructor(
           }
 
       // Создаем и возвращаем готовую UI-модель
-      val event = EventUiModel(
-          id = event.id,
-          summary = event.summary,
-          location = event.location,
-          isAllDay = event.isAllDay,
-          formattedTimeString =
-              dateTimeFormatterUtil.formatEventListTime(context, event, timeZoneId),
-          durationMinutes = durationMinutes,
-          isMicroEvent = isMicroEvent,
-          baseHeight = baseHeight,
-          expandedHeight = expandedHeight,
-          isCurrent = isCurrent,
-          isNext = isNext,
-          proximityRatio = proximityRatio,
-          shapeParams = generateShapeParams(event.id), // Твой генератор фигур
-          originalEvent = event)
-//        Log.d("Model", "Event: $event")
-        event
+      val event =
+          EventUiModel(
+              id = event.id,
+              summary = event.summary,
+              location = event.location,
+              isAllDay = event.isAllDay,
+              formattedTimeString =
+                  dateTimeFormatterUtil.formatEventListTime(context, event, timeZoneId),
+              durationMinutes = durationMinutes,
+              isMicroEvent = isMicroEvent,
+              baseHeight = baseHeight,
+              expandedHeight = expandedHeight,
+              isCurrent = isCurrent,
+              isNext = isNext,
+              proximityRatio = proximityRatio,
+              shapeParams = generateShapeParams(event.id), // Твой генератор фигур
+              originalEvent = event)
+      //        Log.d("Model", "Event: $event")
+      event
     }
   }
 
