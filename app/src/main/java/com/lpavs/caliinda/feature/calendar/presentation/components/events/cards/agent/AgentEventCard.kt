@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,9 +23,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -74,6 +78,8 @@ fun AgentItem(
     val isShortText = message.length < 35
     val style = if (isShortText) typography.headlineSmall else typography.bodyLarge
     val textAlign = if (isShortText) TextAlign.Center else TextAlign.Start
+    val shape1 = MaterialShapes.SoftBurst.toShape()
+    val onDialog = colorScheme.onTertiaryFixedVariant
 
     Box(
       modifier =
@@ -99,6 +105,17 @@ fun AgentItem(
               )) {
         val currentText = message
         var lineCount by remember { mutableIntStateOf(1) }
+        Box(
+            modifier =
+                Modifier.align(Alignment.TopEnd)
+                    .offset(y = (-10).dp, x = 10.dp)
+                    .size(80.dp)
+                    .rotate(75f)
+                    .border(
+                        width = 2.dp, color = onDialog.copy(alpha = 0.2f), shape = shape1)
+                    .clip(shape1)
+                    .background(onDialog.copy(alpha = 0f))
+        )
         Column {
             Box(
                 modifier =
@@ -116,6 +133,7 @@ fun AgentItem(
                     onTextLayout = { layoutResult -> lineCount = layoutResult.lineCount }
                 )
             }
+
             AnimatedVisibility(
                 visible = isExpanded,
                 enter =
@@ -165,8 +183,8 @@ fun AgentItem(
 @Composable
 fun AgentEventPreview() {
     AgentItem(
-        message = "Неподдерживаемый формат ответа.",
-        isExpanded = true,
+        message = "Неподдерживаемый формат.",
+        isExpanded = false,
         onToggleExpand = {},
         onSessionDelete = {}
     )
