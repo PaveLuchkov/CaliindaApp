@@ -7,7 +7,9 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.remote.agent.AgentRemoteDataSource // Используем переименованный класс
 import com.lpavs.caliinda.core.data.remote.agent.ChatApiResponse
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
-import com.lpavs.caliinda.core.data.remote.agent.MessageAuthor
+import com.lpavs.caliinda.core.data.remote.agent.EventPreview
+import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
+import com.lpavs.caliinda.core.data.remote.agent.PreviewType
 import com.lpavs.caliinda.core.data.remote.agent.StructuredResponse
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
@@ -50,22 +52,53 @@ class AgentRepositoryImpl @Inject constructor(
             is String -> {
                 ChatMessage(
                     text = responsePayload,
-                    author = MessageAuthor.AGENT,
-                    suggestions = emptyList()
+                    author = apiResponse.agent
                 )
             }
+
             is StructuredResponse -> {
+                // НОВАЯ ЛОГИКА ЗДЕСЬ
+                val eventPreviews = responsePayload.previews?.mapNotNull { (_, previewType) ->
+                    // Трансформируем PreviewType в наш EventPreview
+                    when (previewType) {
+                        is PreviewType.Search -> EventPreview(
+                            PreviewAction.SEARCH,
+                            previewType.search
+                        )
+
+                        is PreviewType.Update -> EventPreview(
+                            PreviewAction.UPDATE,
+                            previewType.update
+                        )
+
+                        is PreviewType.Create -> EventPreview(
+                            PreviewAction.CREATE,
+                            previewType.create
+                        )
+
+                        is PreviewType.Delete -> EventPreview(
+                            PreviewAction.DELETE,
+                            previewType.delete
+                        )
+                    }
+                } ?: emptyList()
+
                 ChatMessage(
                     text = responsePayload.message.message,
-                    author = MessageAuthor.AGENT,
-                    suggestions = responsePayload.message.suggestions
+                    author = apiResponse.agent,
+                    suggestions = responsePayload.message.suggestions,
+                    previews = eventPreviews
                 )
             }
+
             else -> {
-                Log.w("AgentRepositoryImpl", "Received an unexpected response type: ${responsePayload::class.java.name}")
+                Log.w(
+                    "AgentRepositoryImpl",
+                    "Received an unexpected response type: ${responsePayload::class.java.name}"
+                )
                 ChatMessage(
                     text = "Неподдерживаемый формат ответа (внутренняя ошибка).",
-                    author = MessageAuthor.AGENT
+                    author = apiResponse.agent
                 )
             }
         }

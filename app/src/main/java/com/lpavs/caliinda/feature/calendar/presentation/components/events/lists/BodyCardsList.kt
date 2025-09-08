@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
+import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentItem
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
@@ -38,6 +39,7 @@ fun BodyCardsList(
     onDetailsRequest: (EventDto) -> Unit,
     onSignInClick: () -> Unit,
     agentMessage: ChatMessage?,
+    highlightedEventInfo: Map<String, PreviewAction>
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
 
@@ -78,9 +80,11 @@ fun BodyCardsList(
                         fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                   val isExpanded = event.id == expandedEventId
+                val highlightAction = highlightedEventInfo[event.id]
                 CalendarEventItem(
                     uiModel = event,
                     isExpanded = isExpanded,
+                    highlightAction = highlightAction,
                     onToggleExpand = {
                         expandedEventId =
                             if (expandedEventId == event.id) {

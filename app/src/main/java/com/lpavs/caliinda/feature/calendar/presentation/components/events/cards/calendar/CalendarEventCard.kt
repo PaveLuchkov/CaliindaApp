@@ -8,7 +8,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,6 +68,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.Typography
@@ -80,6 +83,7 @@ import kotlin.math.exp
 fun CalendarEventItem(
     uiModel: EventUiModel,
     isExpanded: Boolean,
+    highlightAction: PreviewAction?,
     onToggleExpand: () -> Unit,
     onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
@@ -104,6 +108,12 @@ fun CalendarEventItem(
             innerRadius = cuid.SHAPEINNERRADIUS,
             rounding = CornerRounding(cuid.ShapeCornerRounding))
       }
+    val borderColor = when (highlightAction) {
+        PreviewAction.SEARCH -> colorScheme.tertiary
+        PreviewAction.DELETE -> colorScheme.error
+        PreviewAction.UPDATE -> colorScheme.primaryContainer
+        else -> Color.Transparent
+    }
 
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
   val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
@@ -181,6 +191,7 @@ fun CalendarEventItem(
                   ambientColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent,
                   spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
+              .border(BorderStroke(2.dp, borderColor), shape = RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
@@ -393,7 +404,9 @@ val normalEvent = EventUiModel(
     originalEvent = EventDto(id="qp919hj747psg010hiua4qvmho_20250818T140000Z", summary="SQL Practice: Query Building", startTime="2025-08-18T17:00:00+03:00", endTime="2025-08-18T17:45:00+03:00", description=null, location=null, isAllDay=false)
 )
 
-@Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
+@Preview(showBackground = true,
+    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE
+)
 @Composable
 fun CalendarEventPreview() {
     CalendarEventItem(
@@ -402,6 +415,7 @@ fun CalendarEventPreview() {
         isExpanded = false,
         onEditClickFromList = {},
         onDeleteClickFromList = {},
-        uiModel = normalEvent
+        uiModel = normalEvent,
+        highlightAction = PreviewAction.SEARCH
     )
 }

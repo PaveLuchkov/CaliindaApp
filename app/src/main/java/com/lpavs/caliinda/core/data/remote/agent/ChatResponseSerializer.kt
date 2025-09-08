@@ -51,3 +51,50 @@ object ChatResponseSerializer : KSerializer<Any> {
         }
     }
 }
+
+object PreviewTypeSerializer : KSerializer<PreviewType> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("PreviewType")
+
+    override fun deserialize(decoder: Decoder): PreviewType {
+        val jsonDecoder = decoder as? JsonDecoder
+            ?: error("Can be deserialized only by Json")
+        val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
+
+        // Получаем единственный ключ из объекта ("search", "update" и т.д.)
+        val typeKey = jsonObject.keys.first()
+
+        return when (typeKey) {
+            "search" -> jsonDecoder.json.decodeFromJsonElement(
+                PreviewType.Search.serializer(),
+                jsonObject
+            )
+            "update" -> jsonDecoder.json.decodeFromJsonElement(
+                PreviewType.Update.serializer(),
+                jsonObject
+            )
+            "create" -> jsonDecoder.json.decodeFromJsonElement(
+                PreviewType.Create.serializer(),
+                jsonObject
+            )
+            "delete" -> jsonDecoder.json.decodeFromJsonElement(
+                PreviewType.Delete.serializer(),
+                jsonObject
+            )
+            else -> throw IllegalArgumentException("Unknown preview type: $typeKey")
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: PreviewType) {
+        // Сериализация пока не нужна, но лучше реализовать для полноты
+        val jsonEncoder = encoder as? JsonEncoder
+            ?: error("Can be serialized only by Json")
+
+        when (value) {
+            is PreviewType.Search -> jsonEncoder.encodeSerializableValue(PreviewType.Search.serializer(), value)
+            is PreviewType.Update -> jsonEncoder.encodeSerializableValue(PreviewType.Update.serializer(), value)
+            is PreviewType.Create -> jsonEncoder.encodeSerializableValue(PreviewType.Create.serializer(), value)
+            is PreviewType.Delete -> jsonEncoder.encodeSerializableValue(PreviewType.Delete.serializer(), value)
+        }
+    }
+}

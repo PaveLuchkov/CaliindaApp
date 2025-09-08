@@ -69,7 +69,7 @@ fun DayEventsPage(
       }
     }
   }
-
+    val highlightedInfo by agentViewModel.highlightedEventInfo.collectAsStateWithLifecycle()
   Column(modifier = Modifier.fillMaxSize()) {
     HeadCardsList(
         events = pageState.allDayEvents,
@@ -89,7 +89,8 @@ fun DayEventsPage(
           onEditRequest = eventManagementViewModel::requestEditEvent,
           onDetailsRequest = viewModel::requestEventDetails,
           onSignInClick = onSignInClick,
-          agentMessage = agentMessage,)
+          agentMessage = agentMessage,
+          highlightedEventInfo = highlightedInfo)
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isBusy) {

@@ -1,12 +1,13 @@
 package com.lpavs.caliinda.feature.agent.presentation.vm
 
 import android.util.Log
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
-import com.lpavs.caliinda.core.data.remote.agent.MessageAuthor
+import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
+import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.agent.data.AgentRepository
 import com.lpavs.caliinda.feature.agent.data.SpeechRecognitionService
@@ -20,17 +21,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlinx.coroutines.flow.onEach
 
 @HiltViewModel
 class AgentViewModel
 @Inject
 constructor(
   private val agentRepository: AgentRepository,
+  private val calendarRepository: CalendarRepository,
   private val speechRecognitionService: SpeechRecognitionService,
+  private val calendarStateHolder: ICalendarStateHolder,
 ) : ViewModel() {
 
   private val _agentState = MutableStateFlow(AgentState.IDLE)
@@ -38,6 +41,9 @@ constructor(
 
   private val _agentMessage = MutableStateFlow<ChatMessage?>(null)
   val agentMessage: StateFlow<ChatMessage?> = _agentMessage.asStateFlow()
+
+  private val _highlightedEventInfo = MutableStateFlow<Map<String, PreviewAction>>(emptyMap())
+  val highlightedEventInfo: StateFlow<Map<String, PreviewAction>> = _highlightedEventInfo.asStateFlow()
 
   private val _recordingState = MutableStateFlow(RecordingState())
   val recState: StateFlow<RecordingState> = _recordingState.asStateFlow()
@@ -81,7 +87,7 @@ constructor(
           }
           is SpeechRecognitionState.Error -> {
             _agentState.value = AgentState.ERROR
-            _agentMessage.value = ChatMessage(text = "Recording error", author = MessageAuthor.AGENT)
+            _agentMessage.value = ChatMessage(text = "Recording error", author = "System")
             _recordingState.update {
               it.copy(
                 isListening = false,
@@ -116,12 +122,25 @@ constructor(
 
       agentRepository.sendMessage(text)
         .onSuccess { agentMessage ->
+          _agentMessage.value = null
+          _highlightedEventInfo.value = emptyMap()
           _agentMessage.value = agentMessage
+          val infoMap = buildMap {
+            agentMessage.previews.forEach { preview ->
+              preview.eventIds.forEach { id ->
+                put(id, preview.action)
+              }
+            }
+          }
+          _highlightedEventInfo.value = infoMap
           _agentState.value = AgentState.RESULT
+          if (agentMessage.author == "Waiter_Action") {
+            calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
+          }
         }
         .onFailure { error ->
           Log.e(TAG, "Failed to send message", error)
-          _agentMessage.value = ChatMessage(text = (error.message ?: (R.string.error)).toString(), author = MessageAuthor.AGENT)
+          _agentMessage.value = ChatMessage(text = (error.message ?: (R.string.error)).toString(), author = "System")
           _agentState.value = AgentState.ERROR
         }
 
@@ -156,7 +175,6 @@ constructor(
   }
 
   fun sendTextMessage(text: String) {
-    _agentMessage.value = null
     processTextMessage(text)
   }
 

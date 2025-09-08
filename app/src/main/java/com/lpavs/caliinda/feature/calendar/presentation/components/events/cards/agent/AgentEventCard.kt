@@ -55,8 +55,10 @@ fun AgentItem(
   val cardBackground = colorScheme.tertiaryFixed
   val cardTextColor = colorScheme.onTertiaryFixedVariant
   val cardBorderColor = colorScheme.onTertiaryFixed
-
-  Box(
+    val isShortText = message.length < 35
+    val style = if (isShortText) typography.headlineSmall else typography.bodyLarge
+    val textAlign = if (isShortText) TextAlign.Center else TextAlign.Start
+    Box(
       modifier =
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
@@ -85,13 +87,8 @@ fun AgentItem(
               Text(
                   text = currentText,
                   color = cardTextColor,
-                  textAlign = if (lineCount == 1) TextAlign.Center else TextAlign.Start,
-                  style =
-                      when {
-                        lineCount == 1 -> typography.headlineSmall
-                        lineCount < 3 -> typography.bodyLarge
-                        else -> typography.bodyMedium
-                      },
+                  textAlign = textAlign,
+                  style = style,
                   fontFamily = cardFontFamily,
                   onTextLayout = { layoutResult -> lineCount = layoutResult.lineCount }
               )
