@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +28,11 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
 import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
+import com.lpavs.caliinda.core.data.remote.agent.domain.AgentResponseContent
+import com.lpavs.caliinda.core.data.remote.agent.domain.DaysPlan
+import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
+import com.lpavs.caliinda.core.data.remote.agent.domain.SuggestionPlan
+import com.lpavs.caliinda.core.data.remote.agent.domain.TextMessageResponse
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentItem
@@ -41,13 +49,13 @@ fun BodyCardsList(
     onDetailsRequest: (EventDto) -> Unit,
     onSignInClick: () -> Unit,
     onSessionDelete: () -> Unit,
-    agentMessage: ChatMessage?,
-    highlightedEventInfo: Map<String, PreviewAction>
+    agentResponse: AgentResponseContent?
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
   var expandedAgent by remember { mutableStateOf(false) }
   val haptic = LocalHapticFeedback.current
-
+    val highlightedInfo =
+        (agentResponse as? TextMessageResponse)?.highlightedEventInfo ?: emptyMap()
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
       state = listState,
@@ -55,16 +63,36 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
-          agentMessage?.let { message ->
-            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-            item {
-              AgentItem(
-                  message = message.text,
-                  isExpanded = expandedAgent,
-                  onToggleExpand = { expandedAgent = !expandedAgent },
-                  onSessionDelete = onSessionDelete)
+            when (agentResponse) {
+                is TextMessageResponse -> {
+                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    item {
+                        AgentItem(
+                            message = agentResponse.mainText,
+                            isExpanded = expandedAgent,
+                            onToggleExpand = { expandedAgent = !expandedAgent },
+                            onSessionDelete = onSessionDelete
+                        )
+                    }
+                }
+                is DaysPlan -> {
+                    item {
+                        Text("План на дни: ${agentResponse.mainText}", modifier = Modifier.padding(16.dp))
+                    }
+                }
+                is SuggestionPlan -> {
+                    item {
+                        Text("Предложения: ${agentResponse.mainText}", modifier = Modifier.padding(16.dp))
+                    }
+                }
+                is ErrorResponse -> {
+                    item {
+                        Text("Ошибка: ${agentResponse.mainText}", color = colorScheme.error, modifier = Modifier.padding(16.dp))
+                    }
+                }
+                null -> {
+                }
             }
-          }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
                 spring<Float>(
@@ -92,7 +120,7 @@ fun BodyCardsList(
                         fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                   val isExpanded = event.id == expandedEventId
-                  val highlightAction = highlightedEventInfo[event.id]
+                val highlightAction = highlightedInfo[event.id]
                   CalendarEventItem(
                       uiModel = event,
                       isExpanded = isExpanded,

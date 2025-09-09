@@ -57,7 +57,7 @@ fun DayEventsPage(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
-  val agentMessage by agentViewModel.agentMessage.collectAsStateWithLifecycle()
+    val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
       launch {
@@ -69,7 +69,6 @@ fun DayEventsPage(
       }
     }
   }
-  val highlightedInfo by agentViewModel.highlightedEventInfo.collectAsStateWithLifecycle()
   Column(modifier = Modifier.fillMaxSize()) {
     HeadCardsList(
         events = pageState.allDayEvents,
@@ -89,8 +88,7 @@ fun DayEventsPage(
           onEditRequest = eventManagementViewModel::requestEditEvent,
           onDetailsRequest = viewModel::requestEventDetails,
           onSignInClick = onSignInClick,
-          agentMessage = agentMessage,
-          highlightedEventInfo = highlightedInfo,
+          agentResponse = agentResponse,
           onSessionDelete = agentViewModel::deleteSession)
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

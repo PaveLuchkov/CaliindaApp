@@ -13,7 +13,8 @@ sealed interface AgentResponseContent {
 data class TextMessageResponse(
     override val mainText: String,
     override val suggestions: List<String>,
-    val highlightedEventInfo: Map<String, PreviewAction>
+    val highlightedEventInfo: Map<String, PreviewAction>,
+    val author: String
 ) : AgentResponseContent
 
 data class DaysPlan(

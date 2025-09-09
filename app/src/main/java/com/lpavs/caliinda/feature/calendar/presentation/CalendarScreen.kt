@@ -80,7 +80,8 @@ fun CalendarScreen(
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
   val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
-  val agentMessage by agentViewModel.agentMessage.collectAsStateWithLifecycle()
+    val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
+    val suggestions = agentResponse?.suggestions ?: emptyList()
 
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val isTextInputVisible by remember { mutableStateOf(false) }
@@ -285,7 +286,7 @@ fun CalendarScreen(
           },
           recordState = recState,
           authState = authState,
-          suggestions = agentMessage?.suggestions)
+          suggestions = suggestions)
     } // End основной Box
   } // End Scaffold
 

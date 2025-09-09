@@ -65,16 +65,15 @@ constructor(
 
         return when (payload) {
             is String -> {
-                // Простой текстовый ответ
                 TextMessageResponse(
                     mainText = payload,
                     suggestions = emptyList(),
-                    highlightedEventInfo = emptyMap()
+                    highlightedEventInfo = emptyMap(),
+                    author = apiResponse.agent
                 )
             }
             is StructuredResponse -> {
-                // Ответ с превью событий
-                val infoMap = buildMap { // Правильное использование buildMap
+                val infoMap = buildMap {
                     payload.previews?.forEach { (_, previewType) ->
                         val eventPreview = when (previewType) {
                             is PreviewType.Search -> EventPreview(PreviewAction.SEARCH, previewType.search)
@@ -82,7 +81,6 @@ constructor(
                             is PreviewType.Create -> EventPreview(PreviewAction.CREATE, previewType.create)
                             is PreviewType.Delete -> EventPreview(PreviewAction.DELETE, previewType.delete)
                         }
-                        // Добавляем ID в карту
                         eventPreview.eventIds.forEach { id ->
                             put(id, eventPreview.action)
                         }
@@ -91,28 +89,26 @@ constructor(
                 TextMessageResponse(
                     mainText = payload.message.message,
                     suggestions = payload.message.suggestions,
-                    highlightedEventInfo = infoMap
+                    highlightedEventInfo = infoMap,
+                    author = apiResponse.agent
                 )
             }
             is DaysPlanResponse -> {
-                // Ответ с планом по дням
                 DaysPlan(
-                    mainText = payload.summary, // <-- Унификация!
-                    suggestions = emptyList(), // У этого типа нет подсказок
+                    mainText = payload.summary,
+                    suggestions = emptyList(),
                     days = payload.days
                 )
             }
             is SuggestionPlanResponse -> {
-                // Ответ с предложениями
                 SuggestionPlan(
-                    mainText = payload.summary, // <-- Унификация!
+                    mainText = payload.summary,
                     suggestions = emptyList(),
                     suggestionItems = payload.suggestions,
                     generalAdvice = payload.generalAdvice
                 )
             }
             else -> {
-                // Неизвестный тип ответа
                 Log.w("AgentRepositoryImpl", "Received an unexpected response type: ${payload::class.java.name}")
                 ErrorResponse(mainText = "Неподдерживаемый формат ответа от сервера.")
             }

@@ -7,6 +7,8 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
 import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
+import com.lpavs.caliinda.core.data.remote.agent.domain.AgentResponseContent
+import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.agent.data.AgentRepository
@@ -39,12 +41,8 @@ constructor(
   private val _agentState = MutableStateFlow(AgentState.IDLE)
   val agentState: StateFlow<AgentState> = _agentState.asStateFlow()
 
-  private val _agentMessage = MutableStateFlow<ChatMessage?>(null)
-  val agentMessage: StateFlow<ChatMessage?> = _agentMessage.asStateFlow()
-
-  private val _highlightedEventInfo = MutableStateFlow<Map<String, PreviewAction>>(emptyMap())
-  val highlightedEventInfo: StateFlow<Map<String, PreviewAction>> =
-      _highlightedEventInfo.asStateFlow()
+  private val _agentResponse = MutableStateFlow<AgentResponseContent?>(null)
+  val agentResponse: StateFlow<AgentResponseContent?> = _agentResponse.asStateFlow()
 
   private val _recordingState = MutableStateFlow(RecordingState())
   val recState: StateFlow<RecordingState> = _recordingState.asStateFlow()
@@ -76,7 +74,9 @@ constructor(
             }
             is SpeechRecognitionState.Error -> {
               _agentState.value = AgentState.ERROR
-              _agentMessage.value = ChatMessage(text = "Recording error", author = "System")
+              _agentResponse.value = ErrorResponse(
+                mainText = "Ошибка распознавания речи: ${state.message}"
+              )
               _recordingState.update { it.copy(isListening = false, isLoading = false) }
             }
           }
@@ -87,40 +87,31 @@ constructor(
   private fun processTextMessage(text: String) {
     if (text.isBlank()) {
       _agentState.value = AgentState.IDLE
-      _recordingState.update { it.copy(isListening = false, isLoading = false) }
+      _recordingState.update { it.copy(isLoading = false) }
       return
     }
 
+    _agentResponse.value = null
+
     viewModelScope.launch {
       _agentState.value = AgentState.THINKING
-      _recordingState.update { it.copy(isListening = false, isLoading = true) }
+      _recordingState.update { it.copy(isLoading = true) }
 
-      agentRepository
-          .sendMessage(text)
-          .onSuccess { agentMessage ->
-            _agentMessage.value = null
-            _highlightedEventInfo.value = emptyMap()
-            _agentMessage.value = agentMessage
-            val infoMap = buildMap {
-              agentMessage.previews.forEach { preview ->
-                preview.eventIds.forEach { id -> put(id, preview.action) }
-              }
-            }
-            _highlightedEventInfo.value = infoMap
-            _agentState.value = AgentState.RESULT
-            if (agentMessage.author == "Waiter_Action") {
-              calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
-            }
-          }
-          .onFailure { error ->
-            Log.e(TAG, "Failed to send message", error)
-            _agentMessage.value =
-                ChatMessage(
-                    text = (error.message ?: (R.string.error)).toString(), author = "System")
-            _agentState.value = AgentState.ERROR
-          }
+      agentRepository.sendMessage(text)
+        .onSuccess { responseContent ->
+          _agentResponse.value = responseContent
 
-      _recordingState.update { it.copy(isListening = false, isLoading = false) }
+          _agentState.value = AgentState.RESULT
+        }
+        .onFailure { error ->
+          Log.e(TAG, "Failed to send message", error)
+          _agentResponse.value = ErrorResponse(
+            mainText = error.message ?: "Произошла неизвестная ошибка"
+          )
+          _agentState.value = AgentState.ERROR
+        }
+
+      _recordingState.update { it.copy(isLoading = false) }
     }
   }
 
@@ -151,8 +142,7 @@ constructor(
       agentRepository
           .deleteSession()
           .onSuccess {
-            _agentMessage.value = null
-            _highlightedEventInfo.value = emptyMap()
+            _agentResponse.value = null
           }
           .onFailure { error -> Log.e(TAG, "Failed to delete session", error) }
     }
@@ -169,7 +159,7 @@ constructor(
         currentState == AgentState.ERROR ||
         currentState == AgentState.ASKING) {
       _agentState.value = AgentState.IDLE
-      _agentMessage.value = null
+      _agentResponse.value = null
     }
 
     // Также сбрасываем состояние записи
