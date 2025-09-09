@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -54,7 +55,7 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
-fun AgentItem(
+fun AgentMessageItem(
     message: String,
     onToggleExpand: () -> Unit,
     onSessionDelete: () -> Unit,
@@ -73,7 +74,7 @@ fun AgentItem(
                       FontVariation.opticalSizing(100.sp))))
   val cardBackground = colorScheme.tertiaryFixed
   val cardTextColor = colorScheme.onTertiaryFixedVariant
-  val cardBorderColor = colorScheme.onTertiaryFixed
+  val cardBorderColor = colorScheme.onTertiary
   val isShortText = message.length < 35
   val style = if (isShortText) typography.headlineSmall else typography.bodyLarge
   val textAlign = if (isShortText) TextAlign.Center else TextAlign.Start
@@ -85,13 +86,11 @@ fun AgentItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding + 5.dp)
-              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .shadow(
-                  elevation = cardElevation,
+                  elevation = 12.dp,
                   shape = RoundedCornerShape(cuid.EventItemCornerRadius),
-                  clip = false,
-                  ambientColor = darkerShadowColor,
-                  spotColor = darkerShadowColor)
+                  )
+              .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .border(
                   width = 2.dp,
                   color = cardBorderColor,
@@ -165,10 +164,13 @@ fun AgentItem(
       }
 }
 
-@Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
+@Preview(showBackground = true,
+    wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE,
+    uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL
+)
 @Composable
 fun AgentEventPreview() {
-  AgentItem(
+  AgentMessageItem(
       message = "Неподдерживаемый формат.",
       isExpanded = false,
       onToggleExpand = {},
