@@ -46,7 +46,7 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 fun AgentRecommendItem(
     suggestion: Suggestion,
     onToggleExpand: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (String) -> Unit,
     isExpanded: Boolean,
 ) {
   val darkerShadowColor = Color.Black
@@ -68,7 +68,7 @@ fun AgentRecommendItem(
               variationSettings =
                   FontVariation.Settings(
                       FontVariation.weight(700),
-                      FontVariation.width(120f),
+                      FontVariation.width(100f),
                       FontVariation.opticalSizing(50.sp),
                   )))
   val isRecommened = suggestion.isRecommended
@@ -79,8 +79,8 @@ fun AgentRecommendItem(
   val cardBorderColor = colorScheme.onTertiaryFixed
   val styleTitle = typography.headlineSmall
   val textTitleAlign = TextAlign.Start
-
-  Box(
+    val RecommentTitle = suggestion.title
+        Box(
       modifier =
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
@@ -162,8 +162,8 @@ fun AgentRecommendItem(
                               }
                         }
                         Button(onClick = {
-                            onConfirm
-                        }) { Text("Confirm plan") }
+                            onConfirm("Я соглашаюсь на план $RecommentTitle и подтверждаю его создание. class: plan_update.")
+                        }) { Text("Confirm plan", fontFamily = slotNameFontFamily) }
                       }
                 }
               }

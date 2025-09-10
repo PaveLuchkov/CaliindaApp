@@ -24,7 +24,7 @@ object ChatApiResponseSerializer : KSerializer<ChatApiResponse> {
       ?: throw Exception("Response field is missing")
 
     val responseObject: Any = when (agentName) {
-      "MAIN_Agent" -> {
+      "MAIN_Agent", "Waiter_Action", "Planner" -> {
         responseElement.jsonPrimitive.content
       }
       "PresentationLayer" -> {

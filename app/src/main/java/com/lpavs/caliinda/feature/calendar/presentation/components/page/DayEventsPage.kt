@@ -83,13 +83,16 @@ fun DayEventsPage(
       BodyCardsList(
           events = pageState.timedEvents,
           listState = listState,
+          date = date,
           isSignIn = isSignIn,
           onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
           onEditRequest = eventManagementViewModel::requestEditEvent,
           onDetailsRequest = viewModel::requestEventDetails,
           onSignInClick = onSignInClick,
           agentResponse = agentResponse,
-          onSessionDelete = agentViewModel::deleteSession)
+          onSessionDelete = agentViewModel::deleteSession,
+          onPlanConfirm = agentViewModel::sendTextMessage)
+
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isBusy) {

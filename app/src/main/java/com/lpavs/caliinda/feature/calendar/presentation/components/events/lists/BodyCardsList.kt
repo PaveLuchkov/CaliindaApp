@@ -31,25 +31,31 @@ import com.lpavs.caliinda.core.data.remote.agent.domain.TextMessageResponse
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentMessageItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentRecommendItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
+import java.time.LocalDate
 
 @Composable
 fun BodyCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
+    date: LocalDate,
     isSignIn: Boolean,
     onDeleteRequest: (EventDto) -> Unit,
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
     onSignInClick: () -> Unit,
     onSessionDelete: () -> Unit,
+    onPlanConfirm: (String) -> Unit,
     agentResponse: AgentResponseContent?
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
+    var expandedAgentId by remember { mutableStateOf<String?>(null) }
   var expandedAgent by remember { mutableStateOf(false) }
   val haptic = LocalHapticFeedback.current
   val highlightedInfo = (agentResponse as? TextMessageResponse)?.highlightedEventInfo ?: emptyMap()
+    val today = LocalDate.now()
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
       state = listState,
@@ -57,46 +63,77 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
-          when (agentResponse) {
-            is TextMessageResponse -> {
-              haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-              item {
-                AgentMessageItem(
-                    message = agentResponse.mainText,
-                    isExpanded = expandedAgent,
-                    onToggleExpand = { expandedAgent = !expandedAgent },
-                    onSessionDelete = onSessionDelete)
-              }
-            }
-            is DaysPlan -> {
-              item {
-                  AgentMessageItem(
-                      message = agentResponse.mainText,
-                      isExpanded = expandedAgent,
-                      onToggleExpand = { expandedAgent = !expandedAgent },
-                      onSessionDelete = onSessionDelete)
-              }
-            }
-            is SuggestionPlan -> {
-              item {
-                  AgentMessageItem(
-                      message = agentResponse.mainText,
-                      isExpanded = expandedAgent,
-                      onToggleExpand = { expandedAgent = !expandedAgent },
-                      onSessionDelete = onSessionDelete)
-              }
-            }
-            is ErrorResponse -> {
-              item {
-                  AgentMessageItem(
-                      message = agentResponse.mainText,
-                      isExpanded = expandedAgent,
-                      onToggleExpand = { expandedAgent = !expandedAgent },
-                      onSessionDelete = onSessionDelete)
-              }
-            }
-            null -> {}
-          }
+                when (agentResponse) {
+                    is TextMessageResponse -> {
+                        if (date == today) {
+                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            item {
+                                AgentMessageItem(
+                                    message = agentResponse.mainText,
+                                    isExpanded = expandedAgent,
+                                    onToggleExpand = { expandedAgent = !expandedAgent },
+                                    onSessionDelete = onSessionDelete
+                                )
+                            }
+                        }
+                    }
+                    is DaysPlan -> {
+                        item {
+                            AgentMessageItem(
+                                message = agentResponse.mainText,
+                                isExpanded = expandedAgent,
+                                onToggleExpand = { expandedAgent = !expandedAgent },
+                                onSessionDelete = onSessionDelete
+                            )
+                        }
+                    }
+
+                    is SuggestionPlan -> {
+                        if (date == today) {
+                            item {
+                                AgentMessageItem(
+                                    message = agentResponse.mainText,
+                                    isExpanded = expandedAgent,
+                                    onToggleExpand = { expandedAgent = !expandedAgent },
+                                    onSessionDelete = onSessionDelete
+                                )
+                            }
+                            val suggestionItems = agentResponse.suggestionItems
+                            items(
+                                items = suggestionItems,
+                                key = { suggestion -> suggestion.hashCode() }) { suggestion ->
+                                val isExpandedAgent = suggestion.title == expandedAgentId
+                                AgentRecommendItem(
+                                    suggestion = suggestion,
+                                    isExpanded = isExpandedAgent,
+                                    onToggleExpand = {
+                                        expandedAgentId =
+                                            if (expandedAgentId == suggestion.title) {
+                                                null
+                                            } else {
+                                                suggestion.title
+                                            }
+                                    },
+                                    onConfirm = onPlanConfirm
+                                )
+                            }
+                        }
+
+                    }
+
+                    is ErrorResponse -> {
+                        item {
+                            AgentMessageItem(
+                                message = agentResponse.mainText,
+                                isExpanded = expandedAgent,
+                                onToggleExpand = { expandedAgent = !expandedAgent },
+                                onSessionDelete = onSessionDelete
+                            )
+                        }
+                    }
+
+                    null -> {}
+                }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
                 spring<Float>(
