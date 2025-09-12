@@ -59,8 +59,8 @@ fun BodyCardsList(
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
   var expandedAgentId by remember { mutableStateOf<String?>(null) }
-  var expandedAgent by remember { mutableStateOf(false) }
-  val haptic = LocalHapticFeedback.current
+    var expandedAgent by remember { mutableStateOf(false) }
+    var hiddenAgent by remember { mutableStateOf(false) }
   val highlightedInfo = (agentResponse as? TextMessageResponse)?.highlightedEventInfo ?: emptyMap()
   val today = LocalDate.now()
   LazyColumn(
@@ -70,29 +70,24 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
+            if (agentResponse != null) {
+                item {
+                    AgentMessageItem(
+                        message = agentResponse.mainText,
+                        isExpanded = expandedAgent,
+                        onToggleExpand = { expandedAgent = !expandedAgent },
+                        onSessionDelete = onSessionDelete,
+                        onHide = { hiddenAgent = !hiddenAgent },
+                        isHidden = hiddenAgent
+                    )
+                }
+            }
           when (agentResponse) {
             is TextMessageResponse -> {
-              if (date == today) {
-                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                item {
-                  AgentMessageItem(
-                      message = agentResponse.mainText,
-                      isExpanded = expandedAgent,
-                      onToggleExpand = { expandedAgent = !expandedAgent },
-                      onSessionDelete = onSessionDelete)
-                }
-              }
             }
 
             is DaysPlanContent -> {
               val relevantDayPlan = agentResponse.days.find { LocalDate.parse(it.date) == date }
-              item {
-                AgentMessageItem(
-                    message = agentResponse.mainText,
-                    isExpanded = expandedAgent,
-                    onToggleExpand = { expandedAgent = !expandedAgent },
-                    onSessionDelete = onSessionDelete)
-              }
               if (relevantDayPlan == null) {
                 // Найти первую дату из планов
                 val firstPlanDate =
@@ -141,13 +136,6 @@ fun BodyCardsList(
 
             is SuggestionPlan -> {
               if (date == today) {
-                item {
-                  AgentMessageItem(
-                      message = agentResponse.mainText,
-                      isExpanded = expandedAgent,
-                      onToggleExpand = { expandedAgent = !expandedAgent },
-                      onSessionDelete = onSessionDelete)
-                }
                 val suggestionItems = agentResponse.suggestionItems
                 items(items = suggestionItems, key = { suggestion -> suggestion.hashCode() }) {
                     suggestion ->
@@ -169,13 +157,6 @@ fun BodyCardsList(
             }
 
             is ErrorResponse -> {
-              item {
-                AgentMessageItem(
-                    message = agentResponse.mainText,
-                    isExpanded = expandedAgent,
-                    onToggleExpand = { expandedAgent = !expandedAgent },
-                    onSessionDelete = onSessionDelete)
-              }
             }
 
             null -> {}

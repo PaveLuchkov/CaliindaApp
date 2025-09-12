@@ -42,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 
@@ -147,5 +148,7 @@ fun LogInEvent(
 @Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
 @Composable
 fun LogInEventPreview() {
-  LogInEvent(onSignInClick = {})
+    CaliindaTheme {
+        LogInEvent(onSignInClick = {})
+    }
 }

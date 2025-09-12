@@ -71,6 +71,7 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
@@ -420,15 +421,19 @@ val normalEvent =
                 location = null,
                 isAllDay = false))
 
-@Preview(showBackground = true, wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE)
+@Preview(showBackground = true,
+    wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE
+)
 @Composable
 fun CalendarEventPreview() {
-  CalendarEventItem(
-      onToggleExpand = {},
-      onDetailsClickFromList = {},
-      isExpanded = false,
-      onEditClickFromList = {},
-      onDeleteClickFromList = {},
-      uiModel = normalEvent,
-      highlightAction = PreviewAction.SEARCH)
+    CaliindaTheme {
+        CalendarEventItem(
+            onToggleExpand = {},
+            onDetailsClickFromList = {},
+            isExpanded = false,
+            onEditClickFromList = {},
+            onDeleteClickFromList = {},
+            uiModel = normalEvent,
+            highlightAction = PreviewAction.UPDATE)
+    }
 }
