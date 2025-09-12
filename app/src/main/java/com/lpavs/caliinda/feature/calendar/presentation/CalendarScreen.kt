@@ -107,6 +107,14 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
+    val navigateToDate: (LocalDate) -> Unit = { targetDate ->
+        scope.launch {
+            val targetPageIndex = initialPageIndex + ChronoUnit.DAYS.between(today, targetDate).toInt()
+            calendarViewModel.onVisibleDateChanged(targetDate)
+            pagerState.animateScrollToPage(targetPageIndex)
+        }
+    }
+
   LaunchedEffect(authState.authorizationIntent) {
     authState.authorizationIntent?.let { pendingIntent ->
       try {
@@ -264,7 +272,8 @@ fun CalendarScreen(
                     Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
                   }
                 },
-                agentViewModel = agentViewModel)
+                agentViewModel = agentViewModel,
+                onNavigateToDate = navigateToDate)
           }
       AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
       BottomBar(

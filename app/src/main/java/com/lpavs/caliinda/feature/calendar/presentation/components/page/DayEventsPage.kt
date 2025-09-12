@@ -48,6 +48,7 @@ fun DayEventsPage(
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
     agentViewModel: AgentViewModel,
+    onNavigateToDate: (LocalDate) -> Unit,
 ) {
   val pageState by
       viewModel
@@ -91,7 +92,8 @@ fun DayEventsPage(
           onSignInClick = onSignInClick,
           agentResponse = agentResponse,
           onSessionDelete = agentViewModel::deleteSession,
-          onPlanConfirm = agentViewModel::sendTextMessage)
+          onPlanConfirm = agentViewModel::sendTextMessage,
+          onNavigateToDate = onNavigateToDate )
 
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
