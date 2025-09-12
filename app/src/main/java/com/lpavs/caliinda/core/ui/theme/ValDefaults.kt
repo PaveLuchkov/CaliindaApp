@@ -25,7 +25,7 @@ object CalendarUiDefaults {
   val SettingsItemCornerRadius = 25.dp
 
   // Тени и Z-index
-  val CurrentEventElevation = 8.dp
+  val CurrentEventElevation = 16.dp
 
   const val HeightSigmoidMidpointMinutes = 180.0
   const val HeightSigmoidScaleFactor = 100.0

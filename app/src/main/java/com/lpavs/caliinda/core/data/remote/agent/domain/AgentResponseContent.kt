@@ -17,7 +17,7 @@ data class TextMessageResponse(
     val author: String
 ) : AgentResponseContent
 
-data class DaysPlan(
+data class DaysPlanContent(
     override val mainText: String,
     override val suggestions: List<String>,
     val days: List<DayPlan>
