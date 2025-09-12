@@ -39,6 +39,7 @@ import com.lpavs.caliinda.core.data.remote.agent.Slot
 import com.lpavs.caliinda.core.data.remote.agent.Suggestion
 import com.lpavs.caliinda.core.data.remote.agent.Weekday
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
@@ -79,8 +80,8 @@ fun AgentRecommendItem(
   val cardBorderColor = colorScheme.onTertiaryFixed
   val styleTitle = typography.headlineSmall
   val textTitleAlign = TextAlign.Start
-    val RecommentTitle = suggestion.title
-        Box(
+  val recommentTitle = suggestion.title
+  Box(
       modifier =
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
@@ -161,9 +162,13 @@ fun AgentRecommendItem(
                                     color = cardTextColor)
                               }
                         }
-                        Button(onClick = {
-                            onConfirm("Я соглашаюсь на план $RecommentTitle и подтверждаю его создание. class: plan_update.")
-                        }) { Text("Confirm plan", fontFamily = slotNameFontFamily) }
+                        Button(
+                            onClick = {
+                              onConfirm(
+                                  "Я соглашаюсь на план $recommentTitle и подтверждаю его создание. class: plan_update.")
+                            }) {
+                              Text("Confirm plan", fontFamily = slotNameFontFamily)
+                            }
                       }
                 }
               }
@@ -174,7 +179,7 @@ fun AgentRecommendItem(
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
 fun AgentEventRecommendPreview() {
-  val fake_suggestion_not_rec =
+  val debugVsCodeSuggestion =
       Suggestion(
           title = "Debug VS code",
           description =
@@ -185,10 +190,11 @@ fun AgentEventRecommendPreview() {
                   Slot(Weekday.Wednesday, "Attemping to create outline", "17:30", "18:00"),
                   Slot(Weekday.Friday, "Generate AI crap", "13:30", "14:30")),
           isRecommended = true)
-  AgentRecommendItem(
-      suggestion = fake_suggestion_not_rec,
-      isExpanded = true,
-      onToggleExpand = {},
-      onConfirm = {}
-  )
+  CaliindaTheme {
+    AgentRecommendItem(
+        suggestion = debugVsCodeSuggestion,
+        isExpanded = true,
+        onToggleExpand = {},
+        onConfirm = {})
+  }
 }
