@@ -110,7 +110,6 @@ fun EventDateTimePicker(
 
   val weekdays = remember { DayOfWeek.entries.toTypedArray() }
 
-  // --- Форматтеры для отображения (без изменений) ---
   val deviceDateFormatter = remember {
     DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.getDefault())
   }
@@ -153,12 +152,10 @@ fun EventDateTimePicker(
   }
 
   Column(modifier = modifier) {
-    // --- Filter Chips ---
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
-      // --- Чип "All Day" ---
       FilterChip(
           selected = isAllDay,
           onClick = {
@@ -209,7 +206,6 @@ fun EventDateTimePicker(
           label = { Text(allDay) },
           enabled = !isLoading)
 
-      // --- Чип "One Day" ---
       FilterChip(
           selected = isOneDay,
           onClick = {
@@ -240,7 +236,6 @@ fun EventDateTimePicker(
           label = { Text(oneDay) },
           enabled = !isLoading)
 
-      // --- Чип "Recurring" ---
       FilterChip(
           selected = state.isRecurring,
           onClick = {
@@ -271,7 +266,6 @@ fun EventDateTimePicker(
           }
         }
 
-    // --- Поля ввода Даты/Времени ---
     Column(
         modifier = Modifier.animateContentSize(animationSpec = tween(300)),
         verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -423,10 +417,9 @@ fun EventDateTimePicker(
                     }
                   }
                 }
-              } // End AnimatedContent
-        } // End Column for Date/Time fields with animateContentSize
+              }
+        }
 
-    // --- Настройки повторения (АНИМИРОВАННЫЕ) ---
     AnimatedVisibility(
         visible = state.isRecurring,
         enter =
@@ -435,20 +428,16 @@ fun EventDateTimePicker(
         exit = fadeOut(animationSpec = tween(150)) + shrinkVertically(animationSpec = tween(300)),
         modifier = Modifier.padding(top = 8.dp)) {
           Column {
-            // --- Чипы для выбора частоты RRULE ---
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 8.dp)
-                        .horizontalScroll(rememberScrollState()), // Горизонтальная прокрутка
+                        .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             ) {
-              // Вычисляем текущий выбор один раз
               val currentSelection =
                   remember(state.recurrenceRule) { RecurrenceOption.fromRule(state.recurrenceRule) }
 
-              // --- Явно создаем каждый чип ---
-              // Чип "Ежедневно"
               FilterChipForOption(
                   option = RecurrenceOption.Daily,
                   currentSelection = currentSelection,
@@ -456,7 +445,6 @@ fun EventDateTimePicker(
                   onStateChange = onStateChange,
                   state = state)
 
-              // Чип "Еженедельно"
               FilterChipForOption(
                   option = RecurrenceOption.Weekly,
                   currentSelection = currentSelection,
@@ -464,7 +452,6 @@ fun EventDateTimePicker(
                   onStateChange = onStateChange,
                   state = state)
 
-              // Чип "Ежемесячно"
               FilterChipForOption(
                   option = RecurrenceOption.Monthly,
                   currentSelection = currentSelection,
@@ -472,7 +459,6 @@ fun EventDateTimePicker(
                   onStateChange = onStateChange,
                   state = state)
 
-              // Чип "Ежегодно"
               FilterChipForOption(
                   option = RecurrenceOption.Yearly,
                   currentSelection = currentSelection,
@@ -481,9 +467,7 @@ fun EventDateTimePicker(
                   state = state)
             }
             AnimatedVisibility(
-                visible =
-                    state.recurrenceRule ==
-                        RecurrenceOption.Weekly.rruleValue, // Показываем только для Weekly
+                visible = state.recurrenceRule == RecurrenceOption.Weekly.rruleValue,
                 enter =
                     fadeIn(animationSpec = tween(150, delayMillis = 50)) +
                         expandVertically(animationSpec = tween(300)),
@@ -492,13 +476,11 @@ fun EventDateTimePicker(
                         shrinkVertically(animationSpec = tween(300)),
             ) {
               Column {
-                // --- Чипы для дней недели ---
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 8.dp)
                             .horizontalScroll(rememberScrollState()),
-                    // Центрируем дни недели, если их немного
                     horizontalArrangement =
                         Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
                       weekdays.forEach { day ->
@@ -509,7 +491,6 @@ fun EventDateTimePicker(
                               val currentDays = state.selectedWeekdays
                               val newDays =
                                   if (isSelected) {
-                                    // Не даем убрать последний выбранный день, если он один
                                     if (currentDays.size > 1) currentDays - day else currentDays
                                   } else {
                                     currentDays + day
@@ -528,11 +509,10 @@ fun EventDateTimePicker(
                 modifier = Modifier.padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
-                      text = endsLabel, // "Ending"
+                      text = endsLabel,
                       style = typography.titleSmall,
                       modifier = Modifier.padding(horizontal = 8.dp),
                       textAlign = TextAlign.Center)
-                  // --- Чипы для выбора типа окончания (NEVER, DATE, COUNT) ---
                   Row(
                       modifier =
                           Modifier.fillMaxWidth()
@@ -540,11 +520,9 @@ fun EventDateTimePicker(
                               .horizontalScroll(rememberScrollState()),
                       horizontalArrangement =
                           Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-                        // Чип "Never"
                         FilterChip(
                             selected = state.recurrenceEndType == RecurrenceEndType.NEVER,
                             onClick = {
-                              // Устанавливаем тип, сбрасываем дату и количество
                               onStateChange(
                                   state.copy(
                                       recurrenceEndType = RecurrenceEndType.NEVER,
@@ -553,26 +531,22 @@ fun EventDateTimePicker(
                             },
                             label = { Text(endNeverLabel) },
                             enabled = !isLoading)
-                        // Чип "On date"
                         FilterChip(
                             selected = state.recurrenceEndType == RecurrenceEndType.DATE,
                             onClick = {
                               val defaultEndDate =
-                                  state.recurrenceEndDate
-                                      ?: state.startDate.plusMonths(1) // Пример: через месяц
+                                  state.recurrenceEndDate ?: state.startDate.plusMonths(1)
                               onStateChange(
                                   state.copy(
                                       recurrenceEndType = RecurrenceEndType.DATE,
                                       recurrenceEndDate = defaultEndDate,
                                       recurrenceCount = null))
-                              // Запрашиваем показ пикера, если дата была null
                               if (state.recurrenceEndDate == null) {
                                 onRequestShowRecurrenceEndDatePicker()
                               }
                             },
                             label = { Text(endDateLabel) },
                             enabled = !isLoading)
-                        // Чип "After..."
                         FilterChip(
                             selected = state.recurrenceEndType == RecurrenceEndType.COUNT,
                             onClick = {
@@ -587,20 +561,17 @@ fun EventDateTimePicker(
                             enabled = !isLoading)
                       }
 
-                  // --- Поле для выбора даты окончания (UNTIL) ---
                   AnimatedVisibility(
                       visible = state.recurrenceEndType == RecurrenceEndType.DATE,
                       modifier = Modifier.padding(top = 8.dp)) {
                         DatePickerField(
-                            // "End Date"
                             date = state.recurrenceEndDate,
                             dateFormatter = deviceDateFormatter,
                             isLoading = isLoading,
-                            onClick = onRequestShowRecurrenceEndDatePicker, // Открываем пикер
+                            onClick = onRequestShowRecurrenceEndDatePicker,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 50.dp))
                       }
 
-                  // --- Поле для ввода количества (COUNT) ---
                   AnimatedVisibility(
                       visible = state.recurrenceEndType == RecurrenceEndType.COUNT,
                       modifier = Modifier.padding(top = 8.dp)) {
@@ -611,7 +582,7 @@ fun EventDateTimePicker(
                                   text.filter { it.isDigit() }.toIntOrNull()?.coerceAtLeast(1)
                               onStateChange(state.copy(recurrenceCount = count))
                             },
-                            label = { Text(recurrenceCountFieldLabel) }, // "Number of times"
+                            label = { Text(recurrenceCountFieldLabel) },
                             keyboardOptions =
                                 KeyboardOptions(
                                     keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
@@ -619,16 +590,14 @@ fun EventDateTimePicker(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 50.dp),
                             shape = RoundedCornerShape(cuid.ContainerCornerRadius),
                             enabled = !isLoading,
-                            isError = state.recurrenceCount == null // Ошибка, если пусто
-                            )
+                            isError = state.recurrenceCount == null)
                       }
-                } // --- КОНЕЦ СЕКЦИИ ОКОНЧАНИЯ ---
+                }
           }
-        } // End AnimatedVisibility for Recurrence
-  } // End Outer Column
+        }
+  }
 }
 
-// --- Вспомогательные Composable для полей ---
 @Composable
 private fun FilterChipForOption(
     option: RecurrenceOption,

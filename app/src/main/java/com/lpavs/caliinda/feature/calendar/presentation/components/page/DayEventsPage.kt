@@ -80,7 +80,8 @@ fun DayEventsPage(
 
     Spacer(modifier = Modifier.height(2.dp))
 
-    if (pageState.timedEvents.isNotEmpty() or isSignIn) {
+    if (pageState.timedEvents.isNotEmpty() or isSignIn || !(agentResponse?.mainText.isNullOrBlank())
+    ) {
       BodyCardsList(
           events = pageState.timedEvents,
           listState = listState,

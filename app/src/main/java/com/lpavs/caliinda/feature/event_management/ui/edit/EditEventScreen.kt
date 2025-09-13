@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.AdaptiveContainer
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
@@ -138,46 +139,21 @@ fun EditEventScreen(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center) {
-        AnimatedContent(
-            targetState = currentSheetValue,
-            transitionSpec = {
-              (EnterTransition.None)
-                  .togetherWith(ExitTransition.None)
-                  .using(
-                      SizeTransform(
-                          clip = false,
-                          sizeAnimationSpec = { _, _ ->
-                            spring(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessMediumLow)
-                          }))
-            },
-            label = "SaveButtonAnimation") { targetSheetValue
-              -> // TODO исправить чтобы выключалась на загрузке
-              val expandedSize = ButtonDefaults.LargeContainerHeight
-              val defaultSize = ButtonDefaults.MediumContainerHeight
-
-              val isNotCompactState = targetSheetValue == SheetValue.Expanded
-
-              val size = if (!isNotCompactState) defaultSize else expandedSize
-
-              Button(
-                  onClick = onSaveClick,
-                  enabled = !uiState.isLoading,
-                  modifier = Modifier.heightIn(size),
-                  contentPadding = ButtonDefaults.contentPaddingFor(size)) {
-                    if (uiState.isLoading) {
-                      LoadingIndicator(
-                          color = colorScheme.onPrimary,
-                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
-                    } else {
-                      Icon(
-                          imageVector = Icons.Filled.Check,
-                          contentDescription = stringResource(R.string.save),
-                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)))
-                    }
-                  }
-            }
+      Button(
+          onClick = onSaveClick,
+          enabled = !uiState.isLoading,
+          modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
+      ) {
+          if (uiState.isLoading) {
+              LoadingIndicator(
+                  color = colorScheme.onPrimary,
+                  modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
+          } else {
+              Text(
+                  text = stringResource(R.string.save),
+              )
+          }
+      }
       }
   Column(
       modifier =

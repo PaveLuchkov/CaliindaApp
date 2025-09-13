@@ -23,8 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.remote.agent.domain.AgentResponseContent
@@ -59,8 +57,8 @@ fun BodyCardsList(
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
   var expandedAgentId by remember { mutableStateOf<String?>(null) }
-    var expandedAgent by remember { mutableStateOf(false) }
-    var hiddenAgent by remember { mutableStateOf(false) }
+  var expandedAgent by remember { mutableStateOf(false) }
+  var hiddenAgent by remember { mutableStateOf(false) }
   val highlightedInfo = (agentResponse as? TextMessageResponse)?.highlightedEventInfo ?: emptyMap()
   val today = LocalDate.now()
   LazyColumn(
@@ -70,21 +68,19 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
-            if (agentResponse != null) {
-                item {
-                    AgentMessageItem(
-                        message = agentResponse.mainText,
-                        isExpanded = expandedAgent,
-                        onToggleExpand = { expandedAgent = !expandedAgent },
-                        onSessionDelete = onSessionDelete,
-                        onHide = { hiddenAgent = !hiddenAgent },
-                        isHidden = hiddenAgent
-                    )
-                }
+          if (agentResponse != null) {
+            item {
+              AgentMessageItem(
+                  message = agentResponse.mainText,
+                  isExpanded = expandedAgent,
+                  onToggleExpand = { expandedAgent = !expandedAgent },
+                  onSessionDelete = onSessionDelete,
+                  onHide = { hiddenAgent = !hiddenAgent },
+                  isHidden = hiddenAgent)
             }
+          }
           when (agentResponse) {
-            is TextMessageResponse -> {
-            }
+            is TextMessageResponse -> {}
 
             is DaysPlanContent -> {
               val relevantDayPlan = agentResponse.days.find { LocalDate.parse(it.date) == date }
@@ -156,8 +152,7 @@ fun BodyCardsList(
               }
             }
 
-            is ErrorResponse -> {
-            }
+            is ErrorResponse -> {}
 
             null -> {}
           }
