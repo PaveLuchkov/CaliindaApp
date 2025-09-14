@@ -14,41 +14,49 @@ object ChatApiResponseSerializer : KSerializer<ChatApiResponse> {
   override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ChatApiResponse")
 
   override fun deserialize(decoder: Decoder): ChatApiResponse {
-    val jsonDecoder = decoder as? JsonDecoder ?: error("This serializer can be used only with Json format")
+    val jsonDecoder =
+        decoder as? JsonDecoder ?: error("This serializer can be used only with Json format")
     val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
-    val agentName = jsonObject["agent"]?.jsonPrimitive?.content
-      ?: throw Exception("Agent field is missing or not a string")
+    val agentName =
+        jsonObject["agent"]?.jsonPrimitive?.content
+            ?: throw Exception("Agent field is missing or not a string")
 
-    val responseElement = jsonObject["response"]
-      ?: throw Exception("Response field is missing")
+    val responseElement = jsonObject["response"] ?: throw Exception("Response field is missing")
 
-    val responseObject: Any = when (agentName) {
-      "MAIN_Agent", "Waiter_Action", "Planner" -> {
-        responseElement.jsonPrimitive.content
-      }
-      "PresentationLayer" -> {
-          jsonDecoder.json.decodeFromJsonElement(StructuredResponse.serializer(), responseElement)
-      }
-      "TacticAgent", "StrategyAgent" -> {
-        val responseJsonObj = responseElement.jsonObject
-        val planType = responseJsonObj["response_type"]?.jsonPrimitive?.content
+    val responseObject: Any =
+        when (agentName) {
+          "MAIN_Agent",
+          "Waiter_Action",
+          "Planner" -> {
+            responseElement.jsonPrimitive.content
+          }
+          "PresentationLayer" -> {
+            jsonDecoder.json.decodeFromJsonElement(StructuredResponse.serializer(), responseElement)
+          }
+          "TacticAgent",
+          "StrategyAgent" -> {
+            val responseJsonObj = responseElement.jsonObject
+            val planType = responseJsonObj["response_type"]?.jsonPrimitive?.content
 
-        when (planType) {
-          "days_plan" -> jsonDecoder.json.decodeFromJsonElement(DaysPlanResponse.serializer(), responseJsonObj)
-          "suggestion_plan" -> jsonDecoder.json.decodeFromJsonElement(SuggestionPlanResponse.serializer(), responseJsonObj)
-          else -> throw Exception("Unknown plan type '$planType' for agent '$agentName'")
+            when (planType) {
+              "days_plan" ->
+                  jsonDecoder.json.decodeFromJsonElement(
+                      DaysPlanResponse.serializer(), responseJsonObj)
+              "suggestion_plan" ->
+                  jsonDecoder.json.decodeFromJsonElement(
+                      SuggestionPlanResponse.serializer(), responseJsonObj)
+              else -> throw Exception("Unknown plan type '$planType' for agent '$agentName'")
+            }
+          }
+
+          else -> throw Exception("Unknown agent type: $agentName")
         }
-      }
-
-      else -> throw Exception("Unknown agent type: $agentName")
-    }
 
     return ChatApiResponse(agent = agentName, response = responseObject)
   }
 
-  override fun serialize(encoder: Encoder, value: ChatApiResponse) {
-  }
+  override fun serialize(encoder: Encoder, value: ChatApiResponse) {}
 }
 
 object PreviewTypeSerializer : KSerializer<PreviewType> {

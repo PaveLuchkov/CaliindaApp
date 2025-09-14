@@ -59,20 +59,20 @@ constructor(
           } else if (response.code() == 204) {
             Result.success(Unit as T)
           } else {
-            Result.failure(Exception("Response body is null for code ${response.code()}"))
+            Result.failure(Exception("My brother Server said nothing, well continue with oldschool mmethods or try later"))
           }
         } else {
           val errorBody = response.errorBody()?.string()
           Log.e(TAG, "API call failed with code ${response.code()}: $errorBody")
           Result.failure(
-              ApiException(response.code(), "Server error: ${response.code()}. $errorBody"))
+              ApiException(response.code(), "Sorry cannot help you now, my brother Server is in trouble"))
         }
       } catch (e: Throwable) {
         Log.e(TAG, "API call exception: ${e.javaClass.simpleName}", e)
         when (e) {
-          is IOException -> Result.failure(NetworkException("Network issue: ${e.message}"))
-          is HttpException -> Result.failure(ApiException(e.code(), "Http error: ${e.message()}"))
-          else -> Result.failure(UnknownException("Unknown error: ${e.message}"))
+          is IOException -> Result.failure(NetworkException("Some problems with the connection to great network I see"))
+          is HttpException -> Result.failure(ApiException(e.code(), "Some troubles :("))
+          else -> Result.failure(UnknownException("idk what happened but I cannot help you now :("))
         }
       }
     }

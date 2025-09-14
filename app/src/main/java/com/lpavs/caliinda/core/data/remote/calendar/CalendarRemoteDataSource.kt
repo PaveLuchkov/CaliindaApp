@@ -8,13 +8,13 @@ import com.lpavs.caliinda.core.common.UnknownException
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.withContext
-import retrofit2.HttpException
 import java.io.IOException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 class CalendarRemoteDataSource
 @Inject
@@ -118,23 +118,30 @@ constructor(
         when (e) {
           is IOException -> {
             Log.e(TAG, "safeApiCall: IOException - Network issue", e)
-            Result.failure(NetworkException("Network issue: ${e.message}"))
+            Result.failure(
+                NetworkException(
+                    "Looks like the internet went on a coffee break. Please check your connection ☕"))
           }
 
           is HttpException -> {
             val errorBody = e.response()?.errorBody()?.string()
             Log.e(TAG, "safeApiCall: HttpException - code: ${e.code()}, errorBody: $errorBody", e)
-            Result.failure(ApiException(e.code(), "Server error: ${e.code()}. $errorBody"))
+            Result.failure(
+                ApiException(
+                    e.code(), "Server is in a bad mood (code: ${e.code()}). Try again later 🙃"))
           }
 
           is ApiException -> {
             Log.e(TAG, "safeApiCall: ApiException - code: ${e}, message: ${e}", e)
-            Result.failure(e)
+            Result.failure(
+                ApiException(
+                    e.code, "Something went wrong... but don’t worry, we called the devs 👨‍💻"))
           }
-
           else -> {
             Log.e(TAG, "safeApiCall: UnknownException - message: ${e.message}", e)
-            Result.failure(UnknownException("Unknown error: ${e.message}"))
+            Result.failure(
+                UnknownException(
+                    "Oops! An unexpected error happened. Try again—or bribe the app with cookies 🍪"))
           }
         }
       }
