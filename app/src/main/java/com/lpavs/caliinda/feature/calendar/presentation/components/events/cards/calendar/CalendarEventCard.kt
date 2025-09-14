@@ -421,19 +421,17 @@ val normalEvent =
                 location = null,
                 isAllDay = false))
 
-@Preview(showBackground = true,
-    wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE
-)
+@Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
 fun CalendarEventPreview() {
-    CaliindaTheme {
-        CalendarEventItem(
-            onToggleExpand = {},
-            onDetailsClickFromList = {},
-            isExpanded = false,
-            onEditClickFromList = {},
-            onDeleteClickFromList = {},
-            uiModel = normalEvent,
-            highlightAction = PreviewAction.UPDATE)
-    }
+  CaliindaTheme {
+    CalendarEventItem(
+        onToggleExpand = {},
+        onDetailsClickFromList = {},
+        isExpanded = false,
+        onEditClickFromList = {},
+        onDeleteClickFromList = {},
+        uiModel = normalEvent,
+        highlightAction = PreviewAction.UPDATE)
+  }
 }

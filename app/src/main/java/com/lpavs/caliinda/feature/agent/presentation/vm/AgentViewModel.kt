@@ -4,12 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
-import com.lpavs.caliinda.core.data.remote.agent.ChatMessage
-import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.agent.domain.AgentResponseContent
 import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
-import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.agent.data.AgentRepository
 import com.lpavs.caliinda.feature.agent.data.SpeechRecognitionService
@@ -33,9 +29,7 @@ class AgentViewModel
 @Inject
 constructor(
     private val agentRepository: AgentRepository,
-    private val calendarRepository: CalendarRepository,
     private val speechRecognitionService: SpeechRecognitionService,
-    private val calendarStateHolder: ICalendarStateHolder,
 ) : ViewModel() {
 
   private val _agentState = MutableStateFlow(AgentState.IDLE)
@@ -74,9 +68,8 @@ constructor(
             }
             is SpeechRecognitionState.Error -> {
               _agentState.value = AgentState.ERROR
-              _agentResponse.value = ErrorResponse(
-                mainText = "Ошибка распознавания речи: ${state.message}"
-              )
+              _agentResponse.value =
+                  ErrorResponse(mainText = "Ошибка распознавания речи: ${state.message}")
               _recordingState.update { it.copy(isListening = false, isLoading = false) }
             }
           }
@@ -97,19 +90,19 @@ constructor(
       _agentState.value = AgentState.THINKING
       _recordingState.update { it.copy(isLoading = true) }
 
-      agentRepository.sendMessage(text)
-        .onSuccess { responseContent ->
-          _agentResponse.value = responseContent
+      agentRepository
+          .sendMessage(text)
+          .onSuccess { responseContent ->
+            _agentResponse.value = responseContent
 
-          _agentState.value = AgentState.RESULT
-        }
-        .onFailure { error ->
-          Log.e(TAG, "Failed to send message", error)
-          _agentResponse.value = ErrorResponse(
-            mainText = error.message ?: "Произошла неизвестная ошибка"
-          )
-          _agentState.value = AgentState.ERROR
-        }
+            _agentState.value = AgentState.RESULT
+          }
+          .onFailure { error ->
+            Log.e(TAG, "Failed to send message", error)
+            _agentResponse.value =
+                ErrorResponse(mainText = error.message ?: "Произошла неизвестная ошибка")
+            _agentState.value = AgentState.ERROR
+          }
 
       _recordingState.update { it.copy(isLoading = false) }
     }
@@ -141,29 +134,13 @@ constructor(
     viewModelScope.launch {
       agentRepository
           .deleteSession()
-          .onSuccess {
-            _agentResponse.value = null
-          }
+          .onSuccess { _agentResponse.value = null }
           .onFailure { error -> Log.e(TAG, "Failed to delete session", error) }
     }
   }
 
-  // --- ОБРАБОТКА UI СОБЫТИЙ / РАЗРЕШЕНИЙ ---
   fun updatePermissionStatus(isGranted: Boolean) {
     _recordingState.update { it.copy(isPermissionGranted = isGranted) }
-  }
-
-  fun resetAiState() {
-    val currentState = agentState.value
-    if (currentState == AgentState.RESULT ||
-        currentState == AgentState.ERROR ||
-        currentState == AgentState.ASKING) {
-      _agentState.value = AgentState.IDLE
-      _agentResponse.value = null
-    }
-
-    // Также сбрасываем состояние записи
-    _recordingState.update { it.copy(isListening = false, isLoading = false) }
   }
 
   override fun onCleared() {

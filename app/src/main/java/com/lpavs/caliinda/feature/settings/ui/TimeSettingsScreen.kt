@@ -125,9 +125,8 @@ fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit,
                       }) {
                         OutlinedTextField(
                             modifier =
-                                Modifier
-                                    .menuAnchor() // menuAnchor без параметров - это стандартный
-                                                  // способ
+                                Modifier.menuAnchor() // menuAnchor без параметров - это стандартный
+                                    // способ
                                     .fillMaxWidth(),
                             readOnly = true,
                             // Меню заблокировано, если включен системный часовой пояс

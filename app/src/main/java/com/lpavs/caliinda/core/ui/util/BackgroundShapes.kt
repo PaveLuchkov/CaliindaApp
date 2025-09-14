@@ -44,40 +44,36 @@ enum class BackgroundShapeContext {
 fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Main) {
   Box(
       modifier = Modifier.fillMaxSize()
-      //    .graphicsLayer(alpha = 0.5f) // Можно сделать полупрозрачным, если нужно
-      ) {
-        // Используем when для выбора фигур в зависимости от контекста
+  ) {
         when (context) {
           BackgroundShapeContext.Main -> {
 
-            val Clover4Leaf = MaterialShapes.Clover4Leaf.toShape()
-            val Cookie4Sided = MaterialShapes.Flower.toShape()
+            val clover4Leaf = MaterialShapes.Clover4Leaf.toShape()
+            val cookie4Sided = MaterialShapes.Flower.toShape()
             val starContainerSize = 300.dp
             val star2ContainerSize = 200.dp
 
-            // Фигура 1 (звезда 17)
-            Box(
+              Box(
                 modifier =
                     Modifier.size(starContainerSize)
                         .align(Alignment.TopEnd)
                         .offset(x = starContainerSize * 0.2f, y = -starContainerSize * 0.1f)
                         .rotate(30f)
-                        .clip(Clover4Leaf)
+                        .clip(clover4Leaf)
                         .background(color = Color.Transparent)
                         .border(
-                            width = 2.dp, color = colorScheme.surfaceVariant, shape = Clover4Leaf))
+                            width = 2.dp, color = colorScheme.surfaceVariant, shape = clover4Leaf))
 
-            // Фигура 2 (звезда 4)
-            Box(
+              Box(
                 modifier =
                     Modifier.size(star2ContainerSize)
                         .align(Alignment.TopStart)
                         .offset(
                             x = -star2ContainerSize * 0.4f,
-                            y = star2ContainerSize * 1.5f // Позиция относительно TopStart
-                            )
+                            y = star2ContainerSize * 1.5f
+                        )
                         .rotate(80f)
-                        .clip(Cookie4Sided)
+                        .clip(cookie4Sided)
                         .background(colorScheme.surfaceVariant))
           }
 
@@ -91,28 +87,26 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
             val starContainerSize = 200.dp
             val star2ContainerSize = 300.dp
 
-            // Фигура 1 (звезда 17)
-            Box(
+              Box(
                 modifier =
                     Modifier.size(starContainerSize)
                         .align(Alignment.TopEnd)
                         .offset(x = starContainerSize * 0.2f, y = -starContainerSize * 0.1f)
                         .graphicsLayer {
                           shape = clipStar
-                          alpha = 0.99f // Оставляем для надежности
+                          alpha = 0.99f
                         }
                         .clip(clipStar)
                         .background(colorScheme.surfaceVariant))
 
-            // Фигура 2 (звезда 4)
-            Box(
+              Box(
                 modifier =
                     Modifier.size(star2ContainerSize)
                         .align(Alignment.TopStart)
                         .offset(
                             x = -star2ContainerSize * 0.4f,
-                            y = star2ContainerSize * 2f // Позиция относительно TopStart
-                            )
+                            y = star2ContainerSize * 2f
+                        )
                         .graphicsLayer { shape = clip2Star }
                         .clip(clip2Star)
                         .background(colorScheme.surfaceVariant))

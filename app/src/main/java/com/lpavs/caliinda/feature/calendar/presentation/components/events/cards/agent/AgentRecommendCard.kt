@@ -192,9 +192,6 @@ fun AgentEventRecommendPreview() {
           isRecommended = true)
   CaliindaTheme {
     AgentRecommendItem(
-        suggestion = debugVsCodeSuggestion,
-        isExpanded = true,
-        onToggleExpand = {},
-        onConfirm = {})
+        suggestion = debugVsCodeSuggestion, isExpanded = true, onToggleExpand = {}, onConfirm = {})
   }
 }

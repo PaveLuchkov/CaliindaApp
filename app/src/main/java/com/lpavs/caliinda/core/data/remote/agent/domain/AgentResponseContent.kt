@@ -6,8 +6,8 @@ import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.agent.Suggestion
 
 sealed interface AgentResponseContent {
-    val mainText: String
-    val suggestions: List<String>
+  val mainText: String
+  val suggestions: List<String>
 }
 
 data class TextMessageResponse(
@@ -30,8 +30,6 @@ data class SuggestionPlan(
     val generalAdvice: GeneralAdvice?
 ) : AgentResponseContent
 
-data class ErrorResponse(
-    override val mainText: String
-) : AgentResponseContent {
-    override val suggestions: List<String> = emptyList()
+data class ErrorResponse(override val mainText: String) : AgentResponseContent {
+  override val suggestions: List<String> = emptyList()
 }

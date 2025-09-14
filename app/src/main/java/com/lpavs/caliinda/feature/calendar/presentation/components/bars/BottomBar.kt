@@ -95,7 +95,7 @@ fun BottomBar(
   }
   Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
     if (!suggestions.isNullOrEmpty()) {
-      Box() {
+      Box {
         SuggestionChipsRow(
             suggestions,
             enabled = !recordState.isLoading,

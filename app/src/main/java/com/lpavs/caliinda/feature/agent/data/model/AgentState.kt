@@ -4,7 +4,6 @@ enum class AgentState {
   IDLE,
   LISTENING,
   THINKING,
-  ASKING,
   RESULT,
   ERROR
 }

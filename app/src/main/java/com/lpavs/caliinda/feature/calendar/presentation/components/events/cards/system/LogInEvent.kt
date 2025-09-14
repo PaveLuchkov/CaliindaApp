@@ -148,7 +148,5 @@ fun LogInEvent(
 @Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
 @Composable
 fun LogInEventPreview() {
-    CaliindaTheme {
-        LogInEvent(onSignInClick = {})
-    }
+  CaliindaTheme { LogInEvent(onSignInClick = {}) }
 }

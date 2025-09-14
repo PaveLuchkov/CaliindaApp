@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
@@ -96,7 +94,7 @@ fun AgentMessageItem(
               .shadow(
                   elevation = 12.dp,
                   shape = RoundedCornerShape(cuid.EventItemCornerRadius),
-                  )
+              )
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
               .border(
                   width = 2.dp,
@@ -145,55 +143,56 @@ fun AgentMessageItem(
                       animationSpec = tween(durationMillis = 250),
                       shrinkTowards = Alignment.Top // Убрал .Companion
                       ) + fadeOut(animationSpec = tween(durationMillis = 150))) {
-              Row(
-                  modifier =
-                      Modifier.fillMaxWidth()
-                          .padding(
-                              horizontal = cuid.ItemHorizontalPadding,
-                              vertical = cuid.AgentCardVerticalPadding),
-                  horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-                    val size = ButtonDefaults.ExtraSmallContainerHeight
-                  Button(
-                      onClick = {  onHide() },
-                      modifier = Modifier.heightIn(size),
-                      contentPadding = ButtonDefaults.contentPaddingFor(size),
-                  ) {
-                      Icon(
-                          if (!isHidden) Icons.Filled.Upload else Icons.Filled.Download,
-                          contentDescription = "Hide/Unhide",
-                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
-                      )
-                  }
-                    Button(
-                        onClick = {  onSessionDelete() },
-                        modifier = Modifier.heightIn(size),
-                        contentPadding = ButtonDefaults.contentPaddingFor(size),
-                    ) {
-                      Icon(
-                          Icons.Filled.DeleteForever,
-                          contentDescription = "Delete",
-                          modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
-                      )
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                horizontal = cuid.ItemHorizontalPadding,
+                                vertical = cuid.AgentCardVerticalPadding),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+                      val size = ButtonDefaults.ExtraSmallContainerHeight
+                      Button(
+                          onClick = { onHide() },
+                          modifier = Modifier.heightIn(size),
+                          contentPadding = ButtonDefaults.contentPaddingFor(size),
+                      ) {
+                        Icon(
+                            if (!isHidden) Icons.Filled.Upload else Icons.Filled.Download,
+                            contentDescription = "Hide/Unhide",
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
+                        )
+                      }
+                      Button(
+                          onClick = { onSessionDelete() },
+                          modifier = Modifier.heightIn(size),
+                          contentPadding = ButtonDefaults.contentPaddingFor(size),
+                      ) {
+                        Icon(
+                            Icons.Filled.DeleteForever,
+                            contentDescription = "Delete",
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
+                        )
+                      }
                     }
-                  }
               }
         }
       }
 }
 
-@Preview(showBackground = true,
+@Preview(
+    showBackground = true,
     wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE,
-    uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL
-)
+    uiMode = Configuration.UI_MODE_NIGHT_NO or Configuration.UI_MODE_TYPE_NORMAL)
 @Composable
 fun AgentEventPreview() {
-    CaliindaTheme {
-        AgentMessageItem(
-            message = "Неподдерживаемый формат. dsdsdsds dsd sd s dsd s ds ds dsds",
-            isExpanded = true,
-            onToggleExpand = {},
-            onSessionDelete = {},
-            onHide = {},
-            isHidden = true)
-    }
+  CaliindaTheme {
+    AgentMessageItem(
+        message = "Неподдерживаемый формат. dsdsdsds dsd sd s dsd s ds ds dsds",
+        isExpanded = true,
+        onToggleExpand = {},
+        onSessionDelete = {},
+        onHide = {},
+        isHidden = true)
+  }
 }

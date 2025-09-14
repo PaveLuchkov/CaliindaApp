@@ -71,9 +71,7 @@ fun CreateEventScreen(
 ) {
   var summary by remember { mutableStateOf("") }
   var description by remember { mutableStateOf("") }
-  var descriptionEnabled by remember { mutableStateOf(false) }
-  var dlocationEnabled by remember { mutableStateOf(false) }
-  var location by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
 
   var summaryError by remember { mutableStateOf<String?>(null) }

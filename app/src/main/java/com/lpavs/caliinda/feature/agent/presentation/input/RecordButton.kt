@@ -119,7 +119,6 @@ fun RecordButton(
 
   FloatingActionButton(
       onClick = {
-        // Только обрабатываем разрешения при простом клике
         Log.d("RecordButton", "FAB onClick - handling permissions only")
       },
       containerColor = animatedBackgroundColor,
@@ -131,20 +130,16 @@ fun RecordButton(
                   while (true) {
                     if (!isInteractionEnabled) {
                       Log.d("RecordButton", "Interaction disabled, skipping gesture handling")
-                      //                            delay(100) // Небольшая задержка чтобы не
-                      // нагружать CPU
-                      continue
+                        continue
                     }
 
-                    // Ждем нажатие
-                    val down = awaitFirstDown(requireUnconsumed = false)
+                      val down = awaitFirstDown(requireUnconsumed = false)
                     Log.d("RecordButton", "👇 Pointer DOWN")
 
                     isPressed = true
 
                     try {
-                      // Проверяем разрешения
-                      val hasPermission =
+                        val hasPermission =
                           ContextCompat.checkSelfPermission(
                               context, Manifest.permission.RECORD_AUDIO) ==
                               PackageManager.PERMISSION_GRANTED
@@ -162,19 +157,15 @@ fun RecordButton(
                         continue
                       }
 
-                      // Есть разрешения - начинаем запись
-                      Log.d("RecordButton", "🎙️ Starting recording")
+                        Log.d("RecordButton", "🎙️ Starting recording")
                       down.consume()
 
-                      // Запускаем запись в корутине
-                      val recordingJob = scope.launch { onStartRecording() }
+                        scope.launch { onStartRecording() }
 
-                      // Ждем отпускание кнопки
-                      val upEvent = waitForUpOrCancellation()
+                        waitForUpOrCancellation()
                       Log.d("RecordButton", "👆 Pointer UP - stopping recording")
 
-                      // Останавливаем запись
-                      scope.launch { onStopRecordingAndSend() }
+                        scope.launch { onStopRecordingAndSend() }
                     } catch (e: Exception) {
                       Log.e("RecordButton", "❌ Error in gesture handling", e)
                     } finally {

@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.lpavs.caliinda"
-        minSdk = 28
+        minSdk = 32
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

@@ -59,16 +59,14 @@ fun AiVisualizer(
 ) {
   val targetState = aiState
 
-  // --- 1. Animatable для вращения ---
-  val rotationAngle = remember { Animatable(0f) }
-  // LaunchedEffect для вращения остается без изменений...
-  LaunchedEffect(targetState) {
+    val rotationAngle = remember { Animatable(0f) }
+    LaunchedEffect(targetState) {
     val shouldRotate = targetState == AgentState.LISTENING
     if (shouldRotate) {
       val duration =
           when (targetState) {
             AgentState.LISTENING -> 80000
-            else -> 5000 // На всякий случай
+            else -> 5000
           }
       if (!rotationAngle.isRunning) {
         launch {
@@ -86,23 +84,20 @@ fun AiVisualizer(
           rotationAngle.stop()
           rotationAngle.value
           rotationAngle.animateTo(
-              targetValue = 0f, // Возвращаем в 0 для предсказуемости
+              targetValue = 0f,
               animationSpec = tween(durationMillis = 500, easing = EaseOutCubic))
         }
       }
     }
   }
 
-  // --- 3. Transition для управления остальными свойствами ---
-  val transition = updateTransition(targetState = targetState, label = "AiVisualizerTransition")
+    val transition = updateTransition(targetState = targetState, label = "AiVisualizerTransition")
 
-  // --- Анимированные свойства ---
-  val configuration = LocalConfiguration.current
+    val configuration = LocalConfiguration.current
   val screenWidthDp = configuration.screenWidthDp.dp
   val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
 
-  // --- Анимированный Фактор Масштаба ---
-  val animatedScaleFactor by
+    val animatedScaleFactor by
       transition.animateFloat(
           transitionSpec = { spring(stiffness = Spring.StiffnessMediumLow) },
           label = "scaleFactor") { state ->
@@ -112,8 +107,7 @@ fun AiVisualizer(
             }
           }
 
-  // --- Базовый размер ---
-  val baseSizeDp = screenWidthDp * 0.4f
+    val baseSizeDp = screenWidthDp * 0.4f
 
   val animatedOffsetYRatio by
       transition.animateFloat(
@@ -130,16 +124,14 @@ fun AiVisualizer(
       transition.animateColor(transitionSpec = { tween(durationMillis = 500) }, label = "color") {
           state ->
         when (state) {
-          AgentState.LISTENING -> colorScheme.primaryContainer
+          AgentState.LISTENING -> colorScheme.primary
           else -> colorScheme.surface
         }
       }
 
-  // Видимость всего компонента
-  val isComponentVisible = targetState != AgentState.IDLE && targetState != AgentState.ERROR
-  // Общий контейнер для позиционирования по Y и анимации появления/исчезания
+    val isComponentVisible = targetState != AgentState.IDLE && targetState != AgentState.ERROR
 
-  val breathingAmplitude: Dp = 300.dp
+    val breathingAmplitude: Dp = 300.dp
   val animationDurationMillis = 650
   val infiniteTransition = rememberInfiniteTransition(label = "breathing_transition")
 
@@ -181,7 +173,6 @@ fun AiVisualizer(
                 Modifier.fillMaxSize().offset {
                   IntOffset(x = 0, y = (animatedOffsetYRatio * screenHeightPx / 2).toInt())
                 }) {
-              // --- 1. Анимированная Звезда (под баблом) ---
               Box(
                   modifier =
                       Modifier.size(baseSizeDp).aspectRatio(1f).graphicsLayer {

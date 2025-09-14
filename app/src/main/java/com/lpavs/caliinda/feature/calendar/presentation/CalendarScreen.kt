@@ -80,8 +80,8 @@ fun CalendarScreen(
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
   val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
-    val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
-    val suggestions = agentResponse?.suggestions ?: emptyList()
+  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
+  val suggestions = agentResponse?.suggestions ?: emptyList()
 
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val isTextInputVisible by remember { mutableStateOf(false) }
@@ -107,13 +107,13 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
-    val navigateToDate: (LocalDate) -> Unit = { targetDate ->
-        scope.launch {
-            val targetPageIndex = initialPageIndex + ChronoUnit.DAYS.between(today, targetDate).toInt()
-            calendarViewModel.onVisibleDateChanged(targetDate)
-            pagerState.animateScrollToPage(targetPageIndex)
-        }
+  val navigateToDate: (LocalDate) -> Unit = { targetDate ->
+    scope.launch {
+      val targetPageIndex = initialPageIndex + ChronoUnit.DAYS.between(today, targetDate).toInt()
+      calendarViewModel.onVisibleDateChanged(targetDate)
+      pagerState.animateScrollToPage(targetPageIndex)
     }
+  }
 
   LaunchedEffect(authState.authorizationIntent) {
     authState.authorizationIntent?.let { pendingIntent ->

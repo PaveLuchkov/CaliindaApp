@@ -7,10 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ChipColors
 import androidx.compose.material3.ElevatedSuggestionChip
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,12 +28,12 @@ fun SuggestionChipsRow(
       contentPadding = PaddingValues(cuid.padding)) {
         chips?.let {
           items(chips) { chip ->
-              ElevatedSuggestionChip(
-                  onClick = { onChipClick(chip) },
-                  label = { Text(chip) },
-                  modifier = Modifier.height(35.dp),
-                  enabled = enabled,
-                  )
+            ElevatedSuggestionChip(
+                onClick = { onChipClick(chip) },
+                label = { Text(chip) },
+                modifier = Modifier.height(35.dp),
+                enabled = enabled,
+            )
           }
         }
       }

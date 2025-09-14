@@ -3,34 +3,23 @@ package com.lpavs.caliinda.feature.event_management.ui.edit
 import android.text.format.DateFormat
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -139,21 +128,21 @@ fun EditEventScreen(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center) {
-      Button(
-          onClick = onSaveClick,
-          enabled = !uiState.isLoading,
-          modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
-      ) {
+        Button(
+            onClick = onSaveClick,
+            enabled = !uiState.isLoading,
+            modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
+        ) {
           if (uiState.isLoading) {
-              LoadingIndicator(
-                  color = colorScheme.onPrimary,
-                  modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
+            LoadingIndicator(
+                color = colorScheme.onPrimary,
+                modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
           } else {
-              Text(
-                  text = stringResource(R.string.save),
-              )
+            Text(
+                text = stringResource(R.string.save),
+            )
           }
-      }
+        }
       }
   Column(
       modifier =

@@ -1,4 +1,3 @@
-// file: app/src/main/java/com/lpavs/caliinda/feature/agent/data/SpeechRecognitionService.kt
 package com.lpavs.caliinda.feature.agent.data
 
 import android.content.Context
@@ -41,7 +40,7 @@ constructor(
   private val serviceScope = CoroutineScope(SupervisorJob() + mainDispatcher)
 
   private var speechRecognizer: SpeechRecognizer? = null
-  private var isCurrentlyListening = false // Добавляем внутренний флаг
+  private var isCurrentlyListening = false
 
   private val _state = MutableStateFlow<SpeechRecognitionState>(SpeechRecognitionState.Idle)
   val state = _state.asStateFlow()
@@ -61,7 +60,6 @@ constructor(
   }
 
   private fun createNewRecognizer() {
-    // Уничтожаем старый если есть
     speechRecognizer?.destroy()
 
     speechRecognizer =
@@ -77,13 +75,11 @@ constructor(
         TAG,
         "startListening called, current state: ${_state.value}, isCurrentlyListening: $isCurrentlyListening")
 
-    // Если уже слушаем - игнорируем
     if (isCurrentlyListening || _state.value is SpeechRecognitionState.Listening) {
       Log.w(TAG, "Already listening, ignoring start request")
       return
     }
 
-    // Создаем новый recognizer для надежности
     createNewRecognizer()
 
     val recognizerIntent =
@@ -153,7 +149,6 @@ constructor(
 
         override fun onEndOfSpeech() {
           Log.d(TAG, "onEndOfSpeech")
-          // НЕ сбрасываем isCurrentlyListening - дождемся onResults/onError
         }
 
         override fun onError(error: Int) {
@@ -174,7 +169,6 @@ constructor(
             }
           }
 
-          // Создаем новый recognizer для следующего использования
           serviceScope.launch { createNewRecognizer() }
         }
 
@@ -192,12 +186,10 @@ constructor(
             _state.value = SpeechRecognitionState.Idle
           }
 
-          // Создаем новый recognizer для следующего использования
           serviceScope.launch { createNewRecognizer() }
         }
 
         override fun onRmsChanged(rmsdB: Float) {
-          // Можно использовать для индикации уровня звука
         }
 
         override fun onBufferReceived(buffer: ByteArray?) {}

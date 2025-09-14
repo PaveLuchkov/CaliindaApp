@@ -17,11 +17,11 @@ import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
 import com.lpavs.caliinda.core.data.remote.agent.domain.SuggestionPlan
 import com.lpavs.caliinda.core.data.remote.agent.domain.TextMessageResponse
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
+import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.first
 
 interface AgentRepository {
   suspend fun sendMessage(message: String): Result<AgentResponseContent>

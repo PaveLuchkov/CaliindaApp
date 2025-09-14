@@ -5,12 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.ZoneId
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.ZoneId
+import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel

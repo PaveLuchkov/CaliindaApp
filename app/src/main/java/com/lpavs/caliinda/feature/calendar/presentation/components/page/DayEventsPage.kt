@@ -58,7 +58,7 @@ fun DayEventsPage(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
-    val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
+  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
       launch {
@@ -80,8 +80,8 @@ fun DayEventsPage(
 
     Spacer(modifier = Modifier.height(2.dp))
 
-    if (pageState.timedEvents.isNotEmpty() or isSignIn || !(agentResponse?.mainText.isNullOrBlank())
-    ) {
+    if (pageState.timedEvents.isNotEmpty() or isSignIn ||
+        !(agentResponse?.mainText.isNullOrBlank())) {
       BodyCardsList(
           events = pageState.timedEvents,
           listState = listState,
@@ -94,8 +94,7 @@ fun DayEventsPage(
           agentResponse = agentResponse,
           onSessionDelete = agentViewModel::deleteSession,
           onPlanConfirm = agentViewModel::sendTextMessage,
-          onNavigateToDate = onNavigateToDate )
-
+          onNavigateToDate = onNavigateToDate)
     } else if (pageState.allDayEvents.isEmpty()) {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isBusy) {
