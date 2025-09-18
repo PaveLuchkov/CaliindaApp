@@ -44,12 +44,12 @@ This project is under active development.
 *   [✅] Google OAuth2 Authentication
 *   [✅] CRUD Operations for Google Calendar Events
 *   [✅] Fully functioning app with events management.
-*   [🚧] **In Progress:** AI Assistant
+*   [✅] AI Assistant
+*   [✅] Deep Integration of AI based features (suggestions, recommendations)
+*   [🚧] **Planned:** Google Play Store Release
 *   [🚧] **In Progress:** Test Coverage with `pytest`
 *   [⬜️] **Planned:** CI/CD Pipeline with GitHub Actions
 *   [⬜️] **Planned:** 24+ hours events visibility
-*   [⬜️] **Planned:** Deep Integration of AI based features (suggestions, recommendations)
-*   [⬜️] **Planned:** Google Play Store Release
 
 ---
 
