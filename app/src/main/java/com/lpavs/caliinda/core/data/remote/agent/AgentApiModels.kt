@@ -2,19 +2,37 @@ package com.lpavs.caliinda.core.data.remote.agent
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable sealed interface AgentResponsePayload
 
 @Serializable(with = PreviewTypeSerializer::class)
 sealed class PreviewType {
-  @Serializable data class Search(val search: List<String>) : PreviewType()
+    @Serializable
+    data class Search(val search: List<String>) : PreviewType()
 
-  @Serializable data class Update(val update: List<String>) : PreviewType()
+    @Serializable
+    data class Update(val update: List<UIEditPayload>) : PreviewType()
 
-  @Serializable data class Create(val create: List<EventCreationPayload>) : PreviewType()
+    @Serializable
+    data class Create(val create: List<EventCreationPayload>) : PreviewType()
 
-  @Serializable data class Delete(val delete: List<String>) : PreviewType()
+    @Serializable
+    data class Delete(val delete: List<String>) : PreviewType()
 }
+
+@Serializable
+data class UIEditPayload(
+    val summary: String? = null,
+    val time: DateTimeEvent? = null,
+    val eventid: String
+)
+
+@Serializable
+data class DateTimeEvent(
+    val start: String? = null,
+    val time: String? = null
+)
 
 enum class PreviewAction {
   SEARCH,
@@ -36,14 +54,9 @@ data class StructuredResponse(
 )
 
 @Serializable
-data class TimeObject(
-    val start: String,
-    val time: String
-)
-@Serializable
 data class EventCreationPayload(
-    val summary: String,
-    val time: TimeObject
+    val summary: String? = null,
+    val time: DateTimeEvent? = null
 )
 
 @Serializable

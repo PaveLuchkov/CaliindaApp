@@ -17,11 +17,11 @@ import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
 import com.lpavs.caliinda.core.data.remote.agent.domain.SuggestionPlan
 import com.lpavs.caliinda.core.data.remote.agent.domain.TextMessageResponse
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 
 interface AgentRepository {
   suspend fun sendMessage(message: String): Result<AgentResponseContent>
@@ -39,8 +39,8 @@ constructor(
 ) : AgentRepository {
 
   override suspend fun sendMessage(message: String): Result<AgentResponseContent> {
-      val timeZoneId = settingsRepository.timeZoneFlow.first().ifEmpty { ZoneId.systemDefault().id }
-      val temperAi = settingsRepository.botTemperFlow.first().ifEmpty { "friendly" }
+    val timeZoneId = settingsRepository.timeZoneFlow.first().ifEmpty { ZoneId.systemDefault().id }
+    val temperAi = settingsRepository.botTemperFlow.first().ifEmpty { "friendly" }
 
     val userContext =
         UserContext(
@@ -78,10 +78,12 @@ constructor(
             val eventPreview =
                 when (previewType) {
                   is PreviewType.Search -> EventPreview(PreviewAction.SEARCH, previewType.search)
-                  is PreviewType.Update -> EventPreview(PreviewAction.UPDATE, previewType.update)
-                    is PreviewType.Create -> {
-                        EventPreview(PreviewAction.CREATE, listOf(previewId))
-                    }
+                  is PreviewType.Update -> {
+                      EventPreview(PreviewAction.UPDATE, listOf(previewId))
+                  }
+                  is PreviewType.Create -> {
+                    EventPreview(PreviewAction.CREATE, listOf(previewId))
+                  }
                   is PreviewType.Delete -> EventPreview(PreviewAction.DELETE, previewType.delete)
                 }
             eventPreview.eventIds.forEach { id -> put(id, eventPreview.action) }
