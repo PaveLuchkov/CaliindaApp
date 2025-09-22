@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.remote.agent.domain.AgentResponseContent
 import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
+import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.agent.data.AgentRepository
 import com.lpavs.caliinda.feature.agent.data.SpeechRecognitionService
@@ -30,6 +32,8 @@ class AgentViewModel
 constructor(
     private val agentRepository: AgentRepository,
     private val speechRecognitionService: SpeechRecognitionService,
+    private val calendarStateHolder: ICalendarStateHolder,
+    private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
 
   private val _agentState = MutableStateFlow(AgentState.IDLE)
@@ -94,8 +98,10 @@ constructor(
           .sendMessage(text)
           .onSuccess { responseContent ->
             _agentResponse.value = responseContent
-
             _agentState.value = AgentState.RESULT
+            viewModelScope.launch {
+              calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
+            }
           }
           .onFailure { error ->
             Log.e(TAG, "Failed to send message", error)

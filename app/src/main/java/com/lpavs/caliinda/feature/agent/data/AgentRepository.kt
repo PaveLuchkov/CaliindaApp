@@ -39,7 +39,8 @@ constructor(
 ) : AgentRepository {
 
   override suspend fun sendMessage(message: String): Result<AgentResponseContent> {
-    val timeZoneId = settingsRepository.timeZoneFlow.first().ifEmpty { ZoneId.systemDefault().id }
+      val timeZoneId = settingsRepository.timeZoneFlow.first().ifEmpty { ZoneId.systemDefault().id }
+      val temperAi = settingsRepository.botTemperFlow.first().ifEmpty { "friendly" }
 
     val userContext =
         UserContext(
@@ -47,7 +48,8 @@ constructor(
             timezoneOffset =
                 ZoneId.of(timeZoneId).rules.getOffset(java.time.Instant.now()).toString(),
             glanceDate = calendarStateHolder.currentVisibleDate.value.toString(),
-            language = Locale.getDefault().language)
+            language = Locale.getDefault().displayLanguage,
+            style = temperAi)
 
     val apiResult = remoteDataSource.runChat(message, userContext)
 
@@ -72,12 +74,14 @@ constructor(
       }
       is StructuredResponse -> {
         val infoMap = buildMap {
-          payload.previews?.forEach { (_, previewType) ->
+          payload.previews?.forEach { (previewId, previewType) ->
             val eventPreview =
                 when (previewType) {
                   is PreviewType.Search -> EventPreview(PreviewAction.SEARCH, previewType.search)
                   is PreviewType.Update -> EventPreview(PreviewAction.UPDATE, previewType.update)
-                  is PreviewType.Create -> EventPreview(PreviewAction.CREATE, previewType.create)
+                    is PreviewType.Create -> {
+                        EventPreview(PreviewAction.CREATE, listOf(previewId))
+                    }
                   is PreviewType.Delete -> EventPreview(PreviewAction.DELETE, previewType.delete)
                 }
             eventPreview.eventIds.forEach { id -> put(id, eventPreview.action) }
