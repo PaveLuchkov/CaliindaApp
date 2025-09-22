@@ -14,8 +14,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.FloatingActionButton
@@ -32,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.graphics.shapes.CornerRounding
@@ -41,7 +38,6 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarState
-import kotlinx.coroutines.launch
 
 @Composable
 fun RecordButton(
@@ -53,7 +49,6 @@ fun RecordButton(
     modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
-  val scope = rememberCoroutineScope()
   var isPressed by remember { mutableStateOf(false) }
 
   val targetBackgroundColor =
@@ -113,80 +108,51 @@ fun RecordButton(
 
   val isInteractionEnabled = calendarState.isSignedIn && !recordState.isLoading
 
-  Log.d(
-      "RecordButton",
-      "Render: enabled=$isInteractionEnabled, pressed=$isPressed, listening=${recordState.isListening}, loading=${recordState.isLoading}")
-
   FloatingActionButton(
       onClick = {
-        Log.d("RecordButton", "FAB onClick - handling permissions only")
+          if (!isInteractionEnabled) {
+              Log.d("RecordButton", "Interaction disabled, ignoring click")
+              return@FloatingActionButton
+          }
+
+          if (recordState.isListening) {
+              // Если уже идет запись - останавливаем
+              Log.d("RecordButton", "🛑 Stopping recording via click")
+              onStopRecordingAndSend()
+          } else {
+              // Проверяем разрешения и начинаем запись
+              val hasPermission =
+                  ContextCompat.checkSelfPermission(
+                      context, Manifest.permission.RECORD_AUDIO) ==
+                          PackageManager.PERMISSION_GRANTED
+
+              onUpdatePermissionResult(hasPermission)
+
+              if (!hasPermission) {
+                  Log.d("RecordButton", "❌ No permission, requesting...")
+                  requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+              } else {
+                  Log.d("RecordButton", "🎙️ Starting recording via click")
+                  onStartRecording()
+              }
+          }
       },
       containerColor = animatedBackgroundColor,
       contentColor = animatedContentColor,
       modifier =
           modifier
-              .pointerInput(isInteractionEnabled) {
-                awaitPointerEventScope {
-                  while (true) {
-                    if (!isInteractionEnabled) {
-                      Log.d("RecordButton", "Interaction disabled, skipping gesture handling")
-                        continue
-                    }
-
-                      val down = awaitFirstDown(requireUnconsumed = false)
-                    Log.d("RecordButton", "👇 Pointer DOWN")
-
-                    isPressed = true
-
-                    try {
-                        val hasPermission =
-                          ContextCompat.checkSelfPermission(
-                              context, Manifest.permission.RECORD_AUDIO) ==
-                              PackageManager.PERMISSION_GRANTED
-
-                      onUpdatePermissionResult(hasPermission)
-
-                      if (!hasPermission) {
-                        Log.d("RecordButton", "❌ No permission, requesting...")
-                        down.consume()
-                        scope.launch {
-                          requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                        }
-                        waitForUpOrCancellation()
-                        Log.d("RecordButton", "👆 Released after permission request")
-                        continue
-                      }
-
-                        Log.d("RecordButton", "🎙️ Starting recording")
-                      down.consume()
-
-                        scope.launch { onStartRecording() }
-
-                        waitForUpOrCancellation()
-                      Log.d("RecordButton", "👆 Pointer UP - stopping recording")
-
-                        scope.launch { onStopRecordingAndSend() }
-                    } catch (e: Exception) {
-                      Log.e("RecordButton", "❌ Error in gesture handling", e)
-                    } finally {
-                      isPressed = false
-                      Log.d("RecordButton", "🔄 Reset isPressed = false")
-                    }
-                  }
-                }
-              }
               .clip(
                   if (isPressed || recordState.isListening) {
-                    CustomRotatingMorphShape(
-                        morph = morph,
-                        percentage = animatedProgress.value,
-                        rotation = animatedRotation.value)
+                      CustomRotatingMorphShape(
+                          morph = morph,
+                          percentage = animatedProgress.value,
+                          rotation = animatedRotation.value)
                   } else {
-                    FloatingActionButtonDefaults.shape
+                      FloatingActionButtonDefaults.shape
                   })
               .graphicsLayer {
-                scaleX = animatedScale
-                scaleY = animatedScale
+                  scaleX = animatedScale
+                  scaleY = animatedScale
               },
   ) {
     Icon(
