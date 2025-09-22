@@ -59,7 +59,6 @@ constructor(
   }
 
   private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
   private val _authState = MutableStateFlow(AuthState())
   val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
@@ -130,11 +129,11 @@ constructor(
         handleAuthenticationSuccess(result)
       } catch (e: GetCredentialException) {
         Log.w(TAG, "GetCredentialException: ${e.message}", e)
-        _authState.update { it.copy(isLoading = false, authError = "Вход был отменен.") }
+        _authState.update { it.copy(isLoading = false, authError = "Log in was canceled") }
       } catch (e: Exception) {
         Log.e(TAG, "Unknown error during sign-in", e)
         _authState.update {
-          it.copy(isLoading = false, authError = "Произошла неизвестная ошибка.")
+          it.copy(isLoading = false, authError = "Unexpected Error")
         }
       }
     }

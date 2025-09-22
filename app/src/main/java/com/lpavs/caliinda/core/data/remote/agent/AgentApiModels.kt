@@ -11,7 +11,7 @@ sealed class PreviewType {
 
   @Serializable data class Update(val update: List<String>) : PreviewType()
 
-  @Serializable data class Create(val create: List<String>) : PreviewType()
+  @Serializable data class Create(val create: List<EventCreationPayload>) : PreviewType()
 
   @Serializable data class Delete(val delete: List<String>) : PreviewType()
 }
@@ -33,6 +33,17 @@ data class ResponseMessage(val message: String, val suggestions: List<String> = 
 data class StructuredResponse(
     val previews: Map<String, PreviewType>? = null,
     val message: ResponseMessage
+)
+
+@Serializable
+data class TimeObject(
+    val start: String,
+    val time: String
+)
+@Serializable
+data class EventCreationPayload(
+    val summary: String,
+    val time: TimeObject
 )
 
 @Serializable
