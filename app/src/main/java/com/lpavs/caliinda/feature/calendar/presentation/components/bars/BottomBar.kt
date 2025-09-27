@@ -61,7 +61,7 @@ fun BottomBar(
     recordState: RecordingState,
     textFieldValue: TextFieldValue,
     onTextChanged: (TextFieldValue) -> Unit,
-    onSendClick: () -> Unit,
+    onSendClick: (String) -> Unit,
     onRecordStart: () -> Unit,
     onRecordStopAndSend: () -> Unit,
     onUpdatePermissionResult: (Boolean) -> Unit,
@@ -99,7 +99,7 @@ fun BottomBar(
         SuggestionChipsRow(
             suggestions,
             enabled = !recordState.isLoading,
-            onChipClick = { suggestionText -> onTextChanged(TextFieldValue(suggestionText)) })
+            onChipClick = { suggestionText -> onSendClick(suggestionText) })
       }
       Spacer(modifier = Modifier.height(12.dp))
     }
@@ -130,7 +130,7 @@ fun BottomBar(
                 expanded = expanded,
                 floatingActionButton = {
                   FloatingActionButton(
-                      onClick = onSendClick,
+                      onClick = { onSendClick(textFieldValue.text) },
                       contentColor = colorScheme.onPrimary,
                       containerColor = colorScheme.primary) {
                         Icon(
@@ -157,7 +157,7 @@ fun BottomBar(
                           KeyboardActions(
                               onSend = {
                                 if (isSendEnabled) {
-                                  onSendClick()
+                                    { onSendClick(textFieldValue.text) }
                                 }
                               }),
                       colors =

@@ -58,11 +58,11 @@ import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -281,7 +281,7 @@ fun CalendarScreen(
           textFieldValue = textFieldState,
           onTextChanged = { textFieldState = it },
           onSendClick = {
-            agentViewModel.sendTextMessage(textFieldState.text)
+            agentViewModel::sendTextMessage
             textFieldState = TextFieldValue("")
           },
           onRecordStart = { agentViewModel.startListening() },
