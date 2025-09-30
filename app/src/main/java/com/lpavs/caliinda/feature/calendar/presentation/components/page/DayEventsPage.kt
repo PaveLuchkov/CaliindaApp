@@ -128,7 +128,7 @@ fun DayEventsPage(
           onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
           onDismiss = { eventManagementViewModel.cancelDelete() })
     } else if (eventManagementState.showRecurringDeleteOptionsDialog &&
-        eventManagementState.eventPendingDeletion != null) {
+        eventManagementState.eventPendingDeletion != null) { // TODO исправить
       RecurringEventDeleteOptionsDialog(
           eventName = eventManagementState.eventPendingDeletion!!.summary,
           onDismiss = { eventManagementViewModel.cancelDelete() },

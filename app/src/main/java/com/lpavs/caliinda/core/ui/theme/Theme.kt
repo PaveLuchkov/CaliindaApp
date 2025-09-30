@@ -61,14 +61,14 @@ fun CaliindaTheme(
 
   val lightColors =
       when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        dynamicColor && true ->
             dynamicLightColorScheme(context)
         else -> lightColorScheme()
       }
 
   val darkColors =
       when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        dynamicColor && true ->
             dynamicDarkColorScheme(context)
         else -> darkColorScheme()
       }

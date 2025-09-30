@@ -15,8 +15,8 @@ android {
         applicationId = "com.lpavs.caliinda"
         minSdk = 32
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 5
+        versionName = "Breakfast-1.04"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -31,12 +31,15 @@ android {
     }
 
     buildTypes {
+        debug {
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
