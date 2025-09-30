@@ -54,6 +54,8 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBa
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectEventsPage
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.WeekState
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
@@ -269,10 +271,14 @@ fun CalendarScreen(
                   flingBehavior =
                       PagerDefaults.flingBehavior(
                           state = weekViewPagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = !calendarState.signInRequired,
-                  beyondViewportPageCount = 1) {
-                    Text(text = "Пока пусто")
-                  }
+                  userScrollEnabled = !calendarState.signInRequired && false,
+                  beyondViewportPageCount = 1) { pageIndex ->
+                  ProjectEventsPage(
+                      isLoading = isOverallLoading,
+                      viewModel = calendarViewModel,
+                      eventManagementViewModel = eventManagementViewModel,
+                      displayPosition = WeekState.current_projects)
+              }
           1 ->
               VerticalPager(
                   state = pagerState,

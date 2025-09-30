@@ -209,7 +209,8 @@ constructor(
                   events = sortedTimedDtos,
                   currentTime = now,
                   timeZoneId = zoneId.toString(),
-                  date = date)
+                  date = date,
+                  project = false)
 
           DayPageUiState(
               isLoading = networkState is EventNetworkState.Loading,
@@ -233,7 +234,7 @@ constructor(
           val zoneId = zoneId.toString()
           val projectUIModels =
               eventUiModelMapper.mapToUiModels(
-                  events = events, currentTime = now, timeZoneId = zoneId.toString(), date = date)
+                  events = events, currentTime = now, timeZoneId = zoneId.toString(), date = date, project = true)
 
           EventsPageUiState(
               isLoading = networkState is EventNetworkState.Loading, events = projectUIModels)

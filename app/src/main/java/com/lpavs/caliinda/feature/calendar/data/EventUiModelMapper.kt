@@ -1,8 +1,10 @@
 package com.lpavs.caliinda.feature.calendar.data
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.os.ConfigurationCompat
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
@@ -26,14 +28,21 @@ constructor(
       events: List<EventDto>,
       timeZoneId: String,
       currentTime: Instant,
-      date: LocalDate
+      date: LocalDate,
+      project: Boolean
   ): List<EventUiModel> {
     val sortedEvents =
-        events
-            .filter { !it.isAllDay }
-            .sortedBy { event ->
-              dateTimeUtils.parseToInstant(event.startTime, timeZoneId) ?: Instant.MAX
-            }
+        if (project) {
+          events.sortedBy { event ->
+            dateTimeUtils.parseToInstant(event.startTime, timeZoneId) ?: Instant.MAX
+          }
+        } else {
+          events
+              .filter { !it.isAllDay }
+              .sortedBy { event ->
+                dateTimeUtils.parseToInstant(event.startTime, timeZoneId) ?: Instant.MAX
+              }
+        }
     val isToday = date == LocalDate.now()
     val nextStartTime: Instant? =
         if (!isToday) {
@@ -104,7 +113,8 @@ constructor(
               location = event.location,
               isAllDay = event.isAllDay,
               formattedTimeString =
-                  dateTimeFormatterUtil.formatEventListTime(context, event, timeZoneId),
+                  dateTimeFormatterUtil.formatEventListTime(context, event, timeZoneId, project = project, locale = ConfigurationCompat.getLocales(context.resources.configuration).get(0)
+                      ?: java.util.Locale.getDefault()),
               durationMinutes = durationMinutes,
               isMicroEvent = isMicroEvent,
               baseHeight = baseHeight,
@@ -114,7 +124,7 @@ constructor(
               proximityRatio = proximityRatio,
               shapeParams = generateShapeParams(event.id), // Твой генератор фигур
               originalEvent = event)
-      //        Log.d("Model", "Event: $event")
+      Log.d("Model", "Event: $event")
       event
     }
   }
@@ -127,8 +137,10 @@ constructor(
       val maxHeight = cuid.MaxEventHeight
       val durationDouble = durationMinutes.toDouble()
       val heightRange = maxHeight - minHeight
-
-      val x = (durationDouble - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
+      val midpoint =
+          if (durationMinutes / 60 < 24) cuid.HeightSigmoidMidpointMinutes
+          else cuid.HeightSigmoidProjectMidpointMinutes
+      val x = (durationDouble - midpoint) / cuid.HeightSigmoidScaleFactor
       val k = cuid.HeightSigmoidSteepness
       val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
 

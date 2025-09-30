@@ -83,10 +83,10 @@ import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
-fun CalendarEventItem(
+fun CalendarProjectItem(
     uiModel: EventUiModel,
     isExpanded: Boolean,
-    highlightAction: PreviewAction?,
+//    highlightAction: PreviewAction?,
     onToggleExpand: () -> Unit,
     onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
@@ -111,13 +111,13 @@ fun CalendarEventItem(
             innerRadius = cuid.SHAPEINNERRADIUS,
             rounding = CornerRounding(cuid.ShapeCornerRounding))
       }
-  val borderColor =
-      when (highlightAction) {
-        PreviewAction.SEARCH -> colorScheme.tertiary
-        PreviewAction.DELETE -> colorScheme.error
-        PreviewAction.UPDATE -> colorScheme.primaryContainer
-        else -> Color.Transparent
-      }
+//  val borderColor =
+//      when (highlightAction) {
+//        PreviewAction.SEARCH -> colorScheme.tertiary
+//        PreviewAction.DELETE -> colorScheme.error
+//        PreviewAction.UPDATE -> colorScheme.primaryContainer
+//        else -> Color.Transparent
+//      }
 
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
   val clip2Star = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
@@ -195,9 +195,6 @@ fun CalendarEventItem(
                   ambientColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent,
                   spotColor = if (cardElevation > 0.dp) darkerShadowColor else Color.Transparent)
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-              .border(
-                  BorderStroke(2.dp, borderColor),
-                  shape = RoundedCornerShape(cuid.EventItemCornerRadius))
               .background(cardBackground)
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
@@ -365,7 +362,8 @@ fun CalendarEventItem(
       } // Конец Column (контент + кнопки)
 } // Конец корневого Box
 
-val normalEvent =
+
+val normalProjectEvent =
     EventUiModel(
         id = "1",
         summary = "SQL Practice: Query Building",
@@ -399,7 +397,7 @@ val normalEvent =
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
-fun CalendarEventPreview() {
+fun CalendarProjectItem() {
   CaliindaTheme {
     CalendarEventItem(
         onToggleExpand = {},
@@ -407,7 +405,7 @@ fun CalendarEventPreview() {
         isExpanded = false,
         onEditClickFromList = {},
         onDeleteClickFromList = {},
-        uiModel = normalEvent,
+        uiModel = normalProjectEvent,
         highlightAction = PreviewAction.UPDATE)
   }
 }

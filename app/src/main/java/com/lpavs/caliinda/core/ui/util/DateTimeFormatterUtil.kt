@@ -17,13 +17,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface IDateTimeFormatterUtil {
-  fun formatEventListTime(context: Context, event: EventDto, zoneIdString: String): String
+  fun formatEventListTime(context: Context, event: EventDto, zoneIdString: String, project: Boolean, locale: Locale): String
 
   fun formatEventDetailsTime(
       context: Context,
       event: EventDto,
       zoneIdString: String,
-      locale: Locale
+      locale: Locale,
   ): String
 }
 
@@ -33,9 +33,11 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
   override fun formatEventListTime(
       context: Context,
       event: EventDto,
-      zoneIdString: String
+      zoneIdString: String,
+      project: Boolean,
+      locale: Locale
   ): String {
-    if (event.isAllDay) return context.getString(R.string.all_day)
+//    if (event.isAllDay) return context.getString(R.string.all_day)
 
     val zoneId =
         try {
@@ -81,14 +83,31 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
         ""
       }
     }
-
-    return when {
-      startInstant != null && endInstant != null -> {
-        "${formatTime(startInstant)} - ${formatTime(endInstant)}"
+      fun formatDate(instant: Instant?): String {
+          if (instant == null) return ""
+          return try {
+              val localDate = instant.atZone(zoneId).toLocalDate()
+              val formatter = DateTimeFormatter.ofPattern("d MMMM", locale)
+              localDate.format(formatter)
+          } catch (e: Exception) {
+              Log.e("FormatDate", "Error formatting date: $instant", e)
+              ""
+          }
       }
-      startInstant != null -> formatTime(startInstant)
-      else -> ""
-    }
+
+      return when {
+          startInstant != null && endInstant != null -> {
+              if (event.isAllDay) {
+                  "${formatDate(startInstant)} - ${formatDate(endInstant)}"
+              } else if (formatDate(startInstant) == formatDate(endInstant)) {
+                  "${formatTime(startInstant)} - ${formatTime(endInstant)}"
+              } else {
+                  "${formatDate(startInstant)} ${formatTime(startInstant)} - ${formatTime(endInstant)} ${formatDate(endInstant)}"
+              }
+          }
+          startInstant != null -> formatTime(startInstant)
+          else -> ""
+      }
   }
 
   override fun formatEventDetailsTime(
@@ -156,7 +175,9 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
 
     return when {
       startInstant != null && endInstant != null -> {
-        if (event.isAllDay) return formatDate(startInstant)
+        if (event.isAllDay){
+            return "${formatDate(startInstant)} - ${formatDate(endInstant)}"
+        }
         if (formatDate(startInstant) == formatDate(endInstant)) {
           "${formatTime(startInstant)} - ${formatTime(endInstant)}\n${formatDate(endInstant)}"
         } else {

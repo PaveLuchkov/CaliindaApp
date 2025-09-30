@@ -37,6 +37,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentMessageItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentRecommendItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarProjectItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
 import java.time.LocalDate
 
@@ -44,118 +45,15 @@ import java.time.LocalDate
 fun ProjectsCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
-    date: LocalDate,
-    isSignIn: Boolean,
     onDeleteRequest: (EventDto) -> Unit,
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
-    onSignInClick: () -> Unit,
-    onSessionDelete: () -> Unit,
-    onPlanConfirm: (String) -> Unit,
-    agentResponse: AgentResponseContent?,
-    onNavigateToDate: (LocalDate) -> Unit,
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
-  var expandedAgentId by remember { mutableStateOf<String?>(null) }
-  var expandedAgent by remember { mutableStateOf(false) }
-  var hiddenAgent by remember { mutableStateOf(false) }
-  val highlightedInfo = (agentResponse as? TextMessageResponse)?.highlightedEventInfo ?: emptyMap()
-  val today = LocalDate.now()
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
       state = listState,
       contentPadding = PaddingValues(bottom = 100.dp)) {
-        if (isSignIn) {
-          item { LogInEvent(onSignInClick = onSignInClick) }
-        } else {
-          if (agentResponse != null) {
-            item {
-              AgentMessageItem(
-                  message = agentResponse.mainText,
-                  isExpanded = expandedAgent,
-                  onToggleExpand = { expandedAgent = !expandedAgent },
-                  onSessionDelete = onSessionDelete,
-                  onHide = { hiddenAgent = !hiddenAgent },
-                  isHidden = hiddenAgent)
-            }
-          }
-          when (agentResponse) {
-            is TextMessageResponse -> {}
-
-            is DaysPlanContent -> {
-              val relevantDayPlan = agentResponse.days.find { LocalDate.parse(it.date) == date }
-              if (relevantDayPlan == null) {
-                // Найти первую дату из планов
-                val firstPlanDate =
-                    agentResponse.days
-                        .minByOrNull { LocalDate.parse(it.date) }
-                        ?.let { LocalDate.parse(it.date) }
-
-                item {
-                  Button(
-                      modifier =
-                          Modifier.fillMaxWidth().padding(horizontal = cuid.ItemHorizontalPadding),
-                      onClick = {
-                        firstPlanDate?.let { targetDate -> onNavigateToDate(targetDate) }
-                      }) {
-                        Text(text = "Go to plan date${firstPlanDate?.let { " ($it)" } ?: ""}")
-                      }
-                }
-              }
-              if (relevantDayPlan != null) {
-                item {
-                  Button(
-                      modifier =
-                          Modifier.fillMaxWidth().padding(horizontal = cuid.ItemHorizontalPadding),
-                      onClick = {
-                        onPlanConfirm("Создай мне предлагаемый тобой план. plan_update")
-                      }) {
-                        Text(text = "Confirm plan")
-                      }
-                }
-                items(items = relevantDayPlan.schedule, key = { event -> event.id }) { event ->
-                  AgentDayPlanItem(
-                      event = event,
-                      isExpanded = expandedEventId == event.id,
-                      onToggleExpand = {
-                        expandedEventId =
-                            if (expandedEventId == event.id) {
-                              null
-                            } else {
-                              event.id
-                            }
-                      },
-                  )
-                }
-              }
-            }
-
-            is SuggestionPlan -> {
-              if (date == today) {
-                val suggestionItems = agentResponse.suggestionItems
-                items(items = suggestionItems, key = { suggestion -> suggestion.hashCode() }) {
-                    suggestion ->
-                  val isExpandedAgent = suggestion.title == expandedAgentId
-                  AgentRecommendItem(
-                      suggestion = suggestion,
-                      isExpanded = isExpandedAgent,
-                      onToggleExpand = {
-                        expandedAgentId =
-                            if (expandedAgentId == suggestion.title) {
-                              null
-                            } else {
-                              suggestion.title
-                            }
-                      },
-                      onConfirm = onPlanConfirm)
-                }
-              }
-            }
-
-            is ErrorResponse -> {}
-
-            null -> {}
-          }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
                 spring<Float>(
@@ -183,11 +81,11 @@ fun ProjectsCardsList(
                         fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                   val isExpanded = event.id == expandedEventId
-                  val highlightAction = highlightedInfo[event.id]
-                  CalendarEventItem(
+//                  val highlightAction = highlightedInfo[event.id]
+                  CalendarProjectItem(
                       uiModel = event,
                       isExpanded = isExpanded,
-                      highlightAction = highlightAction,
+//                      highlightAction = highlightAction,
                       onToggleExpand = {
                         expandedEventId =
                             if (expandedEventId == event.id) {
@@ -200,7 +98,6 @@ fun ProjectsCardsList(
                       onEditClickFromList = { onEditRequest(event.originalEvent) },
                       onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
                   )
-                }
           }
         }
       }

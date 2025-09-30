@@ -104,26 +104,26 @@ constructor(
         .flowOn(ioDispatcher)
   }
 
-    /** Предоставляет Flow событий из БД для указанной даты */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> {
-        return settingsRepository.timeZoneFlow
-            .flatMapLatest { timeZoneIdString ->
-                val zoneId = parseTimeZone(timeZoneIdString)
-                val (startMillis, endMillis) = calculateLocalBounds(date, zoneId)
+  /** Предоставляет Flow событий из БД для указанной даты */
+  @OptIn(ExperimentalCoroutinesApi::class)
+  fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> {
+    return settingsRepository.timeZoneFlow
+        .flatMapLatest { timeZoneIdString ->
+          val zoneId = parseTimeZone(timeZoneIdString)
+          val (startMillis, endMillis) = calculateLocalBounds(date, zoneId)
 
-                localDataSource.getProjectsForDateRangeFlow(startMillis, endMillis).map { entityList ->
-                    entityList
-                        .filter { entity -> isEventValidForProjectRange(entity, startMillis, endMillis) }
-                        .map { entity -> eventMapper.mapToDomain(entity, zoneId.toString()) }
-                }
-            }
-            .catch { e ->
-                Log.e(TAG, "Error processing events Flow for date $date", e)
-                emit(emptyList())
-            }
-            .flowOn(ioDispatcher)
-    }
+          localDataSource.getProjectsForDateRangeFlow(startMillis, endMillis).map { entityList ->
+            entityList
+                .filter { entity -> isEventValidForProjectRange(entity, startMillis, endMillis) }
+                .map { entity -> eventMapper.mapToDomain(entity, zoneId.toString()) }
+          }
+        }
+        .catch { e ->
+          Log.e(TAG, "Error processing events Flow for date $date", e)
+          emit(emptyList())
+        }
+        .flowOn(ioDispatcher)
+  }
 
   /** Безопасный парсинг часового пояса */
   private fun parseTimeZone(timeZoneIdString: String): ZoneId {
@@ -149,33 +149,29 @@ constructor(
       startMillis: Long,
       endMillis: Long
   ): Boolean {
-    return if (!entity.isAllDay) {
-       entity.endTimeMillis > startMillis && entity.startTimeMillis < endMillis
-    } else {
       val durationMillis = entity.endTimeMillis - entity.startTimeMillis
       val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
       val toleranceMillis = TimeUnit.MINUTES.toMillis(5)
 
+    return if (!entity.isAllDay) {
+        (entity.endTimeMillis > startMillis && entity.startTimeMillis < endMillis) && (durationMillis < twentyFourHoursMillis)
+    } else {
       (durationMillis >= twentyFourHoursMillis - toleranceMillis) &&
           (durationMillis <= twentyFourHoursMillis + toleranceMillis) &&
           (entity.startTimeMillis < endMillis && entity.endTimeMillis > startMillis)
     }
   }
-    private fun isEventValidForProjectRange(
-        entity: CalendarEventEntity,
-        startMillis: Long,
-        endMillis: Long
-    ): Boolean {
-        return if (!entity.isAllDay) {
-            !(entity.endTimeMillis < endMillis && entity.startTimeMillis > startMillis)
-        } else {
-            val durationMillis = entity.endTimeMillis - entity.startTimeMillis
-            val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
-            val toleranceMillis = TimeUnit.MINUTES.toMillis(5)
 
-            (durationMillis >= twentyFourHoursMillis - toleranceMillis)
-        }
-    }
+  private fun isEventValidForProjectRange(
+      entity: CalendarEventEntity,
+      startMillis: Long,
+      endMillis: Long
+  ): Boolean {
+    val durationMillis = entity.endTimeMillis - entity.startTimeMillis
+    val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
+    return !(entity.endTimeMillis < endMillis && entity.startTimeMillis > startMillis) &&
+        (durationMillis > twentyFourHoursMillis)
+  }
 
   // --- Секция Запрос данных ---
   suspend fun fetchAndStoreDateRange(range: ClosedRange<LocalDate>, replace: Boolean) {
