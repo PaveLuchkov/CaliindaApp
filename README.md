@@ -21,7 +21,7 @@ The core design lays in latest Material 3 Expressive from Google.
 
 *   🎨 **Delightful UI/UX:** Smooth animations, thoughtful color schemes, and clean typography. Material 3 Expressive based!
 *   ⚡️ **Effortless Event Creation:** Smart tweaks and intuitive gestures for adding tasks in seconds.
-*   🤖 **Intelligent Assistant (In Development):** An integrated AI agent to manage your calendar with voice and text commands. Proactive agent with way beyond boundaries apart of Google Gemini.
+*   🤖 **Intelligent Assistant:** An integrated AI agent to manage your calendar with voice and text commands. Proactive agent with way beyond boundaries apart of Google Gemini.
 *   🔄 **Full Google Calendar Sync:** Mostly all your events, seamlessly integrated in one place. !!Events for more than 1 day are currently not supported (there will be another approach to visualise them)!!
 *   📱 **Native Android Client:** Built with Kotlin and Jetpack Compose for maximum performance and a modern feel.
 
@@ -44,12 +44,12 @@ This project is under active development.
 *   [✅] Google OAuth2 Authentication
 *   [✅] CRUD Operations for Google Calendar Events
 *   [✅] Fully functioning app with events management.
-*   [🚧] **In Progress:** AI Assistant
+*   [✅] AI Assistant
+*   [✅] Deep Integration of AI based features (suggestions, recommendations)
+*   [🚧] **Planned:** Google Play Store Release
 *   [🚧] **In Progress:** Test Coverage with `pytest`
 *   [⬜️] **Planned:** CI/CD Pipeline with GitHub Actions
 *   [⬜️] **Planned:** 24+ hours events visibility
-*   [⬜️] **Planned:** Deep Integration of AI based features (suggestions, recommendations)
-*   [⬜️] **Planned:** Google Play Store Release
 
 ---
 
