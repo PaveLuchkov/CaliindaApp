@@ -97,9 +97,9 @@ fun CalendarScreen(
   val initialHorizontalPageIndex = remember { 1 }
   val horizontalPagerState =
       rememberPagerState(initialPage = initialHorizontalPageIndex, pageCount = { 2 })
-    val initialWeekViewPageIndex = remember { 1 }
-    val weekViewPagerState =
-        rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
+  val initialWeekViewPageIndex = remember { 1 }
+  val weekViewPagerState =
+      rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
   val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()
   val activity = context as? Activity
   val authorizationLauncher =
@@ -197,7 +197,7 @@ fun CalendarScreen(
 
   if (eventManagementState.showRecurringEditOptionsDialog &&
       eventManagementState.eventBeingEdited != null) {
-    RecurringEventEditOptionsDialog( // Вам нужно создать этот Composable
+    RecurringEventEditOptionsDialog(
         eventName = eventManagementState.eventBeingEdited!!.summary,
         onDismiss = {
           eventManagementViewModel.cancelEditEvent()
@@ -260,17 +260,19 @@ fun CalendarScreen(
           userScrollEnabled = !calendarState.signInRequired,
       ) { page ->
         when (page) {
-          0 -> VerticalPager(
-              state = weekViewPagerState,
-              modifier = Modifier.fillMaxSize(),
-              key = { index ->
-                  },
-              flingBehavior =
-                  PagerDefaults.flingBehavior(
-                      state = weekViewPagerState, snapPositionalThreshold = 0.05f),
-              userScrollEnabled = !calendarState.signInRequired,
-              beyondViewportPageCount = 1
-          ) {}
+          0 ->
+              VerticalPager(
+                  state = weekViewPagerState,
+                  modifier = Modifier.fillMaxSize(),
+                  //              key = { index ->
+                  //                  },
+                  flingBehavior =
+                      PagerDefaults.flingBehavior(
+                          state = weekViewPagerState, snapPositionalThreshold = 0.05f),
+                  userScrollEnabled = !calendarState.signInRequired,
+                  beyondViewportPageCount = 1) {
+                    Text(text = "Пока пусто")
+                  }
           1 ->
               VerticalPager(
                   state = pagerState,
@@ -342,17 +344,17 @@ fun CalendarScreen(
                   val selectedDate =
                       Instant.ofEpochMilli(selectedMillis).atZone(userTimeZoneId).toLocalDate()
 
-                    if (selectedDate != currentVisibleDate) {
-                        Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
+                  if (selectedDate != currentVisibleDate) {
+                    Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
                     calendarViewModel.onVisibleDateChanged(selectedDate)
 
-                        val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
+                    val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
                     val targetPageIndex =
                         (initialPageIndex + daysDifference)
                             .coerceIn(0L, Int.MAX_VALUE.toLong() - 1L)
                             .toInt()
 
-                        scope.launch {
+                    scope.launch {
                       Log.d("DatePicker", "Scrolling Pager to page index: $targetPageIndex")
                       pagerState.scrollToPage(targetPageIndex)
                     }
@@ -367,12 +369,10 @@ fun CalendarScreen(
               },
               enabled = datePickerState.selectedDateMillis != null) {
                 Text("OK")
-          }
+              }
         },
         dismissButton = {
-          TextButton(onClick = { showDatePicker = false }) {
-            Text(stringResource(R.string.cancel))
-          }
+          TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
         }) {
           DatePicker(state = datePickerState)
         }
