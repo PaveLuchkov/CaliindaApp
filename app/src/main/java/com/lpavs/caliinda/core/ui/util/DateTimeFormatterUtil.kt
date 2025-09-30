@@ -12,6 +12,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -98,7 +99,7 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
       return when {
           startInstant != null && endInstant != null -> {
               if (event.isAllDay) {
-                  "${formatDate(startInstant)} - ${formatDate(endInstant)}"
+                  "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
               } else if (formatDate(startInstant) == formatDate(endInstant)) {
                   "${formatTime(startInstant)} - ${formatTime(endInstant)}"
               } else {
@@ -176,7 +177,7 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
     return when {
       startInstant != null && endInstant != null -> {
         if (event.isAllDay){
-            return "${formatDate(startInstant)} - ${formatDate(endInstant)}"
+            return "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
         }
         if (formatDate(startInstant) == formatDate(endInstant)) {
           "${formatTime(startInstant)} - ${formatTime(endInstant)}\n${formatDate(endInstant)}"

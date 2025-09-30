@@ -28,11 +28,11 @@ object CalendarUiDefaults {
   val CurrentEventElevation = 16.dp
 
   const val HeightSigmoidMidpointMinutes = 180.0
-  const val HeightSigmoidProjectMidpointMinutes = 10080.0
   const val HeightSigmoidScaleFactor = 100.0
   const val HeightSigmoidSteepness = 4.5
-  const val HeightSigmoidProjectScaleFactor = 100.0
-  const val HeightSigmoidProjectSteepness = 4.5
+  const val HeightSigmoidProjectMidpointMinutes = 18080.0
+  const val HeightSigmoidProjectScaleFactor = 500.0
+  const val HeightSigmoidProjectSteepness = 0.5
   const val EVENT_TRANSITION_WINDOW_MINUTES = 60L
 
   const val ShapeMinVertices = 3

@@ -33,7 +33,7 @@ interface CalendarLocalDataSource {
      * @param endRangeMillis Конец диапазона (не включительно)
      */
     @Query(
-        "SELECT * FROM calendar_events WHERE startTimeMillis < :endRangeMillis AND endTimeMillis > :startRangeMillis ORDER BY startTimeMillis ASC")
+        "SELECT * FROM calendar_events WHERE startTimeMillis < :endRangeMillis AND endTimeMillis > :startRangeMillis ORDER BY endTimeMillis ASC")
     fun getProjectsForDateRangeFlow(
         startRangeMillis: Long,
         endRangeMillis: Long

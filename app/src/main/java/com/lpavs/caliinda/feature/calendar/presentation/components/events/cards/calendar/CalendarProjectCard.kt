@@ -368,7 +368,7 @@ val normalProjectEvent =
         id = "1",
         summary = "SQL Practice: Query Building",
         isAllDay = false,
-        formattedTimeString = "17 - 17:45",
+        formattedTimeString = "30 сентября - 11 октября",
         durationMinutes = 45,
         isMicroEvent = false,
         baseHeight = 65.dp,
@@ -389,23 +389,22 @@ val normalProjectEvent =
             EventDto(
                 id = "qp919hj747psg010hiua4qvmho_20250818T140000Z",
                 summary = "SQL Practice: Query Building",
-                startTime = "2025-08-18T17:00:00+03:00",
-                endTime = "2025-08-18T17:45:00+03:00",
+                startTime = "2025-09-18T00:00:00+03:00",
+                endTime = "2025-10-19T00:00:00+03:00",
                 description = null,
                 location = null,
                 isAllDay = false))
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
-fun CalendarProjectItem() {
+fun CalendarProjectItemPreview() {
   CaliindaTheme {
-    CalendarEventItem(
+      CalendarProjectItem(
         onToggleExpand = {},
         onDetailsClickFromList = {},
         isExpanded = false,
         onEditClickFromList = {},
         onDeleteClickFromList = {},
-        uiModel = normalProjectEvent,
-        highlightAction = PreviewAction.UPDATE)
+        uiModel = normalProjectEvent)
   }
 }

@@ -113,8 +113,14 @@ constructor(
               location = event.location,
               isAllDay = event.isAllDay,
               formattedTimeString =
-                  dateTimeFormatterUtil.formatEventListTime(context, event, timeZoneId, project = project, locale = ConfigurationCompat.getLocales(context.resources.configuration).get(0)
-                      ?: java.util.Locale.getDefault()),
+                  dateTimeFormatterUtil.formatEventListTime(
+                      context,
+                      event,
+                      timeZoneId,
+                      project = project,
+                      locale =
+                          ConfigurationCompat.getLocales(context.resources.configuration).get(0)
+                              ?: java.util.Locale.getDefault()),
               durationMinutes = durationMinutes,
               isMicroEvent = isMicroEvent,
               baseHeight = baseHeight,
@@ -137,11 +143,16 @@ constructor(
       val maxHeight = cuid.MaxEventHeight
       val durationDouble = durationMinutes.toDouble()
       val heightRange = maxHeight - minHeight
+      val isNotProject = durationMinutes / 60 < 24
       val midpoint =
-          if (durationMinutes / 60 < 24) cuid.HeightSigmoidMidpointMinutes
+          if (isNotProject) cuid.HeightSigmoidMidpointMinutes
           else cuid.HeightSigmoidProjectMidpointMinutes
-      val x = (durationDouble - midpoint) / cuid.HeightSigmoidScaleFactor
-      val k = cuid.HeightSigmoidSteepness
+      val stepness =
+          if (isNotProject) cuid.HeightSigmoidSteepness else cuid.HeightSigmoidProjectSteepness
+      val scaleFactor =
+          if (isNotProject) cuid.HeightSigmoidScaleFactor else cuid.HeightSigmoidProjectScaleFactor
+      val x = (durationDouble - midpoint) / scaleFactor
+      val k = stepness
       val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
 
       val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
