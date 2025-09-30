@@ -14,6 +14,7 @@ import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.data.EventUiDetailsModelMapper
 import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayPageUiState
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.EventsPageUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -220,11 +221,25 @@ constructor(
         .distinctUntilChanged()
   }
 
-  // --- ДЕЙСТВИЯ АУТЕНТИФИКАЦИИ ---
+  fun getProjectsPageUiState(date: LocalDate = LocalDate.now()): Flow<EventsPageUiState> {
+    val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
+    val rangeNetworkStateFlow = calendarRepository.rangeNetworkState
 
-  fun onSignInRequiredDialogDismissed() {
-    _uiState.update { it.copy(signInRequired = false) }
-    Log.d(TAG, "Sign-in dismissed")
+    return calendarRepository
+        .getEventsFlowForProjects(LocalDate.now())
+        .combine(currentTime) { events, now -> events to now }
+        .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
+        .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
+          val zoneId = zoneId.toString()
+          val projectUIModels =
+              eventUiModelMapper.mapToUiModels(
+                  events = events, currentTime = now, timeZoneId = zoneId.toString(), date = date)
+
+          EventsPageUiState(
+              isLoading = networkState is EventNetworkState.Loading, events = projectUIModels)
+        }
+        .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
+        .distinctUntilChanged()
   }
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
