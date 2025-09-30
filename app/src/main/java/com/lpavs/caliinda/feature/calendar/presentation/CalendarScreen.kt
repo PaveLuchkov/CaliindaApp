@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -93,6 +94,12 @@ fun CalendarScreen(
   val today = remember { LocalDate.now() }
   val initialPageIndex = remember { Int.MAX_VALUE / 2 }
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
+  val initialHorizontalPageIndex = remember { 1 }
+  val horizontalPagerState =
+      rememberPagerState(initialPage = initialHorizontalPageIndex, pageCount = { 2 })
+    val initialWeekViewPageIndex = remember { 1 }
+    val weekViewPagerState =
+        rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
   val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()
   val activity = context as? Activity
   val authorizationLauncher =
@@ -247,34 +254,58 @@ fun CalendarScreen(
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
       BackgroundShapes(BackgroundShapeContext.Main)
-
-      VerticalPager(
-          state = pagerState,
+      HorizontalPager(
+          state = horizontalPagerState,
           modifier = Modifier.fillMaxSize(),
-          key = { index -> today.plusDays((index - initialPageIndex).toLong()).toEpochDay() },
-          flingBehavior =
-              PagerDefaults.flingBehavior(state = pagerState, snapPositionalThreshold = 0.05f),
           userScrollEnabled = !calendarState.signInRequired,
-          beyondViewportPageCount = 1) { pageIndex ->
-            val pageDate =
-                remember(pageIndex) { today.plusDays((pageIndex - initialPageIndex).toLong()) }
+      ) { page ->
+        when (page) {
+          0 -> VerticalPager(
+              state = weekViewPagerState,
+              modifier = Modifier.fillMaxSize(),
+              key = { index ->
+                  },
+              flingBehavior =
+                  PagerDefaults.flingBehavior(
+                      state = weekViewPagerState, snapPositionalThreshold = 0.05f),
+              userScrollEnabled = !calendarState.signInRequired,
+              beyondViewportPageCount = 1
+          ) {}
+          1 ->
+              VerticalPager(
+                  state = pagerState,
+                  modifier = Modifier.fillMaxSize(),
+                  key = { index ->
+                    today.plusDays((index - initialPageIndex).toLong()).toEpochDay()
+                  },
+                  flingBehavior =
+                      PagerDefaults.flingBehavior(
+                          state = pagerState, snapPositionalThreshold = 0.05f),
+                  userScrollEnabled = !calendarState.signInRequired,
+                  beyondViewportPageCount = 1) { pageIndex ->
+                    val pageDate =
+                        remember(pageIndex) {
+                          today.plusDays((pageIndex - initialPageIndex).toLong())
+                        }
 
-            DayEventsPage(
-                isLoading = isOverallLoading,
-                isSignIn = calendarState.signInRequired,
-                date = pageDate,
-                viewModel = calendarViewModel,
-                eventManagementViewModel = eventManagementViewModel,
-                onSignInClick = {
-                  if (activity != null) {
-                    authViewModel.signIn(activity)
-                  } else {
-                    Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+                    DayEventsPage(
+                        isLoading = isOverallLoading,
+                        isSignIn = calendarState.signInRequired,
+                        date = pageDate,
+                        viewModel = calendarViewModel,
+                        eventManagementViewModel = eventManagementViewModel,
+                        onSignInClick = {
+                          if (activity != null) {
+                            authViewModel.signIn(activity)
+                          } else {
+                            Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+                          }
+                        },
+                        agentViewModel = agentViewModel,
+                        onNavigateToDate = navigateToDate)
                   }
-                },
-                agentViewModel = agentViewModel,
-                onNavigateToDate = navigateToDate)
-          }
+        }
+      }
       AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
       BottomBar(
           calendarState = calendarState,
@@ -311,23 +342,17 @@ fun CalendarScreen(
                   val selectedDate =
                       Instant.ofEpochMilli(selectedMillis).atZone(userTimeZoneId).toLocalDate()
 
-                  // Проверяем, изменилась ли дата
-                  if (selectedDate != currentVisibleDate) {
-                    // 1. Сообщаем ViewModel о новой дате *до* скролла
-                    Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
+                    if (selectedDate != currentVisibleDate) {
+                        Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
                     calendarViewModel.onVisibleDateChanged(selectedDate)
 
-                    // 2. Рассчитываем целевую страницу
-                    val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
+                        val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
                     val targetPageIndex =
                         (initialPageIndex + daysDifference)
-                            // Ограничиваем индекс на всякий случай
                             .coerceIn(0L, Int.MAX_VALUE.toLong() - 1L)
                             .toInt()
 
-                    // 3. Запускаем скролл к странице (используем scrollToPage для мгновенного
-                    // перехода)
-                    scope.launch {
+                        scope.launch {
                       Log.d("DatePicker", "Scrolling Pager to page index: $targetPageIndex")
                       pagerState.scrollToPage(targetPageIndex)
                     }
@@ -340,17 +365,15 @@ fun CalendarScreen(
                   Log.w("DatePicker", "Confirm clicked but selectedDateMillis is null.")
                 }
               },
-              // Кнопка активна, только если дата выбрана
               enabled = datePickerState.selectedDateMillis != null) {
-                Text("OK") // Используем Text из M3
-              }
+                Text("OK")
+          }
         },
         dismissButton = {
           TextButton(onClick = { showDatePicker = false }) {
-            Text(stringResource(R.string.cancel)) // Используем Text из M3
+            Text(stringResource(R.string.cancel))
           }
         }) {
-          // Сам DatePicker
           DatePicker(state = datePickerState)
         }
   }
