@@ -162,13 +162,9 @@ fun AgentRecommendItem(
                                     color = cardTextColor)
                               }
                         }
-                        Button(
-                            onClick = {
-                              onConfirm(
-                                  "Я соглашаюсь на план $recommentTitle и подтверждаю его создание. class: plan_update.")
-                            }) {
-                              Text("Confirm plan", fontFamily = slotNameFontFamily)
-                            }
+                        Button(onClick = { onConfirm("Create plan '$recommentTitle'") }) {
+                          Text("Confirm plan", fontFamily = slotNameFontFamily)
+                        }
                       }
                 }
               }
