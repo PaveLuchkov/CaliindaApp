@@ -38,7 +38,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
@@ -90,6 +92,7 @@ fun CalendarScreen(
   val isTextInputVisible by remember { mutableStateOf(false) }
 
   val snackbarHostState = remember { SnackbarHostState() }
+    val haptic = LocalHapticFeedback.current
 
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
@@ -250,6 +253,10 @@ fun CalendarScreen(
               datePickerState.selectableDates
 
               showDatePicker = true
+            },
+            onTitleHold = {
+                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                calendarViewModel.refreshCurrentVisibleDate()
             },
             date = currentVisibleDate)
       },

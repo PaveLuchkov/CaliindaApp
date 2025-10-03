@@ -2,6 +2,7 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
@@ -54,6 +56,7 @@ fun CalendarAppBar(
     onNavigateToSettings: () -> Unit,
     onGoToTodayClick: () -> Unit,
     onTitleClick: () -> Unit,
+    onTitleHold: () -> Unit,
     date: LocalDate
 ) {
   val isToday = date == LocalDate.now()
@@ -104,7 +107,12 @@ fun CalendarAppBar(
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(25.dp))
                     .background(color = headerBackgroundColor)
-                    .clickable(onClick = onTitleClick),
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { onTitleClick() },
+                            onLongPress = { onTitleHold() }
+                        )
+                    },
         ) {
           Text(
               text = date.format(formatterWithShortDay),
@@ -163,6 +171,7 @@ fun CalendarEventPreview() {
             onTitleClick = {},
             onGoToTodayClick = {},
             onNavigateToSettings = {},
+            onTitleHold = {},
             date = LocalDate.now()
         )
     }
