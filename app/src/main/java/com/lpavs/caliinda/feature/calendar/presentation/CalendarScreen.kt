@@ -60,6 +60,8 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectE
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.WeekState
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
+import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
+import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -454,6 +456,18 @@ fun CalendarScreen(
         userTimeZone = timeZone.value,
         eventManagementViewModel = eventManagementViewModel)
   }
+    if (eventManagementState.showDeleteConfirmationDialog &&
+        eventManagementState.eventPendingDeletion != null) {
+        DeleteConfirmationDialog(
+            onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
+            onDismiss = { eventManagementViewModel.cancelDelete() })
+    } else if (eventManagementState.showRecurringDeleteOptionsDialog &&
+        eventManagementState.eventPendingDeletion != null) { // TODO исправить
+        RecurringEventDeleteOptionsDialog(
+            eventName = eventManagementState.eventPendingDeletion!!.summary,
+            onDismiss = { eventManagementViewModel.cancelDelete() },
+            onOptionSelected = { choice -> eventManagementViewModel.confirmRecurringDelete(choice) })
+    }
 
   LaunchedEffect(sheetState.isVisible) {
     if (!sheetState.isVisible && showCreateEventSheet) {
