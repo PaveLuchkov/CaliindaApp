@@ -319,8 +319,8 @@ fun CalendarScreen(
           calendarState = calendarState,
           textFieldValue = textFieldState,
           onTextChanged = { textFieldState = it },
-          onSendClick = {
-            agentViewModel::sendTextMessage
+          onSendClick = { messageText ->
+              agentViewModel.sendTextMessage(messageText)
             textFieldState = TextFieldValue("")
           },
           onRecordStart = { agentViewModel.startListening() },

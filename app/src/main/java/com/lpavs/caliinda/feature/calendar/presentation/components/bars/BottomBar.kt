@@ -157,7 +157,7 @@ fun BottomBar(
                           KeyboardActions(
                               onSend = {
                                 if (isSendEnabled) {
-                                    { onSendClick(textFieldValue.text) }
+                                     onSendClick(textFieldValue.text)
                                 }
                               }),
                       colors =

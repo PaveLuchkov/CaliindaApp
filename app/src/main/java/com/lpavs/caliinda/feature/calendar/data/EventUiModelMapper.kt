@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.data
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.os.ConfigurationCompat
@@ -130,7 +129,7 @@ constructor(
               proximityRatio = proximityRatio,
               shapeParams = generateShapeParams(event.id), // Твой генератор фигур
               originalEvent = event)
-      Log.d("Model", "Event: $event")
+      //      Log.d("Model", "Event: $event")
       event
     }
   }
