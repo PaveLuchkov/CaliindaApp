@@ -377,7 +377,7 @@ val normalEvent =
         expandedHeight = 121.dp,
         isCurrent = true,
         isNext = true,
-        proximityRatio = 1f,
+        proximityRatio = 0.2f,
         shapeParams =
             GeneratedShapeParams(
                 numVertices = 6,
@@ -408,6 +408,6 @@ fun CalendarEventPreview() {
         onEditClickFromList = {},
         onDeleteClickFromList = {},
         uiModel = normalEvent,
-        highlightAction = PreviewAction.UPDATE)
+        highlightAction = PreviewAction.CREATE)
   }
 }

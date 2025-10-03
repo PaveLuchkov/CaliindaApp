@@ -165,11 +165,9 @@ fun CalendarProjectItem(
                     R.font.robotoflex_variable,
                     variationSettings =
                         FontVariation.Settings(
-                            FontVariation.weight(700),
-                            FontVariation.grade(70),
-                            FontVariation.width(65f),
+                            FontVariation.weight(800),
+                            FontVariation.width(60f),
                             //                            FontVariation.opticalSizing(0.sp),
-                            FontVariation.slant(-5f),
                         )))
         else ->
             FontFamily(
