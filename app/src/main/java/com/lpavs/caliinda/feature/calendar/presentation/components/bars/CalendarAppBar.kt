@@ -32,10 +32,16 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.normalEvent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -51,6 +57,7 @@ fun CalendarAppBar(
     date: LocalDate
 ) {
   val isToday = date == LocalDate.now()
+    val isCurrentYear = date.year == LocalDate.now().year
   val headerBackgroundColor =
       if (isToday) {
         colorScheme.tertiary
@@ -88,7 +95,7 @@ fun CalendarAppBar(
                         )))
       }
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
-  val formatterWithShortDay = DateTimeFormatter.ofPattern("E, d MMMM yyyy", currentLocale)
+  val formatterWithShortDay = if (isCurrentYear) DateTimeFormatter.ofPattern("E, d MMMM", currentLocale) else DateTimeFormatter.ofPattern("E, d MMMM, yyyy", currentLocale)
   CenterAlignedTopAppBar(
       title = {
         Box(
@@ -145,4 +152,18 @@ fun CalendarAppBar(
         }
       },
       colors = topAppBarColors(containerColor = Color.Transparent))
+}
+
+
+@Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
+@Composable
+fun CalendarEventPreview() {
+    CaliindaTheme {
+        CalendarAppBar(
+            onTitleClick = {},
+            onGoToTodayClick = {},
+            onNavigateToSettings = {},
+            date = LocalDate.now()
+        )
+    }
 }
