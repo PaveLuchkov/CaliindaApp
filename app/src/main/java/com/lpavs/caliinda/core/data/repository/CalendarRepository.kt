@@ -158,7 +158,7 @@ constructor(
     } else {
       (durationMillis >= twentyFourHoursMillis - toleranceMillis) &&
           (durationMillis <= twentyFourHoursMillis + toleranceMillis) &&
-          (entity.startTimeMillis < endMillis && entity.endTimeMillis > startMillis)
+          (entity.startTimeMillis >= startMillis && entity.startTimeMillis < endMillis)
     }
   }
 
