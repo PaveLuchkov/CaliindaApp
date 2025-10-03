@@ -64,9 +64,9 @@ constructor(
   val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
 
   companion object {
-    const val INITIAL_LOAD_DAYS_AROUND = 7L
+    const val INITIAL_LOAD_DAYS_AROUND = 2L
     const val UPDATE_LOAD_DAYS_AROUND = 5L
-    const val TRIGGER_PREFETCH_THRESHOLD = 2L
+    const val TRIGGER_PREFETCH_THRESHOLD = 1L
     const val EXPAND_CHUNK_DAYS = 14L
     const val JUMP_DETECTION_BUFFER_DAYS = 10L
     private const val TAG = "CalendarDataManager"
