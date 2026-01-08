@@ -57,7 +57,8 @@ fun CalendarAppBar(
     onGoToTodayClick: () -> Unit,
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit,
-    date: LocalDate
+    date: LocalDate,
+    isSignedIn: Boolean
 ) {
   val isToday = date == LocalDate.now()
     val isCurrentYear = date.year == LocalDate.now().year
@@ -108,11 +109,14 @@ fun CalendarAppBar(
                     .clip(RoundedCornerShape(25.dp))
                     .background(color = headerBackgroundColor)
                     .pointerInput(Unit) {
-                        detectTapGestures(
-                            onTap = { onTitleClick() },
-                            onLongPress = { onTitleHold() }
-                        )
+                        if (isSignedIn) {
+                            detectTapGestures(
+                                onTap = { onTitleClick() },
+                                onLongPress = { onTitleHold() }
+                            )
+                        }
                     },
+
         ) {
           Text(
               text = date.format(formatterWithShortDay),
@@ -135,7 +139,9 @@ fun CalendarAppBar(
                     .size(
                         IconButtonDefaults.smallContainerSize(
                             IconButtonDefaults.IconButtonWidthOption.Wide)),
-            shape = IconButtonDefaults.smallRoundShape) {
+            shape = IconButtonDefaults.smallRoundShape,
+            enabled = isSignedIn
+            ) {
               Icon(
                   Icons.Filled.Today,
                   contentDescription = "Перейти к сегодня",
@@ -172,7 +178,8 @@ fun CalendarEventPreview() {
             onGoToTodayClick = {},
             onNavigateToSettings = {},
             onTitleHold = {},
-            date = LocalDate.now()
+            date = LocalDate.now(),
+            isSignedIn = true
         )
     }
 }

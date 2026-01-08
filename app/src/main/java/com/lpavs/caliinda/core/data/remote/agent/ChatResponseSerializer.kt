@@ -26,7 +26,7 @@ object ChatApiResponseSerializer : KSerializer<ChatApiResponse> {
 
     val responseObject: Any =
         when (agentName) {
-          "MAIN_Agent",
+          "talk_agent",
           "Waiter_Action",
           "Planner" -> {
             responseElement.jsonPrimitive.content

@@ -15,8 +15,8 @@ android {
         applicationId = "com.lpavs.caliinda"
         minSdk = 32
         targetSdk = 35
-        versionCode = 5
-        versionName = "Breakfast-1.04"
+        versionCode = 6
+        versionName = "Breakfast-1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -52,7 +52,8 @@ fun HeadCardsList(
               Modifier.animateItem(
                   placementSpec = popUndUpSpec,
                   fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                  fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
+                  fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))
+                  .padding(bottom = 4.dp)){
             val isExpanded = event.id == expandedEventId
 
             AllDayEventItem(

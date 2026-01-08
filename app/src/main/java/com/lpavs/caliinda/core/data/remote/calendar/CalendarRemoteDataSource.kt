@@ -126,9 +126,13 @@ constructor(
           is HttpException -> {
             val errorBody = e.response()?.errorBody()?.string()
             Log.e(TAG, "safeApiCall: HttpException - code: ${e.code()}, errorBody: $errorBody", e)
+              if (e.code() == 401) {
+                  authManager.signOut()
+              }
             Result.failure(
                 ApiException(
                     e.code(), "Server is in a bad mood (code: ${e.code()}). Try again later 🙃"))
+
           }
 
           is ApiException -> {

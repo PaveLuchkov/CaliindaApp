@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.feature.event_management.ui.create
 
 import android.text.format.DateFormat
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -134,27 +135,32 @@ fun CreateEventScreen(
         location = location,
         dateTimeState = eventDateTimeState)
   }
-
-  Row(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.Center) {
-        Button(
-            onClick = onSaveClick,
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
-        ) {
-          if (uiState.isLoading) {
-            LoadingIndicator(
-                color = colorScheme.onPrimary,
-                modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
-          } else {
-            Text(
-                text = stringResource(R.string.save),
-            )
-          }
+    AnimatedContent(
+        targetState = summary.isEmpty()
+    ) {
+        if (!it) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center) {
+                Button(
+                    onClick = onSaveClick,
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
+                ) {
+                    if (uiState.isLoading) {
+                        LoadingIndicator(
+                            color = colorScheme.onPrimary,
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
+                    } else {
+                        Text(
+                            text = stringResource(R.string.save),
+                        )
+                    }
+                }
+            }
         }
-      }
+    }
 
   Column(
       modifier =

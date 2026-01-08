@@ -260,7 +260,8 @@ fun CalendarScreen(
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                 calendarViewModel.refreshCurrentVisibleDate()
             },
-            date = currentVisibleDate)
+            date = currentVisibleDate,
+            isSignedIn = !calendarState.signInRequired)
       },
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
@@ -324,27 +325,29 @@ fun CalendarScreen(
         }
       }
       AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
-      BottomBar(
-          calendarState = calendarState,
-          textFieldValue = textFieldState,
-          onTextChanged = { textFieldState = it },
-          onSendClick = { messageText ->
-              agentViewModel.sendTextMessage(messageText)
-            textFieldState = TextFieldValue("")
-          },
-          onRecordStart = { agentViewModel.startListening() },
-          onRecordStopAndSend = { agentViewModel.stopListening() },
-          onUpdatePermissionResult = { granted -> agentViewModel.updatePermissionStatus(granted) },
-          isTextInputVisible = isTextInputVisible,
-          modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
-          onCreateEventClick = {
-            selectedDateForSheet = currentVisibleDate
-            showCreateEventSheet = true
-          },
-          recordState = recState,
-          authState = authState,
-          suggestions = suggestions)
-    } // End основной Box
+        if (!calendarState.signInRequired) {
+            BottomBar(
+                calendarState = calendarState,
+                textFieldValue = textFieldState,
+                onTextChanged = { textFieldState = it },
+                onSendClick = { messageText ->
+                    agentViewModel.sendTextMessage(messageText)
+                    textFieldState = TextFieldValue("")
+                },
+                onRecordStart = { agentViewModel.startListening() },
+                onRecordStopAndSend = { agentViewModel.stopListening() },
+                onUpdatePermissionResult = { granted -> agentViewModel.updatePermissionStatus(granted) },
+                isTextInputVisible = isTextInputVisible,
+                modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
+                onCreateEventClick = {
+                    selectedDateForSheet = currentVisibleDate
+                    showCreateEventSheet = true
+                },
+                recordState = recState,
+                authState = authState,
+                suggestions = suggestions)
+        }
+        }
   } // End Scaffold
 
   if (showDatePicker) {

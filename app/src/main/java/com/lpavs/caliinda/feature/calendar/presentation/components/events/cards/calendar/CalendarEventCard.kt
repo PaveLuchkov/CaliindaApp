@@ -48,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -62,7 +61,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
@@ -79,7 +77,6 @@ import com.lpavs.caliinda.core.ui.util.calculateShapeContainerSize
 import com.lpavs.caliinda.core.ui.util.lerpOkLab
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
-import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
@@ -408,6 +405,6 @@ fun CalendarEventPreview() {
         onEditClickFromList = {},
         onDeleteClickFromList = {},
         uiModel = normalEvent,
-        highlightAction = PreviewAction.CREATE)
+        highlightAction = PreviewAction.SEARCH)
   }
 }

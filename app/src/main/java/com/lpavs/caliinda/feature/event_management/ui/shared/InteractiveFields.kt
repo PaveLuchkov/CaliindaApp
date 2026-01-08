@@ -62,8 +62,8 @@ fun CustomOutlinedTextField(
       modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
       colors =
           OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = Color.Transparent,
-              unfocusedBorderColor = Color.Transparent,
+//              focusedBorderColor = Color.Transparent,
+//              unfocusedBorderColor = Color.Transparent,
               focusedContainerColor = Color.Transparent,
               unfocusedContainerColor = Color.Transparent,
           ),

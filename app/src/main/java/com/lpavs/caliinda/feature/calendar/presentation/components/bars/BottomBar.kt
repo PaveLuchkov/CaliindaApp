@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,10 +26,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,7 +107,7 @@ fun BottomBar(
       Spacer(modifier = Modifier.height(12.dp))
     }
     AnimatedContent(
-        modifier = modifier,
+//        modifier = modifier.padding(end = 16.dp),
         targetState = onKeyboardToggle,
         transitionSpec = {
           val fadeSpringSpec =
@@ -170,29 +173,37 @@ fun BottomBar(
                 },
             )
           } else {
+//              FloatingActionButton(
+//                  onClick = onCreateEventClick,
+////                  shape =
+//              ) {
+//                  Icon(Icons.Filled.AddCircle, "Create event")
+//              }
+
             HorizontalFloatingToolbar(
                 expanded = expanded,
-                floatingActionButton = {
-                  RecordButton(
-                      calendarState = calendarState,
-                      onStartRecording = onRecordStart,
-                      onStopRecordingAndSend = onRecordStopAndSend,
-                      onUpdatePermissionResult = onUpdatePermissionResult,
-                      recordState = recordState)
-                },
+
+//                floatingActionButton = {
+//                  RecordButton(
+//                      calendarState = calendarState,
+//                      onStartRecording = onRecordStart,
+//                      onStopRecordingAndSend = onRecordStopAndSend,
+//                      onUpdatePermissionResult = onUpdatePermissionResult,
+//                      recordState = recordState)
+//                },
                 content = {
                   IconButton(
                       onClick = onCreateEventClick,
                   ) {
                     Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Create event")
                   }
-                  IconButton(
-                      onClick = { onKeyboardToggle = !onKeyboardToggle },
-                  ) {
-                    Icon(
-                        imageVector = Icons.Filled.Keyboard,
-                        contentDescription = "Показать клавиатуру")
-                  }
+//                  IconButton(
+//                      onClick = { onKeyboardToggle = !onKeyboardToggle },
+//                  ) {
+//                    Icon(
+//                        imageVector = Icons.Filled.Keyboard,
+//                        contentDescription = "Показать клавиатуру")
+//                  }
                 },
             )
           }
