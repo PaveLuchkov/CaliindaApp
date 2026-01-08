@@ -128,7 +128,6 @@ fun CalendarScreen(
       pagerState.animateScrollToPage(targetPageIndex)
     }
   }
-
   LaunchedEffect(authState.authorizationIntent) {
     authState.authorizationIntent?.let { pendingIntent ->
       try {
@@ -151,7 +150,10 @@ fun CalendarScreen(
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
-
+    val CreateEventAction = {
+        selectedDateForSheet = currentVisibleDate
+        showCreateEventSheet = true
+    }
   var showEditEventSheet by remember { mutableStateOf(false) }
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
@@ -320,7 +322,8 @@ fun CalendarScreen(
                           }
                         },
                         agentViewModel = agentViewModel,
-                        onNavigateToDate = navigateToDate)
+                        onNavigateToDate = navigateToDate,
+                        createEventClick = CreateEventAction)
                   }
         }
       }
@@ -339,10 +342,7 @@ fun CalendarScreen(
                 onUpdatePermissionResult = { granted -> agentViewModel.updatePermissionStatus(granted) },
                 isTextInputVisible = isTextInputVisible,
                 modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
-                onCreateEventClick = {
-                    selectedDateForSheet = currentVisibleDate
-                    showCreateEventSheet = true
-                },
+                onCreateEventClick = CreateEventAction,
                 recordState = recState,
                 authState = authState,
                 suggestions = suggestions)

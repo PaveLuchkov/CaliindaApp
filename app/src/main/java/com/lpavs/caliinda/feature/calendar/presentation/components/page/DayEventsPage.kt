@@ -30,6 +30,7 @@ import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.BodyCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
@@ -49,13 +50,14 @@ fun DayEventsPage(
     eventManagementViewModel: EventManagementViewModel,
     agentViewModel: AgentViewModel,
     onNavigateToDate: (LocalDate) -> Unit,
+    createEventClick: () -> Unit
 ) {
   val pageState by
       viewModel
           .getDayPageUiState(date)
           .collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
   val listState = rememberLazyListState()
-  val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
+//  val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
   val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
@@ -96,27 +98,33 @@ fun DayEventsPage(
           onPlanConfirm = agentViewModel::sendTextMessage,
           onNavigateToDate = onNavigateToDate)
     } else if (pageState.allDayEvents.isEmpty()) {
-      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+
         if (isBusy) {
-          LoadingIndicator(modifier = Modifier.size(80.dp))
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                LoadingIndicator(modifier = Modifier.size(80.dp))
+            }
         } else {
-          Box(
-              modifier =
-                  Modifier.shadow(
-                          elevation = 5.dp,
-                          shape = RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius),
-                          clip = false,
-                      )
-                      .clip(RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius))
-                      .background(color = MaterialTheme.colorScheme.secondaryContainer)
-                      .padding(16.dp),
-              contentAlignment = Alignment.Center // Центрируем сообщение
-              ) {
-                Text(
-                    stringResource(R.string.no_events),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer)
-              }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            CalendarCreateEventItem(
+                onCreateEventClick = createEventClick
+            )
+//          Box(
+//              modifier =
+//                  Modifier.shadow(
+//                          elevation = 5.dp,
+//                          shape = RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius),
+//                          clip = false,
+//                      )
+//                      .clip(RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius))
+//                      .background(color = MaterialTheme.colorScheme.secondaryContainer)
+//                      .padding(16.dp),
+//              contentAlignment = Alignment.Center // Центрируем сообщение
+//              ) {
+//                Text(
+//                    stringResource(R.string.no_events),
+//                    style = MaterialTheme.typography.bodyLarge,
+//                    color = MaterialTheme.colorScheme.onSecondaryContainer)
+//              }
         }
       }
     } else {
