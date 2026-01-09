@@ -67,18 +67,24 @@ fun AppNavHost(
       val calendarViewModel: CalendarViewModel = hiltViewModel()
       val authViewModel: AuthViewModel = hiltViewModel()
       val agentViewModel: AgentViewModel = hiltViewModel()
+        val settingsViewModel: SettingsViewModel = hiltViewModel()
+
       CalendarScreen(
           calendarViewModel = calendarViewModel,
           onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) },
           eventManagementViewModel = eventManagementViewModel,
           agentViewModel = agentViewModel,
-          authViewModel = authViewModel)
+          authViewModel = authViewModel,
+          settignsViewModel = settingsViewModel)
     }
     composable(
         NavRoutes.Settings.route,
     ) {
+        val settingsViewModel: SettingsViewModel = hiltViewModel()
+
       SettingsScreen(
           authViewModel = authViewModel,
+          settignsViewModel = settingsViewModel,
           onSignInClick = onSignInClick,
           onNavigateBack = { navController.popBackStack() },
           onNavigateToAISettings = { navController.navigate(NavRoutes.AISettings.route) },
@@ -88,7 +94,7 @@ fun AppNavHost(
     composable(
         NavRoutes.AISettings.route,
     ) {
-      val settingsViewModel: SettingsViewModel = hiltViewModel()
+        val settingsViewModel: SettingsViewModel = hiltViewModel()
       AISettingsScreen(
           viewModel = settingsViewModel, onNavigateBack = { navController.popBackStack() })
     }

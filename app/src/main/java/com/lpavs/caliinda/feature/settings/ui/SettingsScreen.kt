@@ -2,7 +2,9 @@ package com.lpavs.caliinda.feature.settings.ui
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.AccessTimeFilled
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Error
@@ -42,32 +45,38 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthState
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.core.ui.theme.getThemePrimaryColor
+import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
+import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     authViewModel: AuthViewModel,
+    settignsViewModel: SettingsViewModel,
     onSignInClick: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToAISettings: () -> Unit,
     onNavigateToTimeSettings: () -> Unit,
     onNavigateToTermsOfuse: () -> Unit
 ) {
-
+    val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
   val state by authViewModel.authState.collectAsState()
   val snackbarHostState = remember { SnackbarHostState() }
-
   val isOverallLoading = state.isLoading
 
   Scaffold(
@@ -85,7 +94,10 @@ fun SettingsScreen(
       }) { paddingValues ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(paddingValues).padding(16.dp).fillMaxWidth()) {
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(16.dp)
+                .fillMaxWidth()) {
               if (isOverallLoading && !state.isSignedIn) {
                 LoadingIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
@@ -95,7 +107,13 @@ fun SettingsScreen(
                   authViewModel = authViewModel,
                   onSignInClick = onSignInClick,
               )
-
+            Spacer(modifier = Modifier.height(10.dp))
+            ThemePickerItem(
+                currentMode =  themeMode,
+                onModeSelected = { newMode ->
+                    settignsViewModel.updateThemeMode(newMode)
+                }
+            )
               Spacer(modifier = Modifier.height(10.dp))
 
               SettingsItem(
@@ -135,6 +153,7 @@ fun SettingsScreen(
                   onClick = onNavigateToTermsOfuse,
                   shape = MaterialShapes.Bun.toShape())
             }
+
       }
 }
 
@@ -143,14 +162,16 @@ fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Uni
   val cornerRadius = cuid.SettingsItemCornerRadius
   Box(
       modifier =
-          Modifier.fillMaxWidth()
+          Modifier
+              .fillMaxWidth()
               .clip(RoundedCornerShape(cornerRadius))
               .background(color = colorScheme.surfaceContainer)
               .height(60.dp)
               .clickable(onClick = onClick)) {
         Box(
             modifier =
-                Modifier.align(Alignment.CenterStart)
+                Modifier
+                    .align(Alignment.CenterStart)
                     .padding(start = 16.dp)
                     .clip(shape)
                     .size(40.dp)
@@ -158,7 +179,9 @@ fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Uni
             contentAlignment = Alignment.Center) {
               icon()
             }
-        Text(text = title, modifier = Modifier.padding(16.dp).align(Alignment.Center))
+        Text(text = title, modifier = Modifier
+            .padding(16.dp)
+            .align(Alignment.Center))
       }
 }
 
@@ -176,19 +199,24 @@ fun GoogleAccountSection(
 
   Box(
       modifier =
-          Modifier.fillMaxWidth()
+          Modifier
+              .fillMaxWidth()
               .clip(RoundedCornerShape(cornerRadius))
               .background(color = colorScheme.surfaceContainer)
               .height(120.dp)) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically) {
               Box(
                   modifier =
-                      Modifier.size(80.dp)
+                      Modifier
+                          .size(80.dp)
                           .clip(
                               if (photo == null) MaterialShapes.Circle.toShape()
-                              else MaterialShapes.Cookie7Sided.toShape())
+                              else MaterialShapes.Cookie7Sided.toShape()
+                          )
                           .background(color = colorScheme.primaryContainer),
                   contentAlignment = Alignment.Center) {
                     if (photo == null) {
@@ -233,4 +261,93 @@ fun GoogleAccountSection(
               }
             }
       }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class) // Если используешь Expressive формы
+@Composable
+fun ThemeItem(
+    mode: ThemeMode,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    // 1. Определяем форму в зависимости от темы
+    val modeShape: Shape = when(mode) {
+        ThemeMode.SYSTEM -> MaterialShapes.Flower.toShape()
+        ThemeMode.SUNNY -> MaterialShapes.Sunny.toShape()
+        ThemeMode.WARM -> MaterialShapes.VerySunny.toShape() // Проверь названия в своих шейпах
+        ThemeMode.GREEN -> MaterialShapes.Arrow.toShape()
+        ThemeMode.COLD -> MaterialShapes.Burst.toShape()
+        ThemeMode.PINKY -> MaterialShapes.Heart.toShape()
+    }
+
+    // 2. Получаем цвет для превью (функция из предыдущего ответа)
+    val previewColor = getThemePrimaryColor(themeMode = mode)
+
+    // Цвет галочки (контрастный к цвету темы)
+    // Можно упростить и всегда брать белый или черный, или вычислить luminance
+    val checkMarkColor = Color.White
+
+    Box(
+        modifier = Modifier
+            // Делаем элемент кликабельным и добавляем немного паддинга для визуального разделителя
+            .clip(modeShape) // Обрезаем клик по форме
+            .clickable(onClick = onClick)
+            .size(48.dp) // Общий размер области клика (можно 40.dp)
+        ,
+        contentAlignment = Alignment.Center
+    ) {
+        // Рисуем саму фигуру
+        Box(
+            modifier = Modifier
+                .matchParentSize() // Заполняем 48dp
+                .background(previewColor)
+                .border(
+                    // Если выбрано - жирная рамка, если нет - тонкая или отсутствует
+                    width = if (isSelected) 3.dp else 0.dp,
+                    color = MaterialTheme.colorScheme.onSurface, // Цвет рамки
+                    shape = modeShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            // Опционально: галочка внутри, если выбрано
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = checkMarkColor, // Или MaterialTheme.colorScheme.onPrimary
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemePickerItem(
+    currentMode: ThemeMode,
+    onModeSelected: (ThemeMode) -> Unit
+) {
+    val cornerRadius = cuid.SettingsItemCornerRadius // замени на  если есть доступ
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(color = colorScheme.surfaceContainer) // Фон контейнера
+            .padding(vertical = 12.dp, horizontal = 8.dp) // Отступы внутри контейнера
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly, // Равномерное распределение
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ThemeMode.entries.forEach { mode ->
+                ThemeItem(
+                    mode = mode,
+                    isSelected = (mode == currentMode),
+                    onClick = { onModeSelected(mode) }
+                )
+            }
+        }
+    }
 }

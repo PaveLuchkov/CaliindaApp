@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.core.ui.util.formatRRule
 import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -54,8 +56,17 @@ fun CustomEventDetailsDialog(
     event: EventDetailsUiModel,
     userTimeZone: String,
     onDismissRequest: () -> Unit,
-    eventManagementViewModel: EventManagementViewModel
+    eventManagementViewModel: EventManagementViewModel,
+    themeMode: ThemeMode = ThemeMode.SYSTEM
 ) {
+    val modeShape: Shape = when(themeMode) {
+        ThemeMode.SYSTEM -> MaterialShapes.Cookie7Sided.toShape()
+        ThemeMode.SUNNY -> MaterialShapes.Sunny.toShape()
+        ThemeMode.WARM -> MaterialShapes.VerySunny.toShape() // Проверь названия в своих шейпах
+        ThemeMode.GREEN -> MaterialShapes.Arrow.toShape()
+        ThemeMode.COLD -> MaterialShapes.Burst.toShape()
+        ThemeMode.PINKY -> MaterialShapes.Heart.toShape()
+    }
   Dialog(
       onDismissRequest = onDismissRequest,
       properties =
@@ -78,13 +89,13 @@ fun CustomEventDetailsDialog(
                     modifier =
                         Modifier.align(Alignment.BottomEnd)
                             .size(250.dp)
-                            .rotate(75f)
+                            .rotate(-25f)
                             .offset(y = (-50).dp, x = 50.dp)
-                            .clip(MaterialShapes.Cookie7Sided.toShape())
+                            .clip(modeShape)
                             .border(
                                 width = 2.dp,
                                 color = onCardText.copy(alpha = 0.2f),
-                                shape = MaterialShapes.Cookie7Sided.toShape())
+                                shape = modeShape)
                             .background(onCardText.copy(alpha = 0f))) {}
 
                 Column(

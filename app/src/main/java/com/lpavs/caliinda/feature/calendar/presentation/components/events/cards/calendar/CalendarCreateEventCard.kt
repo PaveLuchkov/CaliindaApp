@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,12 +41,11 @@ fun CalendarCreateEventItem(
     val targetHeight = cuid.MinEventHeight
 
     val borderColor = colorScheme.outline
-    val cardBackground = colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+    val cardBackground = colorScheme.tertiaryContainer.copy(alpha = 0.3f)
 
     val cardTextColor = colorScheme.onTertiaryContainer //.copy(alpha = 0.8f)
 
-    // --- Композиция UI ---
-    Box( // Корневой Box для тени, фона, высоты и кликабельности
+    Box(
         modifier =
             modifier
                 .padding(
@@ -61,7 +61,7 @@ fun CalendarCreateEventItem(
                         style = Stroke(
                             width = 3.dp.toPx(),
                             pathEffect = PathEffect.dashPathEffect(
-                                floatArrayOf(10f, 10f), 0f
+                                floatArrayOf(20f, 20f), 0f
                             )
                         )
                     )
@@ -86,14 +86,6 @@ fun CalendarCreateEventItem(
                 contentAlignment = Alignment.Center
             ) {
                 Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-//                    Text(
-//                        text = "Create event",
-//                        color = cardTextColor,
-//                        style = textStyle,
-//                        fontFamily = cardFontFamily,
-//                        maxLines = 1,
-//                        overflow = TextOverflow.Ellipsis
-//                    )
                     Icon(
                         imageVector = Icons.Filled.AddCircle,
                         contentDescription = "Create event",
@@ -106,7 +98,7 @@ fun CalendarCreateEventItem(
 } // Конец корневого Box
 
 
-@Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
 fun CalendarCreateEventPreview() {
   CaliindaTheme {

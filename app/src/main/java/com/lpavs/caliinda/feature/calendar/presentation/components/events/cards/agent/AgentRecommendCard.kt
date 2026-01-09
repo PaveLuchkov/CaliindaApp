@@ -9,6 +9,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -186,7 +187,9 @@ fun AgentEventRecommendPreview() {
                   Slot(Weekday.Wednesday, "Attemping to create outline", "17:30", "18:00"),
                   Slot(Weekday.Friday, "Generate AI crap", "13:30", "14:30")),
           isRecommended = true)
-  CaliindaTheme {
+  CaliindaTheme(
+      darkTheme = true
+  ) {
     AgentRecommendItem(
         suggestion = debugVsCodeSuggestion, isExpanded = true, onToggleExpand = {}, onConfirm = {})
   }

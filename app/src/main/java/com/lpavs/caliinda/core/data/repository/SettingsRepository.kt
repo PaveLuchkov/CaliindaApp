@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -19,6 +20,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
   private object PreferencesKeys {
     val BOT_TEMPER = stringPreferencesKey("bot_temper")
     val TIME_ZONE = stringPreferencesKey("time_zone")
+    val THEME_MODE = stringPreferencesKey("theme_mode")
   }
 
   val botTemperFlow: Flow<String> =
@@ -32,8 +34,41 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
             }
           }
           .map { preferences -> preferences[PreferencesKeys.BOT_TEMPER] ?: "" }
+  val themeModeFlow: Flow<ThemeMode> = dataStore.data
+    .catch { exception ->
+      if (exception is IOException) {
+        Log.e(TAG, "Error reading theme preferences.", exception)
+        emit(emptyPreferences())
+      } else {
+        throw exception
+      }
+    }
+    .map { preferences ->
+      val themeName = preferences[PreferencesKeys.THEME_MODE]
+      if (themeName != null) {
+        try {
+          ThemeMode.valueOf(themeName)
+        } catch (e: IllegalArgumentException) {
+          Log.e(TAG, "Unknown theme mode found: $themeName. Fallback to SYSTEM.")
+          ThemeMode.SYSTEM
+        }
+      } else {
+        ThemeMode.SYSTEM
+      }
+    }
 
-  suspend fun saveBotTemper(temper: String) {
+  suspend fun saveThemeMode(mode: ThemeMode) {
+    try {
+      dataStore.edit { prefs ->
+        prefs[PreferencesKeys.THEME_MODE] = mode.name
+      }
+      Log.i(TAG, "Saved theme mode: ${mode.name}")
+    } catch (e: IOException) {
+      Log.e(TAG, "Error saving theme mode.", e)
+    }
+  }
+
+  suspend fun saveBotTemper(  temper: String) {
     try {
       dataStore.edit { preferences -> preferences[PreferencesKeys.BOT_TEMPER] = temper }
       Log.i(TAG, "Saved bot temper setting.")

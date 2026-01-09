@@ -32,6 +32,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
+import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 import kotlin.math.max
 
 enum class BackgroundShapeContext {
@@ -41,7 +42,10 @@ enum class BackgroundShapeContext {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Main) {
+fun BackgroundShapes(
+    context: BackgroundShapeContext = BackgroundShapeContext.Main,
+    themeMode: ThemeMode = ThemeMode.SYSTEM
+    ) {
   Box(
       modifier = Modifier.fillMaxSize()
   ) {
@@ -49,7 +53,15 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
           BackgroundShapeContext.Main -> {
 
             val clover4Leaf = MaterialShapes.Clover4Leaf.toShape()
-            val cookie4Sided = MaterialShapes.Flower.toShape()
+
+              val centerShape: Shape = when(themeMode) {
+                  ThemeMode.SYSTEM -> MaterialShapes.Flower.toShape()
+                  ThemeMode.SUNNY -> MaterialShapes.Sunny.toShape()
+                  ThemeMode.WARM -> MaterialShapes.VerySunny.toShape() // Проверь названия в своих шейпах
+                  ThemeMode.GREEN -> MaterialShapes.Arrow.toShape()
+                  ThemeMode.COLD -> MaterialShapes.Burst.toShape()
+                  ThemeMode.PINKY -> MaterialShapes.Heart.toShape()
+              }
             val starContainerSize = 300.dp
             val star2ContainerSize = 200.dp
 
@@ -69,11 +81,11 @@ fun BackgroundShapes(context: BackgroundShapeContext = BackgroundShapeContext.Ma
                     Modifier.size(star2ContainerSize)
                         .align(Alignment.TopStart)
                         .offset(
-                            x = -star2ContainerSize * 0.4f,
+                            x = -star2ContainerSize * 0.15f,
                             y = star2ContainerSize * 1.5f
                         )
-                        .rotate(80f)
-                        .clip(cookie4Sided)
+                        .rotate(30f)
+                        .clip(centerShape)
                         .background(colorScheme.surfaceVariant))
           }
 

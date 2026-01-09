@@ -65,6 +65,7 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDelet
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -76,6 +77,7 @@ import kotlinx.coroutines.launch
 fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
+    settignsViewModel: SettingsViewModel,
     agentViewModel: AgentViewModel,
     authViewModel: AuthViewModel,
     onNavigateToSettings: () -> Unit,
@@ -86,6 +88,7 @@ fun CalendarScreen(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
   val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
+    val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
   val suggestions = agentResponse?.suggestions ?: emptyList()
@@ -157,9 +160,8 @@ fun CalendarScreen(
   var showEditEventSheet by remember { mutableStateOf(false) }
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
-  // --- НОВОЕ: Эффект для синхронизации Pager -> ViewModel ---
-  LaunchedEffect(pagerState.targetPage) { // Реагируем, когда страница "устаканилась"
-    val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
+    LaunchedEffect(pagerState.targetPage) {
+        val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
     Log.d("CalendarScreen", "Pager settled on page ${pagerState.targetPage}, date: $settledDate")
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
@@ -184,8 +186,7 @@ fun CalendarScreen(
     }
   }
 
-  // события от EventManagementViewModel (успех/ошибка CRUD операций)
-  LaunchedEffect(key1 = true) {
+    LaunchedEffect(key1 = true) {
     eventManagementViewModel.eventFlow.collect { event ->
       when (event) {
         is EventManagementUiEvent.ShowMessage -> {
@@ -195,9 +196,8 @@ fun CalendarScreen(
       }
     }
   }
-  // TODO: Добавь обработку rangeNetworkState.Error, если нужно показывать снекбар и для этого
 
-  LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) {
     val hasPermission =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -210,7 +210,7 @@ fun CalendarScreen(
         eventName = eventManagementState.eventBeingEdited!!.summary,
         onDismiss = {
           eventManagementViewModel.cancelEditEvent()
-        }, // Если пользователь закрыл диалог
+        },
         onOptionSelected = { choice ->
           eventManagementViewModel.onRecurringEditOptionSelected(choice)
         })
@@ -267,7 +267,7 @@ fun CalendarScreen(
       },
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-      BackgroundShapes(BackgroundShapeContext.Main)
+      BackgroundShapes(context = BackgroundShapeContext.Main, themeMode = themeMode)
       HorizontalPager(
           state = horizontalPagerState,
           modifier = Modifier.fillMaxSize(),
@@ -278,8 +278,6 @@ fun CalendarScreen(
               VerticalPager(
                   state = weekViewPagerState,
                   modifier = Modifier.fillMaxSize(),
-                  //              key = { index ->
-                  //                  },
                   flingBehavior =
                       PagerDefaults.flingBehavior(
                           state = weekViewPagerState, snapPositionalThreshold = 0.05f),
@@ -289,7 +287,7 @@ fun CalendarScreen(
                       isLoading = isOverallLoading,
                       viewModel = calendarViewModel,
                       eventManagementViewModel = eventManagementViewModel,
-                      displayPosition = WeekState.current_projects)
+                      createEventClick = CreateEventAction)
               }
           1 ->
               VerticalPager(
@@ -348,9 +346,9 @@ fun CalendarScreen(
                 suggestions = suggestions)
         }
         }
-  } // End Scaffold
+  }
 
-  if (showDatePicker) {
+    if (showDatePicker) {
     DatePickerDialog(
         onDismissRequest = { showDatePicker = false },
         confirmButton = {
@@ -457,7 +455,8 @@ fun CalendarScreen(
         event = calendarState.eventForDetailedView!!,
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone.value,
-        eventManagementViewModel = eventManagementViewModel)
+        eventManagementViewModel = eventManagementViewModel,
+        themeMode = themeMode)
   }
     if (eventManagementState.showDeleteConfirmationDialog &&
         eventManagementState.eventPendingDeletion != null) {
@@ -465,7 +464,7 @@ fun CalendarScreen(
             onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
             onDismiss = { eventManagementViewModel.cancelDelete() })
     } else if (eventManagementState.showRecurringDeleteOptionsDialog &&
-        eventManagementState.eventPendingDeletion != null) { // TODO исправить
+        eventManagementState.eventPendingDeletion != null) {
         RecurringEventDeleteOptionsDialog(
             eventName = eventManagementState.eventPendingDeletion!!.summary,
             onDismiss = { eventManagementViewModel.cancelDelete() },

@@ -104,10 +104,11 @@ fun DayEventsPage(
                 LoadingIndicator(modifier = Modifier.size(80.dp))
             }
         } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-            CalendarCreateEventItem(
-                onCreateEventClick = createEventClick
-            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter)
+            {
+            CalendarCreateEventItem(onCreateEventClick = createEventClick)
+            }
+
 //          Box(
 //              modifier =
 //                  Modifier.shadow(
@@ -125,7 +126,6 @@ fun DayEventsPage(
 //                    style = MaterialTheme.typography.bodyLarge,
 //                    color = MaterialTheme.colorScheme.onSecondaryContainer)
 //              }
-        }
       }
     } else {
       Spacer(modifier = Modifier.weight(1f))

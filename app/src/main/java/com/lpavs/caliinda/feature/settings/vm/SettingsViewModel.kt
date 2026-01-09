@@ -7,6 +7,7 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -22,6 +23,21 @@ constructor(
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
           viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
+
+    val themeMode: StateFlow<ThemeMode> = settingsRepository.themeModeFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ThemeMode.SYSTEM
+        )
+
+    // 2. Обновление темы
+    fun updateThemeMode(newMode: ThemeMode) {
+        viewModelScope.launch {
+            // Repository принимает ThemeMode, а не String, поэтому передаем объект целиком
+            settingsRepository.saveThemeMode(newMode)
+        }
+    }
 
   fun updateTimeZoneSetting(zoneId: String) {
     if (ZoneId.getAvailableZoneIds().contains(zoneId)) {
