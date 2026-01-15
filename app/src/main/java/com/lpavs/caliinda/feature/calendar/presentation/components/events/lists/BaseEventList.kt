@@ -3,7 +3,9 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.events.lists
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,13 +42,32 @@ fun <T : Any> BaseEventList(
 
         items(items = items, key = key) { item ->
             val itemId = key(item)
-            val sliderSpec = spring<IntOffset>(Spring.DampingRatioHighBouncy, Spring.StiffnessMediumLow)
+            val fadeSpringSpec =
+                spring<Float>(
+                    dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+            val sliderSpringSpec =
+                spring<IntOffset>(
+                    dampingRatio = Spring.DampingRatioHighBouncy,
+                    stiffness = Spring.StiffnessMediumLow)
+            val popUndUpSpec =
+                spring<IntOffset>(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow)
 
             AnimatedVisibility(
                 visible = true,
-                enter = slideInVertically(initialOffsetY = { it / 2 }, animationSpec = sliderSpec),
-                modifier = Modifier.animateItem()
-            ) {
+                enter =
+                    slideInVertically(
+                        initialOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
+                exit =
+                    fadeOut(animationSpec = fadeSpringSpec) +
+                            slideOutVertically(
+                                targetOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
+                modifier =
+                    Modifier.animateItem(
+                        placementSpec = popUndUpSpec,
+                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                 itemContent(
                     item,
                     expandedId == itemId,
