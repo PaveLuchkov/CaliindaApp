@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.settings.ui
 
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.AccessTimeFilled
 import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,15 +51,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthState
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
-import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.getThemePrimaryColor
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
@@ -78,7 +81,7 @@ fun SettingsScreen(
   val state by authViewModel.authState.collectAsState()
   val snackbarHostState = remember { SnackbarHostState() }
   val isOverallLoading = state.isLoading
-
+    val context = LocalContext.current
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -103,20 +106,21 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
               }
               GoogleAccountSection(
+                  modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                   state = state,
                   authViewModel = authViewModel,
                   onSignInClick = onSignInClick,
               )
-            Spacer(modifier = Modifier.height(10.dp))
             ThemePickerItem(
+                modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                 currentMode =  themeMode,
                 onModeSelected = { newMode ->
                     settignsViewModel.updateThemeMode(newMode)
                 }
             )
-              Spacer(modifier = Modifier.height(10.dp))
-
+                  /**
               SettingsItem(
+                    modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                   icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ar_sticker),
@@ -126,10 +130,11 @@ fun SettingsScreen(
                   title = stringResource(R.string.aisettings),
                   onClick = onNavigateToAISettings,
                   shape = MaterialShapes.Clover4Leaf.toShape())
-
               Spacer(modifier = Modifier.height(10.dp))
+                    **/
 
               SettingsItem(
+                  modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                   icon = {
                     Icon(
                         Icons.Rounded.AccessTimeFilled,
@@ -140,29 +145,58 @@ fun SettingsScreen(
                   onClick = onNavigateToTimeSettings,
                   shape = MaterialShapes.Pill.toShape())
 
-              Spacer(modifier = Modifier.height(10.dp))
-
               SettingsItem(
+                  modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                   icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.doc),
                         tint = colorScheme.onPrimaryContainer,
                         contentDescription = stringResource(R.string.terms))
                   },
-                  title = stringResource(R.string.terms_of_use),
-                  onClick = onNavigateToTermsOfuse,
+                  title = stringResource(R.string.privacy_policy),
+                  onClick = {
+                      val intent = Intent(
+                          Intent.ACTION_VIEW,
+                          "https://www.lpavs.com/caliinda/privacy-policy".toUri()
+                      )
+                      context.startActivity(intent)
+                  },
                   shape = MaterialShapes.Bun.toShape())
+            SettingsItem(
+                modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
+                icon = {
+                    Icon(
+                        Icons.Rounded.DeleteSweep,
+                        tint = colorScheme.onPrimaryContainer,
+                        contentDescription = stringResource(R.string.terms))
+                },
+                title = stringResource(R.string.delete_data),
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        "https://www.lpavs.com/caliinda/delete-data".toUri()
+                    )
+                    context.startActivity(intent)
+                },
+                shape = MaterialShapes.Burst.toShape()
+            )
             }
 
       }
 }
 
 @Composable
-fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Unit, shape: Shape) {
+fun SettingsItem(
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+    title: String,
+    onClick: () -> Unit,
+    shape: Shape
+) {
   val cornerRadius = cuid.SettingsItemCornerRadius
   Box(
       modifier =
-          Modifier
+          modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(cornerRadius))
               .background(color = colorScheme.surfaceContainer)
@@ -188,6 +222,7 @@ fun SettingsItem(icon: @Composable () -> Unit, title: String, onClick: () -> Uni
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun GoogleAccountSection(
+    modifier: Modifier = Modifier,
     state: AuthState,
     authViewModel: AuthViewModel,
     onSignInClick: () -> Unit,
@@ -199,7 +234,7 @@ fun GoogleAccountSection(
 
   Box(
       modifier =
-          Modifier
+          modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(cornerRadius))
               .background(color = colorScheme.surfaceContainer)
@@ -324,13 +359,14 @@ fun ThemeItem(
 
 @Composable
 fun ThemePickerItem(
+    modifier: Modifier = Modifier,
     currentMode: ThemeMode,
     onModeSelected: (ThemeMode) -> Unit
 ) {
     val cornerRadius = cuid.SettingsItemCornerRadius // замени на  если есть доступ
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(cornerRadius))
             .background(color = colorScheme.surfaceContainer) // Фон контейнера

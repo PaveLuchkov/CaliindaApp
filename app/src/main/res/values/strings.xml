@@ -143,6 +143,8 @@
     <string name="time_zone_save">Time Zone saved: %1$s</string>
     <string name="time_format">Time &amp; Format</string>
     <string name="terms">Terms</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="delete_data">Delete Data</string>
     <string name="terms_of_use">Terms of use</string>
 
     <string name="ai">AI</string>
