@@ -55,6 +55,7 @@ import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
@@ -441,27 +442,11 @@ fun CalendarScreen(
           }
     }
   }
-  if (calendarState.showEventDetailedView && calendarState.eventForDetailedView != null) {
-    CustomEventDetailsDialog(
-        event = calendarState.eventForDetailedView!!,
-        onDismissRequest = { calendarViewModel.cancelEventDetails() },
-        userTimeZone = timeZone.value,
-        eventManagementViewModel = eventManagementViewModel,
-        themeMode = themeMode)
-  }
-  if (eventManagementState.showDeleteConfirmationDialog &&
-      eventManagementState.eventPendingDeletion != null) {
-    DeleteConfirmationDialog(
-        onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
-        onDismiss = { eventManagementViewModel.cancelDelete() })
-  } else if (eventManagementState.showRecurringDeleteOptionsDialog &&
-      eventManagementState.eventPendingDeletion != null) {
-    RecurringEventDeleteOptionsDialog(
-        eventName = eventManagementState.eventPendingDeletion!!.summary,
-        onDismiss = { eventManagementViewModel.cancelDelete() },
-        onOptionSelected = { choice -> eventManagementViewModel.confirmRecurringDelete(choice) })
-  }
-
+    EventManagementDialogs(
+        state = eventManagementState,
+        viewModel = eventManagementViewModel
+    )
+    
   LaunchedEffect(sheetState.isVisible) {
     if (!sheetState.isVisible && showCreateEventSheet) {
       showCreateEventSheet = false
