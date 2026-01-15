@@ -50,6 +50,7 @@ import com.lpavs.caliinda.feature.agent.presentation.indicators.AiVisualizer
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
@@ -60,11 +61,11 @@ import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -81,11 +82,12 @@ fun CalendarScreen(
   val recState by agentViewModel.recState.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
-  val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
+  val timeZone = settignsViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
-  val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
-//  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
-//  val suggestions = agentResponse?.suggestions ?: emptyList()
+  val userTimeZoneId = ZoneId.of(timeZone.value)
+
+  //  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
+  //  val suggestions = agentResponse?.suggestions ?: emptyList()
 
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val isTextInputVisible by remember { mutableStateOf(false) }
@@ -283,57 +285,40 @@ fun CalendarScreen(
             onCreateEventClick = CreateEventAction,
             recordState = recState,
             authState = authState,
-//            suggestions = suggestions
+            //            suggestions = suggestions
         )
       }
     }
   }
 
-  if (showDatePicker) {
-    DatePickerDialog(
-        onDismissRequest = { showDatePicker = false },
-        confirmButton = {
-          TextButton(
-              onClick = {
-                showDatePicker = false
-                val selectedMillis = datePickerState.selectedDateMillis
-                if (selectedMillis != null) {
-                  val selectedDate =
-                      Instant.ofEpochMilli(selectedMillis).atZone(userTimeZoneId).toLocalDate()
+    CalendarDatePickerDialog(
+        show = showDatePicker,
+        state = datePickerState,
+        onDismiss = { showDatePicker = false },
+        onConfirm = { millis ->
+            showDatePicker = false
 
-                  if (selectedDate != currentVisibleDate) {
-                    Log.d("DatePicker", "Date selected: $selectedDate. Updating ViewModel.")
-                    calendarViewModel.onVisibleDateChanged(selectedDate)
+            val selectedDate =
+                Instant.ofEpochMilli(millis)
+                    .atZone(userTimeZoneId)
+                    .toLocalDate()
 
-                    val daysDifference = ChronoUnit.DAYS.between(today, selectedDate)
-                    val targetPageIndex =
-                        (initialPageIndex + daysDifference)
-                            .coerceIn(0L, Int.MAX_VALUE.toLong() - 1L)
-                            .toInt()
+            if (selectedDate != currentVisibleDate) {
+                calendarViewModel.onVisibleDateChanged(selectedDate)
 
-                    scope.launch {
-                      Log.d("DatePicker", "Scrolling Pager to page index: $targetPageIndex")
-                      pagerState.scrollToPage(targetPageIndex)
-                    }
-                  } else {
-                    Log.d(
-                        "DatePicker",
-                        "Selected date $selectedDate is the same as current $currentVisibleDate. No action.")
-                  }
-                } else {
-                  Log.w("DatePicker", "Confirm clicked but selectedDateMillis is null.")
+                val daysDiff = ChronoUnit.DAYS.between(today, selectedDate)
+                val targetPage =
+                    (initialPageIndex.toLong() + daysDiff)
+                        .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
+                        .toInt()
+
+                scope.launch {
+                    pagerState.scrollToPage(targetPage.toInt())
                 }
-              },
-              enabled = datePickerState.selectedDateMillis != null) {
-                Text("OK")
-              }
-        },
-        dismissButton = {
-          TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
-        }) {
-          DatePicker(state = datePickerState)
+            }
         }
-  }
+    )
+
   if (showCreateEventSheet) {
     ModalBottomSheet(
         onDismissRequest = { showCreateEventSheet = false },
