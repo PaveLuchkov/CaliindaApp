@@ -60,76 +60,14 @@ fun CalendarAppBar(
     date: LocalDate,
     isSignedIn: Boolean
 ) {
-  val isToday = date == LocalDate.now()
-    val isCurrentYear = date.year == LocalDate.now().year
-  val headerBackgroundColor =
-      if (isToday) {
-        colorScheme.tertiary
-      } else {
-        colorScheme.secondary
-      }
-  val headerTextColor =
-      if (isToday) {
-        colorScheme.onTertiary
-      } else {
-        colorScheme.onSecondary
-      }
-  val headerTextStyle =
-      when {
-        isToday -> Typography.titleLargeEmphasized
-        else -> Typography.titleLarge
-      }
-  val headerFontFamily =
-      when {
-        isToday ->
-            FontFamily(
-                Font(
-                    R.font.robotoflex_variable,
-                    variationSettings =
-                        FontVariation.Settings(
-                            FontVariation.weight(750),
-                        )))
-        else ->
-            FontFamily(
-                Font(
-                    R.font.robotoflex_variable,
-                    variationSettings =
-                        FontVariation.Settings(
-                            FontVariation.weight(600),
-                        )))
-      }
-  val currentLocale = LocalConfiguration.current.getLocales().get(0)
-  val formatterWithShortDay = if (isCurrentYear) DateTimeFormatter.ofPattern("E, d MMMM", currentLocale) else DateTimeFormatter.ofPattern("E, d MMMM, yyyy", currentLocale)
   CenterAlignedTopAppBar(
       title = {
-        Box(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(25.dp))
-                    .background(color = headerBackgroundColor)
-                    .pointerInput(Unit) {
-                        if (isSignedIn) {
-                            detectTapGestures(
-                                onTap = { onTitleClick() },
-                                onLongPress = { onTitleHold() }
-                            )
-                        }
-                    },
-
-        ) {
-          Text(
-              text = date.format(formatterWithShortDay),
-              style = headerTextStyle,
-              fontFamily = headerFontFamily,
-              color = headerTextColor,
-              modifier =
-                  Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                      .fillMaxWidth(), // Больше отступы
-              textAlign = TextAlign.Center,
-              fontSize = 16.sp,
+          CalendarDateTitle(
+              date = date,
+              isSignedIn = isSignedIn,
+              onTitleHold = onTitleHold,
+              onTitleClick = onTitleClick
           )
-        }
       },
       navigationIcon = {
         FilledIconButton(
