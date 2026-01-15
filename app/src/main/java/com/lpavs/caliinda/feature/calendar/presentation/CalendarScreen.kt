@@ -5,26 +5,19 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -39,10 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
@@ -51,14 +42,15 @@ import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CreateBottomSheet
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EditBottomSheet
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
-import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
@@ -120,6 +112,9 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
+  val eventToEdit = eventManagementState.eventBeingEdited
+  val mode = eventManagementState.selectedUpdateMode
+
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
@@ -147,16 +142,6 @@ fun CalendarScreen(
   }
   var showEditEventSheet by remember { mutableStateOf(false) }
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-
-  if (eventManagementState.showRecurringEditOptionsDialog &&
-      eventManagementState.eventBeingEdited != null) {
-    RecurringEventEditOptionsDialog(
-        eventName = eventManagementState.eventBeingEdited!!.summary,
-        onDismiss = { eventManagementViewModel.cancelEditEvent() },
-        onOptionSelected = { choice ->
-          eventManagementViewModel.onRecurringEditOptionSelected(choice)
-        })
-  }
 
   LaunchedEffect(eventManagementState.showEditEventDialog, eventManagementState.eventBeingEdited) {
     if (eventManagementState.showEditEventDialog && eventManagementState.eventBeingEdited != null) {
@@ -291,91 +276,74 @@ fun CalendarScreen(
     }
   }
 
-    CalendarDatePickerDialog(
-        show = showDatePicker,
-        state = datePickerState,
-        onDismiss = { showDatePicker = false },
-        onConfirm = { millis ->
-            showDatePicker = false
+  CalendarDatePickerDialog(
+      show = showDatePicker,
+      state = datePickerState,
+      onDismiss = { showDatePicker = false },
+      onConfirm = { millis ->
+        showDatePicker = false
 
-            val selectedDate =
-                Instant.ofEpochMilli(millis)
-                    .atZone(userTimeZoneId)
-                    .toLocalDate()
+        val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
 
-            if (selectedDate != currentVisibleDate) {
-                calendarViewModel.onVisibleDateChanged(selectedDate)
+        if (selectedDate != currentVisibleDate) {
+          calendarViewModel.onVisibleDateChanged(selectedDate)
 
-                val daysDiff = ChronoUnit.DAYS.between(today, selectedDate)
-                val targetPage =
-                    (initialPageIndex.toLong() + daysDiff)
-                        .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
-                        .toInt()
+          val daysDiff = ChronoUnit.DAYS.between(today, selectedDate)
+          val targetPage =
+              (initialPageIndex.toLong() + daysDiff)
+                  .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
+                  .toInt()
 
-                scope.launch {
-                    pagerState.scrollToPage(targetPage.toInt())
-                }
-            }
+          scope.launch { pagerState.scrollToPage(targetPage.toInt()) }
         }
-    )
+      })
+  CreateBottomSheet(
+      show = showCreateEventSheet,
+      sheetState = sheetState,
+      onDismiss = { showCreateEventSheet = false },
+  ) {
+    CreateEventScreen(
+        userTimeZone = timeZone.value,
+        initialDate = selectedDateForSheet,
+        onDismiss = {
+          scope
+              .launch { sheetState.hide() }
+              .invokeOnCompletion {
+                if (!sheetState.isVisible) {
+                  showCreateEventSheet = false
+                }
+              }
+        },
+        currentSheetValue = sheetState.currentValue)
+  }
 
-  if (showCreateEventSheet) {
-    ModalBottomSheet(
-        onDismissRequest = { showCreateEventSheet = false },
-        sheetState = sheetState,
-        contentWindowInsets = { WindowInsets.navigationBars }) {
-          CreateEventScreen(
-              userTimeZone = timeZone.value,
-              initialDate = selectedDateForSheet,
-              onDismiss = {
-                scope
-                    .launch { sheetState.hide() }
-                    .invokeOnCompletion {
-                      if (!sheetState.isVisible) {
-                        showCreateEventSheet = false
-                      }
+  EditBottomSheet(
+      show = showEditEventSheet,
+      sheetState = editSheetState,
+      eventToEdit = eventToEdit,
+      mode = mode,
+      onDismiss = {
+        showEditEventSheet = false
+        eventManagementViewModel.cancelEditEvent()
+      }) {
+        EditEventScreen(
+            viewModel = eventManagementViewModel,
+            userTimeZone = timeZone.value,
+            eventToEdit = eventToEdit!!,
+            selectedUpdateMode = mode!!,
+            onDismiss = {
+              scope
+                  .launch { editSheetState.hide() }
+                  .invokeOnCompletion {
+                    if (!editSheetState.isVisible) {
+                      showEditEventSheet = false
+                      eventManagementViewModel.cancelEditEvent()
                     }
-              },
-              currentSheetValue = sheetState.currentValue)
-        }
-  }
-  if (showEditEventSheet) {
-    val eventToEdit = eventManagementState.eventBeingEdited
-    val mode = eventManagementState.selectedUpdateMode
-
-    if (eventToEdit != null && mode != null) {
-      ModalBottomSheet(
-          onDismissRequest = {
-            scope
-                .launch { editSheetState.hide() }
-                .invokeOnCompletion {
-                  if (!editSheetState.isVisible) {
-                    showEditEventSheet = false
-                    eventManagementViewModel.cancelEditEvent()
                   }
-                }
-          },
-          sheetState = editSheetState,
-          contentWindowInsets = { WindowInsets.navigationBars }) {
-            EditEventScreen(
-                viewModel = eventManagementViewModel,
-                userTimeZone = timeZone.value,
-                eventToEdit = eventToEdit,
-                selectedUpdateMode = mode,
-                onDismiss = {
-                  scope
-                      .launch { editSheetState.hide() }
-                      .invokeOnCompletion {
-                        if (!editSheetState.isVisible) {
-                          showEditEventSheet = false
-                          eventManagementViewModel.cancelEditEvent()
-                        }
-                      }
-                },
-                currentSheetValue = editSheetState.currentValue)
-          }
-    }
-  }
+            },
+            currentSheetValue = editSheetState.currentValue)
+      }
+
   if (calendarState.showEventDetailedView && calendarState.eventForDetailedView != null) {
     CustomEventDetailsDialog(
         event = calendarState.eventForDetailedView!!,
