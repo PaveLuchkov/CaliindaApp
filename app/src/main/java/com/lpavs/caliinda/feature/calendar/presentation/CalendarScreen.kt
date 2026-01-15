@@ -57,7 +57,6 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.bars.Calendar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectEventsPage
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.WeekState
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
@@ -66,11 +65,11 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditO
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -88,7 +87,7 @@ fun CalendarScreen(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val authState by authViewModel.authState.collectAsStateWithLifecycle()
   val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
-    val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
+  val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
   val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
   val suggestions = agentResponse?.suggestions ?: emptyList()
@@ -97,7 +96,7 @@ fun CalendarScreen(
   val isTextInputVisible by remember { mutableStateOf(false) }
 
   val snackbarHostState = remember { SnackbarHostState() }
-    val haptic = LocalHapticFeedback.current
+  val haptic = LocalHapticFeedback.current
 
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
@@ -124,13 +123,6 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
-  val navigateToDate: (LocalDate) -> Unit = { targetDate ->
-    scope.launch {
-      val targetPageIndex = initialPageIndex + ChronoUnit.DAYS.between(today, targetDate).toInt()
-      calendarViewModel.onVisibleDateChanged(targetDate)
-      pagerState.animateScrollToPage(targetPageIndex)
-    }
-  }
   LaunchedEffect(authState.authorizationIntent) {
     authState.authorizationIntent?.let { pendingIntent ->
       try {
@@ -153,15 +145,15 @@ fun CalendarScreen(
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
-    val CreateEventAction = {
-        selectedDateForSheet = currentVisibleDate
-        showCreateEventSheet = true
-    }
+  val CreateEventAction = {
+    selectedDateForSheet = currentVisibleDate
+    showCreateEventSheet = true
+  }
   var showEditEventSheet by remember { mutableStateOf(false) }
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
-    LaunchedEffect(pagerState.targetPage) {
-        val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
+  LaunchedEffect(pagerState.targetPage) {
+    val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
     Log.d("CalendarScreen", "Pager settled on page ${pagerState.targetPage}, date: $settledDate")
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
@@ -186,7 +178,7 @@ fun CalendarScreen(
     }
   }
 
-    LaunchedEffect(key1 = true) {
+  LaunchedEffect(key1 = true) {
     eventManagementViewModel.eventFlow.collect { event ->
       when (event) {
         is EventManagementUiEvent.ShowMessage -> {
@@ -197,7 +189,7 @@ fun CalendarScreen(
     }
   }
 
-    LaunchedEffect(Unit) {
+  LaunchedEffect(Unit) {
     val hasPermission =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -208,9 +200,7 @@ fun CalendarScreen(
       eventManagementState.eventBeingEdited != null) {
     RecurringEventEditOptionsDialog(
         eventName = eventManagementState.eventBeingEdited!!.summary,
-        onDismiss = {
-          eventManagementViewModel.cancelEditEvent()
-        },
+        onDismiss = { eventManagementViewModel.cancelEditEvent() },
         onOptionSelected = { choice ->
           eventManagementViewModel.onRecurringEditOptionSelected(choice)
         })
@@ -259,8 +249,8 @@ fun CalendarScreen(
               showDatePicker = true
             },
             onTitleHold = {
-                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                calendarViewModel.refreshCurrentVisibleDate()
+              haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+              calendarViewModel.refreshCurrentVisibleDate()
             },
             date = currentVisibleDate,
             isSignedIn = !calendarState.signInRequired)
@@ -281,14 +271,14 @@ fun CalendarScreen(
                   flingBehavior =
                       PagerDefaults.flingBehavior(
                           state = weekViewPagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = !calendarState.signInRequired && false,
+                  userScrollEnabled = false,
                   beyondViewportPageCount = 1) { pageIndex ->
-                  ProjectEventsPage(
-                      isLoading = isOverallLoading,
-                      viewModel = calendarViewModel,
-                      eventManagementViewModel = eventManagementViewModel,
-                      createEventClick = CreateEventAction)
-              }
+                    ProjectEventsPage(
+                        isLoading = isOverallLoading,
+                        viewModel = calendarViewModel,
+                        eventManagementViewModel = eventManagementViewModel,
+                        createEventClick = CreateEventAction)
+                  }
           1 ->
               VerticalPager(
                   state = pagerState,
@@ -325,29 +315,31 @@ fun CalendarScreen(
         }
       }
       AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
-        if (!calendarState.signInRequired) {
-            BottomBar(
-                calendarState = calendarState,
-                textFieldValue = textFieldState,
-                onTextChanged = { textFieldState = it },
-                onSendClick = { messageText ->
-                    agentViewModel.sendTextMessage(messageText)
-                    textFieldState = TextFieldValue("")
-                },
-                onRecordStart = { agentViewModel.startListening() },
-                onRecordStopAndSend = { agentViewModel.stopListening() },
-                onUpdatePermissionResult = { granted -> agentViewModel.updatePermissionStatus(granted) },
-                isTextInputVisible = isTextInputVisible,
-                modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
-                onCreateEventClick = CreateEventAction,
-                recordState = recState,
-                authState = authState,
-                suggestions = suggestions)
-        }
-        }
+      if (!calendarState.signInRequired) {
+        BottomBar(
+            calendarState = calendarState,
+            textFieldValue = textFieldState,
+            onTextChanged = { textFieldState = it },
+            onSendClick = { messageText ->
+              agentViewModel.sendTextMessage(messageText)
+              textFieldState = TextFieldValue("")
+            },
+            onRecordStart = { agentViewModel.startListening() },
+            onRecordStopAndSend = { agentViewModel.stopListening() },
+            onUpdatePermissionResult = { granted ->
+              agentViewModel.updatePermissionStatus(granted)
+            },
+            isTextInputVisible = isTextInputVisible,
+            modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
+            onCreateEventClick = CreateEventAction,
+            recordState = recState,
+            authState = authState,
+            suggestions = suggestions)
+      }
+    }
   }
 
-    if (showDatePicker) {
+  if (showDatePicker) {
     DatePickerDialog(
         onDismissRequest = { showDatePicker = false },
         confirmButton = {
@@ -457,18 +449,18 @@ fun CalendarScreen(
         eventManagementViewModel = eventManagementViewModel,
         themeMode = themeMode)
   }
-    if (eventManagementState.showDeleteConfirmationDialog &&
-        eventManagementState.eventPendingDeletion != null) {
-        DeleteConfirmationDialog(
-            onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
-            onDismiss = { eventManagementViewModel.cancelDelete() })
-    } else if (eventManagementState.showRecurringDeleteOptionsDialog &&
-        eventManagementState.eventPendingDeletion != null) {
-        RecurringEventDeleteOptionsDialog(
-            eventName = eventManagementState.eventPendingDeletion!!.summary,
-            onDismiss = { eventManagementViewModel.cancelDelete() },
-            onOptionSelected = { choice -> eventManagementViewModel.confirmRecurringDelete(choice) })
-    }
+  if (eventManagementState.showDeleteConfirmationDialog &&
+      eventManagementState.eventPendingDeletion != null) {
+    DeleteConfirmationDialog(
+        onConfirm = { eventManagementViewModel.confirmDeleteEvent() },
+        onDismiss = { eventManagementViewModel.cancelDelete() })
+  } else if (eventManagementState.showRecurringDeleteOptionsDialog &&
+      eventManagementState.eventPendingDeletion != null) {
+    RecurringEventDeleteOptionsDialog(
+        eventName = eventManagementState.eventPendingDeletion!!.summary,
+        onDismiss = { eventManagementViewModel.cancelDelete() },
+        onOptionSelected = { choice -> eventManagementViewModel.confirmRecurringDelete(choice) })
+  }
 
   LaunchedEffect(sheetState.isVisible) {
     if (!sheetState.isVisible && showCreateEventSheet) {

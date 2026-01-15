@@ -8,13 +8,12 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 import com.lpavs.caliinda.feature.event_management.EventActions
 
 @Composable
-fun BodyCardsList(
+fun DailyCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
     isSignIn: Boolean,
     actions: EventActions,
     onSignInClick: () -> Unit,
-//    highlightedInfo: Map<String> = emptyMap()
 ) {
     BaseEventList(
         items = events,

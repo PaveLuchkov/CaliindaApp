@@ -22,7 +22,7 @@ import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.BodyCardsList
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.DailyCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
 import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -79,7 +79,7 @@ fun DayEventsPage(
 
     if (pageState.timedEvents.isNotEmpty() or isSignIn ||
         !(agentResponse?.mainText.isNullOrBlank())) {
-      BodyCardsList(
+      DailyCardsList(
           events = pageState.timedEvents,
           listState = listState,
           isSignIn = isSignIn,
