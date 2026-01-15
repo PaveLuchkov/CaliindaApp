@@ -1,10 +1,8 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
-import android.Manifest
 import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,27 +41,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
 import com.lpavs.caliinda.feature.agent.presentation.indicators.AiVisualizer
-import com.lpavs.caliinda.feature.agent.presentation.vm.AgentUiEvent
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
-import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectEventsPage
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
-import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
-import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
@@ -124,17 +117,17 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
-  LaunchedEffect(authState.authorizationIntent) {
-    authState.authorizationIntent?.let { pendingIntent ->
-      try {
-        val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
-        authorizationLauncher.launch(intentSenderRequest)
-        authViewModel.clearAuthorizationIntent()
-      } catch (e: Exception) {
-        Log.e("MainScreen", "Couldn't start authorization UI", e)
-      }
-    }
-  }
+    CalendarEffectHandler(
+        calendarViewModel = calendarViewModel,
+        eventManagementViewModel = eventManagementViewModel,
+        agentViewModel = agentViewModel,
+        authViewModel = authViewModel,
+        pagerState = pagerState,
+        snackbarHostState = snackbarHostState,
+        initialPageIndex = initialPageIndex,
+        today = today,
+        authorizationLauncher = authorizationLauncher
+    )
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
@@ -152,50 +145,6 @@ fun CalendarScreen(
   }
   var showEditEventSheet by remember { mutableStateOf(false) }
   val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-
-  LaunchedEffect(pagerState.targetPage) {
-    val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
-    Log.d("CalendarScreen", "Pager settled on page ${pagerState.targetPage}, date: $settledDate")
-    calendarViewModel.onVisibleDateChanged(settledDate)
-  }
-
-  LaunchedEffect(key1 = true) {
-    agentViewModel.eventFlow.collect { event ->
-      when (event) {
-        is AgentUiEvent.ShowMessage -> {
-          snackbarHostState.showSnackbar(event.message.asString(context))
-        }
-      }
-    }
-  }
-
-  LaunchedEffect(key1 = true) {
-    calendarViewModel.eventFlow.collect { event ->
-      when (event) {
-        is CalendarUiEvent.ShowMessage -> {
-          snackbarHostState.showSnackbar(event.message)
-        }
-      }
-    }
-  }
-
-  LaunchedEffect(key1 = true) {
-    eventManagementViewModel.eventFlow.collect { event ->
-      when (event) {
-        is EventManagementUiEvent.ShowMessage -> {
-          snackbarHostState.showSnackbar(event.message.asString(context))
-        }
-        is EventManagementUiEvent.OperationSuccess -> {}
-      }
-    }
-  }
-
-  LaunchedEffect(Unit) {
-    val hasPermission =
-        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED
-    agentViewModel.updatePermissionStatus(hasPermission)
-  }
 
   if (eventManagementState.showRecurringEditOptionsDialog &&
       eventManagementState.eventBeingEdited != null) {
@@ -442,11 +391,8 @@ fun CalendarScreen(
           }
     }
   }
-    EventManagementDialogs(
-        state = eventManagementState,
-        viewModel = eventManagementViewModel
-    )
-    
+  EventManagementDialogs(state = eventManagementState, viewModel = eventManagementViewModel)
+
   LaunchedEffect(sheetState.isVisible) {
     if (!sheetState.isVisible && showCreateEventSheet) {
       showCreateEventSheet = false
