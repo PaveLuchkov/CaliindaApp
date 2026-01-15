@@ -50,6 +50,7 @@ import com.lpavs.caliinda.feature.agent.presentation.indicators.AiVisualizer
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
@@ -59,11 +60,11 @@ import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -83,8 +84,8 @@ fun CalendarScreen(
   val timeZone = calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
   val userTimeZoneId = remember { ZoneId.of(timeZone.value) }
-  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
-  val suggestions = agentResponse?.suggestions ?: emptyList()
+//  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
+//  val suggestions = agentResponse?.suggestions ?: emptyList()
 
   var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
   val isTextInputVisible by remember { mutableStateOf(false) }
@@ -117,17 +118,16 @@ fun CalendarScreen(
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
 
-    CalendarEffectHandler(
-        calendarViewModel = calendarViewModel,
-        eventManagementViewModel = eventManagementViewModel,
-        agentViewModel = agentViewModel,
-        authViewModel = authViewModel,
-        pagerState = pagerState,
-        snackbarHostState = snackbarHostState,
-        initialPageIndex = initialPageIndex,
-        today = today,
-        authorizationLauncher = authorizationLauncher
-    )
+  CalendarEffectHandler(
+      calendarViewModel = calendarViewModel,
+      eventManagementViewModel = eventManagementViewModel,
+      agentViewModel = agentViewModel,
+      authViewModel = authViewModel,
+      pagerState = pagerState,
+      snackbarHostState = snackbarHostState,
+      initialPageIndex = initialPageIndex,
+      today = today,
+      authorizationLauncher = authorizationLauncher)
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
@@ -245,7 +245,6 @@ fun CalendarScreen(
                         remember(pageIndex) {
                           today.plusDays((pageIndex - initialPageIndex).toLong())
                         }
-
                     DayEventsPage(
                         isLoading = isOverallLoading,
                         isSignIn = calendarState.signInRequired,
@@ -284,7 +283,8 @@ fun CalendarScreen(
             onCreateEventClick = CreateEventAction,
             recordState = recState,
             authState = authState,
-            suggestions = suggestions)
+//            suggestions = suggestions
+        )
       }
     }
   }
@@ -390,6 +390,14 @@ fun CalendarScreen(
                 currentSheetValue = editSheetState.currentValue)
           }
     }
+  }
+  if (calendarState.showEventDetailedView && calendarState.eventForDetailedView != null) {
+    CustomEventDetailsDialog(
+        event = calendarState.eventForDetailedView!!,
+        onDismissRequest = { calendarViewModel.cancelEventDetails() },
+        userTimeZone = timeZone.value,
+        eventManagementViewModel = eventManagementViewModel,
+        themeMode = themeMode)
   }
   EventManagementDialogs(state = eventManagementState, viewModel = eventManagementViewModel)
 
