@@ -9,6 +9,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -17,6 +18,7 @@ import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.ProjectsCardsList
+import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -38,14 +40,19 @@ fun ProjectEventsPage(
     val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
     val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
     val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
+    val actions =
+        remember(eventManagementViewModel, viewModel) {
+            EventActions(
+                onDelete = eventManagementViewModel::requestDeleteConfirmation,
+                onEdit = eventManagementViewModel::requestEditEvent,
+                onDetails = viewModel::requestEventDetails)
+        }
     Column(modifier = Modifier.fillMaxSize()) {
         if (pageState.events.isNotEmpty()) {
             ProjectsCardsList(
                 events = pageState.events,
                 listState = listState,
-                onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
-                onEditRequest = eventManagementViewModel::requestEditEvent,
-                onDetailsRequest = viewModel::requestEventDetails,
+                actions = actions
             )
         } else {
             if (isBusy) {

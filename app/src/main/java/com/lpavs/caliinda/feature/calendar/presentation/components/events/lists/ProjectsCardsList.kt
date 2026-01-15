@@ -39,67 +39,27 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarProjectItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
+import com.lpavs.caliinda.feature.event_management.EventActions
 import java.time.LocalDate
 
 @Composable
 fun ProjectsCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
-    onDeleteRequest: (EventDto) -> Unit,
-    onEditRequest: (EventDto) -> Unit,
-    onDetailsRequest: (EventDto) -> Unit,
+    actions: EventActions
 ) {
-  var expandedEventId by remember { mutableStateOf<String?>(null) }
-  LazyColumn(
-      modifier = Modifier.fillMaxSize(),
-      state = listState,
-      contentPadding = PaddingValues(bottom = 100.dp)) {
-          items(items = events, key = { event -> event.id }) { event ->
-            val fadeSpringSpec =
-                spring<Float>(
-                    dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-            val sliderSpringSpec =
-                spring<IntOffset>(
-                    dampingRatio = Spring.DampingRatioHighBouncy,
-                    stiffness = Spring.StiffnessMediumLow)
-            val popUndUpSpec =
-                spring<IntOffset>(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow)
-            AnimatedVisibility(
-                visible = true,
-                enter =
-                    slideInVertically(
-                        initialOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
-                exit =
-                    fadeOut(animationSpec = fadeSpringSpec) +
-                        slideOutVertically(
-                            targetOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
-                modifier =
-                    Modifier.animateItem(
-                        placementSpec = popUndUpSpec,
-                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                        fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
-                  val isExpanded = event.id == expandedEventId
-//                  val highlightAction = highlightedInfo[event.id]
-                  CalendarProjectItem(
-                      uiModel = event,
-                      isExpanded = isExpanded,
-//                      highlightAction = highlightAction,
-                      onToggleExpand = {
-                        expandedEventId =
-                            if (expandedEventId == event.id) {
-                              null
-                            } else {
-                              event.id
-                            }
-                      },
-                      onDeleteClickFromList = { onDeleteRequest(event.originalEvent) },
-                      onEditClickFromList = { onEditRequest(event.originalEvent) },
-                      onDetailsClickFromList = { onDetailsRequest(event.originalEvent) },
-                  )
-          }
-        }
-      }
-  Box(modifier = Modifier.height(70.dp))
+    BaseEventList(
+        items = events,
+        key = { it.id },
+        listState = listState
+    ) { event, isExpanded, toggleExpand ->
+        CalendarProjectItem(
+            uiModel = event,
+            isExpanded = isExpanded,
+            onToggleExpand = toggleExpand,
+            onDeleteClickFromList = { actions.onDelete(event.originalEvent) },
+            onEditClickFromList = { actions.onEdit(event.originalEvent) },
+            onDetailsClickFromList = { actions.onDetails(event.originalEvent) }
+        )
+    }
 }

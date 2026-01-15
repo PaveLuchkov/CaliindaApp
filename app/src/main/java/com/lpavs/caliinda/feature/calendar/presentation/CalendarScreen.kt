@@ -320,7 +320,6 @@ fun CalendarScreen(
                           }
                         },
                         agentViewModel = agentViewModel,
-                        onNavigateToDate = navigateToDate,
                         createEventClick = CreateEventAction)
                   }
         }
