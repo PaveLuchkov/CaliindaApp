@@ -87,16 +87,11 @@ fun DayEventsPage(
       BodyCardsList(
           events = pageState.timedEvents,
           listState = listState,
-          date = date,
           isSignIn = isSignIn,
           onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
           onEditRequest = eventManagementViewModel::requestEditEvent,
           onDetailsRequest = viewModel::requestEventDetails,
-          onSignInClick = onSignInClick,
-          agentResponse = agentResponse,
-          onSessionDelete = agentViewModel::deleteSession,
-          onPlanConfirm = agentViewModel::sendTextMessage,
-          onNavigateToDate = onNavigateToDate)
+          onSignInClick = onSignInClick)
     } else if (pageState.allDayEvents.isEmpty()) {
 
         if (isBusy) {
@@ -108,24 +103,6 @@ fun DayEventsPage(
             {
             CalendarCreateEventItem(onCreateEventClick = createEventClick)
             }
-
-//          Box(
-//              modifier =
-//                  Modifier.shadow(
-//                          elevation = 5.dp,
-//                          shape = RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius),
-//                          clip = false,
-//                      )
-//                      .clip(RoundedCornerShape(CalendarUiDefaults.EventItemCornerRadius))
-//                      .background(color = MaterialTheme.colorScheme.secondaryContainer)
-//                      .padding(16.dp),
-//              contentAlignment = Alignment.Center // Центрируем сообщение
-//              ) {
-//                Text(
-//                    stringResource(R.string.no_events),
-//                    style = MaterialTheme.typography.bodyLarge,
-//                    color = MaterialTheme.colorScheme.onSecondaryContainer)
-//              }
       }
     } else {
       Spacer(modifier = Modifier.weight(1f))

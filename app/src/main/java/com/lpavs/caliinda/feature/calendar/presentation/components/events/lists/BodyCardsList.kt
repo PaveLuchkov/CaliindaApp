@@ -9,14 +9,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,42 +21,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.core.data.remote.agent.domain.AgentResponseContent
-import com.lpavs.caliinda.core.data.remote.agent.domain.DaysPlanContent
-import com.lpavs.caliinda.core.data.remote.agent.domain.ErrorResponse
-import com.lpavs.caliinda.core.data.remote.agent.domain.SuggestionPlan
-import com.lpavs.caliinda.core.data.remote.agent.domain.TextMessageResponse
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
-import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentDayPlanItem
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentMessageItem
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.agent.AgentRecommendItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
-import java.time.LocalDate
 
 @Composable
 fun BodyCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
-    date: LocalDate,
     isSignIn: Boolean,
     onDeleteRequest: (EventDto) -> Unit,
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
     onSignInClick: () -> Unit,
-    onSessionDelete: () -> Unit,
-    onPlanConfirm: (String) -> Unit,
-    agentResponse: AgentResponseContent?,
-    onNavigateToDate: (LocalDate) -> Unit,
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
-  var expandedAgentId by remember { mutableStateOf<String?>(null) }
-  var expandedAgent by remember { mutableStateOf(false) }
-  var hiddenAgent by remember { mutableStateOf(false) }
-  val highlightedInfo = (agentResponse as? TextMessageResponse)?.highlightedEventInfo ?: emptyMap()
-  val today = LocalDate.now()
   LazyColumn(
       modifier = Modifier.fillMaxSize(),
       state = listState,
@@ -68,94 +44,6 @@ fun BodyCardsList(
         if (isSignIn) {
           item { LogInEvent(onSignInClick = onSignInClick) }
         } else {
-          if (agentResponse != null) {
-            item {
-              AgentMessageItem(
-                  message = agentResponse.mainText,
-                  isExpanded = expandedAgent,
-                  onToggleExpand = { expandedAgent = !expandedAgent },
-                  onSessionDelete = onSessionDelete,
-                  onHide = { hiddenAgent = !hiddenAgent },
-                  isHidden = hiddenAgent)
-            }
-          }
-          when (agentResponse) {
-            is TextMessageResponse -> {}
-
-            is DaysPlanContent -> {
-              val relevantDayPlan = agentResponse.days.find { LocalDate.parse(it.date) == date }
-              if (relevantDayPlan == null) {
-                // Найти первую дату из планов
-                val firstPlanDate =
-                    agentResponse.days
-                        .minByOrNull { LocalDate.parse(it.date) }
-                        ?.let { LocalDate.parse(it.date) }
-
-                item {
-                  Button(
-                      modifier =
-                          Modifier.fillMaxWidth().padding(horizontal = cuid.ItemHorizontalPadding),
-                      onClick = {
-                        firstPlanDate?.let { targetDate -> onNavigateToDate(targetDate) }
-                      }) {
-                        Text(text = "Go to plan date${firstPlanDate?.let { " ($it)" } ?: ""}")
-                      }
-                }
-              }
-              if (relevantDayPlan != null) {
-                item {
-                  Button(
-                      modifier =
-                          Modifier.fillMaxWidth().padding(horizontal = cuid.ItemHorizontalPadding),
-                      onClick = {
-                        onPlanConfirm("Создай мне предлагаемый тобой план. plan_update")
-                      }) {
-                        Text(text = "Confirm plan")
-                      }
-                }
-                items(items = relevantDayPlan.schedule, key = { event -> event.id }) { event ->
-                  AgentDayPlanItem(
-                      event = event,
-                      isExpanded = expandedEventId == event.id,
-                      onToggleExpand = {
-                        expandedEventId =
-                            if (expandedEventId == event.id) {
-                              null
-                            } else {
-                              event.id
-                            }
-                      },
-                  )
-                }
-              }
-            }
-
-            is SuggestionPlan -> {
-              if (date == today) {
-                val suggestionItems = agentResponse.suggestionItems
-                items(items = suggestionItems, key = { suggestion -> suggestion.hashCode() }) {
-                    suggestion ->
-                  val isExpandedAgent = suggestion.title == expandedAgentId
-                  AgentRecommendItem(
-                      suggestion = suggestion,
-                      isExpanded = isExpandedAgent,
-                      onToggleExpand = {
-                        expandedAgentId =
-                            if (expandedAgentId == suggestion.title) {
-                              null
-                            } else {
-                              suggestion.title
-                            }
-                      },
-                      onConfirm = onPlanConfirm)
-                }
-              }
-            }
-
-            is ErrorResponse -> {}
-
-            null -> {}
-          }
           items(items = events, key = { event -> event.id }) { event ->
             val fadeSpringSpec =
                 spring<Float>(
@@ -183,11 +71,10 @@ fun BodyCardsList(
                         fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))) {
                   val isExpanded = event.id == expandedEventId
-                  val highlightAction = highlightedInfo[event.id]
                   CalendarEventItem(
                       uiModel = event,
                       isExpanded = isExpanded,
-                      highlightAction = highlightAction,
+                      highlightAction = null,
                       onToggleExpand = {
                         expandedEventId =
                             if (expandedEventId == event.id) {
