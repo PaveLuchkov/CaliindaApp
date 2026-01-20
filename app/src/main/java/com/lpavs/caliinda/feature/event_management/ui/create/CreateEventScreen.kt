@@ -166,6 +166,7 @@ fun CreateEventScreen(
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).fillMaxWidth(),
+      verticalArrangement = Arrangement.spacedBy(4.dp)
        ) {
         AdaptiveContainer {
           EventNameSection(

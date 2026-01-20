@@ -12,6 +12,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -97,18 +98,18 @@ fun CalendarEventItem(
   val current = uiModel.isCurrent
   val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
-    val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
-    val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
+  val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
+  val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
   val animatedHeight by
       animateDpAsState(
           targetValue = targetHeight,
           animationSpec = tween(durationMillis = 250),
           label = "eventItemHeightAnimation")
-    val animatedElevation by
-    animateDpAsState(
-        targetValue = targetElevatioion,
-        animationSpec = tween(durationMillis = 250),
-        label = "eventItemHeightAnimation")
+  val animatedElevation by
+      animateDpAsState(
+          targetValue = targetElevatioion,
+          animationSpec = tween(durationMillis = 250),
+          label = "eventItemHeightAnimation")
   val starShape =
       remember(shapeParams.numVertices, shapeParams.radiusSeed) {
         RoundedPolygon.star(
@@ -126,13 +127,15 @@ fun CalendarEventItem(
       }
 
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+    val darkTheme = isSystemInDarkTheme()
+    val shadowColor = if (!darkTheme) Color.Black else Color.White
   val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)
   val cardElevation =
       if (current)
           Shadow(
               radius = 5.dp,
               spread = 2.dp,
-              color = Color.Black.copy(0.5f),
+              color = shadowColor.copy(0.5f),
               offset = DpOffset(x = 0.dp, 4.dp))
       else
           Shadow(
@@ -213,10 +216,7 @@ fun CalendarEventItem(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
               .dropShadow(shape = cardShape, shadow = cardElevation)
-              .shadow(
-                  elevation = animatedElevation,
-                  shape = cardShape,
-                  clip = false)
+              .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
               .border(BorderStroke(2.dp, borderColor), shape = cardShape)
               .background(cardBackground)
