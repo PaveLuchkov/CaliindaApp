@@ -173,7 +173,7 @@ constructor(
   }
 
   private suspend fun requestCalendarAuthorization() {
-    val requiredScopes = Scope(CalendarScopes.CALENDAR)
+    val requiredScopes = Scope(CalendarScopes.CALENDAR_EVENTS)
     val authRequest =
         AuthorizationRequest.builder()
             .setRequestedScopes(listOf(requiredScopes))
