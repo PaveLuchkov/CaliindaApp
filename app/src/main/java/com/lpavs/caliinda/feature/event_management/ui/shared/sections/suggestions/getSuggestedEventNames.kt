@@ -35,6 +35,10 @@ fun getSuggestedEventNames(context: Context): List<SugNameChips> {
           context.getString(R.string.suggested_event_shopping),
           context.getString(R.string.suggested_event_shopping_full)),
       SugNameChips(
+          key = "road",
+          "Road",
+          "🛣️Road"), // TODO в стринг
+      SugNameChips(
           key = "appointment",
           context.getString(R.string.suggested_event_appointment),
           context.getString(R.string.suggested_event_appointment_full)),

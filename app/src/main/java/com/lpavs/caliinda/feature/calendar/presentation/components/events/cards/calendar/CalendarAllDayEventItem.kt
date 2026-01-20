@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,13 +37,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
+import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
 fun AllDayEventItem(
     event: EventDto,
@@ -56,7 +64,15 @@ fun AllDayEventItem(
   val cardBackground = MaterialTheme.colorScheme.tertiaryContainer
   val cardTextColor = MaterialTheme.colorScheme.onTertiaryContainer
   val haptic = LocalHapticFeedback.current
-
+    val cardFontFamily =
+                FontFamily(
+                    Font(
+                        R.font.robotoflex_variable,
+                        variationSettings =
+                            FontVariation.Settings(
+                                FontVariation.weight(600),
+                                FontVariation.width(100f),
+                            )))
   Box(
       modifier =
           modifier
@@ -82,7 +98,8 @@ fun AllDayEventItem(
                         vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
               Text(
                   text = event.summary,
-                  style = MaterialTheme.typography.bodyLarge,
+                  style = Typography.bodyLargeEmphasized,
+                  fontFamily = cardFontFamily,
                   fontWeight = FontWeight.Companion.Medium,
                   color = cardTextColor,
                   textAlign = TextAlign.Companion.Center,

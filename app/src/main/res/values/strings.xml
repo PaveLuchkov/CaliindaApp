@@ -20,7 +20,7 @@
     <string name="pick_date">Pick a Date</string>
     <string name="time">Time</string>
 
-    <string name="event_name">Event Name</string>
+    <string name="event_name">Title</string>
     <string name="time_start">Start time</string>
     <string name="time_end">End time</string>
     <string name="date_start">Start date</string>

@@ -23,6 +23,7 @@ import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -39,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -68,7 +70,6 @@ fun CreateEventScreen(
     userTimeZone: String,
     initialDate: LocalDate,
     onDismiss: () -> Unit,
-    currentSheetValue: SheetValue
 ) {
   var summary by remember { mutableStateOf("") }
   var description by remember { mutableStateOf("") }
@@ -165,7 +166,7 @@ fun CreateEventScreen(
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).fillMaxWidth(),
-      verticalArrangement = Arrangement.spacedBy(4.dp)) {
+       ) {
         AdaptiveContainer {
           EventNameSection(
               summary = summary,
@@ -199,6 +200,13 @@ fun CreateEventScreen(
               label = { Text(stringResource(R.string.description)) },
               modifier = Modifier.fillMaxWidth().height(100.dp),
               maxLines = 4,
+              colors =
+                  OutlinedTextFieldDefaults.colors(
+                      focusedBorderColor = Color.Transparent,
+                      unfocusedBorderColor = Color.Transparent,
+                      focusedContainerColor = colorScheme.surfaceContainerHighest,
+                      unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+                  ),
               enabled = !uiState.isLoading,
               shape = RoundedCornerShape(25.dp))
           OutlinedTextField(
@@ -208,6 +216,13 @@ fun CreateEventScreen(
               modifier = Modifier.fillMaxWidth(),
               singleLine = true,
               enabled = !uiState.isLoading,
+              colors =
+                  OutlinedTextFieldDefaults.colors(
+                      focusedBorderColor = Color.Transparent,
+                      unfocusedBorderColor = Color.Transparent,
+                      focusedContainerColor = colorScheme.surfaceContainerHighest,
+                      unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+                  ),
               shape = RoundedCornerShape(25.dp))
         }
         generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }

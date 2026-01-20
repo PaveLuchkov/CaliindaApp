@@ -35,9 +35,15 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
+import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.normalEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
 import java.time.LocalDate
 import java.time.LocalTime
@@ -62,10 +68,10 @@ fun CustomOutlinedTextField(
       modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp),
       colors =
           OutlinedTextFieldDefaults.colors(
-//              focusedBorderColor = Color.Transparent,
-//              unfocusedBorderColor = Color.Transparent,
-              focusedContainerColor = Color.Transparent,
-              unfocusedContainerColor = Color.Transparent,
+              focusedBorderColor = Color.Transparent,
+              unfocusedBorderColor = Color.Transparent,
+              focusedContainerColor = colorScheme.surfaceContainerHighest,
+              unfocusedContainerColor = colorScheme.surfaceContainerHigh,
           ),
       keyboardOptions = keyboardOptions,
       textStyle =
@@ -82,7 +88,8 @@ fun CustomOutlinedTextField(
       enabled = enabled,
       singleLine = true,
       isError = isError,
-      supportingText = supportingText)
+      supportingText = supportingText,
+      shape = RoundedCornerShape(25.dp))
 }
 
 @Composable
@@ -171,4 +178,28 @@ private fun ModernClickableTextField(
               Text(text = value, color = colorScheme.onSecondaryContainer)
             }
       }
+}
+
+@Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
+@Composable
+fun CustomOutlinedTextFieldPreview() {
+    CaliindaTheme {
+        CustomOutlinedTextField(
+            value = "Name",
+            onValueChange = {},
+            label = ""
+        )
+    }
+}
+
+@Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
+@Composable
+fun ModernClickableTextFieldPreview() {
+    CaliindaTheme {
+        ModernClickableTextField(
+            value = "Name",
+            isLoading = false,
+            onClick = {}
+        )
+    }
 }

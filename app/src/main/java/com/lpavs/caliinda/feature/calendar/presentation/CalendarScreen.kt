@@ -313,8 +313,7 @@ fun CalendarScreen(
                   showCreateEventSheet = false
                 }
               }
-        },
-        currentSheetValue = sheetState.currentValue)
+        },)
   }
 
   EditBottomSheet(
