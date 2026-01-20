@@ -4,13 +4,14 @@ import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
-import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -47,8 +48,8 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.Custo
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EditBottomSheet
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayEventsPage
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectEventsPage
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarPagerScreen
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.ManagementScreen
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -111,10 +112,9 @@ fun CalendarScreen(
             }
           }
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
-
   val eventToEdit = eventManagementState.eventBeingEdited
   val mode = eventManagementState.selectedUpdateMode
-
+    val currentCalendarScreenMode = calendarState.currentMode
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
@@ -190,86 +190,62 @@ fun CalendarScreen(
               calendarViewModel.refreshCurrentVisibleDate()
             },
             date = currentVisibleDate,
-            isSignedIn = !calendarState.signInRequired)
+            isSignedIn = !calendarState.signInRequired,
+            currentCalendarScreenMode = currentCalendarScreenMode)
       },
   ) { paddingValues ->
-    Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+    Box(modifier = Modifier
+        .padding(paddingValues)
+        .fillMaxSize()) {
       BackgroundShapes(context = BackgroundShapeContext.Main, themeMode = themeMode)
-      HorizontalPager(
-          state = horizontalPagerState,
-          modifier = Modifier.fillMaxSize(),
-          userScrollEnabled = !calendarState.signInRequired,
-      ) { page ->
-        when (page) {
-          0 ->
-              VerticalPager(
-                  state = weekViewPagerState,
-                  modifier = Modifier.fillMaxSize(),
-                  flingBehavior =
-                      PagerDefaults.flingBehavior(
-                          state = weekViewPagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = false,
-                  beyondViewportPageCount = 1) { pageIndex ->
-                    ProjectEventsPage(
-                        isLoading = isOverallLoading,
-                        viewModel = calendarViewModel,
-                        eventManagementViewModel = eventManagementViewModel,
-                        createEventClick = CreateEventAction)
-                  }
-          1 ->
-              VerticalPager(
-                  state = pagerState,
-                  modifier = Modifier.fillMaxSize(),
-                  key = { index ->
-                    today.plusDays((index - initialPageIndex).toLong()).toEpochDay()
-                  },
-                  flingBehavior =
-                      PagerDefaults.flingBehavior(
-                          state = pagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = !calendarState.signInRequired,
-                  beyondViewportPageCount = 1) { pageIndex ->
-                    val pageDate =
-                        remember(pageIndex) {
-                          today.plusDays((pageIndex - initialPageIndex).toLong())
-                        }
-                    DayEventsPage(
-                        isLoading = isOverallLoading,
-                        isSignIn = calendarState.signInRequired,
-                        date = pageDate,
-                        viewModel = calendarViewModel,
-                        eventManagementViewModel = eventManagementViewModel,
-                        onSignInClick = {
-                          if (activity != null) {
-                            authViewModel.signIn(activity)
-                          } else {
-                            Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
-                          }
-                        },
-                        agentViewModel = agentViewModel,
-                        createEventClick = CreateEventAction)
-                  }
+        AnimatedContent(
+            targetState = currentCalendarScreenMode,
+            label = "ChangeInScenery",
+            transitionSpec = {
+                fadeIn() togetherWith fadeOut()
+            }
+        ) { mode ->
+            when(mode) {
+            AppMode.CALENDAR -> {
+            CalendarPagerScreen(
+                calendarViewModel = calendarViewModel,
+                eventManagementViewModel = eventManagementViewModel,
+                authViewModel = authViewModel,
+                agentViewModel = agentViewModel,
+                calendarPagerState = horizontalPagerState,
+                dailyViewPagerState = pagerState,
+                weekViewPagerState = weekViewPagerState,
+                signedIn = !calendarState.signInRequired,
+                createEventAction = CreateEventAction,
+                isOverallLoading = isOverallLoading,
+                initialPageIndex = initialPageIndex,
+                today = today,
+                activity = activity
+            )
         }
-      }
+            AppMode.MANAGEMENT -> { ManagementScreen() }
+        }
+
+        }
+
       AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
       if (!calendarState.signInRequired) {
         BottomBar(
-            calendarState = calendarState,
             textFieldValue = textFieldState,
             onTextChanged = { textFieldState = it },
             onSendClick = { messageText ->
               agentViewModel.sendTextMessage(messageText)
               textFieldState = TextFieldValue("")
             },
-            onRecordStart = { agentViewModel.startListening() },
-            onRecordStopAndSend = { agentViewModel.stopListening() },
-            onUpdatePermissionResult = { granted ->
-              agentViewModel.updatePermissionStatus(granted)
-            },
             isTextInputVisible = isTextInputVisible,
-            modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = -ScreenOffset),
             onCreateEventClick = CreateEventAction,
             recordState = recState,
             authState = authState,
+            changeScenery = calendarViewModel::changeScenery,
+            currentMode = currentCalendarScreenMode
             //            suggestions = suggestions
         )
       }
@@ -313,7 +289,8 @@ fun CalendarScreen(
                   showCreateEventSheet = false
                 }
               }
-        },)
+        },
+    )
   }
 
   EditBottomSheet(

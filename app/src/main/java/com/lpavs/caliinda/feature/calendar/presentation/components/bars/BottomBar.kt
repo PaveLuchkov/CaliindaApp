@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -20,18 +19,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,26 +48,23 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.auth.AuthState
-import com.lpavs.caliinda.feature.agent.presentation.input.RecordButton
 import com.lpavs.caliinda.feature.agent.presentation.input.SuggestionChipsRow
 import com.lpavs.caliinda.feature.agent.presentation.vm.RecordingState
-import com.lpavs.caliinda.feature.calendar.presentation.CalendarState
+import com.lpavs.caliinda.feature.calendar.presentation.AppMode
 
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 fun BottomBar(
-    calendarState: CalendarState,
     authState: AuthState,
     recordState: RecordingState,
     textFieldValue: TextFieldValue,
     onTextChanged: (TextFieldValue) -> Unit,
     onSendClick: (String) -> Unit,
-    onRecordStart: () -> Unit,
-    onRecordStopAndSend: () -> Unit,
-    onUpdatePermissionResult: (Boolean) -> Unit,
     isTextInputVisible: Boolean,
     modifier: Modifier = Modifier,
     onCreateEventClick: () -> Unit,
+    changeScenery: (AppMode) -> Unit,
+    currentMode: AppMode,
     suggestions: List<String>? = emptyList(),
 ) {
   val focusRequester = remember { FocusRequester() }
@@ -82,7 +76,14 @@ fun BottomBar(
           !recordState.isListening
   var expanded by rememberSaveable { mutableStateOf(true) }
   var onKeyboardToggle by remember { mutableStateOf(true) }
-
+    val changeSceneryClick = {
+        changeScenery(
+            if (currentMode == AppMode.MANAGEMENT)
+                AppMode.CALENDAR
+            else
+                AppMode.MANAGEMENT
+        )
+    }
   LaunchedEffect(isTextInputVisible) {
     if (isTextInputVisible) {
       try {
@@ -107,7 +108,6 @@ fun BottomBar(
       Spacer(modifier = Modifier.height(12.dp))
     }
     AnimatedContent(
-//        modifier = modifier.padding(end = 16.dp),
         targetState = onKeyboardToggle,
         transitionSpec = {
           val fadeSpringSpec =
@@ -160,7 +160,7 @@ fun BottomBar(
                           KeyboardActions(
                               onSend = {
                                 if (isSendEnabled) {
-                                     onSendClick(textFieldValue.text)
+                                  onSendClick(textFieldValue.text)
                                 }
                               }),
                       colors =
@@ -173,37 +173,21 @@ fun BottomBar(
                 },
             )
           } else {
-//              FloatingActionButton(
-//                  onClick = onCreateEventClick,
-////                  shape =
-//              ) {
-//                  Icon(Icons.Filled.AddCircle, "Create event")
-//              }
-
             HorizontalFloatingToolbar(
                 expanded = expanded,
-
-//                floatingActionButton = {
-//                  RecordButton(
-//                      calendarState = calendarState,
-//                      onStartRecording = onRecordStart,
-//                      onStopRecordingAndSend = onRecordStopAndSend,
-//                      onUpdatePermissionResult = onUpdatePermissionResult,
-//                      recordState = recordState)
-//                },
                 content = {
                   IconButton(
                       onClick = onCreateEventClick,
                   ) {
                     Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Create event")
                   }
-//                  IconButton(
-//                      onClick = { onKeyboardToggle = !onKeyboardToggle },
-//                  ) {
-//                    Icon(
-//                        imageVector = Icons.Filled.Keyboard,
-//                        contentDescription = "Показать клавиатуру")
-//                  }
+                  IconButton(
+                      onClick = changeSceneryClick,
+                  ) {
+                    Icon(
+                        imageVector = Icons.Filled.EditCalendar,
+                        contentDescription = "Edit Calendar")
+                  }
                 },
             )
           }

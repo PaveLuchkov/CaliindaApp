@@ -270,6 +270,12 @@ constructor(
     }
   }
 
+    fun changeScenery(appMode: AppMode) {
+        _uiState.update { currentState ->
+            currentState.copy(currentMode = appMode)
+        }
+    }
+
   // --- COMPANION ---
   companion object {
     private const val TAG = "CalendarViewModel" // Используем один TAG

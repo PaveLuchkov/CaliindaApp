@@ -1,14 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
@@ -18,34 +11,18 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
-import com.lpavs.caliinda.core.ui.theme.Typography
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.normalEvent
+import com.lpavs.caliinda.feature.calendar.presentation.AppMode
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -58,16 +35,20 @@ fun CalendarAppBar(
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit,
     date: LocalDate,
-    isSignedIn: Boolean
+    isSignedIn: Boolean,
+    currentCalendarScreenMode: AppMode = AppMode.CALENDAR
 ) {
   CenterAlignedTopAppBar(
       title = {
-          CalendarDateTitle(
-              date = date,
-              isSignedIn = isSignedIn,
-              onTitleHold = onTitleHold,
-              onTitleClick = onTitleClick
-          )
+        when (currentCalendarScreenMode) {
+          AppMode.CALENDAR ->
+              CalendarDateTitle(
+                  date = date,
+                  isSignedIn = isSignedIn,
+                  onTitleHold = onTitleHold,
+                  onTitleClick = onTitleClick)
+          AppMode.MANAGEMENT -> ManagementTitle()
+        }
       },
       navigationIcon = {
         FilledIconButton(
@@ -78,8 +59,7 @@ fun CalendarAppBar(
                         IconButtonDefaults.smallContainerSize(
                             IconButtonDefaults.IconButtonWidthOption.Wide)),
             shape = IconButtonDefaults.smallRoundShape,
-            enabled = isSignedIn
-            ) {
+            enabled = isSignedIn) {
               Icon(
                   Icons.Filled.Today,
                   contentDescription = "Перейти к сегодня",
@@ -106,18 +86,16 @@ fun CalendarAppBar(
       colors = topAppBarColors(containerColor = Color.Transparent))
 }
 
-
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
 fun CalendarEventPreview() {
-    CaliindaTheme {
-        CalendarAppBar(
-            onTitleClick = {},
-            onGoToTodayClick = {},
-            onNavigateToSettings = {},
-            onTitleHold = {},
-            date = LocalDate.now(),
-            isSignedIn = true
-        )
-    }
+  CaliindaTheme {
+    CalendarAppBar(
+        onTitleClick = {},
+        onGoToTodayClick = {},
+        onNavigateToSettings = {},
+        onTitleHold = {},
+        date = LocalDate.now(),
+        isSignedIn = true)
+  }
 }
