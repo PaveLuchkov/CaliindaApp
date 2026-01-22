@@ -16,4 +16,5 @@ data class CalendarEventEntity(
     val originalStartTimeString: String? = null,
     val lastFetchedMillis: Long = System.currentTimeMillis(),
     val recurrenceRuleString: String? = null,
+    val isPhantom: Boolean = false
 )

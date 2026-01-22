@@ -14,5 +14,6 @@ data class EventDto(
     @SerialName("isAllDay") val isAllDay: Boolean = false,
     @SerialName("recurringEventId") val recurringEventId: String? = null,
     @SerialName("originalStartTime") val originalStartTime: String? = null,
-    @SerialName("recurrenceRule") val recurrenceRule: String? = null
+    @SerialName("recurrenceRule") val recurrenceRule: String? = null,
+    @SerialName("isPhantom") val isPhantom: Boolean = false,
 )

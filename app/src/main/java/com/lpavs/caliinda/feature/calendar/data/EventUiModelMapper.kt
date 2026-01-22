@@ -85,7 +85,7 @@ constructor(
               endInstant != null &&
               !currentTime.isBefore(startInstant) &&
               currentTime.isBefore(endInstant)
-
+        val isPhantom = event.isPhantom
       val isNext =
           if (nextStartTime == null) false
           else (startInstant != null && startInstant == nextStartTime)
@@ -128,7 +128,8 @@ constructor(
               isNext = isNext,
               proximityRatio = proximityRatio,
               shapeParams = generateShapeParams(event.id), // Твой генератор фигур
-              originalEvent = event)
+              originalEvent = event,
+              isPhantom = isPhantom)
       //      Log.d("Model", "Event: $event")
       event
     }

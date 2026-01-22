@@ -17,7 +17,8 @@ data class EventUiModel(
     val isNext: Boolean,
     val proximityRatio: Float,
     val shapeParams: GeneratedShapeParams,
-    val originalEvent: EventDto
+    val originalEvent: EventDto,
+    val isPhantom: Boolean
 )
 
 data class EventDetailsUiModel(
@@ -25,4 +26,12 @@ data class EventDetailsUiModel(
     val formattedTimeString: String,
     val isCurrent: Boolean,
     val originalEvent: EventDto
+)
+
+data class HabbitModel(
+    val id: String,
+    val title: String,
+    val desciption: String,
+    val emoji: String,
+    val primary: Boolean
 )

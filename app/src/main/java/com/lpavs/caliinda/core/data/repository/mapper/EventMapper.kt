@@ -11,11 +11,9 @@ import javax.inject.Singleton
 
 @Singleton
 class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils) {
-
   companion object {
     private const val TAG = "EventMapper"
   }
-
   fun mapToEntity(event: EventDto, zoneIdString: String): CalendarEventEntity? {
     try {
       val isAllDayEvent = event.isAllDay
@@ -57,9 +55,10 @@ class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils)
           isAllDay = isAllDayEvent,
           recurringEventId = event.recurringEventId,
           originalStartTimeString = event.originalStartTime,
-          recurrenceRuleString = event.recurrenceRule)
+          recurrenceRuleString = event.recurrenceRule,
+          isPhantom = event.isPhantom)
     } catch (e: Exception) {
-      Log.e(TAG, "Error mapping CalendarEvent to Entity: ${event.id}", e)
+      Log.e(TAG, "Error mapping CalendarEvent to Entity: ${event.id}, ${event.isPhantom}", e)
       return null
     }
   }
@@ -78,6 +77,8 @@ class EventMapper @Inject constructor(private val dateTimeUtils: IDateTimeUtils)
         isAllDay = entity.isAllDay,
         recurringEventId = entity.recurringEventId,
         originalStartTime = entity.originalStartTimeString,
-        recurrenceRule = entity.recurrenceRuleString)
+        recurrenceRule = entity.recurrenceRuleString,
+        isPhantom = entity.isPhantom
+    )
   }
 }
