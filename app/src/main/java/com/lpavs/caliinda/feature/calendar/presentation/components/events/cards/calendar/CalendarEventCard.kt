@@ -118,17 +118,10 @@ fun CalendarEventItem(
             innerRadius = cuid.SHAPEINNERRADIUS,
             rounding = CornerRounding(cuid.ShapeCornerRounding))
       }
-  val borderColor =
-      when (highlightAction) {
-        PreviewAction.SEARCH -> colorScheme.tertiary
-        PreviewAction.DELETE -> colorScheme.error
-        PreviewAction.UPDATE -> colorScheme.primaryContainer
-        else -> Color.Transparent
-      }
 
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
-    val darkTheme = isSystemInDarkTheme()
-    val shadowColor = if (!darkTheme) Color.Black else Color.White
+  val darkTheme = isSystemInDarkTheme()
+  val shadowColor = if (!darkTheme) Color.Black else Color.White
   val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)
   val cardElevation =
       if (current)
@@ -173,7 +166,6 @@ fun CalendarEventItem(
       animateColorAsState(
           if (current) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
           label = "card color")
-
   val cardTextColor =
       when {
         current -> colorScheme.onTertiaryContainer // Выделяем текущее
@@ -218,7 +210,6 @@ fun CalendarEventItem(
               .dropShadow(shape = cardShape, shadow = cardElevation)
               .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
-              .border(BorderStroke(2.dp, borderColor), shape = cardShape)
               .background(cardBackground)
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
@@ -245,7 +236,7 @@ fun CalendarEventItem(
                               else cuid.StandardItemContentVerticalPadding),
               // Выравнивание контента можно оставить TopStart или изменить на Center, если нужно
               contentAlignment = Alignment.TopStart) {
-                if (!micro && starContainerSize > 0.dp) {
+              if (!micro && starContainerSize > 0.dp) {
                   val density = LocalDensity.current
                   val starOffsetY = starContainerSize * shapeParams.offestParam
                   val starOffsetX = starContainerSize * -shapeParams.offestParam
@@ -258,10 +249,12 @@ fun CalendarEventItem(
                                   translationY = with(density) { starOffsetY.toPx() },
                                   rotationZ = rotationAngle)
                               .requiredSize(starContainerSize)
-                              .innerShadow(shape = clipStar, shadow = starShadow)
                               .clip(clipStar)
-                              .background(starBackground))
-                }
+                              .background(starBackground)
+                              .innerShadow(shape = clipStar, shadow = starShadow)
+
+                  )
+              }
                 if (micro) {
                   Row(
                       modifier = Modifier.fillMaxSize(),
@@ -379,7 +372,7 @@ val normalEvent =
         isMicroEvent = false,
         baseHeight = 65.dp,
         expandedHeight = 121.dp,
-        isCurrent = true,
+        isCurrent = false,
         isNext = true,
         proximityRatio = 0.2f,
         shapeParams =
@@ -399,7 +392,9 @@ val normalEvent =
                 endTime = "2025-08-18T17:45:00+03:00",
                 description = null,
                 location = null,
-                isAllDay = false))
+                isAllDay = false,
+                isPhantom = false),
+        isPhantom = false)
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE, apiLevel = 29)
 @Composable

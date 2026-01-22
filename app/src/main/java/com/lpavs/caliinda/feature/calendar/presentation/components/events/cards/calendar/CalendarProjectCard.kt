@@ -383,7 +383,9 @@ val normalProjectEvent =
                 endTime = "2025-10-19T00:00:00+03:00",
                 description = null,
                 location = null,
-                isAllDay = false))
+                isAllDay = false,
+                isPhantom = false),
+        isPhantom = false)
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
