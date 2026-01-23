@@ -143,6 +143,13 @@ constructor(
     }
   }
 
+    fun deleteEventLocaly(
+        eventId: String
+    ){
+        viewModelScope.launch {
+            calendarRepository.deleteEventLocaly(eventId)
+        }
+    }
   fun updateEvent(
       summary: String,
       description: String,
@@ -539,6 +546,7 @@ constructor(
       }
 
       val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
+
       _uiState.update { it.copy(isLoading = false) }
       if (result.isSuccess) {
         val message = funMessages.getEventDeletedMessage(eventToDelete.summary)

@@ -76,7 +76,7 @@ interface CalendarLocalDataSource {
    *   event ID).
    */
   @Query("DELETE FROM calendar_events WHERE id = :eventId")
-  suspend fun deleteEventById(eventId: String)
+  suspend fun deleteEventById(eventId: String): Int
 
   /** Удаляет все данные календаря из локальной базы данных. */
   @Query("DELETE FROM calendar_events") suspend fun deleteAllEvents()

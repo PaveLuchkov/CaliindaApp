@@ -18,7 +18,8 @@ data class EventUiModel(
     val proximityRatio: Float,
     val shapeParams: GeneratedShapeParams,
     val originalEvent: EventDto,
-    val isPhantom: Boolean
+    val isPhantom: Boolean,
+    val daysLeft: Long? = null
 )
 
 data class EventDetailsUiModel(

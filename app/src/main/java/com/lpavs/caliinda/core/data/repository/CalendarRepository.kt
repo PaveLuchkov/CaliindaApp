@@ -409,12 +409,23 @@ constructor(
       eventId: String,
       mode: EventDeleteMode = EventDeleteMode.DEFAULT
   ): Result<Unit> {
+      localDataSource.deleteEventById(eventId)
     val result = remotreDataSource.deleteEvent(eventId, mode)
     if (result.isSuccess) {
       refreshDate(calendarStateHolder.currentVisibleDate.value)
     }
     return result
   }
+
+    suspend fun deleteEventLocaly(eventId: String): Result<Unit> {
+        return runCatching {
+            val rowsDeleted = localDataSource.deleteEventById(eventId)
+            if (rowsDeleted == 0) {
+                throw NoSuchElementException("Event with id $eventId not found")
+            }
+        }
+    }
+
 
   suspend fun updateEvent(
       eventId: String,

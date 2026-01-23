@@ -7,6 +7,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.suggestions.SuggestionEventCard
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
 import com.lpavs.caliinda.feature.event_management.EventActions
+import com.lpavs.caliinda.feature.event_management.SuggestionActions
 
 @Composable
 fun DailyCardsList(
@@ -14,7 +15,9 @@ fun DailyCardsList(
     listState: LazyListState,
     isSignIn: Boolean,
     actions: EventActions,
+    sugActions: SuggestionActions,
     onSignInClick: () -> Unit,
+
 ) {
     BaseEventList(
         items = events,
@@ -35,10 +38,10 @@ fun DailyCardsList(
         else
             SuggestionEventCard(
                 uiModel = event,
-                isExpanded = isExpanded,
+//                isExpanded = isExpanded,
                 onToggleExpand = toggleExpand,
-                onApprove = {},
-                onDeny = {}
+                onApprove = { sugActions.onApprove(event.originalEvent) },
+                onDeny = {sugActions.onDeny(event.id)}
             )
     }
 }

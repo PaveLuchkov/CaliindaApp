@@ -7,3 +7,9 @@ data class EventActions(
     val onEdit: (EventDto) -> Unit,
     val onDetails: (EventDto) -> Unit
 )
+
+data class SuggestionActions(
+    val onDeny: (String) -> Unit,
+    val onApprove: (EventDto) -> Unit
+)
+

@@ -25,6 +25,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.DailyCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
 import com.lpavs.caliinda.feature.event_management.EventActions
+import com.lpavs.caliinda.feature.event_management.SuggestionActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -53,6 +54,12 @@ fun DayEventsPage(
             onEdit = eventManagementViewModel::requestEditEvent,
             onDetails = viewModel::requestEventDetails)
       }
+    val sugActions =
+        remember(eventManagementViewModel) {
+            SuggestionActions(
+                onApprove = {},
+                onDeny = eventManagementViewModel::deleteEventLocaly)
+        }
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
   val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
@@ -84,6 +91,7 @@ fun DayEventsPage(
           listState = listState,
           isSignIn = isSignIn,
           actions = actions,
+          sugActions = sugActions,
           onSignInClick = onSignInClick)
     } else if (pageState.allDayEvents.isEmpty()) {
 

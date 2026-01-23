@@ -62,7 +62,7 @@ constructor(
             0L
           }
       val isMicroEvent = durationMinutes > 0 && durationMinutes <= cuid.MicroEventMaxDurationMinutes
-
+        val daysLeft = if (project) Duration.between(currentTime, endInstant).toDays() else null
       val baseHeight = calculateEventHeight(durationMinutes, isMicroEvent)
 
       val buttonsRowHeight = 56.dp
@@ -129,7 +129,9 @@ constructor(
               proximityRatio = proximityRatio,
               shapeParams = generateShapeParams(event.id), // Твой генератор фигур
               originalEvent = event,
-              isPhantom = isPhantom)
+              isPhantom = isPhantom,
+              daysLeft = daysLeft
+              )
       //      Log.d("Model", "Event: $event")
       event
     }

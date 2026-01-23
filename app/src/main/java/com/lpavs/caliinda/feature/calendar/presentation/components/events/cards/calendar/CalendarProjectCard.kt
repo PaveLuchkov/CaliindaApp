@@ -8,9 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +49,6 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -66,14 +63,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
@@ -84,37 +79,36 @@ import com.lpavs.caliinda.core.ui.util.calculateShapeContainerSize
 import com.lpavs.caliinda.core.ui.util.lerpOkLab
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
-import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
 fun CalendarProjectItem(
     uiModel: EventUiModel,
     isExpanded: Boolean,
-//    highlightAction: PreviewAction?,
+    //    highlightAction: PreviewAction?,
     onToggleExpand: () -> Unit,
     onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
     onEditClickFromList: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+  val darkTheme = isSystemInDarkTheme()
   val haptic = LocalHapticFeedback.current
   val current = uiModel.isCurrent
   val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
-    val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
+  val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
   val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
   val animatedHeight by
       animateDpAsState(
           targetValue = targetHeight,
           animationSpec = tween(durationMillis = 250),
           label = "eventItemHeightAnimation")
-    val animatedElevation by
-    animateDpAsState(
-        targetValue = targetElevatioion,
-        animationSpec = tween(durationMillis = 250),
-        label = "eventItemHeightAnimation")
+  val animatedElevation by
+      animateDpAsState(
+          targetValue = targetElevatioion,
+          animationSpec = tween(durationMillis = 250),
+          label = "eventItemHeightAnimation")
   val starShape =
       remember(shapeParams.numVertices, shapeParams.radiusSeed) {
         RoundedPolygon.star(
@@ -123,13 +117,13 @@ fun CalendarProjectItem(
             innerRadius = cuid.SHAPEINNERRADIUS,
             rounding = CornerRounding(cuid.ShapeCornerRounding))
       }
-    val shadowColor = if (!darkTheme) Color.Black else Color.White
-    val cardElevation =
-            Shadow(
-                radius = 0.dp,
-                spread = 0.dp,
-                color = shadowColor.copy(0.5f),
-                offset = DpOffset(x = 0.dp, 0.dp))
+  val shadowColor = if (!darkTheme) Color.Black else Color.White
+  val cardElevation =
+      Shadow(
+          radius = 0.dp,
+          spread = 0.dp,
+          color = shadowColor.copy(0.5f),
+          offset = DpOffset(x = 0.dp, 0.dp))
   val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
   val starContainerSize =
       remember(uiModel.durationMinutes, micro) {
@@ -142,12 +136,12 @@ fun CalendarProjectItem(
           start = colorScheme.primaryContainer,
           stop = colorScheme.tertiaryContainer,
           fraction = uiModel.proximityRatio)
-    val starShadow =
-        Shadow(
-            radius = 0.dp,
-            spread = 0.dp,
-            color = Color.Black.copy(0.22f),
-            offset = DpOffset(x = shapeParams.shadowOffsetXSeed, y = shapeParams.shadowOffsetYSeed))
+  val starShadow =
+      Shadow(
+          radius = 0.dp,
+          spread = 0.dp,
+          color = Color.Black.copy(0.22f),
+          offset = DpOffset(x = shapeParams.shadowOffsetXSeed, y = shapeParams.shadowOffsetYSeed))
 
   val starBackground =
       when {
@@ -159,7 +153,7 @@ fun CalendarProjectItem(
       animateColorAsState(
           if (current) colorScheme.tertiaryContainer else colorScheme.primaryContainer,
           label = "card color")
-    val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)
+  val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)
 
   val cardTextColor =
       when {
@@ -194,27 +188,27 @@ fun CalendarProjectItem(
                         )))
       }
   // --- Композиция UI ---
-    Box( // Корневой Box для тени, фона, высоты и кликабельности
-        modifier =
-            Modifier.padding(
-                horizontal = CalendarUiDefaults.ItemHorizontalPadding,
-                vertical = CalendarUiDefaults.ItemVerticalPadding)
-                .dropShadow(shape = cardShape, shadow = cardElevation)
-                .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
-                .clip(cardShape)
-                .background(cardBackground)
-                .height(animatedHeight)
-                .pointerInput(uiModel.id) {
-                    detectTapGestures(
-                        onTap = {
-                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                            onToggleExpand()
-                        },
-                        onLongPress = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onDetailsClickFromList()
-                        })
-                }) {
+  Box( // Корневой Box для тени, фона, высоты и кликабельности
+      modifier =
+          Modifier.padding(
+                  horizontal = CalendarUiDefaults.ItemHorizontalPadding,
+                  vertical = CalendarUiDefaults.ItemVerticalPadding)
+              .dropShadow(shape = cardShape, shadow = cardElevation)
+              .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
+              .clip(cardShape)
+              .background(cardBackground)
+              .height(animatedHeight)
+              .pointerInput(uiModel.id) {
+                detectTapGestures(
+                    onTap = {
+                      haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                      onToggleExpand()
+                    },
+                    onLongPress = {
+                      haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                      onDetailsClickFromList()
+                    })
+              }) {
         Column(modifier = Modifier.fillMaxSize()) {
           Box(
               modifier =
@@ -233,17 +227,17 @@ fun CalendarProjectItem(
                   val starOffsetY = starContainerSize * shapeParams.offestParam
                   val starOffsetX = starContainerSize * -shapeParams.offestParam
                   val rotationAngle = shapeParams.rotationAngle
-                    Box( // Основная фигура
-                        modifier =
-                            Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
-                                .graphicsLayer(
-                                    translationX = with(density) { starOffsetX.toPx() },
-                                    translationY = with(density) { starOffsetY.toPx() },
-                                    rotationZ = rotationAngle)
-                                .requiredSize(starContainerSize)
-                                .innerShadow(shape = clipStar, shadow = starShadow)
-                                .clip(clipStar)
-                                .background(starBackground))
+                  Box( // Основная фигура
+                      modifier =
+                          Modifier.align(Alignment.CenterEnd) // Позиционирование звезды
+                              .graphicsLayer(
+                                  translationX = with(density) { starOffsetX.toPx() },
+                                  translationY = with(density) { starOffsetY.toPx() },
+                                  rotationZ = rotationAngle)
+                              .requiredSize(starContainerSize)
+                              .innerShadow(shape = clipStar, shadow = starShadow)
+                              .clip(clipStar)
+                              .background(starBackground))
                 }
                 if (micro) {
                   Row(
@@ -281,9 +275,9 @@ fun CalendarProjectItem(
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                           maxLines = 1)
                       Spacer(modifier = Modifier.width(8.dp))
-                      uiModel.location?.let {
+                      uiModel.daysLeft?.let {
                         Text(
-                            text = it,
+                            text = "$it days left",// TODO в строку
                             color = cardTextColor,
                             style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                             maxLines = 1)
@@ -352,7 +346,6 @@ fun CalendarProjectItem(
       } // Конец Column (контент + кнопки)
 } // Конец корневого Box
 
-
 val normalProjectEvent =
     EventUiModel(
         id = "1",
@@ -391,7 +384,7 @@ val normalProjectEvent =
 @Composable
 fun CalendarProjectItemPreview() {
   CaliindaTheme {
-      CalendarProjectItem(
+    CalendarProjectItem(
         onToggleExpand = {},
         onDetailsClickFromList = {},
         isExpanded = false,

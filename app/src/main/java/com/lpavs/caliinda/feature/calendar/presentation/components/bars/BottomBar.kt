@@ -181,6 +181,7 @@ fun BottomBar(
                   ) {
                     Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Create event")
                   }
+                    /*
                   IconButton(
                       onClick = changeSceneryClick,
                   ) {
@@ -188,6 +189,8 @@ fun BottomBar(
                         imageVector = Icons.Filled.EditCalendar,
                         contentDescription = "Edit Calendar")
                   }
+
+                     */
                 },
             )
           }
