@@ -71,6 +71,7 @@ fun CalendarScreen(
     onNavigateToSettings: () -> Unit,
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
+  val introductionState by calendarViewModel.introState.collectAsStateWithLifecycle()
   val agentState by agentViewModel.agentState.collectAsStateWithLifecycle()
   val recState by agentViewModel.recState.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
@@ -114,7 +115,7 @@ fun CalendarScreen(
   val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
   val eventToEdit = eventManagementState.eventBeingEdited
   val mode = eventManagementState.selectedUpdateMode
-    val currentCalendarScreenMode = calendarState.currentMode
+  val currentCalendarScreenMode = calendarState.currentMode
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
@@ -194,39 +195,35 @@ fun CalendarScreen(
             currentCalendarScreenMode = currentCalendarScreenMode)
       },
   ) { paddingValues ->
-    Box(modifier = Modifier
-        .padding(paddingValues)
-        .fillMaxSize()) {
+    Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
       BackgroundShapes(context = BackgroundShapeContext.Main, themeMode = themeMode)
-        AnimatedContent(
-            targetState = currentCalendarScreenMode,
-            label = "ChangeInScenery",
-            transitionSpec = {
-                fadeIn() togetherWith fadeOut()
+      AnimatedContent(
+          targetState = currentCalendarScreenMode,
+          label = "ChangeInScenery",
+          transitionSpec = { fadeIn() togetherWith fadeOut() }) { mode ->
+            when (mode) {
+              AppMode.CALENDAR -> {
+                CalendarPagerScreen(
+                    calendarViewModel = calendarViewModel,
+                    eventManagementViewModel = eventManagementViewModel,
+                    authViewModel = authViewModel,
+                    agentViewModel = agentViewModel,
+                    calendarPagerState = horizontalPagerState,
+                    dailyViewPagerState = pagerState,
+                    weekViewPagerState = weekViewPagerState,
+                    signedIn = !calendarState.signInRequired,
+                    createEventAction = CreateEventAction,
+                    isOverallLoading = isOverallLoading,
+                    initialPageIndex = initialPageIndex,
+                    today = today,
+                    activity = activity,
+                    introductionState = introductionState)
+              }
+              AppMode.MANAGEMENT -> {
+                ManagementScreen()
+              }
             }
-        ) { mode ->
-            when(mode) {
-            AppMode.CALENDAR -> {
-            CalendarPagerScreen(
-                calendarViewModel = calendarViewModel,
-                eventManagementViewModel = eventManagementViewModel,
-                authViewModel = authViewModel,
-                agentViewModel = agentViewModel,
-                calendarPagerState = horizontalPagerState,
-                dailyViewPagerState = pagerState,
-                weekViewPagerState = weekViewPagerState,
-                signedIn = !calendarState.signInRequired,
-                createEventAction = CreateEventAction,
-                isOverallLoading = isOverallLoading,
-                initialPageIndex = initialPageIndex,
-                today = today,
-                activity = activity
-            )
-        }
-            AppMode.MANAGEMENT -> { ManagementScreen() }
-        }
-
-        }
+          }
 
       AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
       if (!calendarState.signInRequired) {
@@ -238,16 +235,14 @@ fun CalendarScreen(
               textFieldState = TextFieldValue("")
             },
             isTextInputVisible = isTextInputVisible,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = -ScreenOffset),
+            modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
             onCreateEventClick = CreateEventAction,
             recordState = recState,
             authState = authState,
             changeScenery = calendarViewModel::changeScenery,
             currentMode = currentCalendarScreenMode
             //            suggestions = suggestions
-        )
+            )
       }
     }
   }

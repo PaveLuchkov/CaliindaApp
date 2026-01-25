@@ -17,7 +17,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.ProjectsCardsList
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.SystemEventsList
 import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.LocalDate
@@ -28,7 +30,8 @@ fun ProjectEventsPage(
     isLoading: Boolean,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
-    createEventClick: () -> Unit
+    createEventClick: () -> Unit,
+    introductionState: IntroState
 ) {
   val listState = rememberLazyListState()
   val pageState by
@@ -47,16 +50,25 @@ fun ProjectEventsPage(
 
   val noEmptyEvents = pageState.events.isNotEmpty()
   Column(modifier = Modifier.fillMaxSize()) {
-    if (noEmptyEvents) {
-      ProjectsCardsList(events = pageState.events, listState = listState, actions = actions)
+    if (!introductionState.isFinished && !isBusy) {
+      SystemEventsList(
+          isSignedIn = true,
+          introStep = introductionState.currentStep,
+          onSignInClick = {},
+          projectView = true,
+          onIntroNext = {})
     } else {
-      if (isBusy) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-          LoadingIndicator(modifier = Modifier.size(80.dp))
-        }
+      if (noEmptyEvents) {
+        ProjectsCardsList(events = pageState.events, listState = listState, actions = actions)
       } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-          CalendarCreateEventItem(onCreateEventClick = createEventClick)
+        if (isBusy) {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            LoadingIndicator(modifier = Modifier.size(80.dp))
+          }
+        } else {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            CalendarCreateEventItem(onCreateEventClick = createEventClick)
+          }
         }
       }
     }

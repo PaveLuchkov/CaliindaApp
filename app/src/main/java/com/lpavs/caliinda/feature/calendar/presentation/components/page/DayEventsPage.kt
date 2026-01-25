@@ -22,25 +22,28 @@ import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.DailyCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.SystemEventsList
 import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.SuggestionActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import java.time.LocalDate
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DayEventsPage(
     isLoading: Boolean,
-    isSignIn: Boolean,
+    isSignedIn: Boolean,
     onSignInClick: () -> Unit,
     date: LocalDate,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
     agentViewModel: AgentViewModel,
-    createEventClick: () -> Unit
+    createEventClick: () -> Unit,
+    introductionState: IntroState
 ) {
   val pageState by
       viewModel
@@ -54,12 +57,10 @@ fun DayEventsPage(
             onEdit = eventManagementViewModel::requestEditEvent,
             onDetails = viewModel::requestEventDetails)
       }
-    val sugActions =
-        remember(eventManagementViewModel) {
-            SuggestionActions(
-                onApprove = {},
-                onDeny = eventManagementViewModel::deleteEventLocaly)
-        }
+  val sugActions =
+      remember(eventManagementViewModel) {
+        SuggestionActions(onApprove = {}, onDeny = eventManagementViewModel::deleteEventLocaly)
+      }
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
   val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
@@ -84,28 +85,34 @@ fun DayEventsPage(
 
     Spacer(modifier = Modifier.height(2.dp))
 
-    if (pageState.timedEvents.isNotEmpty() or isSignIn ||
-        !(agentResponse?.mainText.isNullOrBlank())) {
-      DailyCardsList(
-          events = pageState.timedEvents,
-          listState = listState,
-          isSignIn = isSignIn,
-          actions = actions,
-          sugActions = sugActions,
-          onSignInClick = onSignInClick)
-    } else if (pageState.allDayEvents.isEmpty()) {
+    if (!isSignedIn || !introductionState.isFinished && !isBusy) {
+      SystemEventsList(
+          isSignedIn = isSignedIn,
+          introStep = introductionState.currentStep,
+          onSignInClick = onSignInClick,
+          projectView = false,
+          onIntroNext = { viewModel.onIntroNext() })
+    } else {
+      if (pageState.timedEvents.isNotEmpty() || !(agentResponse?.mainText.isNullOrBlank())) {
+        DailyCardsList(
+            events = pageState.timedEvents,
+            listState = listState,
+            actions = actions,
+            sugActions = sugActions)
+      } else if (pageState.allDayEvents.isEmpty()) {
 
-      if (isBusy) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-          LoadingIndicator(modifier = Modifier.size(80.dp))
+        if (isBusy) {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            LoadingIndicator(modifier = Modifier.size(80.dp))
+          }
+        } else {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            CalendarCreateEventItem(onCreateEventClick = createEventClick)
+          }
         }
       } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-          CalendarCreateEventItem(onCreateEventClick = createEventClick)
-        }
+        Spacer(modifier = Modifier.weight(1f))
       }
-    } else {
-      Spacer(modifier = Modifier.weight(1f))
     }
   }
 }

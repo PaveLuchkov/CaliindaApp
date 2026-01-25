@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -174,9 +175,9 @@ constructor(
   }
 
   // --- Секция Запрос данных ---
-  suspend fun fetchAndStoreDateRange(range: ClosedRange<LocalDate>, replace: Boolean) {
+  suspend fun fetchAndStoreDateRange(range: ClosedRange<LocalDate>, replace: Boolean, suggestion: Boolean = false) {
     _rangeNetworkState.value = EventNetworkState.Loading
-    val result = remotreDataSource.getEvents(range.start, range.endInclusive)
+    val result = remotreDataSource.getEvents(range.start, range.endInclusive, suggestion)
     withContext(ioDispatcher) {
       result
           .onSuccess { dtoList ->
@@ -223,7 +224,7 @@ constructor(
   }
 
   /** Принудительно обновляет данные для указанной даты */
-  suspend fun refreshDate(centerDateToRefreshAround: LocalDate) {
+  suspend fun refreshDate(centerDateToRefreshAround: LocalDate, suggestionRequestIncluded: Boolean = false) {
     Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
 
     activeFetchJob?.cancel(
@@ -243,10 +244,10 @@ constructor(
       Log.d(TAG, "refreshDate: Cancelled existing fetchJobHolder due to force refresh.")
     }
 
-    launchProtectedFetch(targetRefreshRange, true)
+    launchProtectedFetch(targetRefreshRange, true, suggestionRequestIncluded)
   }
 
-  private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replace: Boolean = true) {
+  private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replace: Boolean = true, suggestion: Boolean = false) {
     managerScope.launch {
       fetchJobMutex.withLock {
         val currentActiveJobDetails = fetchJobHolder?.takeIf { it.job.isActive }
@@ -282,7 +283,7 @@ constructor(
         val newActualFetchJob =
             managerScope.launch {
               try {
-                fetchAndStoreDateRange(rangeToFetch.start..rangeToFetch.endInclusive, replace)
+                fetchAndStoreDateRange(rangeToFetch.start..rangeToFetch.endInclusive, replace, suggestion = suggestion)
               } catch (e: kotlin.coroutines.cancellation.CancellationException) {
                 Log.i(
                     TAG,
@@ -397,10 +398,10 @@ constructor(
       }
 
   // --- Секция CRUD
-  suspend fun createEvent(request: EventRequest): Result<Unit> {
+  suspend fun createEvent(request: EventRequest, requestSuggestion: Boolean = false): Result<Unit> {
     val result = remotreDataSource.createEvent(request)
     if (result.isSuccess) {
-      refreshDate(calendarStateHolder.currentVisibleDate.value)
+      refreshDate(calendarStateHolder.currentVisibleDate.value, requestSuggestion)
     }
     return result
   }
@@ -424,6 +425,17 @@ constructor(
                 throw NoSuchElementException("Event with id $eventId not found")
             }
         }
+    }
+
+    suspend fun checkFreeSlots(
+        duration: java.time.Duration,
+        startSlotTimeMillis: Long
+    ): Boolean{
+        val endSlotMillis = startSlotTimeMillis + duration.toMillis()
+        return localDataSource
+            .getEventsForDateRangeFlow(startSlotTimeMillis, endSlotMillis)
+            .first()
+            .isEmpty()
     }
 
 

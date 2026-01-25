@@ -13,6 +13,8 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.data.EventUiDetailsModelMapper
 import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroStep
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayPageUiState
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.EventsPageUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,7 +47,7 @@ constructor(
     private val calendarRepository: CalendarRepository,
     timeTicker: ITimeTicker,
     private val calendarStateHolder: ICalendarStateHolder,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val dateTimeUtils: IDateTimeUtils,
     private val eventUiModelMapper: EventUiModelMapper,
     private val eventUiDetailsModelMapper: EventUiDetailsModelMapper,
@@ -55,6 +57,8 @@ constructor(
   private val _uiState = MutableStateFlow(CalendarState())
   val state: StateFlow<CalendarState> = _uiState.asStateFlow()
 
+  private val _introState = MutableStateFlow(IntroState())
+  val introState: StateFlow<IntroState> = _introState.asStateFlow()
   private var initialAuthCheckCompletedAndProcessed = false
 
   // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
@@ -75,7 +79,30 @@ constructor(
     observeAuthState()
     observeCalendarNetworkState()
     observeVisibleDateChanges()
+    observeIntroduction()
   }
+
+    private fun observeIntroduction() {
+        viewModelScope.launch {
+            val finished = settingsRepository.isIntroFinished()
+            if (finished) {
+                _introState.value = IntroState(isFinished = true)
+            }
+        }
+    }
+
+    fun onIntroNext() {
+        val next = IntroStep.next(_introState.value.currentStep)
+
+        if (next == null) {
+            _introState.value = _introState.value.copy(isFinished = true)
+            viewModelScope.launch {
+                settingsRepository.saveIntroComplete()
+            }
+        } else {
+            _introState.value = _introState.value.copy(currentStep = next)
+        }
+    }
 
   private fun observeVisibleDateChanges() {
     viewModelScope.launch {
@@ -234,7 +261,11 @@ constructor(
           val zoneId = zoneId.toString()
           val projectUIModels =
               eventUiModelMapper.mapToUiModels(
-                  events = events, currentTime = now, timeZoneId = zoneId.toString(), date = date, project = true)
+                  events = events,
+                  currentTime = now,
+                  timeZoneId = zoneId.toString(),
+                  date = date,
+                  project = true)
 
           EventsPageUiState(
               isLoading = networkState is EventNetworkState.Loading, events = projectUIModels)
@@ -270,11 +301,9 @@ constructor(
     }
   }
 
-    fun changeScenery(appMode: AppMode) {
-        _uiState.update { currentState ->
-            currentState.copy(currentMode = appMode)
-        }
-    }
+  fun changeScenery(appMode: AppMode) {
+    _uiState.update { currentState -> currentState.copy(currentMode = appMode) }
+  }
 
   // --- COMPANION ---
   companion object {

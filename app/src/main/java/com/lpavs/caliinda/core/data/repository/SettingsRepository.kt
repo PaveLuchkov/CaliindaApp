@@ -3,12 +3,14 @@ package com.lpavs.caliinda.core.data.repository
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 import java.time.ZoneId
@@ -21,7 +23,28 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     val BOT_TEMPER = stringPreferencesKey("bot_temper")
     val TIME_ZONE = stringPreferencesKey("time_zone")
     val THEME_MODE = stringPreferencesKey("theme_mode")
+      val INTRO_COMPLETED = booleanPreferencesKey("introduction")
   }
+
+    val introFlow: Flow<Boolean> =
+        dataStore.data
+            .catch { e ->
+                if (e is IOException) {
+                    Log.e(TAG, "Error reading preferences", e)
+                    emit(emptyPreferences())
+                } else throw e
+            }
+            .map { prefs ->
+                prefs[PreferencesKeys.INTRO_COMPLETED] ?: false
+            }
+    suspend fun isIntroFinished(): Boolean {
+        return introFlow.first()
+    }
+    suspend fun saveIntroComplete() {
+        dataStore.edit { prefs ->
+            prefs[PreferencesKeys.INTRO_COMPLETED] = true
+        }
+    }
 
   val botTemperFlow: Flow<String> =
       dataStore.data

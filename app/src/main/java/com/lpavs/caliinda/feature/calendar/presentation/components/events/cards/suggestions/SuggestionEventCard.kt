@@ -86,7 +86,6 @@ import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
 fun SuggestionEventCard(
     uiModel: EventUiModel,
     //    isExpanded: Boolean,
-    onToggleExpand: () -> Unit,
     onApprove: () -> Unit,
     onDeny: () -> Unit,
 ) {
@@ -223,7 +222,6 @@ fun SuggestionEventCard(
                 detectTapGestures(
                     onTap = {
                       haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                      onToggleExpand()
                     },
                 )
               }) {
@@ -385,7 +383,6 @@ fun CalendarEventPreview() {
           isPhantom = true)
   CaliindaTheme {
     SuggestionEventCard(
-        onToggleExpand = {},
         //        isExpanded = false,
         uiModel = normalEvent,
         onDeny = {},

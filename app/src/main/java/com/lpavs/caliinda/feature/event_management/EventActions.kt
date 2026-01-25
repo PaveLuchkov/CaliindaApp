@@ -8,6 +8,9 @@ data class EventActions(
     val onDetails: (EventDto) -> Unit
 )
 
+data class PendingActions(
+    val suggestionRequest: Boolean = false
+)
 data class SuggestionActions(
     val onDeny: (String) -> Unit,
     val onApprove: (EventDto) -> Unit

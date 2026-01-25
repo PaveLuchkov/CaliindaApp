@@ -13,17 +13,14 @@ import com.lpavs.caliinda.feature.event_management.SuggestionActions
 fun DailyCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
-    isSignIn: Boolean,
     actions: EventActions,
     sugActions: SuggestionActions,
-    onSignInClick: () -> Unit,
 
 ) {
     BaseEventList(
         items = events,
         key = { it.id },
-        listState = listState,
-        headerContent = if (isSignIn) { { LogInEvent(onSignInClick) } } else null
+        listState = listState
     ) { event, isExpanded, toggleExpand ->
         if (!event.isPhantom)
             CalendarEventItem(
@@ -38,8 +35,6 @@ fun DailyCardsList(
         else
             SuggestionEventCard(
                 uiModel = event,
-//                isExpanded = isExpanded,
-                onToggleExpand = toggleExpand,
                 onApprove = { sugActions.onApprove(event.originalEvent) },
                 onDeny = {sugActions.onDeny(event.id)}
             )

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.LocalDate
 
@@ -33,14 +34,14 @@ fun CalendarPagerScreen(
     isOverallLoading: Boolean,
     initialPageIndex: Int,
     today: LocalDate,
-    activity: Activity?
+    activity: Activity?,
+    introductionState: IntroState
 ) {
   val userScrollEnabled = signedIn
   HorizontalPager(
       state = calendarPagerState,
       modifier = Modifier.fillMaxSize(),
-      userScrollEnabled = userScrollEnabled
-      ) { page ->
+      userScrollEnabled = userScrollEnabled) { page ->
         when (page) {
           0 ->
               VerticalPager(
@@ -55,7 +56,8 @@ fun CalendarPagerScreen(
                         isLoading = isOverallLoading,
                         viewModel = calendarViewModel,
                         eventManagementViewModel = eventManagementViewModel,
-                        createEventClick = createEventAction)
+                        createEventClick = createEventAction,
+                        introductionState = introductionState)
                   }
 
           1 ->
@@ -76,19 +78,20 @@ fun CalendarPagerScreen(
                         }
                     DayEventsPage(
                         isLoading = isOverallLoading,
-                        isSignIn = !signedIn,
+                        isSignedIn = signedIn,
                         date = pageDate,
                         viewModel = calendarViewModel,
                         eventManagementViewModel = eventManagementViewModel,
                         onSignInClick = {
-                            if (activity != null) {
-                                authViewModel.signIn(activity)
-                            } else {
-                                Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
-                            }
+                          if (activity != null) {
+                            authViewModel.signIn(activity)
+                          } else {
+                            Log.e("MainScreen", "Activity is null, cannot start sign-in flow.")
+                          }
                         },
                         agentViewModel = agentViewModel,
-                        createEventClick = createEventAction)
+                        createEventClick = createEventAction,
+                        introductionState = introductionState)
                   }
         }
       }

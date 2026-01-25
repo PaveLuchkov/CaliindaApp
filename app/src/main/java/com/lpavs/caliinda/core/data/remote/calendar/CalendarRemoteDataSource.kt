@@ -37,7 +37,7 @@ constructor(
     }
   }
 
-  suspend fun getEvents(startDate: LocalDate, endDate: LocalDate): Result<List<EventDto>> {
+  suspend fun getEvents(startDate: LocalDate, endDate: LocalDate, suggestion: Boolean): Result<List<EventDto>> {
     Log.d(TAG, "getEvents called with startDate: $startDate, endDate: $endDate")
     return authenticatedApiCall { token ->
       Log.d(TAG, "Fetching events from API for range: $startDate - $endDate")
