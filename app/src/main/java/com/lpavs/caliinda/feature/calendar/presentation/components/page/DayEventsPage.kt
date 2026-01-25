@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.FullScreenLoader
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.DailyCardsList
@@ -85,34 +86,38 @@ fun DayEventsPage(
 
     Spacer(modifier = Modifier.height(2.dp))
 
-    if (!isSignedIn || !introductionState.isFinished && !isBusy) {
-      SystemEventsList(
-          isSignedIn = isSignedIn,
-          introStep = introductionState.currentStep,
-          onSignInClick = onSignInClick,
-          projectView = false,
-          onIntroNext = { viewModel.onIntroNext() })
-    } else {
-      if (pageState.timedEvents.isNotEmpty() || !(agentResponse?.mainText.isNullOrBlank())) {
-        DailyCardsList(
-            events = pageState.timedEvents,
-            listState = listState,
-            actions = actions,
-            sugActions = sugActions)
-      } else if (pageState.allDayEvents.isEmpty()) {
+      val showIntro = !introductionState.isFinished && !isBusy
+      val showAuth = !isSignedIn && !isBusy
 
-        if (isBusy) {
-          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            LoadingIndicator(modifier = Modifier.size(80.dp))
-          }
-        } else {
-          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-            CalendarCreateEventItem(onCreateEventClick = createEventClick)
-          }
-        }
-      } else {
-        Spacer(modifier = Modifier.weight(1f))
+      if (showIntro || showAuth) {
+          SystemEventsList(
+              isSignedIn = isSignedIn,
+              introStep = introductionState.currentStep,
+              onSignInClick = onSignInClick,
+              onIntroNext = { viewModel.onIntroNext() },
+              projectView = false
+          )
+          return
       }
-    }
+
+      val hasContent = pageState.timedEvents.isNotEmpty() || !agentResponse?.mainText.isNullOrBlank()
+      val hasAllDayEvents = pageState.allDayEvents.isNotEmpty()
+
+      when {
+          hasContent -> {
+              DailyCardsList(
+                  events = pageState.timedEvents,
+                  listState = listState,
+                  actions = actions,
+                  sugActions = sugActions
+              )
+          }
+          !hasAllDayEvents -> {
+              CalendarCreateEventItem(onCreateEventClick = createEventClick)
+          }
+          isBusy -> {
+              FullScreenLoader()
+          }
+      }
   }
 }
