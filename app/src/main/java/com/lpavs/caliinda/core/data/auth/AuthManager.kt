@@ -16,6 +16,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.Scopes
 import com.google.android.gms.common.api.Scope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -23,6 +24,9 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import com.google.api.services.calendar.CalendarScopes
 import com.lpavs.caliinda.core.data.di.WebClientId
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,9 +40,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Singleton
 class AuthManager
@@ -132,9 +133,7 @@ constructor(
         _authState.update { it.copy(isLoading = false, authError = "Log in was canceled") }
       } catch (e: Exception) {
         Log.e(TAG, "Unknown error during sign-in", e)
-        _authState.update {
-          it.copy(isLoading = false, authError = "Unexpected Error")
-        }
+        _authState.update { it.copy(isLoading = false, authError = "Unexpected Error") }
       }
     }
   }
@@ -172,13 +171,21 @@ constructor(
     }
   }
 
-  private suspend fun requestCalendarAuthorization() {
-    val requiredScopes = Scope(CalendarScopes.CALENDAR_EVENTS)
-    val authRequest =
-        AuthorizationRequest.builder()
-            .setRequestedScopes(listOf(requiredScopes))
-            .requestOfflineAccess(webClientId)
-            .build()
+
+    private suspend fun requestCalendarAuthorization() {
+
+        val scopes = listOf(
+            Scope(CalendarScopes.CALENDAR_EVENTS),
+            Scope(Scopes.OPEN_ID),
+            Scope(Scopes.EMAIL),
+            Scope(Scopes.PROFILE)
+        )
+
+        val authRequest =
+            AuthorizationRequest.builder()
+                .setRequestedScopes(scopes)
+                .requestOfflineAccess(webClientId)
+                .build()
     try {
       val result = authorizationClient.authorize(authRequest).await()
       if (result.hasResolution()) {
@@ -251,6 +258,7 @@ constructor(
         Log.e(TAG, "Error clearing credentials", e)
       } finally {
         _authEvents.emit(AuthEvent.SignedOut)
+        _authState.update { it.copy(isSignedIn = false) }
         signOutInternally("You have been signed out.")
       }
     }
