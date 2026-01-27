@@ -12,8 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -74,6 +76,7 @@ fun CalendarDateTitle(
         }
     val currentLocale = LocalConfiguration.current.getLocales().get(0)
     val formatterWithShortDay = if (isCurrentYear) DateTimeFormatter.ofPattern("E, d MMMM", currentLocale) else DateTimeFormatter.ofPattern("E, d MMMM, yyyy", currentLocale)
+    val haptic = LocalHapticFeedback.current
     Box(
         modifier =
             Modifier.fillMaxWidth()
@@ -83,8 +86,15 @@ fun CalendarDateTitle(
                 .pointerInput(Unit) {
                     if (isSignedIn) {
                         detectTapGestures(
+                            onPress = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                tryAwaitRelease()
+                            },
                             onTap = { onTitleClick() },
-                            onLongPress = { onTitleHold() }
+                            onLongPress = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onTitleHold()
+                            }
                         )
                     }
                 },

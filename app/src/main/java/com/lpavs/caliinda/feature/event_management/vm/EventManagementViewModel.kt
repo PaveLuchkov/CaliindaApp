@@ -359,7 +359,6 @@ constructor(
       parsedEndTime = if (!isAllDay) parsedStartTime?.plusHours(1) else null
     }
 
-    // ... (остальная логика парсинга RRULE остается без изменений) ...
     var recurrenceOption: RecurrenceOption? = null
     var selectedWeekdays: Set<DayOfWeek> = emptySet()
     var recurrenceEndType = RecurrenceEndType.NEVER

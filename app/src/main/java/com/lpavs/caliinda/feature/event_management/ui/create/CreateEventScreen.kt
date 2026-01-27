@@ -25,7 +25,6 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -73,7 +72,7 @@ fun CreateEventScreen(
 ) {
   var summary by remember { mutableStateOf("") }
   var description by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+  var location by remember { mutableStateOf("") }
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
 
   var summaryError by remember { mutableStateOf<String?>(null) }
@@ -136,38 +135,35 @@ fun CreateEventScreen(
         location = location,
         dateTimeState = eventDateTimeState)
   }
-    AnimatedContent(
-        targetState = summary.isEmpty()
-    ) {
-        if (!it) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center) {
-                Button(
-                    onClick = onSaveClick,
-                    enabled = !uiState.isLoading,
-                    modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
-                ) {
-                    if (uiState.isLoading) {
-                        LoadingIndicator(
-                            color = colorScheme.onPrimary,
-                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
-                    } else {
-                        Text(
-                            text = stringResource(R.string.save),
-                        )
-                    }
-                }
+  AnimatedContent(targetState = summary.isEmpty()) {
+    if (!it) {
+      Row(
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.Center) {
+            Button(
+                onClick = onSaveClick,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
+            ) {
+              if (uiState.isLoading) {
+                LoadingIndicator(
+                    color = colorScheme.onPrimary,
+                    modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
+              } else {
+                Text(
+                    text = stringResource(R.string.save),
+                )
+              }
             }
-        }
+          }
     }
+  }
 
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).fillMaxWidth(),
-      verticalArrangement = Arrangement.spacedBy(4.dp)
-       ) {
+      verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AdaptiveContainer {
           EventNameSection(
               summary = summary,

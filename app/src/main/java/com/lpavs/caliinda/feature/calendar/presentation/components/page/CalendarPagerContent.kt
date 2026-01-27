@@ -37,11 +37,12 @@ fun CalendarPagerScreen(
     activity: Activity?,
     introductionState: IntroState
 ) {
-  val userScrollEnabled = signedIn
-  HorizontalPager(
+
+    HorizontalPager(
       state = calendarPagerState,
       modifier = Modifier.fillMaxSize(),
-      userScrollEnabled = userScrollEnabled) { page ->
+      userScrollEnabled = signedIn
+    ) { page ->
         when (page) {
           0 ->
               VerticalPager(
@@ -51,7 +52,7 @@ fun CalendarPagerScreen(
                       PagerDefaults.flingBehavior(
                           state = weekViewPagerState, snapPositionalThreshold = 0.05f),
                   userScrollEnabled = false,
-                  beyondViewportPageCount = 1) { pageIndex ->
+                  beyondViewportPageCount = 1) { _ ->
                     ProjectEventsPage(
                         isLoading = isOverallLoading,
                         viewModel = calendarViewModel,
@@ -70,7 +71,7 @@ fun CalendarPagerScreen(
                   flingBehavior =
                       PagerDefaults.flingBehavior(
                           state = dailyViewPagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = userScrollEnabled,
+                  userScrollEnabled = signedIn,
                   beyondViewportPageCount = 1) { pageIndex ->
                     val pageDate =
                         remember(pageIndex) {

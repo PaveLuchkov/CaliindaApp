@@ -22,7 +22,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.ui.AISettingsScreen
 import com.lpavs.caliinda.feature.settings.ui.SettingsScreen
-import com.lpavs.caliinda.feature.settings.ui.TermsOfUseScreen
+import com.lpavs.caliinda.feature.settings.ui.AboutScreen
 import com.lpavs.caliinda.feature.settings.ui.TimeSettingsScreen
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 
@@ -89,7 +89,7 @@ fun AppNavHost(
           onNavigateBack = { navController.popBackStack() },
           onNavigateToAISettings = { navController.navigate(NavRoutes.AISettings.route) },
           onNavigateToTimeSettings = { navController.navigate(NavRoutes.TimeSettings.route) },
-          onNavigateToTermsOfuse = { navController.navigate(NavRoutes.Terms.route) })
+          onNavigateToAbout = { navController.navigate(NavRoutes.Terms.route) })
     }
     composable(
         NavRoutes.AISettings.route,
@@ -110,7 +110,7 @@ fun AppNavHost(
     composable(
         NavRoutes.Terms.route,
     ) {
-      TermsOfUseScreen(onNavigateBack = { navController.popBackStack() }, title = "Terms of Use")
+      AboutScreen(onNavigateBack = { navController.popBackStack() }, title = "About")
     }
   }
 }

@@ -17,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
@@ -51,13 +53,19 @@ fun CalendarAppBar(
         }
       },
       navigationIcon = {
+          val haptic = LocalHapticFeedback.current
         FilledIconButton(
-            onClick = onGoToTodayClick,
+            onClick = { onGoToTodayClick()
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                      },
             modifier =
-                Modifier.minimumInteractiveComponentSize()
+                Modifier
+                    .minimumInteractiveComponentSize()
                     .size(
                         IconButtonDefaults.smallContainerSize(
-                            IconButtonDefaults.IconButtonWidthOption.Wide)),
+                            IconButtonDefaults.IconButtonWidthOption.Wide
+                        )
+                    ),
             shape = IconButtonDefaults.smallRoundShape,
             enabled = isSignedIn) {
               Icon(
@@ -71,10 +79,13 @@ fun CalendarAppBar(
           FilledIconButton(
               onClick = onNavigateToSettings,
               modifier =
-                  Modifier.minimumInteractiveComponentSize()
+                  Modifier
+                      .minimumInteractiveComponentSize()
                       .size(
                           IconButtonDefaults.smallContainerSize(
-                              IconButtonDefaults.IconButtonWidthOption.Wide)),
+                              IconButtonDefaults.IconButtonWidthOption.Wide
+                          )
+                      ),
               shape = IconButtonDefaults.smallRoundShape) {
                 Icon(
                     imageVector = Icons.Filled.Settings,

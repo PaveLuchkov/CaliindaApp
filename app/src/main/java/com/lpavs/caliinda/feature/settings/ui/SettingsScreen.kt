@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.AccessTimeFilled
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -75,13 +76,12 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAISettings: () -> Unit,
     onNavigateToTimeSettings: () -> Unit,
-    onNavigateToTermsOfuse: () -> Unit
+    onNavigateToAbout: () -> Unit
 ) {
     val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
   val state by authViewModel.authState.collectAsState()
   val snackbarHostState = remember { SnackbarHostState() }
   val isOverallLoading = state.isLoading
-    val context = LocalContext.current
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -144,42 +144,17 @@ fun SettingsScreen(
                   title = stringResource(R.string.time_format),
                   onClick = onNavigateToTimeSettings,
                   shape = MaterialShapes.Pill.toShape())
-
-              SettingsItem(
-                  modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
-                  icon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.doc),
-                        tint = colorScheme.onPrimaryContainer,
-                        contentDescription = stringResource(R.string.terms))
-                  },
-                  title = stringResource(R.string.privacy_policy),
-                  onClick = {
-                      val intent = Intent(
-                          Intent.ACTION_VIEW,
-                          "https://www.lpavs.com/caliinda/privacy-policy".toUri()
-                      )
-                      context.startActivity(intent)
-                  },
-                  shape = MaterialShapes.Bun.toShape())
             SettingsItem(
                 modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                 icon = {
                     Icon(
-                        Icons.Rounded.DeleteSweep,
+                        Icons.Rounded.Info,
                         tint = colorScheme.onPrimaryContainer,
-                        contentDescription = stringResource(R.string.terms))
+                        contentDescription = ("About"))
                 },
-                title = stringResource(R.string.delete_data),
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://www.lpavs.com/caliinda/delete-data".toUri()
-                    )
-                    context.startActivity(intent)
-                },
-                shape = MaterialShapes.Burst.toShape()
-            )
+                title = "About",
+                onClick = onNavigateToAbout,
+                shape = MaterialShapes.Gem.toShape())
             }
 
       }

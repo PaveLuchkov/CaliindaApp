@@ -149,69 +149,68 @@ fun EditEventScreen(
   Column(
       modifier =
           Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).fillMaxWidth(),
-      verticalArrangement = Arrangement.spacedBy(4.dp)
-  ) {
-    AdaptiveContainer {
-      EventNameSection(
-          summary = summary,
-          summaryError = summaryError,
-          onSummaryChange = { summary = it },
-          onSummaryErrorChange = { summaryError = it },
-          isLoading = uiState.isLoading,
-          suggestedChips = suggestedChips)
-    }
-    AdaptiveContainer {
-      EventDateTimePicker(
-          state = eventDateTimeState,
-          onStateChange = { newState ->
-            eventDateTimeState = newState
-            validationError = null
-          },
-          isLoading = uiState.isLoading,
-          onRequestShowStartDatePicker = { showStartDatePicker = true },
-          onRequestShowStartTimePicker = { showStartTimePicker = true },
-          onRequestShowEndDatePicker = { showEndDatePicker = true },
-          onRequestShowEndTimePicker = { showEndTimePicker = true },
-          onRequestShowRecurrenceEndDatePicker = { showRecurrenceEndDatePicker = true },
-          modifier = Modifier.fillMaxWidth())
-    }
-    validationError?.let { Text(it, color = colorScheme.error, style = typography.bodySmall) }
+      verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        AdaptiveContainer {
+          EventNameSection(
+              summary = summary,
+              summaryError = summaryError,
+              onSummaryChange = { summary = it },
+              onSummaryErrorChange = { summaryError = it },
+              isLoading = uiState.isLoading,
+              suggestedChips = suggestedChips)
+        }
+        AdaptiveContainer {
+          EventDateTimePicker(
+              state = eventDateTimeState,
+              onStateChange = { newState ->
+                eventDateTimeState = newState
+                validationError = null
+              },
+              isLoading = uiState.isLoading,
+              onRequestShowStartDatePicker = { showStartDatePicker = true },
+              onRequestShowStartTimePicker = { showStartTimePicker = true },
+              onRequestShowEndDatePicker = { showEndDatePicker = true },
+              onRequestShowEndTimePicker = { showEndTimePicker = true },
+              onRequestShowRecurrenceEndDatePicker = { showRecurrenceEndDatePicker = true },
+              modifier = Modifier.fillMaxWidth())
+        }
+        validationError?.let { Text(it, color = colorScheme.error, style = typography.bodySmall) }
 
-    AdaptiveContainer {
-      OutlinedTextField(
-          value = description,
-          onValueChange = { description = it },
-          label = { Text(stringResource(R.string.description)) },
-          modifier = Modifier.fillMaxWidth().height(100.dp),
-          maxLines = 4,
-          enabled = !uiState.isLoading,
-          colors =
-              OutlinedTextFieldDefaults.colors(
-                  focusedBorderColor = Color.Transparent,
-                  unfocusedBorderColor = Color.Transparent,
-                  focusedContainerColor = colorScheme.surfaceContainerHighest,
-                  unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-              ),
-          shape = RoundedCornerShape(25.dp))
-      OutlinedTextField(
-          value = location,
-          onValueChange = { location = it },
-          label = { Text(stringResource(R.string.location)) },
-          modifier = Modifier.fillMaxWidth(),
-          singleLine = true,
-          enabled = !uiState.isLoading,
-          colors =
-              OutlinedTextFieldDefaults.colors(
-                  focusedBorderColor = Color.Transparent,
-                  unfocusedBorderColor = Color.Transparent,
-                  focusedContainerColor = colorScheme.surfaceContainerHighest,
-                  unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-              ),
-          shape = RoundedCornerShape(25.dp))
-    }
-    generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
-    Spacer(modifier = Modifier.height(16.dp))
-  }
+        AdaptiveContainer {
+          OutlinedTextField(
+              value = description,
+              onValueChange = { description = it },
+              label = { Text(stringResource(R.string.description)) },
+              modifier = Modifier.fillMaxWidth().height(100.dp),
+              maxLines = 4,
+              enabled = !uiState.isLoading,
+              colors =
+                  OutlinedTextFieldDefaults.colors(
+                      focusedBorderColor = Color.Transparent,
+                      unfocusedBorderColor = Color.Transparent,
+                      focusedContainerColor = colorScheme.surfaceContainerHighest,
+                      unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+                  ),
+              shape = RoundedCornerShape(25.dp))
+          OutlinedTextField(
+              value = location,
+              onValueChange = { location = it },
+              label = { Text(stringResource(R.string.location)) },
+              modifier = Modifier.fillMaxWidth(),
+              singleLine = true,
+              enabled = !uiState.isLoading,
+              colors =
+                  OutlinedTextFieldDefaults.colors(
+                      focusedBorderColor = Color.Transparent,
+                      unfocusedBorderColor = Color.Transparent,
+                      focusedContainerColor = colorScheme.surfaceContainerHighest,
+                      unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+                  ),
+              shape = RoundedCornerShape(25.dp))
+        }
+        generalError?.let { Text(it, color = colorScheme.error, style = typography.bodyMedium) }
+        Spacer(modifier = Modifier.height(16.dp))
+      }
 
   val currentDateTimeState = eventDateTimeState
 
