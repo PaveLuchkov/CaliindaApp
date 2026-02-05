@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,8 +93,8 @@ fun EventFormContent(
                     value = description,
                     onValueChange = onDescriptionChange,
                     label = { Text(stringResource(R.string.description)) },
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth().heightIn(min=100.dp),
+//                    maxLines = 4,
                     enabled = !isLoading,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,

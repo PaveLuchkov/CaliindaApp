@@ -93,10 +93,13 @@ fun EventDateTimePicker(
     onRequestShowRecurrenceEndDatePicker: () -> Unit,
 ) {
   Log.d("EventDateTimePicker", "Received state: $state")
-  var isAllDay by remember { mutableStateOf(state.isAllDay) }
-  var isOneDay by remember { mutableStateOf(state.startDate == state.endDate) }
+    val isAllDay = state.isAllDay
+    val isOneDay = remember(state.startDate, state.endDate) {
+        state.startDate == state.endDate
+    }
 
-  var dateTimeError by remember { mutableStateOf<String?>(null) }
+
+    var dateTimeError by remember { mutableStateOf<String?>(null) }
   val context = LocalContext.current
 
   val allDay = stringResource(R.string.all_day)
@@ -118,17 +121,6 @@ fun EventDateTimePicker(
         val pattern = if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a"
         DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
       }
-  LaunchedEffect(state.isAllDay) {
-    if (isAllDay != state.isAllDay) {
-      isAllDay = state.isAllDay
-    }
-  }
-  LaunchedEffect(state.startDate, state.endDate) {
-    val actualIsOneDay = state.startDate == state.endDate
-    if (isOneDay != actualIsOneDay) {
-      isOneDay = actualIsOneDay
-    }
-  }
 
   LaunchedEffect(state) {
     dateTimeError = null

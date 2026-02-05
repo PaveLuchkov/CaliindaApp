@@ -325,39 +325,49 @@ constructor(
     val userTimeZoneId = timeZone.value
     val isAllDay = event.isAllDay
 
-    var parsedStartDate: LocalDate = LocalDate.now()
-    var parsedStartTime: LocalTime? = null
-    var parsedEndDate: LocalDate = LocalDate.now()
-    var parsedEndTime: LocalTime? = null
+      var parsedStartDate = LocalDate.of(1970, 1, 1)
+      var parsedEndDate = LocalDate.of(1970, 1, 1)
+      var parsedStartTime: LocalTime? = null
+      var parsedEndTime: LocalTime? = null
 
-    try {
-      if (isAllDay) {
-        parsedStartDate = LocalDate.parse(event.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
-        parsedEndDate =
-            LocalDate.parse(event.endTime, DateTimeFormatter.ISO_LOCAL_DATE).minusDays(1)
-      } else {
-        val startInstant = dateTimeUtils.parseToInstant(event.startTime, userTimeZoneId)
-        val endInstant = dateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)
+      try {
+          if (isAllDay) {
+              // Для AllDay берем только первые 10 символов (ГГГГ-ММ-ДД)
+              // Это спасет, если сервер прислал "2026-01-27T00:00:00"
+              val startStr = event.startTime?.take(10)
+              val endStr = event.endTime?.take(10)
 
-        if (startInstant != null) {
-          val startZonedDateTime = startInstant.atZone(ZoneId.of(userTimeZoneId))
-          parsedStartDate = startZonedDateTime.toLocalDate()
-          parsedStartTime = startZonedDateTime.toLocalTime().withNano(0)
-        }
-        if (endInstant != null) {
-          val endZonedDateTime = endInstant.atZone(ZoneId.of(userTimeZoneId))
-          parsedEndDate = endZonedDateTime.toLocalDate()
-          parsedEndTime = endZonedDateTime.toLocalTime().withNano(0)
-        }
+              parsedStartDate = LocalDate.parse(startStr)
+              val rawEndDate = LocalDate.parse(endStr)
+
+              // ЛОГИКА КОНЦА ДНЯ:
+              // Если сервер шлет эксклюзивную дату (конец = следующий день), вычитаем 1.
+              // Если сервер шлет включительную (конец = тот же день), оставляем как есть.
+              parsedEndDate = if (rawEndDate.isAfter(parsedStartDate)) {
+                  rawEndDate.minusDays(1)
+              } else {
+                  rawEndDate
+              }
+          } else {
+              // Для событий с временем используем твой dateTimeUtils или стандартный парсер
+              val startInstant = dateTimeUtils.parseToInstant(event.startTime, userTimeZoneId)
+              val endInstant = dateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)
+
+              startInstant?.atZone(ZoneId.of(userTimeZoneId))?.let {
+                  parsedStartDate = it.toLocalDate()
+                  parsedStartTime = it.toLocalTime().withNano(0)
+              }
+              endInstant?.atZone(ZoneId.of(userTimeZoneId))?.let {
+                  parsedEndDate = it.toLocalDate()
+                  parsedEndTime = it.toLocalTime().withNano(0)
+              }
+          }
+      } catch (e: Exception) {
+          Log.e("DEBUG_PARSE", "Ошибка парсинга события ${event.id}: ${e.message}. Данные: Start=${event.startTime}, End=${event.endTime}")
+          // Если совсем всё плохо, тогда уже сегодня
+          parsedStartDate = LocalDate.now()
+          parsedEndDate = LocalDate.now()
       }
-    } catch (e: Exception) {
-      Log.e(TAG, "Error parsing event date/time for editing: ${e.message}")
-      val now = ZonedDateTime.now(ZoneId.of(userTimeZoneId))
-      parsedStartDate = now.toLocalDate()
-      parsedStartTime = if (!isAllDay) now.toLocalTime().plusHours(1).withMinute(0) else null
-      parsedEndDate = parsedStartDate
-      parsedEndTime = if (!isAllDay) parsedStartTime?.plusHours(1) else null
-    }
 
     var recurrenceOption: RecurrenceOption? = null
     var selectedWeekdays: Set<DayOfWeek> = emptySet()
