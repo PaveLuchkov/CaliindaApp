@@ -2,6 +2,7 @@ package com.lpavs.caliinda.core.data.remote.calendar
 
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
+import com.lpavs.caliinda.feature.event_management.PendingSuggestion
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -17,7 +18,9 @@ interface CalendarApiService {
   suspend fun getEventsForRange(
       @Header("Authorization") token: String,
       @Query("startDate") startDate: String,
-      @Query("endDate") endDate: String
+      @Query("endDate") endDate: String,
+      @Query("previousEvent") previousEvent: String? = null,
+      @Query("startEventSuggestion") startEventSuggestion: String? = null
   ): List<EventDto>
 
   @POST("calendar/events")

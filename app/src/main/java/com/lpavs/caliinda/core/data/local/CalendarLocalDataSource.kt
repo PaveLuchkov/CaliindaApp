@@ -25,19 +25,26 @@ interface CalendarLocalDataSource {
       endRangeMillis: Long
   ): Flow<List<CalendarEventEntity>>
 
-    /**
-     * Получает поток списка событий, время начала которых попадает в указанный диапазон миллисекунд
-     * UTC. Возвращает Flow для автоматического обновления UI.
-     *
-     * @param startRangeMillis Начало диапазона (включительно)
-     * @param endRangeMillis Конец диапазона (не включительно)
-     */
-    @Query(
-        "SELECT * FROM calendar_events WHERE startTimeMillis < :endRangeMillis AND endTimeMillis > :startRangeMillis ORDER BY endTimeMillis ASC")
-    fun getProjectsForDateRangeFlow(
-        startRangeMillis: Long,
-        endRangeMillis: Long
-    ): Flow<List<CalendarEventEntity>>
+  @Query(
+      "SELECT * FROM calendar_events WHERE startTimeMillis >= :startRangeMillis AND startTimeMillis <= :endRangeMillis ORDER BY startTimeMillis ASC")
+  fun checkSlotForEvents(
+      startRangeMillis: Long,
+      endRangeMillis: Long
+  ): Flow<List<CalendarEventEntity>>
+
+  /**
+   * Получает поток списка событий, время начала которых попадает в указанный диапазон миллисекунд
+   * UTC. Возвращает Flow для автоматического обновления UI.
+   *
+   * @param startRangeMillis Начало диапазона (включительно)
+   * @param endRangeMillis Конец диапазона (не включительно)
+   */
+  @Query(
+      "SELECT * FROM calendar_events WHERE startTimeMillis < :endRangeMillis AND endTimeMillis > :startRangeMillis ORDER BY endTimeMillis ASC")
+  fun getProjectsForDateRangeFlow(
+      startRangeMillis: Long,
+      endRangeMillis: Long
+  ): Flow<List<CalendarEventEntity>>
 
   /** Вставляет список событий. Если событие с таким же ID уже существует, оно будет заменено. */
   @Insert(onConflict = OnConflictStrategy.REPLACE)

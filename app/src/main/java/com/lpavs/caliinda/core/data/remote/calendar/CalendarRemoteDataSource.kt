@@ -8,6 +8,7 @@ import com.lpavs.caliinda.core.common.UnknownException
 import com.lpavs.caliinda.core.data.auth.AuthManager
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
+import com.lpavs.caliinda.feature.event_management.PendingSuggestion
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -37,7 +38,7 @@ constructor(
     }
   }
 
-  suspend fun getEvents(startDate: LocalDate, endDate: LocalDate, suggestion: Boolean): Result<List<EventDto>> {
+  suspend fun getEvents(startDate: LocalDate, endDate: LocalDate, suggestion: PendingSuggestion?): Result<List<EventDto>> {
     Log.d(TAG, "getEvents called with startDate: $startDate, endDate: $endDate")
     return authenticatedApiCall { token ->
       Log.d(TAG, "Fetching events from API for range: $startDate - $endDate")
@@ -45,7 +46,10 @@ constructor(
           apiService.getEventsForRange(
               token = token,
               startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
-              endDate.format(DateTimeFormatter.ISO_LOCAL_DATE))
+              endDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
+              previousEvent = suggestion?.previousEvent,
+              startEventSuggestion = suggestion?.startEventSuggestion
+          )
       Log.d(TAG, "getEvents successful, events count: ${events.size}")
       events
     }

@@ -13,6 +13,7 @@ import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
 import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
 import com.lpavs.caliinda.core.data.repository.mapper.EventMapper
+import com.lpavs.caliinda.feature.event_management.PendingSuggestion
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -175,7 +176,7 @@ constructor(
   }
 
   // --- Секция Запрос данных ---
-  suspend fun fetchAndStoreDateRange(range: ClosedRange<LocalDate>, replace: Boolean, suggestion: Boolean = false) {
+  suspend fun fetchAndStoreDateRange(range: ClosedRange<LocalDate>, replace: Boolean, suggestion: PendingSuggestion?) {
     _rangeNetworkState.value = EventNetworkState.Loading
     val result = remotreDataSource.getEvents(range.start, range.endInclusive, suggestion)
     withContext(ioDispatcher) {
@@ -224,7 +225,7 @@ constructor(
   }
 
   /** Принудительно обновляет данные для указанной даты */
-  suspend fun refreshDate(centerDateToRefreshAround: LocalDate, suggestionRequestIncluded: Boolean = false) {
+  suspend fun refreshDate(centerDateToRefreshAround: LocalDate, suggestionRequestIncluded: PendingSuggestion? = null) {
     Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
 
     activeFetchJob?.cancel(
@@ -247,7 +248,7 @@ constructor(
     launchProtectedFetch(targetRefreshRange, true, suggestionRequestIncluded)
   }
 
-  private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replace: Boolean = true, suggestion: Boolean = false) {
+  private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replace: Boolean = true, suggestion: PendingSuggestion? = null) {
     managerScope.launch {
       fetchJobMutex.withLock {
         val currentActiveJobDetails = fetchJobHolder?.takeIf { it.job.isActive }
@@ -398,7 +399,7 @@ constructor(
       }
 
   // --- Секция CRUD
-  suspend fun createEvent(request: EventRequest, requestSuggestion: Boolean = false): Result<Unit> {
+  suspend fun createEvent(request: EventRequest, requestSuggestion: PendingSuggestion?): Result<Unit> {
     val result = remotreDataSource.createEvent(request)
     if (result.isSuccess) {
       refreshDate(calendarStateHolder.currentVisibleDate.value, requestSuggestion)
@@ -433,7 +434,7 @@ constructor(
     ): Boolean{
         val endSlotMillis = startSlotTimeMillis + duration.toMillis()
         return localDataSource
-            .getEventsForDateRangeFlow(startSlotTimeMillis, endSlotMillis)
+            .checkSlotForEvents(startSlotTimeMillis, endSlotMillis)
             .first()
             .isEmpty()
     }

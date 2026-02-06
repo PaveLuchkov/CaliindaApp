@@ -8,8 +8,10 @@ data class EventActions(
     val onDetails: (EventDto) -> Unit
 )
 
-data class PendingActions(
-    val suggestionRequest: Boolean = false
+data class PendingSuggestion(
+    val previousEvent: String,
+    val startEventSuggestion: String? =  "datetime"
+
 )
 data class SuggestionActions(
     val onDeny: (String) -> Unit,

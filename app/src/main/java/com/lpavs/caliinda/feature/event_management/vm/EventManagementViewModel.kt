@@ -13,7 +13,7 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
-import com.lpavs.caliinda.feature.event_management.PendingActions
+import com.lpavs.caliinda.feature.event_management.PendingSuggestion
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
@@ -53,9 +53,6 @@ constructor(
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
-
-    private val _suggestionState = MutableStateFlow(PendingActions())
-    val suggestionState: StateFlow<PendingActions> = _suggestionState.asStateFlow()
 
   private val _eventFlow = MutableSharedFlow<EventManagementUiEvent>()
   val eventFlow: SharedFlow<EventManagementUiEvent> = _eventFlow.asSharedFlow()
@@ -134,9 +131,6 @@ constructor(
       // 3. Построение RRULE
       val finalRecurrenceRule = buildRecurrenceRule(dateTimeState)
       Log.d(TAG, "Final RRULE to send: $finalRecurrenceRule")
-        if (isSuggestionNeeded(dateTimeState))
-            _suggestionState.update { it.copy(suggestionRequest = true)}
-      // 4. Создание объекта запроса
       val request =
           EventRequest(
               summary = summary.trim(),
@@ -147,9 +141,16 @@ constructor(
               description = description.trim().takeIf { it.isNotEmpty() },
               location = location.trim().takeIf { it.isNotEmpty() },
               recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
-
+        val suggestionRequest = if (isSuggestionNeeded(dateTimeState)) {
+            PendingSuggestion(
+                previousEvent = request.summary ?: "Relaxing",
+                startEventSuggestion = request.endTime
+            )
+        } else {
+            null
+        }
       // 5. Отправка в репозиторий
-      val result = calendarRepository.createEvent(request)
+      val result = calendarRepository.createEvent(request, requestSuggestion = suggestionRequest)
       _uiState.update { it.copy(isLoading = false) }
 
       // 6. Обработка результата
