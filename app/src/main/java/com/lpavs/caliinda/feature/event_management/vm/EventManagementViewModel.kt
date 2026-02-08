@@ -166,6 +166,38 @@ constructor(
       }
     }
   }
+    fun createSuggestionEvent(
+        summary: String,
+        startStr: String?,
+        endStr: String?
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, operationError = null) }
+
+            val request =
+                EventRequest(
+                    summary = summary.trim(),
+                    startTime = startStr,
+                    endTime = endStr,
+                    timeZoneId = timeZone.value,
+                    isAllDay = false)
+            // 5. Отправка в репозиторий
+            val result = calendarRepository.createEvent(request, requestSuggestion = null)
+            _uiState.update { it.copy(isLoading = false) }
+
+            // 6. Обработка результата
+            if (result.isSuccess) {
+                val message = funMessages.getEventCreatedMessage(request.summary)
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+            } else {
+                val message =
+                    result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                        ?: funMessages.getCreateErrorMessage()
+                _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
+            }
+        }
+    }
 
     fun deleteEventLocaly(
         eventId: String

@@ -60,7 +60,7 @@ fun DayEventsPage(
       }
   val sugActions =
       remember(eventManagementViewModel) {
-        SuggestionActions(onApprove = {}, onDeny = eventManagementViewModel::deleteEventLocaly)
+        SuggestionActions(onApprove = eventManagementViewModel::createSuggestionEvent, onDeny = eventManagementViewModel::deleteEventLocaly)
       }
   val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
   val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading

@@ -319,7 +319,7 @@ fun SuggestionEventCard(
                     verticalAlignment = Alignment.CenterVertically) {
                       Button(
                           modifier = Modifier.padding(horizontal = 4.dp),
-                          onClick = { onApprove },
+                          onClick = onApprove,
                           contentPadding = PaddingValues(horizontal = 12.dp)) {
                             Icon(Icons.Filled.Add, contentDescription = "Approve Suggestion")
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))

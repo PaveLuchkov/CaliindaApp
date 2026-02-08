@@ -63,7 +63,14 @@ constructor(
           }
       val isMicroEvent = durationMinutes > 0 && durationMinutes <= cuid.MicroEventMaxDurationMinutes
         val daysLeft = if (project) Duration.between(currentTime, endInstant).toDays() else null
-      val baseHeight = calculateEventHeight(durationMinutes, isMicroEvent)
+      val baseHeight = calculateEventHeight(
+          durationMinutes,
+          isMicroEvent,
+          isProject = project,
+          startInstant = startInstant,
+          endInstant =endInstant,
+          currentTime = currentTime
+      )
 
       val buttonsRowHeight = 56.dp
       val expandedAdditionalHeight =
@@ -132,37 +139,69 @@ constructor(
               isPhantom = isPhantom,
               daysLeft = daysLeft
               )
-      //      Log.d("Model", "Event: $event")
       event
     }
   }
 
-  private fun calculateEventHeight(durationMinutes: Long, isMicroEvent: Boolean): Dp {
-    return if (isMicroEvent) {
-      cuid.MicroEventHeight
-    } else {
-      val minHeight = cuid.MinEventHeight
-      val maxHeight = cuid.MaxEventHeight
-      val durationDouble = durationMinutes.toDouble()
-      val heightRange = maxHeight - minHeight
-      val isNotProject = durationMinutes / 60 < 24
-      val midpoint =
-          if (isNotProject) cuid.HeightSigmoidMidpointMinutes
-          else cuid.HeightSigmoidProjectMidpointMinutes
-      val stepness =
-          if (isNotProject) cuid.HeightSigmoidSteepness else cuid.HeightSigmoidProjectSteepness
-      val scaleFactor =
-          if (isNotProject) cuid.HeightSigmoidScaleFactor else cuid.HeightSigmoidProjectScaleFactor
-      val x = (durationDouble - midpoint) / scaleFactor
-      val k = stepness
-      val sigmoidOutput = 1.0 / (1.0 + exp(-k * x))
+    private fun calculateEventHeight(
+        durationMinutes: Long,
+        isMicroEvent: Boolean,
+        isProject: Boolean,
+        startInstant: Instant?,
+        endInstant: Instant?,
+        currentTime: Instant
+    ): Dp {
 
-      val calculatedHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
-      calculatedHeight.coerceIn(minHeight, maxHeight)
+        if (isMicroEvent) return cuid.MicroEventHeight
+
+        val minHeight = cuid.MinEventHeight
+        val maxHeight = cuid.MaxEventHeight
+
+        val durationDouble = durationMinutes.toDouble()
+        val heightRange = maxHeight - minHeight
+
+        val isNotProjectType = durationMinutes / 60 < 24
+
+        val midpoint =
+            if (isNotProjectType) cuid.HeightSigmoidMidpointMinutes
+            else cuid.HeightSigmoidProjectMidpointMinutes
+
+        val steepness =
+            if (isNotProjectType) cuid.HeightSigmoidSteepness
+            else cuid.HeightSigmoidProjectSteepness
+
+        val scaleFactor =
+            if (isNotProjectType) cuid.HeightSigmoidScaleFactor
+            else cuid.HeightSigmoidProjectScaleFactor
+
+        val x = (durationDouble - midpoint) / scaleFactor
+        val sigmoidOutput = 1.0 / (1.0 + exp(-steepness * x))
+
+        val baseHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
+
+        if (!isProject || startInstant == null || endInstant == null)
+            return baseHeight.coerceIn(minHeight, maxHeight)
+
+        // 🔥 Новая логика для project
+
+        val totalDuration = Duration.between(startInstant, endInstant).toMillis()
+        if (totalDuration <= 0) return minHeight
+
+        val elapsed = Duration.between(startInstant, currentTime).toMillis()
+            .coerceIn(0, totalDuration)
+
+        val progress = elapsed.toFloat() / totalDuration.toFloat()
+
+        // линейное уменьшение от 1.0 до 0.0
+        val progressFactor = 1f - progress
+
+        val scaledHeight = minHeight + (baseHeight - minHeight) * progressFactor
+
+        return scaledHeight.coerceIn(minHeight, maxHeight)
     }
-  }
 
-  fun generateShapeParams(eventId: String): GeneratedShapeParams {
+
+    fun generateShapeParams(eventId: String): GeneratedShapeParams {
     val hashCode = eventId.hashCode()
     val absHashCode = abs(hashCode)
 

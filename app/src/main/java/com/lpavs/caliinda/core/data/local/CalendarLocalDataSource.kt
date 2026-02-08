@@ -26,7 +26,7 @@ interface CalendarLocalDataSource {
   ): Flow<List<CalendarEventEntity>>
 
   @Query(
-      "SELECT * FROM calendar_events WHERE startTimeMillis >= :startRangeMillis AND startTimeMillis <= :endRangeMillis ORDER BY startTimeMillis ASC")
+      "SELECT * FROM calendar_events WHERE startTimeMillis > :startRangeMillis AND startTimeMillis < :endRangeMillis ORDER BY startTimeMillis ASC")
   fun checkSlotForEvents(
       startRangeMillis: Long,
       endRangeMillis: Long

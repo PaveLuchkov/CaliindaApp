@@ -8,6 +8,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.LogInEvent
 import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.SuggestionActions
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 
 @Composable
 fun DailyCardsList(
@@ -35,7 +36,7 @@ fun DailyCardsList(
         else
             SuggestionEventCard(
                 uiModel = event,
-                onApprove = { sugActions.onApprove(event.originalEvent) },
+                onApprove = { sugActions.onApprove(event.summary, event.originalEvent.startTime, event.originalEvent.endTime) },
                 onDeny = {sugActions.onDeny(event.id)}
             )
     }
