@@ -36,8 +36,9 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestion
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -75,18 +76,21 @@ fun CreateEventScreen(
               isAllDay = true,
               isRecurring = false))
     }
-    val now = LocalTime.now()
-    val defaultStart = now.plusHours(1).withMinute(0).withSecond(0).withNano(0)
-    val defaultEnd = now.plusHours(2).withMinute(0).withSecond(0).withNano(0)
-    val effectiveEndDate =
-        if (defaultEnd.isBefore(defaultStart)) initialDate.plusDays(1) else initialDate
+    // Начало — следующий ровный час. Для сегодняшнего дня считаем с датой: в 23:30 это уже
+    // 00:00 завтрашнего дня, а не прошедшая полночь сегодняшнего.
+    val now = LocalDateTime.now(userTimeZoneId)
+    val nextHour = now.plusHours(1).truncatedTo(ChronoUnit.HOURS)
+    val defaultStart =
+        if (initialDate == now.toLocalDate()) nextHour
+        else initialDate.atTime(nextHour.toLocalTime())
+    val defaultEnd = defaultStart.plusHours(1)
 
     mutableStateOf(
         EventDateTimeState(
-            startDate = initialDate,
-            startTime = defaultStart,
-            endDate = effectiveEndDate,
-            endTime = defaultEnd,
+            startDate = defaultStart.toLocalDate(),
+            startTime = defaultStart.toLocalTime(),
+            endDate = defaultEnd.toLocalDate(),
+            endTime = defaultEnd.toLocalTime(),
             isAllDay = false,
             isRecurring = false))
   }
