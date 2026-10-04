@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -65,14 +67,7 @@ fun AllDayEventItem(
   val cardTextColor = MaterialTheme.colorScheme.onTertiaryContainer
   val haptic = LocalHapticFeedback.current
     val cardFontFamily =
-                FontFamily(
-                    Font(
-                        R.font.robotoflex_variable,
-                        variationSettings =
-                            FontVariation.Settings(
-                                FontVariation.weight(600),
-                                FontVariation.width(100f),
-                            )))
+                CaliindaFonts.Card
   Box(
       modifier =
           modifier

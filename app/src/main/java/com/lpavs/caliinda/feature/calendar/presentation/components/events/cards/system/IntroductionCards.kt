@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -61,14 +63,7 @@ fun IntroductionEvent(
     onIntroNext: () -> Unit
 ) {
   val cardFontFamily =
-      FontFamily(
-          Font(
-              R.font.robotoflex_variable,
-              variationSettings =
-                  FontVariation.Settings(
-                      FontVariation.weight(600),
-                      FontVariation.width(100f),
-                  )))
+      CaliindaFonts.Card
   val cardBackground = colorScheme.tertiaryFixed
   val cardTextColor = colorScheme.onTertiaryFixedVariant
   val cardBorderColor = colorScheme.onSurface

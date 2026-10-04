@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -54,14 +56,7 @@ fun CalendarAccessEvent(
   val darkerShadowColor = Color.Black
   val cardElevation = cuid.CurrentEventElevation
   val cardFontFamily =
-      FontFamily(
-          Font(
-              R.font.robotoflex_variable,
-              variationSettings =
-                  FontVariation.Settings(
-                      FontVariation.weight(600),
-                      FontVariation.width(100f),
-                  )))
+      CaliindaFonts.Card
   val cardBackground = colorScheme.tertiaryFixed
   val cardTextColor = colorScheme.onTertiaryFixedVariant
   val cardBorderColor = colorScheme.onSurface

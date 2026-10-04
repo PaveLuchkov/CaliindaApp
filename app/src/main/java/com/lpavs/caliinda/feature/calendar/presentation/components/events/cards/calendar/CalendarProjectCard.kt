@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -168,24 +170,9 @@ fun CalendarProjectItem(
   val cardFontFamily =
       when {
         current ->
-            FontFamily(
-                Font(
-                    R.font.robotoflex_variable,
-                    variationSettings =
-                        FontVariation.Settings(
-                            FontVariation.weight(800),
-                            FontVariation.width(60f),
-                            //                            FontVariation.opticalSizing(0.sp),
-                        )))
+            CaliindaFonts.ProjectCurrent
         else ->
-            FontFamily(
-                Font(
-                    R.font.robotoflex_variable,
-                    variationSettings =
-                        FontVariation.Settings(
-                            FontVariation.weight(600),
-                            FontVariation.width(100f),
-                        )))
+            CaliindaFonts.Card
       }
   // --- Композиция UI ---
   Box( // Корневой Box для тени, фона, высоты и кликабельности

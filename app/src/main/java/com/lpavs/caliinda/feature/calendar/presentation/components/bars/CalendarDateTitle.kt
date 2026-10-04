@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -58,21 +60,9 @@ fun CalendarDateTitle(
     val headerFontFamily =
         when {
             isToday ->
-                FontFamily(
-                    Font(
-                        R.font.robotoflex_variable,
-                        variationSettings =
-                            FontVariation.Settings(
-                                FontVariation.weight(750),
-                            )))
+                CaliindaFonts.Heavy
             else ->
-                FontFamily(
-                    Font(
-                        R.font.robotoflex_variable,
-                        variationSettings =
-                            FontVariation.Settings(
-                                FontVariation.weight(600),
-                            )))
+                CaliindaFonts.SemiBold
         }
     val currentLocale = LocalConfiguration.current.getLocales().get(0)
     val formatterWithShortDay = if (isCurrentYear) DateTimeFormatter.ofPattern("E, d MMMM", currentLocale) else DateTimeFormatter.ofPattern("E, d MMMM, yyyy", currentLocale)

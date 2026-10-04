@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,33 +28,15 @@ fun HeadCardsList(
     onDeleteRequest: (EventDto) -> Unit,
     onEditRequest: (EventDto) -> Unit,
     onDetailsRequest: (EventDto) -> Unit,
+    userScrollEnabled: Boolean = true,
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
 
-  LazyColumn(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+  LazyColumn(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+      userScrollEnabled = userScrollEnabled) {
     items(items = events, key = { event -> event.id }) { event ->
-      val fadeSpringSpec =
-          spring<Float>(
-              dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
-      val sliderSpringSpec =
-          spring<IntOffset>(
-              dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMediumLow)
-      val popUndUpSpec =
-          spring<IntOffset>(
-              dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)
-
-      AnimatedVisibility(
-          visible = true,
-          enter = slideInVertically(initialOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
-          exit =
-              fadeOut(animationSpec = fadeSpringSpec) +
-                  slideOutVertically(targetOffsetY = { it / 2 }, animationSpec = sliderSpringSpec),
-          modifier =
-              Modifier.animateItem(
-                  placementSpec = popUndUpSpec,
-                  fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                  fadeOutSpec = spring(stiffness = Spring.StiffnessHigh))
-                  .padding(bottom = 4.dp)){
+      Box(modifier = eventItemAnimation().padding(bottom = 4.dp)) {
             val isExpanded = event.id == expandedEventId
 
             AllDayEventItem(

@@ -34,10 +34,9 @@ fun ProjectEventsPage(
     introductionState: IntroState
 ) {
   val listState = rememberLazyListState()
+  val pageStateFlow = remember(viewModel) { viewModel.getProjectsPageUiState(LocalDate.now()) }
   val pageState by
-      viewModel
-          .getProjectsPageUiState(LocalDate.now())
-          .collectAsStateWithLifecycle(initialValue = EventsPageUiState(isLoading = true))
+      pageStateFlow.collectAsStateWithLifecycle(initialValue = EventsPageUiState(isLoading = true))
   val isBusy = pageState.isLoading
   val actions =
       remember(eventManagementViewModel, viewModel) {
