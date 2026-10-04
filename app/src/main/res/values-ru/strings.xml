@@ -185,4 +185,6 @@
     <string name="add_details">Добавить детали</string>
     <string name="duration_minutes_short">%d мин</string>
     <string name="duration_hours_short">%d ч</string>
+    <string name="undo">Отменить</string>
+    <string name="event_deleted">«%1$s» удалено</string>
 </resources>

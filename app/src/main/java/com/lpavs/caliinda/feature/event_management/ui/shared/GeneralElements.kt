@@ -49,7 +49,6 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 
 /**
  * Content [AdaptiveContainer] - container for any content. [TimePickerDialog] - timepicker
- * [DeleteConfirmationDialog] - delete confirmation dialog
  */
 @Composable
 fun AdaptiveContainer(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -82,26 +81,6 @@ fun TimePickerDialog(
       },
       confirmButton = confirmButton,
       dismissButton = dismissButton)
-}
-
-@Composable
-fun DeleteConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-  AlertDialog(
-      onDismissRequest = onDismiss,
-      title = { Text(text = stringResource(R.string.delete_conf)) },
-      text = { Text(text = stringResource(R.string.delete_confirmation_message)) },
-      confirmButton = {
-        Button(
-            onClick = { onConfirm() },
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = colorScheme.primary, contentColor = colorScheme.onPrimary)) {
-              Text(text = stringResource(R.string.delete))
-            }
-      },
-      dismissButton = {
-        TextButton(onClick = onDismiss) { Text(text = stringResource(R.string.cancel)) }
-      })
 }
 
 enum class RecurringDeleteChoice {

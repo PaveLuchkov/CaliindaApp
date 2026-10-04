@@ -183,4 +183,6 @@
     <string name="add_details">Details hinzufügen</string>
     <string name="duration_minutes_short">%d Min.</string>
     <string name="duration_hours_short">%d Std.</string>
+    <string name="undo">Rückgängig</string>
+    <string name="event_deleted">„%1$s“ gelöscht</string>
 </resources>

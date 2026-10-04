@@ -182,4 +182,6 @@
     <string name="add_details">विवरण जोड़ें</string>
     <string name="duration_minutes_short">%d मिनट</string>
     <string name="duration_hours_short">%d घंटे</string>
+    <string name="undo">पूर्ववत करें</string>
+    <string name="event_deleted">“%1$s” हटाया गया</string>
 </resources>

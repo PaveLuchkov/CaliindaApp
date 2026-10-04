@@ -1,5 +1,10 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import com.lpavs.caliinda.core.data.repository.PendingDeletions
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,6 +49,7 @@ constructor(
     settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
     private val funMessages: IFunMessages,
+    private val pendingDeletions: PendingDeletions,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
@@ -132,16 +138,59 @@ constructor(
 
   // --- Удаление ---
 
-  fun confirmDeleteEvent() {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-    _uiState.update {
-      it.copy(showDeleteConfirmationDialog = false, eventPendingDeletion = null)
-    }
+  /** Удалённые, но ещё не стёртые из календаря события: id экземпляра → (событие, таймер). */
+  private val undoableDeletes = mutableMapOf<String, Pair<EventDto, Job>>()
+
+  /**
+   * Обычное событие удаляем без диалога: сразу прячем и даём отменить в снекбаре. Стираем из
+   * календаря, когда снекбар закрылся, или по таймеру — если снекбар так и не показали.
+   */
+  private fun deleteWithUndo(event: EventDto) {
+    if (event.id in undoableDeletes) return
+    pendingDeletions.add(event.id)
+    val timer =
+        viewModelScope.launch {
+          delay(UNDO_FALLBACK_MS)
+          commitDelete(event.id)
+        }
+    undoableDeletes[event.id] = event to timer
     viewModelScope.launch {
-      runOperation(
-          operation = { calendarRepository.deleteEvent(eventToDelete, EventDeleteMode.DEFAULT) },
-          successMessage = { funMessages.getEventDeletedMessage(eventToDelete.summary) },
-          errorMessage = { funMessages.getDeleteErrorMessage() })
+      _eventFlow.emit(
+          EventManagementUiEvent.ShowUndoDelete(
+              event.id, UiText.from(R.string.event_deleted, event.summary)))
+    }
+  }
+
+  fun undoDelete(id: String) {
+    val (_, timer) = undoableDeletes.remove(id) ?: return
+    timer.cancel()
+    pendingDeletions.remove(id)
+  }
+
+  fun commitDelete(id: String) {
+    val (event, timer) = undoableDeletes.remove(id) ?: return
+    timer.cancel()
+    viewModelScope.launch { deleteFromCalendar(event) }
+  }
+
+  private suspend fun deleteFromCalendar(event: EventDto) {
+    val result = calendarRepository.deleteEvent(event, EventDeleteMode.DEFAULT)
+    // Снимаем скрытие после записи: провайдер уже без события, и карточка не мигнёт обратно.
+    pendingDeletions.remove(event.id)
+    if (result.isFailure) {
+      _eventFlow.emit(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
+    }
+  }
+
+  override fun onCleared() {
+    // Экран ушёл, пока снекбар висел: отмены уже не будет — удаляем, а не теряем действие.
+    val leftovers = undoableDeletes.values.map { it.first }
+    undoableDeletes.clear()
+    if (leftovers.isNotEmpty()) {
+      // Своя область: viewModelScope к этому моменту уже отменён.
+      CoroutineScope(SupervisorJob()).launch {
+        leftovers.forEach { deleteFromCalendar(it) }
+      }
     }
   }
 
@@ -149,7 +198,6 @@ constructor(
     val eventToDelete = _uiState.value.eventPendingDeletion ?: return
     _uiState.update {
       it.copy(
-          showDeleteConfirmationDialog = false,
           showRecurringDeleteOptionsDialog = false,
           eventPendingDeletion = null)
     }
@@ -358,23 +406,20 @@ constructor(
 
   // --- Состояние диалогов ---
 
-  fun requestDeleteConfirmation(event: EventDto) {
-    val isRecurring = event.recurringEventId != null
+  fun requestDelete(event: EventDto) {
+    if (event.recurringEventId == null) {
+      deleteWithUndo(event)
+      return
+    }
+    // У повторяющегося нужно выбрать, что именно удалять — тут без диалога не обойтись.
     _uiState.update {
-      it.copy(
-          eventPendingDeletion = event,
-          showDeleteConfirmationDialog = !isRecurring,
-          showRecurringDeleteOptionsDialog = isRecurring,
-      )
+      it.copy(eventPendingDeletion = event, showRecurringDeleteOptionsDialog = true)
     }
   }
 
   fun cancelDelete() {
     _uiState.update {
-      it.copy(
-          eventPendingDeletion = null,
-          showDeleteConfirmationDialog = false,
-          showRecurringDeleteOptionsDialog = false)
+      it.copy(eventPendingDeletion = null, showRecurringDeleteOptionsDialog = false)
     }
   }
 
@@ -415,13 +460,14 @@ constructor(
 
   companion object {
     private const val TAG = "EventManagementViewModel"
+    /** Запасной таймер окна отмены; обычно удаление запускает закрытие снекбара раньше. */
+    private const val UNDO_FALLBACK_MS = 15_000L
   }
 }
 
 data class EventManagementUiState(
     val isLoading: Boolean = false,
     val eventPendingDeletion: EventDto? = null,
-    val showDeleteConfirmationDialog: Boolean = false,
     val showRecurringDeleteOptionsDialog: Boolean = false,
     val eventBeingEdited: EventDto? = null,
     val showRecurringEditOptionsDialog: Boolean = false,
@@ -431,6 +477,8 @@ data class EventManagementUiState(
 
 sealed class EventManagementUiEvent {
   data class ShowMessage(val message: UiText) : EventManagementUiEvent()
+
+  data class ShowUndoDelete(val eventId: String, val message: UiText) : EventManagementUiEvent()
 
   object OperationSuccess : EventManagementUiEvent()
 }

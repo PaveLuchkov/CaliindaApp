@@ -159,8 +159,9 @@ fun CustomEventDetailsDialog(
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
                                 onClick = {
-                                  eventManagementViewModel.requestDeleteConfirmation(
-                                      event.originalEvent)
+                                  eventManagementViewModel.requestDelete(event.originalEvent)
+                                  // Карточка исчезнет сразу — подробности удалённого не нужны.
+                                  onDismissRequest()
                                 },
                                 modifier =
                                     Modifier.minimumInteractiveComponentSize()

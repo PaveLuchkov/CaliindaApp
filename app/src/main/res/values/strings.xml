@@ -344,4 +344,6 @@
     <string name="add_details">Add details</string>
     <string name="duration_minutes_short">%d min</string>
     <string name="duration_hours_short">%d h</string>
+    <string name="undo">Undo</string>
+    <string name="event_deleted">“%1$s” deleted</string>
 </resources>

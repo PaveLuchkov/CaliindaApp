@@ -40,7 +40,7 @@ fun ProjectEventsPage(
   val actions =
       remember(eventManagementViewModel, viewModel) {
         EventActions(
-            onDelete = eventManagementViewModel::requestDeleteConfirmation,
+            onDelete = eventManagementViewModel::requestDelete,
             onEdit = eventManagementViewModel::requestEditEvent,
             onDetails = viewModel::requestEventDetails)
       }
