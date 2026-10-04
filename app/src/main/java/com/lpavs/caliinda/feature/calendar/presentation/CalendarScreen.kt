@@ -196,8 +196,10 @@ fun CalendarScreen(
               }
             },
             onTitleClick = {
-              datePickerState.selectableDates
-
+              // Состояние пикера живёт дольше диалога — открываем его на текущей видимой дате.
+              val visibleMillis = currentVisibleDate.toPickerMillis()
+              datePickerState.selectedDateMillis = visibleMillis
+              datePickerState.displayedMonthMillis = visibleMillis
               showDatePicker = true
             },
             onTitleHold = {
