@@ -44,7 +44,13 @@ constructor(
           if (endInstant.isAfter(startInstant)) Duration.between(startInstant, endInstant).toMinutes()
           else 0L
       val isMicroEvent = durationMinutes > 0 && durationMinutes <= cuid.MicroEventMaxDurationMinutes
-        val daysLeft = if (project) Duration.between(currentTime, endInstant).toDays() else null
+      // «Осталось дней» — только для уже идущих проектов; у предстоящих видна дата начала.
+      val daysLeft =
+          if (project && !currentTime.isBefore(startInstant)) {
+            Duration.between(currentTime, endInstant).toDays()
+          } else {
+            null
+          }
       val baseHeight = calculateEventHeight(
           durationMinutes,
           isMicroEvent,

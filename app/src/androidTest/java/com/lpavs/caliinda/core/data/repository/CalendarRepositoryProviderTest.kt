@@ -124,6 +124,9 @@ class CalendarRepositoryProviderTest {
 
     val trip = projects(tomorrow.plusDays(1)).single { it.summary == "Trip" }
     assertEquals(tomorrow.plusDays(3).atTime(0, 0), trip.endTime.local())
+    // Предстоящий проект виден уже сегодня, закончившийся — пропадает.
+    assertTrue(projects(today).any { it.summary == "Trip" })
+    assertTrue(projects(tomorrow.plusDays(3)).none { it.summary == "Trip" })
   }
 
   @Test

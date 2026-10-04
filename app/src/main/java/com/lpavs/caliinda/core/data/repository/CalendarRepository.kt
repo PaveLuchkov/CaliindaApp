@@ -94,12 +94,14 @@ constructor(
   fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> =
       observeCalendar(
           load = { zone ->
+            // Идущие сейчас и предстоящие: иначе проект, начинающийся завтра, нигде не виден.
             val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
-            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            loadInstances(dayStart, dayEnd, zone)
+            val windowEnd =
+                date.plusDays(PROJECTS_LOOKAHEAD_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
+            loadInstances(dayStart, windowEnd, zone)
                 .filter { inst ->
                   inst.endMillis > dayStart &&
-                      inst.startMillis < dayEnd &&
+                      inst.startMillis < windowEnd &&
                       if (inst.row.isAllDay) {
                         ChronoUnit.DAYS.between(inst.allDayStart, inst.allDayEndExclusive) > 1
                       } else {
@@ -449,5 +451,7 @@ constructor(
     private const val GOOGLE_ACCOUNT_TYPE = "com.google"
     private const val NO_TITLE = "(No title)"
     private val DAY_MILLIS = TimeUnit.DAYS.toMillis(1)
+    /** На сколько дней вперёд экран проектов показывает предстоящие длинные события. */
+    private const val PROJECTS_LOOKAHEAD_DAYS = 180L
   }
 }
