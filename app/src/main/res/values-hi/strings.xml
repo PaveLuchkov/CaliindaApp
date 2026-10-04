@@ -160,4 +160,10 @@
     <string name="suggested_event_breakfast_full">🍳 नाश्ता</string>
     <string name="suggested_event_pet">पालतू जानवर</string>
     <string name="suggested_event_pet_full">🦮 पालतू जानवर को टहलाना</string>
+
+    <string name="project_last_day">आखिरी दिन</string>
+    <plurals name="project_days_left">
+        <item quantity="one">%d दिन बाकी</item>
+        <item quantity="other">%d दिन बाकी</item>
+    </plurals>
 </resources>

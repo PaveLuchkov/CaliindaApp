@@ -161,4 +161,10 @@
     <string name="suggested_event_breakfast_full">🍳 Frühstück</string>
     <string name="suggested_event_pet">Haustier</string>
     <string name="suggested_event_pet_full">🦮 Haustier ausführen</string>
+
+    <string name="project_last_day">Letzter Tag</string>
+    <plurals name="project_days_left">
+        <item quantity="one">Noch %d Tag</item>
+        <item quantity="other">Noch %d Tage</item>
+    </plurals>
 </resources>

@@ -58,6 +58,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -265,7 +267,11 @@ fun CalendarProjectItem(
                       Spacer(modifier = Modifier.width(8.dp))
                       uiModel.daysLeft?.let {
                         Text(
-                            text = "$it days left",// TODO в строку
+                            text =
+                                if (it == 1L) stringResource(R.string.project_last_day)
+                                else
+                                    pluralStringResource(
+                                        R.plurals.project_days_left, it.toInt(), it.toInt()),
                             color = cardTextColor,
                             style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                             maxLines = 1)

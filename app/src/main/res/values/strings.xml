@@ -322,4 +322,10 @@
     <string name="recurring_this_and_following_error">Something went wrong. Cannot perform this and following delete.</string>
     <string name="use_system_time_zone">Use system time zone</string>
     <string name="see_you_soon">See you soon! :)</string>
+
+    <string name="project_last_day">Last day</string>
+    <plurals name="project_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
 </resources>

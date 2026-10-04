@@ -162,4 +162,11 @@
     <string name="suggested_event_pet">Питомец</string>
     <string name="suggested_event_pet_full">🦮 Выгул питомца</string>
 
+    <string name="project_last_day">Последний день</string>
+    <plurals name="project_days_left">
+        <item quantity="one">Остался %d день</item>
+        <item quantity="few">Осталось %d дня</item>
+        <item quantity="many">Осталось %d дней</item>
+        <item quantity="other">Осталось %d дня</item>
+    </plurals>
 </resources>

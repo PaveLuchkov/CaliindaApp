@@ -161,4 +161,11 @@
     <string name="suggested_event_breakfast_full">🍳 Petit-déjeuner</string>
     <string name="suggested_event_pet">Animal de compagnie</string>
     <string name="suggested_event_pet_full">🦮 Promener l\'animal</string>
+
+    <string name="project_last_day">Dernier jour</string>
+    <plurals name="project_days_left">
+        <item quantity="one">Encore %d jour</item>
+        <item quantity="many">Encore %d jours</item>
+        <item quantity="other">Encore %d jours</item>
+    </plurals>
 </resources>
