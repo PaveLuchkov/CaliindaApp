@@ -36,8 +36,8 @@ private const val LAG_COUPLING = 1.5f
 private val MAX_LAG = 96.dp
 
 /** То же для перелистывания дней: страница едет быстро, поэтому связь слабее, а размах больше. */
-private const val PAGE_LAG_COUPLING = 0.5f
-private val PAGE_MAX_LAG = 140.dp
+private const val PAGE_LAG_COUPLING = 0.25f
+private val PAGE_MAX_LAG = 100.dp
 
 /**
  * «Вес» карточек при прокрутке: карточки позади пальца отстают от прокрутки тем сильнее, чем
