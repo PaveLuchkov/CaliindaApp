@@ -119,7 +119,7 @@ fun CalendarProjectItem(
           color = shadowColor.copy(0.5f),
           offset = DpOffset(x = 0.dp, 0.dp))
   // У проектов свои фигуры, отличные от звёзд событий дня (см. ProjectShapes.kt).
-  val clipStar = remember(uiModel.id, uiModel.progress) { projectShape(uiModel.id, uiModel.progress) }
+  val clipStar = remember(uiModel.id) { projectShape(uiModel.id) }
   val starContainerSize =
       remember(uiModel.durationMinutes, micro) {
         if (micro || uiModel.durationMinutes <= 0L) 0.dp

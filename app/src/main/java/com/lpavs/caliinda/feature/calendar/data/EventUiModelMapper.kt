@@ -126,8 +126,7 @@ constructor(
               proximityRatio = proximityRatio,
               shapeParams = generateShapeParams(event.id), // Твой генератор фигур
               originalEvent = event,
-              daysLeft = daysLeft,
-              progress = timeProgress(startInstant, endInstant, currentTime),
+              daysLeft = daysLeft
               )
       event
     }
@@ -190,12 +189,6 @@ constructor(
         return scaledHeight.coerceIn(minHeight, maxHeight)
     }
 
-
-    private fun timeProgress(start: Instant, end: Instant, now: Instant): Float {
-        val total = Duration.between(start, end).toMillis()
-        if (total <= 0) return if (now.isBefore(start)) 0f else 1f
-        return (Duration.between(start, now).toMillis().toFloat() / total).coerceIn(0f, 1f)
-    }
 
     fun generateShapeParams(eventId: String): GeneratedShapeParams {
     val hashCode = eventId.hashCode()
