@@ -111,7 +111,7 @@ constructor(
       val draft = buildDraft(summary, description, location, dateTimeState, recurrenceRule)
       val unchangedDraft =
           buildDraft(
-              originalEvent.summary,
+              if (originalEvent.isUntitled) "" else originalEvent.summary,
               originalEvent.description.orEmpty(),
               originalEvent.location.orEmpty(),
               originalState,
