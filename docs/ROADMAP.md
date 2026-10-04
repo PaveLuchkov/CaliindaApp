@@ -5,18 +5,18 @@
 
 ## Этап 1 — Баги
 
-- [ ] **1.1 DatePicker и часовой пояс.** M3 `DatePicker` работает с полуночью UTC, а код
+- [x] **1.1 DatePicker и часовой пояс.** M3 `DatePicker` работает с полуночью UTC, а код
   передаёт/читает millis через пояс пользователя: в UTC+ подсвечивается вчерашний день,
   в UTC− выбранная дата сохраняется на день раньше. Перевести на `ZoneOffset.UTC`:
   `CalendarScreen.kt` (initialSelectedDateMillis, onConfirm),
   `HandlePickerLogic.kt` (StartDate, EndDate + selectableDates, RecurrenceEnd).
   Вынести хелперы `LocalDate.toPickerMillis()` / `Long.fromPickerMillis()`.
-- [ ] **1.2 «Сегодня» после полуночи.** `CalendarScreen.kt` (`remember { LocalDate.now() }`),
+- [x] **1.2 «Сегодня» после полуночи.** `CalendarScreen.kt` (`remember { LocalDate.now() }`),
   `ProjectEventsPage.kt` (flow проектов создаётся один раз), `CalendarViewModel`/
   `EventUiModelMapper`/`CalendarDateTitle` (`LocalDate.now()` в системном поясе).
   Сделать единый поток «сегодня» в поясе из настроек (от `TimeTicker`), пересоздавать
   зависимые flow при смене дня.
-- [ ] **1.3 Время по умолчанию около полуночи.** `CreateEventScreen.kt`: при `now + 1h`
+- [x] **1.3 Время по умолчанию около полуночи.** `CreateEventScreen.kt`: при `now + 1h`
   через полночь стартовая дата должна сдвигаться на следующий день.
 - [ ] **1.4 Пикер даты в шапке** открывается со старой датой — синхронизировать
   `datePickerState` с `currentVisibleDate` при открытии; убрать пустую строку
