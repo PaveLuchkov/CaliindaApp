@@ -1,6 +1,10 @@
 package com.lpavs.caliinda.feature.settings.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.DeleteSweep
-import androidx.compose.material.icons.rounded.LeakRemove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -39,6 +42,16 @@ import androidx.core.net.toUri
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
+
+private const val PRIVACY_POLICY_URL = "https://www.lpavs.com/caliinda/privacy-policy"
+
+private fun Context.startActivitySafely(intent: Intent) {
+  try {
+    startActivity(intent)
+  } catch (_: ActivityNotFoundException) {
+    // Нет браузера или экрана настроек — просто ничего не открываем
+  }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -72,50 +85,30 @@ fun AboutScreen(onNavigateBack: () -> Unit, title: String) {
                     Icon(
                         painter = painterResource(id = R.drawable.doc),
                         tint = colorScheme.onPrimaryContainer,
-                        contentDescription = "About")
+                        contentDescription = null)
                 },
                 title = stringResource(R.string.privacy_policy),
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://www.lpavs.com/caliinda/privacy-policy".toUri()
-                    )
-                    context.startActivity(intent)
+                    context.startActivitySafely(
+                        Intent(Intent.ACTION_VIEW, PRIVACY_POLICY_URL.toUri()))
                 },
                 shape = MaterialShapes.Bun.toShape())
+            // Все данные приложения хранятся только на устройстве: в системной карточке
+            // приложения их можно стереть («Очистить хранилище») и отозвать доступ к календарю.
             SettingsItem(
                 modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                 icon = {
                     Icon(
                         Icons.Rounded.DeleteSweep,
                         tint = colorScheme.onPrimaryContainer,
-                        contentDescription = stringResource(R.string.terms))
+                        contentDescription = null)
                 },
                 title = stringResource(R.string.delete_data),
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://www.lpavs.com/caliinda/delete-data".toUri()
-                    )
-                    context.startActivity(intent)
-                },
-                shape = MaterialShapes.Burst.toShape()
-            )
-            SettingsItem(
-                modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
-                icon = {
-                    Icon(
-                        Icons.Rounded.LeakRemove,
-                        tint = colorScheme.onPrimaryContainer,
-                        contentDescription = "revoke_Access")
-                },
-                title = stringResource(R.string.revoke_access), //TODO
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://myaccount.google.com/connections".toUri()
-                    )
-                    context.startActivity(intent)
+                    context.startActivitySafely(
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", context.packageName, null)))
                 },
                 shape = MaterialShapes.Burst.toShape()
             )
