@@ -19,7 +19,9 @@ data class EventUiModel(
     val shapeParams: GeneratedShapeParams,
     val originalEvent: EventDto,
     /** Сколько календарных дней проекта осталось, включая сегодня (1 = последний день). */
-    val daysLeft: Long? = null
+    val daysLeft: Long? = null,
+    /** Сколько события уже прошло (0…1) — для волны у идущего события. */
+    val progress: Float = 0f,
 )
 
 data class EventDetailsUiModel(
