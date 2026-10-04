@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.width
 import com.lpavs.caliinda.core.ui.theme.cuid
 import androidx.compose.animation.AnimatedContent
@@ -110,7 +111,11 @@ fun EventFormContent(
         }
 
         // Описание и Локация
-        AnimatedContent(targetState = showDetails, label = "details") { expanded ->
+        AnimatedContent(
+            targetState = showDetails,
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter,
+            label = "details") { expanded ->
             if (!expanded) {
                 TextButton(onClick = { showDetails = true }, enabled = !isLoading) {
                     Icon(Icons.Filled.Add, contentDescription = null)
