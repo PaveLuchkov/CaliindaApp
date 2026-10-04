@@ -22,12 +22,11 @@ fun CalendarPagerScreen(
     eventManagementViewModel: EventManagementViewModel,
     calendarPagerState: PagerState,
     dailyViewPagerState: PagerState,
-    weekViewPagerState: PagerState,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     createEventAction: () -> Unit,
     initialPageIndex: Int,
-    today: LocalDate,
+    anchorDate: LocalDate,
     introductionState: IntroState
 ) {
 
@@ -38,29 +37,20 @@ fun CalendarPagerScreen(
     ) { page ->
         when (page) {
           0 ->
-              VerticalPager(
-                  state = weekViewPagerState,
-                  modifier = Modifier.fillMaxSize(),
-                  flingBehavior =
-                      PagerDefaults.flingBehavior(
-                          state = weekViewPagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = false,
-                  beyondViewportPageCount = 1) { _ ->
-                    ProjectEventsPage(
-                        hasCalendarAccess = hasCalendarAccess,
-                        onGrantAccessClick = onGrantAccessClick,
-                        viewModel = calendarViewModel,
-                        eventManagementViewModel = eventManagementViewModel,
-                        createEventClick = createEventAction,
-                        introductionState = introductionState)
-                  }
+              ProjectEventsPage(
+                  hasCalendarAccess = hasCalendarAccess,
+                  onGrantAccessClick = onGrantAccessClick,
+                  viewModel = calendarViewModel,
+                  eventManagementViewModel = eventManagementViewModel,
+                  createEventClick = createEventAction,
+                  introductionState = introductionState)
 
           1 ->
               VerticalPager(
                   state = dailyViewPagerState,
                   modifier = Modifier.fillMaxSize(),
                   key = { index ->
-                    today.plusDays((index - initialPageIndex).toLong()).toEpochDay()
+                    anchorDate.plusDays((index - initialPageIndex).toLong()).toEpochDay()
                   },
                   flingBehavior =
                       PagerDefaults.flingBehavior(
@@ -69,7 +59,7 @@ fun CalendarPagerScreen(
                   beyondViewportPageCount = 1) { pageIndex ->
                     val pageDate =
                         remember(pageIndex) {
-                          today.plusDays((pageIndex - initialPageIndex).toLong())
+                          anchorDate.plusDays((pageIndex - initialPageIndex).toLong())
                         }
                     // Сдвиг пейджера относительно этой страницы в px — для «веса» карточек при
                     // перелистывании. Считаем от pageIndex: абсолютный номер страницы огромный,

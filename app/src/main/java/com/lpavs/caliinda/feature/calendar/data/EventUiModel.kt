@@ -18,6 +18,7 @@ data class EventUiModel(
     val proximityRatio: Float,
     val shapeParams: GeneratedShapeParams,
     val originalEvent: EventDto,
+    /** Сколько календарных дней проекта осталось, включая сегодня (1 = последний день). */
     val daysLeft: Long? = null
 )
 

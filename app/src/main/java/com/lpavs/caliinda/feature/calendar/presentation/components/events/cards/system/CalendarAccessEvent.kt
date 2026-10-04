@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system
 
+import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
 import androidx.compose.foundation.background
@@ -112,7 +113,7 @@ fun CalendarAccessEvent(
               contentAlignment = Alignment.TopStart) {
                 Column(verticalArrangement = Arrangement.Top) {
                   Text(
-                      text = "Calendar access",
+                      text = stringResource(R.string.calendar_access_title),
                       color = cardTextColor,
                       style = textStyle,
                       fontFamily = cardFontFamily,
@@ -120,9 +121,7 @@ fun CalendarAccessEvent(
                       overflow = TextOverflow.Ellipsis)
                   Spacer(Modifier.height(8.dp))
                   Text(
-                      text =
-                          "Caliinda works with the calendars on your phone. " +
-                              "Google Calendar syncs here automatically.",
+                      text = stringResource(R.string.calendar_access_body),
                       color = cardTextColor,
                       style = Typography.bodyMedium)
                 }
@@ -138,7 +137,7 @@ fun CalendarAccessEvent(
                     contentPadding = PaddingValues(horizontal = 12.dp)) {
                       Icon(Icons.Rounded.CalendarMonth, contentDescription = null)
                       Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                      Text("Allow access")
+                      Text(stringResource(R.string.allow_access))
                     }
               }
         }

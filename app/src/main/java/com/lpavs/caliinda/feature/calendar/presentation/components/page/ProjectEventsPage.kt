@@ -21,7 +21,6 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.SystemEventsList
 import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -34,7 +33,7 @@ fun ProjectEventsPage(
     introductionState: IntroState
 ) {
   val listState = rememberLazyListState()
-  val pageStateFlow = remember(viewModel) { viewModel.getProjectsPageUiState(LocalDate.now()) }
+  val pageStateFlow = remember(viewModel) { viewModel.getProjectsPageUiState() }
   val pageState by
       pageStateFlow.collectAsStateWithLifecycle(initialValue = EventsPageUiState(isLoading = true))
   val isBusy = pageState.isLoading

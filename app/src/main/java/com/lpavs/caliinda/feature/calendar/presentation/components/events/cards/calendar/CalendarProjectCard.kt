@@ -58,6 +58,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -265,7 +267,11 @@ fun CalendarProjectItem(
                       Spacer(modifier = Modifier.width(8.dp))
                       uiModel.daysLeft?.let {
                         Text(
-                            text = "$it days left",// TODO в строку
+                            text =
+                                if (it == 1L) stringResource(R.string.project_last_day)
+                                else
+                                    pluralStringResource(
+                                        R.plurals.project_days_left, it.toInt(), it.toInt()),
                             color = cardTextColor,
                             style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                             maxLines = 1)
@@ -304,16 +310,16 @@ fun CalendarProjectItem(
                           shape = IconButtonDefaults.smallRoundShape) {
                             Icon(
                                 imageVector = Icons.Filled.Info,
-                                contentDescription = "info",
+                                contentDescription = stringResource(R.string.details),
                             )
                           }
                       Spacer(modifier = Modifier.width(4.dp))
                       Button(
                           onClick = { onEditClickFromList() },
                           contentPadding = PaddingValues(horizontal = 12.dp)) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                            Icon(Icons.Filled.Edit, contentDescription = null)
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Edit")
+                            Text(stringResource(R.string.edit))
                           }
                       FilledIconButton(
                           onClick = { onDeleteClickFromList() },
@@ -325,7 +331,7 @@ fun CalendarProjectItem(
                           shape = IconButtonDefaults.smallRoundShape) {
                             Icon(
                                 imageVector = Icons.Filled.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.delete),
                             )
                           }
                     }

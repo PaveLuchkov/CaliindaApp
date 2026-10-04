@@ -161,4 +161,23 @@
     <string name="suggested_event_breakfast_full">🍳 Frühstück</string>
     <string name="suggested_event_pet">Haustier</string>
     <string name="suggested_event_pet_full">🦮 Haustier ausführen</string>
+
+    <string name="project_last_day">Letzter Tag</string>
+    <plurals name="project_days_left">
+        <item quantity="one">Noch %d Tag</item>
+        <item quantity="other">Noch %d Tage</item>
+    </plurals>
+    <string name="create_event">Termin erstellen</string>
+    <string name="go_to_today">Zu heute</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="details">Details</string>
+    <string name="calendar_access_title">Kalenderzugriff</string>
+    <string name="calendar_access_body">Caliinda nutzt die Kalender auf deinem Telefon. Google Kalender wird automatisch hierher synchronisiert.</string>
+    <string name="allow_access">Zugriff erlauben</string>
+    <string name="intro_finish">Fertig</string>
+    <string name="intro_next">Weiter</string>
+    <string name="calendars">Kalender</string>
+    <string name="new_events_saved_to">Neue Termine werden gespeichert in</string>
+    <string name="syncing_calendars">Kalender werden synchronisiert…</string>
+    <string name="no_title">(Kein Titel)</string>
 </resources>

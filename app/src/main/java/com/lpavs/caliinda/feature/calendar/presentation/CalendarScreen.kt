@@ -6,10 +6,6 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -40,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
+import com.lpavs.caliinda.core.ui.util.fromPickerMillis
+import com.lpavs.caliinda.core.ui.util.toPickerMillis
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
@@ -49,15 +47,12 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EditB
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarPagerScreen
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.ManagementScreen
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -73,22 +68,26 @@ fun CalendarScreen(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val timeZone = settignsViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
-  val userTimeZoneId = ZoneId.of(timeZone.value)
 
   val snackbarHostState = remember { SnackbarHostState() }
   val haptic = LocalHapticFeedback.current
 
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
-  val today = remember { LocalDate.now() }
+  val today by calendarViewModel.today.collectAsStateWithLifecycle()
+  // Дата, от которой отсчитываются страницы пейджера дней. Не двигается в полночь, иначе
+  // открытая страница молча сменила бы дату; переживает и пересоздание процесса вместе с пейджером.
+  val anchorDate = rememberSaveable { today }
   val initialPageIndex = remember { Int.MAX_VALUE / 2 }
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
   val initialHorizontalPageIndex = remember { 1 }
   val horizontalPagerState =
       rememberPagerState(initialPage = initialHorizontalPageIndex, pageCount = { 2 })
-  val initialWeekViewPageIndex = remember { 1 }
-  val weekViewPagerState =
-      rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
+  val pageForDate: (LocalDate) -> Int = { date ->
+    (initialPageIndex.toLong() + ChronoUnit.DAYS.between(anchorDate, date))
+        .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
+        .toInt()
+  }
   val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()
   var openSettingsForAccess by remember { mutableStateOf(false) }
   val permissionLauncher =
@@ -123,20 +122,19 @@ fun CalendarScreen(
   }
   val eventToEdit = eventManagementState.eventBeingEdited
   val mode = eventManagementState.selectedUpdateMode
-  val currentCalendarScreenMode = calendarState.currentMode
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
       pagerState = pagerState,
       snackbarHostState = snackbarHostState,
       initialPageIndex = initialPageIndex,
-      today = today)
+      anchorDate = anchorDate)
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
       rememberDatePickerState(
           initialSelectedDateMillis =
-              currentVisibleDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
+              currentVisibleDate.toPickerMillis(),
       )
 
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -181,15 +179,18 @@ fun CalendarScreen(
             onNavigateToSettings = onNavigateToSettings,
             onGoToTodayClick = {
               scope.launch {
-                if (pagerState.currentPage != initialPageIndex) {
+                val todayPage = pageForDate(today)
+                if (pagerState.currentPage != todayPage) {
                   calendarViewModel.onVisibleDateChanged(today)
-                  pagerState.animateScrollToPage(initialPageIndex)
+                  pagerState.animateScrollToPage(todayPage)
                 }
               }
             },
             onTitleClick = {
-              datePickerState.selectableDates
-
+              // Состояние пикера живёт дольше диалога — открываем его на текущей видимой дате.
+              val visibleMillis = currentVisibleDate.toPickerMillis()
+              datePickerState.selectedDateMillis = visibleMillis
+              datePickerState.displayedMonthMillis = visibleMillis
               showDatePicker = true
             },
             onTitleHold = {
@@ -197,36 +198,23 @@ fun CalendarScreen(
               calendarViewModel.syncCalendars()
             },
             date = currentVisibleDate,
-            hasCalendarAccess = calendarState.hasCalendarPermission,
-            currentCalendarScreenMode = currentCalendarScreenMode)
+            today = today,
+            hasCalendarAccess = calendarState.hasCalendarPermission)
       },
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
       BackgroundShapes(context = BackgroundShapeContext.Main, themeMode = themeMode)
-      AnimatedContent(
-          targetState = currentCalendarScreenMode,
-          label = "ChangeInScenery",
-          transitionSpec = { fadeIn() togetherWith fadeOut() }) { mode ->
-            when (mode) {
-              AppMode.CALENDAR -> {
-                CalendarPagerScreen(
-                    calendarViewModel = calendarViewModel,
-                    eventManagementViewModel = eventManagementViewModel,
-                    calendarPagerState = horizontalPagerState,
-                    dailyViewPagerState = pagerState,
-                    weekViewPagerState = weekViewPagerState,
-                    hasCalendarAccess = calendarState.hasCalendarPermission,
-                    onGrantAccessClick = requestCalendarAccess,
-                    createEventAction = CreateEventAction,
-                    initialPageIndex = initialPageIndex,
-                    today = today,
-                    introductionState = introductionState)
-              }
-              AppMode.MANAGEMENT -> {
-                ManagementScreen()
-              }
-            }
-          }
+      CalendarPagerScreen(
+          calendarViewModel = calendarViewModel,
+          eventManagementViewModel = eventManagementViewModel,
+          calendarPagerState = horizontalPagerState,
+          dailyViewPagerState = pagerState,
+          hasCalendarAccess = calendarState.hasCalendarPermission,
+          onGrantAccessClick = requestCalendarAccess,
+          createEventAction = CreateEventAction,
+          initialPageIndex = initialPageIndex,
+          anchorDate = anchorDate,
+          introductionState = introductionState)
 
       if (calendarState.hasCalendarPermission) {
         BottomBar(
@@ -243,18 +231,12 @@ fun CalendarScreen(
       onConfirm = { millis ->
         showDatePicker = false
 
-        val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+        val selectedDate = millis.fromPickerMillis()
 
         if (selectedDate != currentVisibleDate) {
           calendarViewModel.onVisibleDateChanged(selectedDate)
 
-          val daysDiff = ChronoUnit.DAYS.between(today, selectedDate)
-          val targetPage =
-              (initialPageIndex.toLong() + daysDiff)
-                  .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
-                  .toInt()
-
-          scope.launch { pagerState.scrollToPage(targetPage.toInt()) }
+          scope.launch { pagerState.scrollToPage(pageForDate(selectedDate)) }
         }
       })
   CreateBottomSheet(
@@ -289,7 +271,6 @@ fun CalendarScreen(
       }) {
         EditEventScreen(
             viewModel = eventManagementViewModel,
-            userTimeZone = timeZone.value,
             eventToEdit = eventToEdit!!,
             selectedUpdateMode = mode!!,
             onDismiss = {

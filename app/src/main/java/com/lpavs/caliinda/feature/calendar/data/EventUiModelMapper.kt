@@ -11,6 +11,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.exp
@@ -30,7 +32,7 @@ constructor(
   ): List<EventUiModel> {
     val sortedEvents =
         (if (project) events else events.filter { !it.isAllDay }).sortedBy { it.startTime }
-    val isToday = date == LocalDate.now()
+    val isToday = date == currentTime.atZone(ZoneId.of(timeZoneId)).toLocalDate()
     val nextStartTime: Instant? =
         if (!isToday) {
           null
@@ -45,9 +47,13 @@ constructor(
           else 0L
       val isMicroEvent = durationMinutes > 0 && durationMinutes <= cuid.MicroEventMaxDurationMinutes
       // «Осталось дней» — только для уже идущих проектов; у предстоящих видна дата начала.
+      // Считаем календарные дни включая сегодняшний, поэтому в последний день будет 1, а не 0.
       val daysLeft =
           if (project && !currentTime.isBefore(startInstant)) {
-            Duration.between(currentTime, endInstant).toDays()
+            val zone = ZoneId.of(timeZoneId)
+            val lastDay = endInstant.minusNanos(1).atZone(zone).toLocalDate()
+            (ChronoUnit.DAYS.between(currentTime.atZone(zone).toLocalDate(), lastDay) + 1)
+                .coerceAtLeast(1)
           } else {
             null
           }

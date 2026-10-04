@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import com.lpavs.caliinda.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -23,7 +25,6 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
-import com.lpavs.caliinda.feature.calendar.presentation.AppMode
 import java.time.LocalDate
 
 @OptIn(
@@ -37,20 +38,17 @@ fun CalendarAppBar(
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit,
     date: LocalDate,
+    today: LocalDate,
     hasCalendarAccess: Boolean,
-    currentCalendarScreenMode: AppMode = AppMode.CALENDAR
 ) {
   CenterAlignedTopAppBar(
       title = {
-        when (currentCalendarScreenMode) {
-          AppMode.CALENDAR ->
-              CalendarDateTitle(
-                  date = date,
-                  hasCalendarAccess = hasCalendarAccess,
-                  onTitleHold = onTitleHold,
-                  onTitleClick = onTitleClick)
-          AppMode.MANAGEMENT -> ManagementTitle()
-        }
+        CalendarDateTitle(
+            date = date,
+            today = today,
+            hasCalendarAccess = hasCalendarAccess,
+            onTitleHold = onTitleHold,
+            onTitleClick = onTitleClick)
       },
       navigationIcon = {
           val haptic = LocalHapticFeedback.current
@@ -70,7 +68,7 @@ fun CalendarAppBar(
             enabled = hasCalendarAccess) {
               Icon(
                   Icons.Filled.Today,
-                  contentDescription = "Перейти к сегодня",
+                  contentDescription = stringResource(R.string.go_to_today),
               )
             }
       },
@@ -89,7 +87,7 @@ fun CalendarAppBar(
               shape = IconButtonDefaults.smallRoundShape) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
-                    contentDescription = "Настройки",
+                    contentDescription = stringResource(R.string.settings),
                 )
               }
         }
@@ -107,6 +105,7 @@ fun CalendarEventPreview() {
         onNavigateToSettings = {},
         onTitleHold = {},
         date = LocalDate.now(),
+        today = LocalDate.now(),
         hasCalendarAccess = true)
   }
 }

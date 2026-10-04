@@ -161,4 +161,24 @@
     <string name="suggested_event_breakfast_full">🍳 Petit-déjeuner</string>
     <string name="suggested_event_pet">Animal de compagnie</string>
     <string name="suggested_event_pet_full">🦮 Promener l\'animal</string>
+
+    <string name="project_last_day">Dernier jour</string>
+    <plurals name="project_days_left">
+        <item quantity="one">Encore %d jour</item>
+        <item quantity="many">Encore %d jours</item>
+        <item quantity="other">Encore %d jours</item>
+    </plurals>
+    <string name="create_event">Créer un événement</string>
+    <string name="go_to_today">Aller à aujourd’hui</string>
+    <string name="edit">Modifier</string>
+    <string name="details">Détails</string>
+    <string name="calendar_access_title">Accès au calendrier</string>
+    <string name="calendar_access_body">Caliinda utilise les calendriers de votre téléphone. Google Agenda se synchronise ici automatiquement.</string>
+    <string name="allow_access">Autoriser l’accès</string>
+    <string name="intro_finish">Terminer</string>
+    <string name="intro_next">Suivant</string>
+    <string name="calendars">Calendriers</string>
+    <string name="new_events_saved_to">Les nouveaux événements sont enregistrés dans</string>
+    <string name="syncing_calendars">Synchronisation des calendriers…</string>
+    <string name="no_title">(Sans titre)</string>
 </resources>

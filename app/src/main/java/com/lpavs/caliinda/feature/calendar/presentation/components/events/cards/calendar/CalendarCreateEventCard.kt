@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import com.lpavs.caliinda.R
+import androidx.compose.ui.res.stringResource
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -88,7 +90,7 @@ fun CalendarCreateEventItem(
                 Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Filled.AddCircle,
-                        contentDescription = "Create event",
+                        contentDescription = stringResource(R.string.create_event),
                         tint = cardTextColor
                         )
                 }

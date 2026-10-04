@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import com.lpavs.caliinda.core.data.utils.UiText
+import com.lpavs.caliinda.R
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +19,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayPageU
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.EventsPageUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +30,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -37,6 +41,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CalendarViewModel
 @Inject
@@ -64,6 +69,12 @@ constructor(
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(
           viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
+
+  /** Сегодняшняя дата в поясе из настроек; сменяется в полночь (с точностью до тика таймера). */
+  val today: StateFlow<LocalDate> =
+      combine(currentTime, timeZone) { now, zone -> now.atZone(parseZone(zone)).toLocalDate() }
+          .distinctUntilChanged()
+          .stateIn(viewModelScope, SharingStarted.Eagerly, LocalDate.now(parseZone(timeZone.value)))
 
   // Состояния Календаря
   val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate
@@ -118,7 +129,7 @@ constructor(
         .getEventsFlowForDate(date)
         .combine(currentTime) { events, now -> events to now }
         .combine(timeZoneIdFlow) { (events, now), zoneId ->
-          val isToday = date == LocalDate.now()
+          val isToday = date == now.atZone(zoneId).toLocalDate()
           val zoneId = zoneId.toString()
 
           val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
@@ -153,19 +164,20 @@ constructor(
         .distinctUntilChanged()
   }
 
-  fun getProjectsPageUiState(date: LocalDate = LocalDate.now()): Flow<EventsPageUiState> {
-    val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
-
-    return calendarRepository
-        .getEventsFlowForProjects(LocalDate.now())
-        .combine(currentTime) { events, now -> events to now }
-        .combine(timeZoneIdFlow) { (events, now), zoneId ->
-          val zoneId = zoneId.toString()
+  fun getProjectsPageUiState(): Flow<EventsPageUiState> {
+    // Окно проектов отсчитывается от сегодня — после полуночи перезапрашиваем.
+    return today
+        .flatMapLatest { date ->
+          calendarRepository.getEventsFlowForProjects(date).map { events -> date to events }
+        }
+        .combine(currentTime) { dated, now -> dated to now }
+        .combine(timeZone) { (dated, now), zoneId ->
+          val (date, events) = dated
           val projectUIModels =
               eventUiModelMapper.mapToUiModels(
                   events = events,
                   currentTime = now,
-                  timeZoneId = zoneId.toString(),
+                  timeZoneId = zoneId,
                   date = date,
                   project = true)
 
@@ -200,13 +212,12 @@ constructor(
   fun syncCalendars() {
     viewModelScope.launch {
       calendarRepository.requestSync()
-      _eventFlow.emit(CalendarUiEvent.ShowMessage("Syncing calendars…"))
+      _eventFlow.emit(CalendarUiEvent.ShowMessage(UiText.from(R.string.syncing_calendars)))
     }
   }
 
-  fun changeScenery(appMode: AppMode) {
-    _uiState.update { currentState -> currentState.copy(currentMode = appMode) }
-  }
+  private fun parseZone(zone: String): ZoneId =
+      runCatching { ZoneId.of(zone) }.getOrDefault(ZoneId.systemDefault())
 
   // --- COMPANION ---
   companion object {
@@ -215,5 +226,5 @@ constructor(
 }
 
 sealed class CalendarUiEvent {
-  data class ShowMessage(val message: String) : CalendarUiEvent()
+  data class ShowMessage(val message: UiText) : CalendarUiEvent()
 }

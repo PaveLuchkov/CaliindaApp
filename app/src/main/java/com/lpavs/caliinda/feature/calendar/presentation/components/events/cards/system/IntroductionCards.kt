@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system
 
+import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
 import androidx.compose.animation.AnimatedContent
@@ -187,10 +188,10 @@ val cardText = if (projectView) textOfStageProjectView else textOfStageDailyView
                           else -> Icons.AutoMirrored.Filled.NextPlan
                       }
                       val buttonText = when (introStep) {
-                          IntroStep.START -> "Finish"
-                          else -> "Next"//TODO заменить
+                          IntroStep.START -> stringResource(R.string.intro_finish)
+                          else -> stringResource(R.string.intro_next)
                       }
-                      Icon(buttonIcon, contentDescription = "Log in")
+                      Icon(buttonIcon, contentDescription = null)
                       Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                       Text(buttonText)
                   }

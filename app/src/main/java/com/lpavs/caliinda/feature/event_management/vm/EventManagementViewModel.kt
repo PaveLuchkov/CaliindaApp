@@ -413,14 +413,6 @@ constructor(
     }
   }
 
-  fun requestEventDetails(event: EventDto) {
-    _uiState.update { it.copy(eventForDetailedView = event, showEventDetailedView = true) }
-  }
-
-  fun cancelEventDetails() {
-    _uiState.update { it.copy(eventForDetailedView = null, showEventDetailedView = false) }
-  }
-
   companion object {
     private const val TAG = "EventManagementViewModel"
   }
@@ -435,8 +427,6 @@ data class EventManagementUiState(
     val showRecurringEditOptionsDialog: Boolean = false,
     val showEditEventDialog: Boolean = false,
     val selectedUpdateMode: EventUpdateMode? = null,
-    val eventForDetailedView: EventDto? = null,
-    val showEventDetailedView: Boolean = false,
 )
 
 sealed class EventManagementUiEvent {

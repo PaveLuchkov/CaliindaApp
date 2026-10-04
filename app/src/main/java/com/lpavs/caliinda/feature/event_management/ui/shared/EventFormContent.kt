@@ -30,7 +30,6 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateT
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.HandlePickerLogic
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
-import java.time.ZoneId
 
 @Composable
 fun EventFormContent(
@@ -44,7 +43,6 @@ fun EventFormContent(
     onLocationChange: (String) -> Unit,
     dateTimeState: EventDateTimeState,
     onDateTimeStateChange: (EventDateTimeState) -> Unit,
-    userTimeZoneId: ZoneId,
     isLoading: Boolean,
     suggestedChips: List<SugNameChips>,
     modifier: Modifier = Modifier
@@ -130,7 +128,6 @@ fun EventFormContent(
         onDismiss = { activePicker = ActivePicker.None },
         state = dateTimeState,
         onStateChange = onDateTimeStateChange,
-        userTimeZoneId = userTimeZoneId,
         context = context
     )
 }
