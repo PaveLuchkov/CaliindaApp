@@ -124,7 +124,9 @@ fun CreateEventScreen(
     if (sheetSettled) runCatching { nameFocusRequester.requestFocus() }
   }
 
-  Column(modifier = Modifier.fillMaxSize()) {
+  // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
+  // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.
+  Column(modifier = Modifier.fillMaxWidth()) {
     EventFormContent(
         summary = summary,
         onSummaryChange = { summary = it },
@@ -140,7 +142,7 @@ fun CreateEventScreen(
         suggestedChips = suggestedChips,
         onSave = save,
         nameFocusRequester = nameFocusRequester,
-        modifier = Modifier.weight(1f))
+        modifier = Modifier.weight(1f, fill = false))
     SaveBar(enabled = summary.isNotBlank(), isLoading = uiState.isLoading, onSave = save)
   }
 }
