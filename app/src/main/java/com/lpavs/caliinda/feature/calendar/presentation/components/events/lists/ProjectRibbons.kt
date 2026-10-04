@@ -57,7 +57,9 @@ fun ProjectRibbons(ribbons: List<ProjectRibbon>, onClick: (EventDto) -> Unit) {
                     progress = { ribbon.progress },
                     modifier = Modifier.width(56.dp),
                     color = colorScheme.secondary,
-                    trackColor = colorScheme.onSecondaryContainer.copy(alpha = 0.15f))
+                    trackColor = colorScheme.onSecondaryContainer.copy(alpha = 0.15f),
+                    // Волна стоит на месте: бегущая читается как загрузка, а это просто прогресс.
+                    waveSpeed = 0.dp)
                 Spacer(Modifier.width(12.dp))
                 Text(
                     text = stringResource(R.string.project_day_of, ribbon.dayNumber, ribbon.totalDays),

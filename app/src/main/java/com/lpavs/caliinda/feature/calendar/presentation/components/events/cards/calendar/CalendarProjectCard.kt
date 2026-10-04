@@ -80,7 +80,7 @@ import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
-import com.lpavs.caliinda.core.ui.util.calculateShapeContainerSize
+import com.lpavs.caliinda.core.ui.util.calculateProjectShapeContainerSize
 import com.lpavs.caliinda.core.ui.util.lerpOkLab
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
 import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
@@ -133,7 +133,7 @@ fun CalendarProjectItem(
   val starContainerSize =
       remember(uiModel.durationMinutes, micro) {
         if (micro || uiModel.durationMinutes <= 0L) 0.dp
-        else calculateShapeContainerSize(uiModel.durationMinutes)
+        else calculateProjectShapeContainerSize(uiModel.durationMinutes)
       }
 
   val transitionColorCard =
@@ -225,9 +225,10 @@ fun CalendarProjectItem(
                                   translationY = with(density) { starOffsetY.toPx() },
                                   rotationZ = rotationAngle)
                               .requiredSize(starContainerSize)
-                              .innerShadow(shape = clipStar, shadow = starShadow)
                               .clip(clipStar)
-                              .background(starBackground))
+                              .background(starBackground)
+                              // Тень поверх заливки, как у событий дня: иначе заливка её закрывает.
+                              .innerShadow(shape = clipStar, shadow = starShadow))
                 }
                 if (micro) {
                   Row(
