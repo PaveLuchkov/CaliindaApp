@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,13 +33,7 @@ fun ManagementTitle(
   val headerTextStyle = Typography.titleLargeEmphasized
 
   val headerFontFamily =
-      FontFamily(
-          Font(
-              R.font.robotoflex_variable,
-              variationSettings =
-                  FontVariation.Settings(
-                      FontVariation.weight(750),
-                  )))
+      CaliindaFonts.Heavy
 
   Box(
       modifier =

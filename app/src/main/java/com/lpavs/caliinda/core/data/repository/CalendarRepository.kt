@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -313,30 +312,25 @@ constructor(
     return EventDto(
         id = "${row.eventId}_${row.begin}",
         summary = row.title?.takeIf { it.isNotBlank() } ?: NO_TITLE,
-        startTime = isoString(startMillis, zone),
-        endTime = isoString(endMillis, zone),
+        startTime = Instant.ofEpochMilli(startMillis),
+        endTime = Instant.ofEpochMilli(endMillis),
         description = row.description?.takeIf { it.isNotBlank() },
         location = row.location?.takeIf { it.isNotBlank() },
         isAllDay = row.isAllDay,
         recurringEventId =
             if (row.rrule != null) row.eventId.toString() else row.originalId?.toString(),
-        originalStartTime = originalTime?.let { isoString(it, zone) },
+        originalStartTime = originalTime?.let(Instant::ofEpochMilli),
         recurrenceRule = row.rrule,
         eventId = row.eventId,
         instanceBegin = row.begin,
         originalEventId = row.originalId,
+        originalInstanceBegin = row.originalInstanceTime,
         calendarId = row.calendarId,
         color = row.color)
   }
 
-  private fun EventDto.originalInstanceTimeOrBegin(): Long {
-    if (originalEventId == null) return instanceBegin
-    // Для исключения нужно исходное время экземпляра в серии, а не перенесённое.
-    val original = originalStartTime ?: return instanceBegin
-    return if (isAllDay) {
-      LocalDate.parse(original.take(10)).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-    } else OffsetDateTime.parse(original).toInstant().toEpochMilli()
-  }
+  /** Сырое время экземпляра в серии (для перенесённого — исходное, до переноса). */
+  private fun EventDto.originalInstanceTimeOrBegin(): Long = originalInstanceBegin ?: instanceBegin
 
   private data class EventTiming(
       val dtStart: Long,
@@ -378,7 +372,7 @@ constructor(
     if (draft.recurrenceRule == null) return timingOf(draft, draft.startDate, draft.endDate)
 
     val span = ChronoUnit.DAYS.between(draft.startDate, draft.endDate)
-    val instanceDate = LocalDate.parse((event.originalStartTime ?: event.startTime)!!.take(10))
+    val instanceDate = (event.originalStartTime ?: event.startTime).atZone(zone).toLocalDate()
     val masterDate =
         if (masterAllDay) utcDate(masterStart)
         else Instant.ofEpochMilli(masterStart).atZone(zone).toLocalDate()
@@ -441,9 +435,6 @@ constructor(
 
   private fun utcDate(millis: Long): LocalDate =
       Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
-
-  private fun isoString(millis: Long, zone: ZoneId): String =
-      Instant.ofEpochMilli(millis).atZone(zone).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
   private fun parseTimeZone(timeZoneIdString: String): ZoneId =
       try {

@@ -7,7 +7,6 @@ import androidx.core.os.ConfigurationCompat
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
-import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
 import java.time.Instant
@@ -19,7 +18,6 @@ import kotlin.math.exp
 class EventUiModelMapper
 @Inject
 constructor(
-    private val dateTimeUtils: IDateTimeUtils,
     private val dateTimeFormatterUtil: IDateTimeFormatterUtil,
     @ApplicationContext private val context: Context
 ) {
@@ -31,36 +29,20 @@ constructor(
       project: Boolean
   ): List<EventUiModel> {
     val sortedEvents =
-        if (project) {
-          events.sortedBy { event ->
-            dateTimeUtils.parseToInstant(event.startTime, timeZoneId) ?: Instant.MAX
-          }
-        } else {
-          events
-              .filter { !it.isAllDay }
-              .sortedBy { event ->
-                dateTimeUtils.parseToInstant(event.startTime, timeZoneId) ?: Instant.MAX
-              }
-        }
+        (if (project) events else events.filter { !it.isAllDay }).sortedBy { it.startTime }
     val isToday = date == LocalDate.now()
     val nextStartTime: Instant? =
         if (!isToday) {
           null
         } else {
-          sortedEvents.firstNotNullOfOrNull { event ->
-            val start = dateTimeUtils.parseToInstant(event.startTime, timeZoneId)
-            if (start != null && start.isAfter(currentTime)) start else null
-          }
+          sortedEvents.firstOrNull { it.startTime.isAfter(currentTime) }?.startTime
         }
     return sortedEvents.map { event ->
-      val startInstant = dateTimeUtils.parseToInstant(event.startTime, timeZoneId)
-      val endInstant = dateTimeUtils.parseToInstant(event.endTime, timeZoneId)
+      val startInstant = event.startTime
+      val endInstant = event.endTime
       val durationMinutes =
-          if (startInstant != null && endInstant != null && endInstant.isAfter(startInstant)) {
-            Duration.between(startInstant, endInstant).toMinutes()
-          } else {
-            0L
-          }
+          if (endInstant.isAfter(startInstant)) Duration.between(startInstant, endInstant).toMinutes()
+          else 0L
       val isMicroEvent = durationMinutes > 0 && durationMinutes <= cuid.MicroEventMaxDurationMinutes
         val daysLeft = if (project) Duration.between(currentTime, endInstant).toDays() else null
       val baseHeight = calculateEventHeight(
@@ -87,17 +69,13 @@ constructor(
           }
       val transitionWindowDurationMillis =
           Duration.ofMinutes(cuid.EVENT_TRANSITION_WINDOW_MINUTES).toMillis()
-      val isCurrent =
-          startInstant != null &&
-              endInstant != null &&
-              !currentTime.isBefore(startInstant) &&
-              currentTime.isBefore(endInstant)
+      val isCurrent = !currentTime.isBefore(startInstant) && currentTime.isBefore(endInstant)
       val isNext =
           if (nextStartTime == null) false
-          else (startInstant != null && startInstant == nextStartTime)
+          else startInstant == nextStartTime
 
       val proximityRatio =
-          if (!isToday || startInstant == null || currentTime.isAfter(startInstant)) {
+          if (!isToday || currentTime.isAfter(startInstant)) {
             0f
           } else {
             val timeUntilStartMillis = Duration.between(currentTime, startInstant).toMillis()
@@ -145,8 +123,8 @@ constructor(
         durationMinutes: Long,
         isMicroEvent: Boolean,
         isProject: Boolean,
-        startInstant: Instant?,
-        endInstant: Instant?,
+        startInstant: Instant,
+        endInstant: Instant,
         currentTime: Instant
     ): Dp {
 
@@ -177,7 +155,7 @@ constructor(
 
         val baseHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
 
-        if (!isProject || startInstant == null || endInstant == null)
+        if (!isProject)
             return baseHeight.coerceIn(minHeight, maxHeight)
 
         // 🔥 Новая логика для project

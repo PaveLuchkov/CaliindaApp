@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -77,13 +79,7 @@ fun CustomOutlinedTextField(
           typography.headlineMedium.copy(
               textAlign = TextAlign.Start,
               fontFamily =
-                  FontFamily(
-                      Font(
-                          R.font.robotoflex_variable,
-                          variationSettings =
-                              FontVariation.Settings(
-                                  FontVariation.weight(750),
-                              )))),
+                  CaliindaFonts.Heavy),
       enabled = enabled,
       singleLine = true,
       isError = isError,

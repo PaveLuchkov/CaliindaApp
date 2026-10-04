@@ -33,6 +33,7 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DayEventsPage(
+    listScrollEnabled: Boolean,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     date: LocalDate,
@@ -41,10 +42,10 @@ fun DayEventsPage(
     createEventClick: () -> Unit,
     introductionState: IntroState
 ) {
+  // Flow создаём один раз на дату: иначе каждая рекомпозиция перезапускает запрос к календарю.
+  val pageStateFlow = remember(viewModel, date) { viewModel.getDayPageUiState(date) }
   val pageState by
-      viewModel
-          .getDayPageUiState(date)
-          .collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
+      pageStateFlow.collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
   val listState = rememberLazyListState()
   val actions =
       remember(eventManagementViewModel, viewModel) {
@@ -71,6 +72,7 @@ fun DayEventsPage(
         onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
         onEditRequest = eventManagementViewModel::requestEditEvent,
         onDetailsRequest = viewModel::requestEventDetails,
+        userScrollEnabled = listScrollEnabled,
     )
 
     Spacer(modifier = Modifier.height(2.dp))
@@ -96,7 +98,8 @@ fun DayEventsPage(
         DailyCardsList(
             events = pageState.timedEvents,
             listState = listState,
-            actions = actions)
+            actions = actions,
+            userScrollEnabled = listScrollEnabled)
       }
       isBusy -> {
         FullScreenLoader()

@@ -11,7 +11,6 @@ import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText
-import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
@@ -45,7 +44,6 @@ constructor(
     settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
     private val funMessages: IFunMessages,
-    private val dateTimeUtils: IDateTimeUtils
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
@@ -270,31 +268,24 @@ constructor(
     val userTimeZoneId = timeZone.value
     val isAllDay = event.isAllDay
 
-    var parsedStartDate = LocalDate.now()
-    var parsedEndDate = LocalDate.now()
-    var parsedStartTime: LocalTime? = null
-    var parsedEndTime: LocalTime? = null
+    val zone =
+        runCatching { ZoneId.of(userTimeZoneId) }.getOrElse { ZoneId.systemDefault() }
+    val start = event.startTime.atZone(zone)
+    val end = event.endTime.atZone(zone)
 
-    try {
-      if (isAllDay) {
-        // startTime/endTime — локальная полночь; конец эксклюзивный.
-        parsedStartDate = LocalDate.parse(event.startTime?.take(10))
-        val rawEndDate = LocalDate.parse(event.endTime?.take(10))
-        parsedEndDate =
-            if (rawEndDate.isAfter(parsedStartDate)) rawEndDate.minusDays(1) else rawEndDate
-      } else {
-        val zone = ZoneId.of(userTimeZoneId)
-        dateTimeUtils.parseToInstant(event.startTime, userTimeZoneId)?.atZone(zone)?.let {
-          parsedStartDate = it.toLocalDate()
-          parsedStartTime = it.toLocalTime().withNano(0)
-        }
-        dateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)?.atZone(zone)?.let {
-          parsedEndDate = it.toLocalDate()
-          parsedEndTime = it.toLocalTime().withNano(0)
-        }
-      }
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to parse event ${event.id}: start=${event.startTime}, end=${event.endTime}", e)
+    val parsedStartDate = start.toLocalDate()
+    val parsedStartTime: LocalTime?
+    val parsedEndDate: LocalDate
+    val parsedEndTime: LocalTime?
+    if (isAllDay) {
+      // Конец all-day события эксклюзивный: последний день — предыдущий.
+      parsedStartTime = null
+      parsedEndTime = null
+      parsedEndDate = end.toLocalDate().let { if (it.isAfter(parsedStartDate)) it.minusDays(1) else it }
+    } else {
+      parsedStartTime = start.toLocalTime().withNano(0)
+      parsedEndDate = end.toLocalDate()
+      parsedEndTime = end.toLocalTime().withNano(0)
     }
 
     var recurrenceOption: RecurrenceOption? = null

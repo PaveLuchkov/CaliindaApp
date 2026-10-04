@@ -9,7 +9,6 @@ import com.lpavs.caliinda.core.data.di.ITimeTicker
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.data.EventUiDetailsModelMapper
 import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
@@ -47,7 +46,6 @@ constructor(
     timeTicker: ITimeTicker,
     private val calendarStateHolder: ICalendarStateHolder,
     private val settingsRepository: SettingsRepository,
-    private val dateTimeUtils: IDateTimeUtils,
     private val eventUiModelMapper: EventUiModelMapper,
     private val eventUiDetailsModelMapper: EventUiDetailsModelMapper,
 ) : ViewModel() {
@@ -125,41 +123,16 @@ constructor(
 
           val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
 
-          val sortedTimedDtos =
-              timedDtos.sortedBy { event ->
-                dateTimeUtils.parseToInstant(event.startTime, zoneId) ?: Instant.MAX
-              }
+          val sortedTimedDtos = timedDtos.sortedBy { it.startTime }
 
-          val nextStartTime: Instant? =
-              if (!isToday) {
-                null
-              } else {
-                sortedTimedDtos.firstNotNullOfOrNull { event ->
-                  val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
-                  if (start != null && start.isAfter(now)) start else null
-                }
-              }
-
+          // Скроллим к текущему событию, а если его нет — к ближайшему следующему.
           val scrollIndex =
-              if (!isToday || sortedTimedDtos.isEmpty()) {
+              if (!isToday) {
                 -1
               } else {
-                val currentEventIndex =
-                    sortedTimedDtos.indexOfFirst { event ->
-                      val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
-                      val end = dateTimeUtils.parseToInstant(event.endTime, zoneId)
-                      start != null && end != null && !now.isBefore(start) && now.isBefore(end)
-                    }
-                if (currentEventIndex != -1) {
-                  currentEventIndex
-                } else if (nextStartTime != null) {
-                  sortedTimedDtos.indexOfFirst { event ->
-                    val start = dateTimeUtils.parseToInstant(event.startTime, zoneId)
-                    start != null && start == nextStartTime
-                  }
-                } else {
-                  -1
-                }
+                sortedTimedDtos
+                    .indexOfFirst { !now.isBefore(it.startTime) && now.isBefore(it.endTime) }
+                    .takeIf { it != -1 } ?: sortedTimedDtos.indexOfFirst { it.startTime.isAfter(now) }
               }
 
           val timedUiModels =

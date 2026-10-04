@@ -72,6 +72,9 @@ fun CalendarPagerScreen(
                           today.plusDays((pageIndex - initialPageIndex).toLong())
                         }
                     DayEventsPage(
+                        // Пока пейджер листается, жест должен достаться ему, а не списку
+                        // страницы — иначе они "дерутся" и пейджер застревает между днями.
+                        listScrollEnabled = !dailyViewPagerState.isScrollInProgress,
                         hasCalendarAccess = hasCalendarAccess,
                         onGrantAccessClick = onGrantAccessClick,
                         date = pageDate,

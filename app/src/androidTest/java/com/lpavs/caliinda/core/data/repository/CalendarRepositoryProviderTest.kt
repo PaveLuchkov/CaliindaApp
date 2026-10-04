@@ -82,6 +82,8 @@ class CalendarRepositoryProviderTest {
           timeZoneId = zone,
           recurrenceRule = rrule)
 
+  private fun java.time.Instant.local() = atZone(ZoneId.of(zone)).toLocalDateTime()
+
   private suspend fun day(date: LocalDate): List<EventDto> =
       repository.getEventsFlowForDate(date).first().filter { it.calendarId == calendarId }
 
@@ -92,15 +94,15 @@ class CalendarRepositoryProviderTest {
   fun timedEvent_create_update_delete() = runBlocking {
     assertTrue(repository.createEvent(draft("Timed", today)).isSuccess)
     val created = day(today).single { it.summary == "Timed" }
-    assertTrue(created.startTime!!.startsWith("${today}T10:00"))
-    assertTrue(created.endTime!!.startsWith("${today}T11:00"))
+    assertEquals(today.atTime(10, 0), created.startTime.local())
+    assertEquals(today.atTime(11, 0), created.endTime.local())
     assertEquals(null, created.recurringEventId)
 
     val moved = draft("Timed moved", today, LocalTime.of(14, 0), endTime = LocalTime.of(15, 30))
     assertTrue(repository.updateEvent(created, moved, EventUpdateMode.ALL_IN_SERIES).isSuccess)
     val updated = day(today).single { it.eventId == created.eventId }
     assertEquals("Timed moved", updated.summary)
-    assertTrue(updated.startTime!!.startsWith("${today}T14:00"))
+    assertEquals(today.atTime(14, 0), updated.startTime.local())
 
     assertTrue(repository.deleteEvent(updated, EventDeleteMode.DEFAULT).isSuccess)
     assertTrue(day(today).none { it.eventId == created.eventId })
@@ -116,12 +118,12 @@ class CalendarRepositoryProviderTest {
 
     val oneDay = day(tomorrow).single { it.summary == "One day" }
     assertTrue(oneDay.isAllDay)
-    assertTrue(oneDay.startTime!!.startsWith("${tomorrow}T00:00"))
+    assertEquals(tomorrow.atTime(0, 0), oneDay.startTime.local())
     assertTrue(day(today).none { it.summary == "One day" })
     assertTrue(day(tomorrow).none { it.summary == "Trip" })
 
     val trip = projects(tomorrow.plusDays(1)).single { it.summary == "Trip" }
-    assertTrue(trip.endTime!!.startsWith("${tomorrow.plusDays(3)}T00:00"))
+    assertEquals(tomorrow.plusDays(3).atTime(0, 0), trip.endTime.local())
   }
 
   @Test
@@ -148,7 +150,7 @@ class CalendarRepositoryProviderTest {
     repository.updateEvent(d2, d2Draft, EventUpdateMode.SINGLE_INSTANCE).getOrThrow()
     val moved2 = day(today.plusDays(2)).single { it.summary.startsWith("Standup") }
     assertEquals("Standup moved", moved2.summary)
-    assertTrue(moved2.startTime!!.startsWith("${today.plusDays(2)}T12:00"))
+    assertEquals(today.plusDays(2).atTime(12, 0), moved2.startTime.local())
     // Перенесённый экземпляр становится самостоятельным событием.
     assertEquals(null, moved2.recurringEventId)
     assertTrue(day(today.plusDays(3)).single { it.summary.startsWith("Standup") }.summary == "Standup")

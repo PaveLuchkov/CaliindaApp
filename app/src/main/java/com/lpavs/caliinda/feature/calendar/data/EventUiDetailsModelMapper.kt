@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.core.os.ConfigurationCompat
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
-import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import javax.inject.Inject
@@ -12,7 +11,6 @@ import javax.inject.Inject
 class EventUiDetailsModelMapper
 @Inject
 constructor(
-    private val dateTimeUtils: IDateTimeUtils,
     private val dateTimeFormatterUtil: IDateTimeFormatterUtil,
     @ApplicationContext private val context: Context
 ) {
@@ -21,13 +19,9 @@ constructor(
       timeZoneId: String,
       currentTime: Instant,
   ): EventDetailsUiModel {
-    val startInstant = dateTimeUtils.parseToInstant(event.startTime, timeZoneId)
-    val endInstant = dateTimeUtils.parseToInstant(event.endTime, timeZoneId)
-    val isCurrent =
-        startInstant != null &&
-            endInstant != null &&
-            !currentTime.isBefore(startInstant) &&
-            currentTime.isBefore(endInstant)
+    val startInstant = event.startTime
+    val endInstant = event.endTime
+    val isCurrent = !currentTime.isBefore(startInstant) && currentTime.isBefore(endInstant)
 
     val eventDetailsUiModel =
         EventDetailsUiModel(

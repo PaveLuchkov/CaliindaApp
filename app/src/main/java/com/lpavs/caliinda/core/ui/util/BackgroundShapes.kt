@@ -129,25 +129,23 @@ fun BackgroundShapes(
 
 fun RoundedPolygon.getBounds() = calculateBounds().let { Rect(it[0], it[1], it[2], it[3]) }
 
-class RoundedPolygonShape(
-    private val polygon: RoundedPolygon,
-    private var matrix: Matrix = Matrix()
-) : Shape {
-  private var path = Path()
+class RoundedPolygonShape(private val polygon: RoundedPolygon) : Shape {
+  // Path и границы полигона не зависят от размера — считаем один раз.
+  private val basePath by lazy { polygon.toPath().asComposePath() }
+  private val bounds by lazy { polygon.getBounds() }
 
   override fun createOutline(
       size: Size,
       layoutDirection: LayoutDirection,
       density: Density
   ): Outline {
-    path.rewind()
-    path = polygon.toPath().asComposePath()
-    matrix.reset()
-    val bounds = polygon.getBounds()
     val maxDimension = max(bounds.width, bounds.height)
-    matrix.scale(size.width / maxDimension, size.height / maxDimension)
-    matrix.translate(-bounds.left, -bounds.top)
-
+    val matrix =
+        Matrix().apply {
+          scale(size.width / maxDimension, size.height / maxDimension)
+          translate(-bounds.left, -bounds.top)
+        }
+    val path = Path().apply { addPath(basePath) }
     path.transform(matrix)
     return Outline.Generic(path)
   }
