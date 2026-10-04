@@ -181,4 +181,9 @@
     <string name="new_events_saved_to">Los eventos nuevos se guardan en</string>
     <string name="syncing_calendars">Sincronizando calendarios…</string>
     <string name="no_title">(Sin título)</string>
+    <string name="add_details">Añadir detalles</string>
+    <string name="duration_minutes_short">%d min</string>
+    <string name="duration_hours_short">%d h</string>
+    <string name="undo">Deshacer</string>
+    <string name="event_deleted">«%1$s» eliminado</string>
 </resources>

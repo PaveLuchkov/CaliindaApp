@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import com.lpavs.caliinda.core.data.repository.PendingDeletions
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.R
 import android.util.Log
@@ -53,6 +54,7 @@ constructor(
     private val settingsRepository: SettingsRepository,
     private val eventUiModelMapper: EventUiModelMapper,
     private val eventUiDetailsModelMapper: EventUiDetailsModelMapper,
+    private val pendingDeletions: PendingDeletions,
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -127,6 +129,7 @@ constructor(
 
     return calendarRepository
         .getEventsFlowForDate(date)
+        .withoutPendingDeletions()
         .combine(currentTime) { events, now -> events to now }
         .combine(timeZoneIdFlow) { (events, now), zoneId ->
           val isToday = date == now.atZone(zoneId).toLocalDate()
@@ -168,7 +171,9 @@ constructor(
     // Окно проектов отсчитывается от сегодня — после полуночи перезапрашиваем.
     return today
         .flatMapLatest { date ->
-          calendarRepository.getEventsFlowForProjects(date).map { events -> date to events }
+          calendarRepository.getEventsFlowForProjects(date).withoutPendingDeletions().map { events ->
+            date to events
+          }
         }
         .combine(currentTime) { dated, now -> dated to now }
         .combine(timeZone) { (dated, now), zoneId ->
@@ -215,6 +220,12 @@ constructor(
       _eventFlow.emit(CalendarUiEvent.ShowMessage(UiText.from(R.string.syncing_calendars)))
     }
   }
+
+  /** Прячет события, удалённые с возможностью отмены, до их настоящего удаления. */
+  private fun Flow<List<EventDto>>.withoutPendingDeletions(): Flow<List<EventDto>> =
+      combine(pendingDeletions.ids) { events, hidden ->
+        if (hidden.isEmpty()) events else events.filterNot { it.id in hidden }
+      }
 
   private fun parseZone(zone: String): ZoneId =
       runCatching { ZoneId.of(zone) }.getOrDefault(ZoneId.systemDefault())

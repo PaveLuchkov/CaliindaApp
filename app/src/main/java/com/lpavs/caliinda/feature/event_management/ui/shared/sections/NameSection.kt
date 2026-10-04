@@ -1,5 +1,11 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -23,7 +29,9 @@ fun EventNameSection(
     onSummaryErrorChange: (String?) -> Unit,
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
     isLoading: Boolean,
-    suggestedChips: List<SugNameChips>
+    suggestedChips: List<SugNameChips>,
+    onImeDone: () -> Unit,
+    focusRequester: FocusRequester? = null,
 ) {
   CustomOutlinedTextField(
       value = summary,
@@ -32,7 +40,13 @@ fun EventNameSection(
         onSummaryErrorChange(null)
       },
       label = stringResource(R.string.event_name),
-      modifier = Modifier.fillMaxWidth(),
+      modifier =
+          Modifier.fillMaxWidth()
+              .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+      // «Готово» на клавиатуре сохраняет: для быстрого события хватает названия.
+      keyboardOptions =
+          KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+      keyboardActions = KeyboardActions(onDone = { if (summary.isNotBlank()) onImeDone() }),
       isError = summaryError != null,
       supportingText = { if (summaryError != null) Text(summaryError) },
       enabled = !isLoading,

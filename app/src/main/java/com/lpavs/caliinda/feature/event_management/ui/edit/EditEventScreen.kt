@@ -34,6 +34,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.EventFormContent
+import com.lpavs.caliinda.feature.event_management.ui.shared.SaveBar
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -49,7 +50,12 @@ fun EditEventScreen(
     currentSheetValue: SheetValue,
 ) {
   // Состояние данных
-  var summary by remember(eventToEdit.id) { mutableStateOf(eventToEdit.summary) }
+  // Подпись «(Без названия)» — только для показа, в поле её подставлять нельзя: сохранится как
+  // настоящее название.
+  var summary by
+      remember(eventToEdit.id) {
+        mutableStateOf(if (eventToEdit.isUntitled) "" else eventToEdit.summary)
+      }
   var description by remember(eventToEdit.id) { mutableStateOf(eventToEdit.description ?: "") }
   var location by remember(eventToEdit.id) { mutableStateOf(eventToEdit.location ?: "") }
 
@@ -76,36 +82,16 @@ fun EditEventScreen(
         eventDateTimeState.startTime, eventDateTimeState.isAllDay)
   }
 
-  // UI
-  Column(modifier = Modifier.fillMaxSize()) {
-    // Кнопка сохранения в верхней части (как в вашем коде)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center) {
-          Button(
-              onClick = {
-                viewModel.updateEvent(
-                    summary = summary,
-                    description = description,
-                    location = location,
-                    dateTimeState = eventDateTimeState,
-                    updateMode = selectedUpdateMode)
-              },
-              enabled = !uiState.isLoading,
-              modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
-          ) {
-            if (uiState.isLoading) {
-              LoadingIndicator(
-                  color = colorScheme.onPrimary,
-                  modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
-            } else {
-              Text(text = stringResource(R.string.save))
-            }
-          }
-        }
+  val save = {
+    viewModel.updateEvent(
+        summary = summary,
+        description = description,
+        location = location,
+        dateTimeState = eventDateTimeState,
+        updateMode = selectedUpdateMode)
+  }
 
-    // Основная форма
+  Column(modifier = Modifier.fillMaxSize()) {
     EventFormContent(
         summary = summary,
         onSummaryChange = { summary = it },
@@ -118,6 +104,9 @@ fun EditEventScreen(
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
         isLoading = uiState.isLoading,
-        suggestedChips = suggestedChips)
+        suggestedChips = suggestedChips,
+        onSave = save,
+        modifier = Modifier.weight(1f))
+    SaveBar(enabled = summary.isNotBlank(), isLoading = uiState.isLoading, onSave = save)
   }
 }

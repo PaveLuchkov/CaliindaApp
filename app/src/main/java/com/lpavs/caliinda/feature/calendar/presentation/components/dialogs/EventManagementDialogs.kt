@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
 import androidx.compose.runtime.Composable
-import com.lpavs.caliinda.feature.event_management.ui.shared.DeleteConfirmationDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiState
@@ -23,16 +22,8 @@ fun EventManagementDialogs(
         )
     }
 
-    // 2. Диалог подтверждения удаления обычного события
-    if (state.showDeleteConfirmationDialog && state.eventPendingDeletion != null) {
-        DeleteConfirmationDialog(
-            onConfirm = { viewModel.confirmDeleteEvent() },
-            onDismiss = { viewModel.cancelDelete() }
-        )
-    }
-
-    // 3. Диалог выбора режима удаления повторяющегося события
-    else if (state.showRecurringDeleteOptionsDialog && state.eventPendingDeletion != null) {
+    // 2. Диалог выбора режима удаления повторяющегося события (обычные удаляются с «Отменить»)
+    if (state.showRecurringDeleteOptionsDialog && state.eventPendingDeletion != null) {
         RecurringEventDeleteOptionsDialog(
             eventName = state.eventPendingDeletion.summary,
             onDismiss = { viewModel.cancelDelete() },

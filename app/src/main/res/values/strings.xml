@@ -341,4 +341,9 @@
     <string name="new_events_saved_to">New events are saved to</string>
     <string name="syncing_calendars">Syncing calendars…</string>
     <string name="no_title">(No title)</string>
+    <string name="add_details">Add details</string>
+    <string name="duration_minutes_short">%d min</string>
+    <string name="duration_hours_short">%d h</string>
+    <string name="undo">Undo</string>
+    <string name="event_deleted">“%1$s” deleted</string>
 </resources>

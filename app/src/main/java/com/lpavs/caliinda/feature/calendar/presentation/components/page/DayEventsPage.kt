@@ -51,7 +51,7 @@ fun DayEventsPage(
   val actions =
       remember(eventManagementViewModel, viewModel) {
         EventActions(
-            onDelete = eventManagementViewModel::requestDeleteConfirmation,
+            onDelete = eventManagementViewModel::requestDelete,
             onEdit = eventManagementViewModel::requestEditEvent,
             onDetails = viewModel::requestEventDetails)
       }
@@ -70,7 +70,7 @@ fun DayEventsPage(
   Column(modifier = Modifier.fillMaxSize()) {
     HeadCardsList(
         events = pageState.allDayEvents,
-        onDeleteRequest = eventManagementViewModel::requestDeleteConfirmation,
+        onDeleteRequest = eventManagementViewModel::requestDelete,
         onEditRequest = eventManagementViewModel::requestEditEvent,
         onDetailsRequest = viewModel::requestEventDetails,
         userScrollEnabled = listScrollEnabled,

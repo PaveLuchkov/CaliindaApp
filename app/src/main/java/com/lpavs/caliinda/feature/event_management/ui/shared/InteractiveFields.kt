@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import androidx.compose.foundation.text.KeyboardActions
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
 import androidx.compose.foundation.background
@@ -58,6 +59,7 @@ fun CustomOutlinedTextField(
     label: String,
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     enabled: Boolean = true,
     isError: Boolean = false,
     supportingText: (@Composable () -> Unit)? = null
@@ -75,6 +77,7 @@ fun CustomOutlinedTextField(
               unfocusedContainerColor = colorScheme.surfaceContainerHigh,
           ),
       keyboardOptions = keyboardOptions,
+      keyboardActions = keyboardActions,
       textStyle =
           typography.headlineMedium.copy(
               textAlign = TextAlign.Start,

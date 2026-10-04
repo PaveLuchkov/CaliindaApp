@@ -31,6 +31,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.EventFormContent
+import com.lpavs.caliinda.feature.event_management.ui.shared.SaveBar
+import androidx.compose.ui.focus.FocusRequester
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
@@ -48,6 +50,8 @@ fun CreateEventScreen(
     userTimeZone: String,
     initialDate: LocalDate,
     initialProject: Boolean = false,
+    /** Шторка встала на место — можно звать клавиатуру, не сбивая анимацию появления. */
+    sheetSettled: Boolean = true,
     onDismiss: () -> Unit,
 ) {
   // Состояние полей
@@ -107,38 +111,20 @@ fun CreateEventScreen(
   }
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
-  Column(modifier = Modifier.fillMaxSize()) {
-    // Кнопка "Сохранить" (показывается, когда введено название)
-    AnimatedContent(targetState = summary.isNotEmpty()) { isNotEmpty ->
-      if (isNotEmpty) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center) {
-              Button(
-                  onClick = {
-                    viewModel.createEvent(
-                        summary = summary,
-                        description = description,
-                        location = location,
-                        dateTimeState = eventDateTimeState)
-                  },
-                  enabled = !uiState.isLoading,
-                  modifier = Modifier.fillMaxWidth().padding(cuid.ContainerPadding),
-              ) {
-                if (uiState.isLoading) {
-                  LoadingIndicator(
-                      color = colorScheme.onPrimary,
-                      modifier = Modifier.size(ButtonDefaults.iconSizeFor(30.dp)))
-                } else {
-                  Text(text = stringResource(R.string.save))
-                }
-              }
-            }
-      }
-    }
+  val save = {
+    viewModel.createEvent(
+        summary = summary,
+        description = description,
+        location = location,
+        dateTimeState = eventDateTimeState)
+  }
+  // Сразу клавиатура в названии: типичное событие — это название и время.
+  val nameFocusRequester = remember { FocusRequester() }
+  LaunchedEffect(sheetSettled) {
+    if (sheetSettled) runCatching { nameFocusRequester.requestFocus() }
+  }
 
-    // Вся форма вынесена в отдельный компонент
+  Column(modifier = Modifier.fillMaxSize()) {
     EventFormContent(
         summary = summary,
         onSummaryChange = { summary = it },
@@ -151,6 +137,10 @@ fun CreateEventScreen(
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
         isLoading = uiState.isLoading,
-        suggestedChips = suggestedChips)
+        suggestedChips = suggestedChips,
+        onSave = save,
+        nameFocusRequester = nameFocusRequester,
+        modifier = Modifier.weight(1f))
+    SaveBar(enabled = summary.isNotBlank(), isLoading = uiState.isLoading, onSave = save)
   }
 }

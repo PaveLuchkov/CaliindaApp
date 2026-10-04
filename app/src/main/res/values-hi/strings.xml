@@ -179,4 +179,9 @@
     <string name="new_events_saved_to">नए इवेंट यहाँ सहेजे जाते हैं</string>
     <string name="syncing_calendars">कैलेंडर सिंक हो रहे हैं…</string>
     <string name="no_title">(कोई शीर्षक नहीं)</string>
+    <string name="add_details">विवरण जोड़ें</string>
+    <string name="duration_minutes_short">%d मिनट</string>
+    <string name="duration_hours_short">%d घंटे</string>
+    <string name="undo">पूर्ववत करें</string>
+    <string name="event_deleted">“%1$s” हटाया गया</string>
 </resources>

@@ -11,6 +11,7 @@ import java.time.Instant
 data class EventDto(
     /** Уникальный ключ экземпляра (событие + время начала), годится для ключей списков. */
     val id: String,
+    /** Название для показа; у событий без названия — локализованная заглушка (см. [isUntitled]). */
     val summary: String,
     val startTime: Instant,
     val endTime: Instant,
@@ -33,4 +34,6 @@ data class EventDto(
     val originalInstanceBegin: Long? = null,
     val calendarId: Long = 0L,
     val color: Int? = null,
+    /** В календаре у события нет названия, [summary] — подставленная заглушка. */
+    val isUntitled: Boolean = false,
 )

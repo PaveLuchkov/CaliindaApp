@@ -332,7 +332,8 @@ constructor(
         originalEventId = row.originalId,
         originalInstanceBegin = row.originalInstanceTime,
         calendarId = row.calendarId,
-        color = row.color)
+        color = row.color,
+        isUntitled = row.title.isNullOrBlank())
   }
 
   /** Сырое время экземпляра в серии (для перенесённого — исходное, до переноса). */
