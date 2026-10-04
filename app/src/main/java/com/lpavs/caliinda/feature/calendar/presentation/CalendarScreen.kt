@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import androidx.compose.material3.SheetValue
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -137,7 +138,7 @@ fun CalendarScreen(
               currentVisibleDate.toPickerMillis(),
       )
 
-  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
   var createAsProject by remember { mutableStateOf(false) }
@@ -148,7 +149,7 @@ fun CalendarScreen(
     showCreateEventSheet = true
   }
   var showEditEventSheet by remember { mutableStateOf(false) }
-  val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+  val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
   LaunchedEffect(eventManagementState.showEditEventDialog, eventManagementState.eventBeingEdited) {
     if (eventManagementState.showEditEventDialog && eventManagementState.eventBeingEdited != null) {
@@ -248,6 +249,7 @@ fun CalendarScreen(
         userTimeZone = timeZone.value,
         initialDate = selectedDateForSheet,
         initialProject = createAsProject,
+        sheetSettled = sheetState.currentValue != SheetValue.Hidden,
         onDismiss = {
           scope
               .launch { sheetState.hide() }
