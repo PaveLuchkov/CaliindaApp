@@ -29,7 +29,7 @@ interface IDateTimeFormatterUtil {
 }
 
 @Singleton
-class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: IDateTimeUtils) :
+class DateTimeFormatterUtilImpl @Inject constructor() :
     IDateTimeFormatterUtil {
   override fun formatEventListTime(
       context: Context,
@@ -47,13 +47,12 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
           ZoneId.systemDefault()
         }
 
-    val startInstant = dateTimeUtils.parseToInstant(event.startTime, zoneIdString)
-    val endInstant = dateTimeUtils.parseToInstant(event.endTime, zoneIdString)
+    val startInstant = event.startTime
+    val endInstant = event.endTime
 
     val useSystem24HourFormat = DateFormat.is24HourFormat(context)
 
-    fun formatTime(instant: Instant?): String {
-      if (instant == null) return ""
+    fun formatTime(instant: Instant): String {
       return try {
         val localTime = instant.atZone(zoneId).toLocalTime()
         val hour = localTime.hour
@@ -84,8 +83,7 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
         ""
       }
     }
-      fun formatDate(instant: Instant?): String {
-          if (instant == null) return ""
+      fun formatDate(instant: Instant): String {
           return try {
               val localDate = instant.atZone(zoneId).toLocalDate()
               val formatter = DateTimeFormatter.ofPattern("d MMMM", locale)
@@ -97,17 +95,12 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
       }
 
       return when {
-          startInstant != null && endInstant != null -> {
-              if (event.isAllDay) {
-                  "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
-              } else if (formatDate(startInstant) == formatDate(endInstant)) {
-                  "${formatTime(startInstant)} - ${formatTime(endInstant)}"
-              } else {
-                  "${formatDate(startInstant)} ${formatTime(startInstant)} - ${formatTime(endInstant)} ${formatDate(endInstant)}"
-              }
-          }
-          startInstant != null -> formatTime(startInstant)
-          else -> ""
+          event.isAllDay ->
+              "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
+          formatDate(startInstant) == formatDate(endInstant) ->
+              "${formatTime(startInstant)} - ${formatTime(endInstant)}"
+          else ->
+              "${formatDate(startInstant)} ${formatTime(startInstant)} - ${formatTime(endInstant)} ${formatDate(endInstant)}"
       }
   }
 
@@ -124,13 +117,12 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
           ZoneId.systemDefault()
         }
 
-    val startInstant = dateTimeUtils.parseToInstant(event.startTime, zoneIdString)
-    val endInstant = dateTimeUtils.parseToInstant(event.endTime, zoneIdString)
+    val startInstant = event.startTime
+    val endInstant = event.endTime
 
     val useSystem24HourFormat = DateFormat.is24HourFormat(context)
 
-    fun formatTime(instant: Instant?): String {
-      if (instant == null) return ""
+    fun formatTime(instant: Instant): String {
       return try {
         val localTime = instant.atZone(zoneId).toLocalTime()
         val hour = localTime.hour
@@ -162,8 +154,7 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
       }
     }
 
-    fun formatDate(instant: Instant?): String {
-      if (instant == null) return ""
+    fun formatDate(instant: Instant): String {
       return try {
         val localDate = instant.atZone(zoneId).toLocalDate()
         val formatter = DateTimeFormatter.ofPattern("d MMMM", locale)
@@ -175,18 +166,12 @@ class DateTimeFormatterUtilImpl @Inject constructor(private val dateTimeUtils: I
     }
 
     return when {
-      startInstant != null && endInstant != null -> {
-        if (event.isAllDay){
-            return "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
-        }
-        if (formatDate(startInstant) == formatDate(endInstant)) {
+      event.isAllDay ->
+          "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
+      formatDate(startInstant) == formatDate(endInstant) ->
           "${formatTime(startInstant)} - ${formatTime(endInstant)}\n${formatDate(endInstant)}"
-        } else {
+      else ->
           "${formatDate(startInstant)} ${formatTime(startInstant)} - ${formatTime(endInstant)} ${formatDate(endInstant)}"
-        }
-      }
-      startInstant != null -> formatTime(startInstant)
-      else -> ""
     }
   }
 }

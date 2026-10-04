@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+import java.time.OffsetDateTime
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -371,8 +372,8 @@ val normalEvent =
             EventDto(
                 id = "qp919hj747psg010hiua4qvmho_20250818T140000Z",
                 summary = "SQL Practice: Query Building",
-                startTime = "2025-08-18T17:00:00+03:00",
-                endTime = "2025-08-18T17:45:00+03:00",
+                startTime = OffsetDateTime.parse("2025-08-18T17:00:00+03:00").toInstant(),
+                endTime = OffsetDateTime.parse("2025-08-18T17:45:00+03:00").toInstant(),
                 description = null,
                 location = null,
                 isAllDay = false),
