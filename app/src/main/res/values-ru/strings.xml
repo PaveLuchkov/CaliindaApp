@@ -193,4 +193,6 @@
     <string name="widget_now">сейчас</string>
     <string name="widget_no_more_events">Сегодня больше событий нет</string>
     <string name="widget_no_access">Откройте Caliinda и разрешите доступ к календарю</string>
+    <string name="widget_preview_title">Дизайн-ревью</string>
+    <string name="widget_preview_time">14:00 – 15:00</string>
 </resources>

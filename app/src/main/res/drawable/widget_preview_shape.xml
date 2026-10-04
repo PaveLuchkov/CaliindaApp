@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- «Тень» фигуры по кромке, как на карточках: круг минус его же копия со сдвигом. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="60dp"
+    android:viewportWidth="400"
+    android:viewportHeight="120">
+    <path
+        android:fillAlpha="0.3"
+        android:fillColor="@android:color/system_accent1_900"
+        android:fillType="evenOdd"
+        android:pathData="M220,80 a110,110 0 1,0 220,0 a110,110 0 1,0 -220,0 Z M231,96 a110,110 0 1,0 220,0 a110,110 0 1,0 -220,0 Z" />
+</vector>

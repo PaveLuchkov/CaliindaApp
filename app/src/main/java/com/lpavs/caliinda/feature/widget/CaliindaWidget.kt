@@ -25,6 +25,8 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.height
+import androidx.glance.layout.width
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -99,10 +101,18 @@ private fun WidgetCard(data: WidgetData) {
               val time =
                   "${focus.startTime.atZone(data.zone).format(formatter)} – " +
                       focus.endTime.atZone(data.zone).format(formatter)
-              Text(
-                  text = focus.summary,
-                  maxLines = 1,
-                  style = TextStyle(color = content, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+              // Название — картинкой нашим RobotoFlex: жирно и шире обычного, как в приложении.
+              val title =
+                  widgetTitle(
+                      context = context,
+                      text = focus.summary,
+                      maxWidthDp = size.width.value - 32f,
+                      textSizeSp = 24f)
+              Image(
+                  provider = ImageProvider(title.bitmap),
+                  contentDescription = focus.summary,
+                  colorFilter = ColorFilter.tint(content),
+                  modifier = GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
               Text(
                   text = if (isNow) "${context.getString(R.string.widget_now)} · $time" else time,
                   maxLines = 1,
