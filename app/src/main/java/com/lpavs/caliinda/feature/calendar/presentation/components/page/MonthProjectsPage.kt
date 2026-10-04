@@ -21,22 +21,23 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.SystemEventsList
 import com.lpavs.caliinda.feature.event_management.EventActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import java.time.YearMonth
 
+/** Страница месяца на экране проектов: карточки проектов, которые идут в этом месяце. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ProjectEventsPage(
+fun MonthProjectsPage(
+    month: YearMonth,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
     createEventClick: () -> Unit,
-    introductionState: IntroState
+    introductionState: IntroState,
 ) {
   val listState = rememberLazyListState()
-  val pageStateFlow = remember(viewModel) { viewModel.getProjectsPageUiState() }
-  val pageState by
-      pageStateFlow.collectAsStateWithLifecycle(initialValue = EventsPageUiState(isLoading = true))
-  val isBusy = pageState.isLoading
+  val pageStateFlow = remember(viewModel, month) { viewModel.getMonthPageUiState(month) }
+  val pageState by pageStateFlow.collectAsStateWithLifecycle(initialValue = MonthPageUiState())
   val actions =
       remember(eventManagementViewModel, viewModel) {
         EventActions(
@@ -45,29 +46,25 @@ fun ProjectEventsPage(
             onDetails = viewModel::requestEventDetails)
       }
 
-  val noEmptyEvents = pageState.events.isNotEmpty()
   Column(modifier = Modifier.fillMaxSize()) {
-    if (!hasCalendarAccess || (!introductionState.isFinished && !isBusy)) {
-      SystemEventsList(
-          hasCalendarAccess = hasCalendarAccess,
-          introStep = introductionState.currentStep,
-          onGrantAccessClick = onGrantAccessClick,
-          projectView = true,
-          onIntroNext = {})
-    } else {
-      if (noEmptyEvents) {
-        ProjectsCardsList(events = pageState.events, listState = listState, actions = actions)
-      } else {
-        if (isBusy) {
+    when {
+      !hasCalendarAccess || (!introductionState.isFinished && !pageState.isLoading) ->
+          SystemEventsList(
+              hasCalendarAccess = hasCalendarAccess,
+              introStep = introductionState.currentStep,
+              onGrantAccessClick = onGrantAccessClick,
+              projectView = true,
+              onIntroNext = {})
+      pageState.events.isNotEmpty() ->
+          ProjectsCardsList(events = pageState.events, listState = listState, actions = actions)
+      pageState.isLoading ->
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LoadingIndicator(modifier = Modifier.size(80.dp))
           }
-        } else {
+      else ->
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             CalendarCreateEventItem(onCreateEventClick = createEventClick)
           }
-        }
-      }
     }
   }
 }

@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.core.data.repository
 
-import com.lpavs.caliinda.core.data.calendar.model.MonthEvents
 import java.time.YearMonth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
@@ -123,30 +122,18 @@ constructor(
           },
           empty = emptyList())
 
-  /**
-   * Месяц для экрана проектов: многодневные события, пересекающие месяц (в том числе прошлые),
-   * и сколько обычных событий в каждый день — для точек плотности.
-   */
-  fun getMonthFlow(month: YearMonth): Flow<MonthEvents> =
+  /** Многодневные события, пересекающие месяц (в том числе уже прошедшие) — страница месяца. */
+  fun getMonthProjectsFlow(month: YearMonth): Flow<List<EventDto>> =
       observeCalendar(
           load = { zone ->
             val first = month.atDay(1)
             val monthStart = first.atStartOfDay(zone).toInstant().toEpochMilli()
             val monthEnd = first.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            val (projects, regular) =
-                loadInstances(monthStart, monthEnd, zone)
-                    .filter { it.overlaps(monthStart, monthEnd) }
-                    .partition { it.isProject() }
-            val perDay = mutableMapOf<LocalDate, Int>()
-            regular.forEach { inst ->
-              val day =
-                  inst.allDayStart
-                      ?: Instant.ofEpochMilli(inst.startMillis).atZone(zone).toLocalDate()
-              if (YearMonth.from(day) == month) perDay.merge(day, 1, Int::plus)
-            }
-            MonthEvents(projects.map { it.toDto(zone) }, perDay)
+            loadInstances(monthStart, monthEnd, zone)
+                .filter { it.overlaps(monthStart, monthEnd) && it.isProject() }
+                .map { it.toDto(zone) }
           },
-          empty = MonthEvents(emptyList(), emptyMap()))
+          empty = emptyList())
 
   /** Календари, в которые можно записывать события. */
   fun getWritableCalendars(): Flow<List<DeviceCalendar>> =

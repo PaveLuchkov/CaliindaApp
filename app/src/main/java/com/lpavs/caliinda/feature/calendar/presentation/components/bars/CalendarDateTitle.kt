@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import java.time.YearMonth
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
@@ -36,11 +37,13 @@ import java.time.format.DateTimeFormatter
 fun CalendarDateTitle(
     date: LocalDate,
     today: LocalDate,
+    /** На экране проектов вместо даты показываем месяц. */
+    month: YearMonth? = null,
     hasCalendarAccess: Boolean,
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit
 ) {
-    val isToday = date == today
+    val isToday = if (month != null) month == YearMonth.from(today) else date == today
     val isCurrentYear = date.year == today.year
     val headerBackgroundColor =
         if (isToday) {
@@ -93,7 +96,14 @@ fun CalendarDateTitle(
 
         ) {
         Text(
-            text = date.format(formatterWithShortDay),
+            text =
+                if (month != null) {
+                  val pattern = if (month.year == today.year) "LLLL" else "LLLL yyyy"
+                  month.format(DateTimeFormatter.ofPattern(pattern, currentLocale))
+                      .replaceFirstChar { it.titlecase(currentLocale) }
+                } else {
+                  date.format(formatterWithShortDay)
+                },
             style = headerTextStyle,
             fontFamily = headerFontFamily,
             color = headerTextColor,
