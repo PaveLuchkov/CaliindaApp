@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.animation.core.animateFloatAsState
 import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
@@ -269,13 +271,27 @@ fun CalendarEventItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                       Text(
                           text = uiModel.formattedTimeString,
                           color = cardTextColor,
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                           maxLines = 1)
                       Spacer(modifier = Modifier.width(8.dp))
+                      if (current) {
+                        // Идущее событие: заполненная часть — сколько прошло, а волна бежит.
+                        val progress by
+                            animateFloatAsState(
+                                targetValue = uiModel.progress,
+                                animationSpec = AppMotion.slowEffectsSpec(),
+                                label = "currentEventProgress")
+                        LinearWavyProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.width(72.dp),
+                            color = colorScheme.tertiary,
+                            trackColor = cardTextColor.copy(alpha = 0.15f))
+                        Spacer(modifier = Modifier.width(8.dp))
+                      }
                       uiModel.location?.let {
                         Text(
                             text = it,
