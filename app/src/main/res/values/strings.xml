@@ -347,4 +347,9 @@
     <string name="undo">Undo</string>
     <string name="event_deleted">“%1$s” deleted</string>
     <string name="project_day_of">day %1$d of %2$d</string>
+    <string name="widget_name">Caliinda · day</string>
+    <string name="widget_description">Current event, what\'s next and ongoing projects</string>
+    <string name="widget_now">now</string>
+    <string name="widget_no_more_events">No more events today</string>
+    <string name="widget_no_access">Open Caliinda to allow calendar access</string>
 </resources>

@@ -186,4 +186,9 @@
     <string name="undo">Rückgängig</string>
     <string name="event_deleted">„%1$s“ gelöscht</string>
     <string name="project_day_of">Tag %1$d von %2$d</string>
+    <string name="widget_name">Caliinda · Tag</string>
+    <string name="widget_description">Aktueller Termin, was als Nächstes kommt und laufende Projekte</string>
+    <string name="widget_now">jetzt</string>
+    <string name="widget_no_more_events">Heute keine weiteren Termine</string>
+    <string name="widget_no_access">Öffne Caliinda, um Kalenderzugriff zu erlauben</string>
 </resources>

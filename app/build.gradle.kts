@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.graphics.shapes)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.material.icons.extended)
