@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.settings.ui
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -137,7 +138,7 @@ fun TimeSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit,
                             trailingIcon = {
                               ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                             },
-                            shape = RoundedCornerShape(16.dp))
+                            shape = MaterialTheme.shapes.large)
 
                         ExposedDropdownMenu(
                             expanded = expanded, onDismissRequest = { expanded = false }) {

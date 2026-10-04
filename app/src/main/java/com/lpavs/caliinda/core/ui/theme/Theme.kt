@@ -10,7 +10,6 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.lpavs.caliinda.core.ui.theme.cold.ColdDarkScheme
 import com.lpavs.caliinda.core.ui.theme.cold.ColdLightScheme
@@ -39,6 +38,14 @@ fun colorSchemeFor(themeMode: ThemeMode, darkTheme: Boolean, context: Context): 
       ThemeMode.SUNNY -> if (darkTheme) SunnyDarkScheme else SunnyLightScheme
     }
 
+/**
+ * Движение приложения. Та же схема отдаётся в MaterialExpressiveTheme, а здесь доступна и вне
+ * composable — в transitionSpec у AnimatedContent и переходах навигации.
+ * Spatial — позиция и размер (пружина с отскоком), effects — цвет и прозрачность (без отскока).
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+val AppMotion: MotionScheme = MotionScheme.expressive()
+
 /** Тема приложения: M3 Expressive — пружинная motion scheme и expressive-формы по умолчанию. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -53,12 +60,12 @@ fun CaliindaTheme(
 
   MaterialExpressiveTheme(
       colorScheme = colorScheme,
-      motionScheme = MotionScheme.expressive(),
+      motionScheme = AppMotion,
       typography = Typography,
       content = content)
 }
 
-/** Основной цвет темы — для превью-кружков выбора темы в настройках. */
+/** Схема произвольной темы — для превью выбора темы в настройках. */
 @Composable
-fun getThemePrimaryColor(themeMode: ThemeMode, darkTheme: Boolean = isSystemInDarkTheme()): Color =
-    colorSchemeFor(themeMode, darkTheme, LocalContext.current).primary
+fun themeColorScheme(themeMode: ThemeMode, darkTheme: Boolean = isSystemInDarkTheme()): ColorScheme =
+    colorSchemeFor(themeMode, darkTheme, LocalContext.current)

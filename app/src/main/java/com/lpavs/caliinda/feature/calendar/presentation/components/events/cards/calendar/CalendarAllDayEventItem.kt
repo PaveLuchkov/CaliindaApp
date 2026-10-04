@@ -1,10 +1,10 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -105,15 +105,15 @@ fun AllDayEventItem(
               AnimatedVisibility(
                   visible = isExpanded,
                   enter =
-                      fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                      fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                           expandVertically(
-                              animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                              animationSpec = AppMotion.defaultSpatialSpec(),
                               expandFrom = Alignment.Companion.Top),
                   exit =
                       shrinkVertically(
-                          animationSpec = tween(durationMillis = 250),
+                          animationSpec = AppMotion.defaultSpatialSpec(),
                           shrinkTowards = Alignment.Companion.Top) +
-                          fadeOut(animationSpec = tween(durationMillis = 150))) {
+                          fadeOut(animationSpec = AppMotion.fastEffectsSpec())) {
                     Spacer(modifier = Modifier.Companion.height(8.dp))
                     Row(
                         modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 4.dp),

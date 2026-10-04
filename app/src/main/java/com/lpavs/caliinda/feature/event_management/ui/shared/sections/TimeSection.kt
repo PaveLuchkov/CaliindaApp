@@ -1,5 +1,9 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import com.lpavs.caliinda.core.ui.theme.AppMotion
+import androidx.compose.animation.core.snap
 import android.text.format.DateFormat
 import android.util.Log
 import androidx.annotation.StringRes
@@ -7,7 +11,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -259,25 +262,25 @@ fun EventDateTimePicker(
         }
 
     Column(
-        modifier = Modifier.animateContentSize(animationSpec = tween(300)),
+        modifier = Modifier.animateContentSize(animationSpec = AppMotion.defaultSpatialSpec()),
         verticalArrangement = Arrangement.spacedBy(8.dp)) {
           AnimatedContent(
               targetState = Pair(isAllDay, isOneDay),
               transitionSpec = {
                 if (targetState.first != initialState.first ||
                         targetState.second != initialState.second) {
-                      (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                      (fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                           slideInVertically(
                               initialOffsetY = { it / 4 },
-                              animationSpec = tween(270, delayMillis = 90))) togetherWith
-                          (fadeOut(animationSpec = tween(90)) +
+                              animationSpec = AppMotion.defaultSpatialSpec())) togetherWith
+                          (fadeOut(animationSpec = AppMotion.fastEffectsSpec()) +
                               slideOutVertically(
-                                  targetOffsetY = { -it / 4 }, animationSpec = tween(120)))
+                                  targetOffsetY = { -it / 4 }, animationSpec = AppMotion.defaultSpatialSpec()))
                     } else {
-                      fadeIn(animationSpec = tween(0)) togetherWith
-                          fadeOut(animationSpec = tween(0))
+                      fadeIn(animationSpec = snap()) togetherWith
+                          fadeOut(animationSpec = snap())
                     }
-                    .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> tween(250) }))
+                    .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> AppMotion.defaultSpatialSpec() }))
               },
               label = "DateTimeFieldsAnimation") { targetLayoutState ->
                 val (showAllDay, showOneDay) = targetLayoutState
@@ -415,9 +418,9 @@ fun EventDateTimePicker(
     AnimatedVisibility(
         visible = state.isRecurring,
         enter =
-            fadeIn(animationSpec = tween(150, delayMillis = 50)) +
-                expandVertically(animationSpec = tween(300)),
-        exit = fadeOut(animationSpec = tween(150)) + shrinkVertically(animationSpec = tween(300)),
+            fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
+                expandVertically(animationSpec = AppMotion.defaultSpatialSpec()),
+        exit = fadeOut(animationSpec = AppMotion.fastEffectsSpec()) + shrinkVertically(animationSpec = AppMotion.defaultSpatialSpec()),
         modifier = Modifier.padding(top = 8.dp)) {
           Column {
             Row(
@@ -461,11 +464,11 @@ fun EventDateTimePicker(
             AnimatedVisibility(
                 visible = state.recurrenceRule == RecurrenceOption.Weekly.rruleValue,
                 enter =
-                    fadeIn(animationSpec = tween(150, delayMillis = 50)) +
-                        expandVertically(animationSpec = tween(300)),
+                    fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
+                        expandVertically(animationSpec = AppMotion.defaultSpatialSpec()),
                 exit =
-                    fadeOut(animationSpec = tween(150)) +
-                        shrinkVertically(animationSpec = tween(300)),
+                    fadeOut(animationSpec = AppMotion.fastEffectsSpec()) +
+                        shrinkVertically(animationSpec = AppMotion.defaultSpatialSpec()),
             ) {
               Column {
                 Row(

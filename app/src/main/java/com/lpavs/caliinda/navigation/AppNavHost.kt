@@ -1,8 +1,10 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.lpavs.caliinda.navigation
 
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
@@ -29,18 +31,23 @@ fun AppNavHost(
   NavHost(
       navController = navController,
       startDestination = NavRoutes.Main.route,
+      // Общая ось X: новый экран въезжает справа, прежний чуть уходит влево; назад — зеркально.
+      // Раньше при возврате главный экран тоже въезжал справа, навстречу уезжающим настройкам.
+      enterTransition = {
+        slideInHorizontally(AppMotion.defaultSpatialSpec()) { it } +
+            fadeIn(AppMotion.defaultEffectsSpec())
+      },
+      exitTransition = {
+        slideOutHorizontally(AppMotion.defaultSpatialSpec()) { -it / 4 } +
+            fadeOut(AppMotion.defaultEffectsSpec())
+      },
       popEnterTransition = {
-        slideInHorizontally(
-            initialOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = 150, easing = EaseOut))
+        slideInHorizontally(AppMotion.defaultSpatialSpec()) { -it / 4 } +
+            fadeIn(AppMotion.defaultEffectsSpec())
       },
       popExitTransition = {
-        slideOutHorizontally(
-            targetOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = 150, easing = EaseIn))
-      },
-      enterTransition = {
-        slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(200))
+        slideOutHorizontally(AppMotion.defaultSpatialSpec()) { it } +
+            fadeOut(AppMotion.defaultEffectsSpec())
       },
       modifier = modifier,
   ) {

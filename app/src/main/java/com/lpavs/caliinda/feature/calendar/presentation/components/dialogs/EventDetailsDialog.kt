@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
+import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
@@ -78,7 +79,7 @@ fun CustomEventDetailsDialog(
               usePlatformDefaultWidth = false)) {
         Surface(
             modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
-            shape = RoundedCornerShape(25.dp),
+            shape = RoundedCornerShape(cuid.ContainerCornerRadius),
             color =
                 if (!event.isCurrent) colorScheme.primaryContainer
                 else colorScheme.tertiaryContainer,
