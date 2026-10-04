@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
 import androidx.compose.animation.AnimatedVisibility
@@ -130,7 +131,7 @@ fun AllDayEventItem(
                                       contentColor = MaterialTheme.colorScheme.tertiary)) {
                                 Icon(
                                     Icons.Filled.Info,
-                                    contentDescription = "Information",
+                                    contentDescription = stringResource(R.string.details),
                                     modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
                               }
                           Spacer(modifier = Modifier.Companion.width(8.dp))
@@ -143,7 +144,7 @@ fun AllDayEventItem(
                                       contentColor = MaterialTheme.colorScheme.tertiary)) {
                                 Icon(
                                     Icons.Filled.Edit,
-                                    contentDescription = "Редактировать",
+                                    contentDescription = stringResource(R.string.edit),
                                     modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
                               }
                           Spacer(modifier = Modifier.Companion.width(8.dp))
@@ -156,7 +157,7 @@ fun AllDayEventItem(
                                       contentColor = MaterialTheme.colorScheme.tertiary)) {
                                 Icon(
                                     Icons.Filled.Delete,
-                                    contentDescription = "Удалить",
+                                    contentDescription = stringResource(R.string.delete),
                                     modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
                               }
                         }

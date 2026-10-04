@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
+import com.lpavs.caliinda.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -149,9 +151,9 @@ fun CustomEventDetailsDialog(
                                   eventManagementViewModel.requestEditEvent(event.originalEvent)
                                 },
                                 contentPadding = PaddingValues(horizontal = 12.dp)) {
-                                  Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                  Icon(Icons.Filled.Edit, contentDescription = null)
                                   Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                  Text("Edit") // Или локализованная строка
+                                  Text(stringResource(R.string.edit))
                                 }
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
@@ -167,7 +169,7 @@ fun CustomEventDetailsDialog(
                                 shape = IconButtonDefaults.smallRoundShape) {
                                   Icon(
                                       imageVector = Icons.Filled.Delete,
-                                      contentDescription = "Delete",
+                                      contentDescription = stringResource(R.string.delete),
                                   )
                                 }
                           }
@@ -180,7 +182,7 @@ fun CustomEventDetailsDialog(
 @Composable
 private fun DetailRow(icon: ImageVector, value: String, color: Color) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-    Icon(imageVector = icon, contentDescription = "Описание иконки")
+    Icon(imageVector = icon, contentDescription = null)
     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
     Text(text = value, style = typography.bodyLarge, color = color)
     Spacer(modifier = Modifier.height(8.dp))

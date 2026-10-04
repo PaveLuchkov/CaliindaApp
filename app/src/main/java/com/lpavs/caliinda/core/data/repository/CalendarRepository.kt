@@ -1,5 +1,8 @@
 package com.lpavs.caliinda.core.data.repository
 
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
+import com.lpavs.caliinda.R
 import android.content.ContentValues
 import android.provider.CalendarContract.Events
 import android.util.Log
@@ -47,6 +50,7 @@ constructor(
     private val dataSource: CalendarProviderDataSource,
     private val permissionManager: CalendarPermissionManager,
     private val settingsRepository: SettingsRepository,
+    @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
   private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
@@ -313,7 +317,7 @@ constructor(
 
     return EventDto(
         id = "${row.eventId}_${row.begin}",
-        summary = row.title?.takeIf { it.isNotBlank() } ?: NO_TITLE,
+        summary = row.title?.takeIf { it.isNotBlank() } ?: context.getString(R.string.no_title),
         startTime = Instant.ofEpochMilli(startMillis),
         endTime = Instant.ofEpochMilli(endMillis),
         description = row.description?.takeIf { it.isNotBlank() },
@@ -449,7 +453,6 @@ constructor(
   companion object {
     private const val TAG = "CalendarRepository"
     private const val GOOGLE_ACCOUNT_TYPE = "com.google"
-    private const val NO_TITLE = "(No title)"
     private val DAY_MILLIS = TimeUnit.DAYS.toMillis(1)
     /** На сколько дней вперёд экран проектов показывает предстоящие длинные события. */
     private const val PROJECTS_LOOKAHEAD_DAYS = 180L

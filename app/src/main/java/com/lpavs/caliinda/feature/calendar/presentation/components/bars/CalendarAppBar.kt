@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import com.lpavs.caliinda.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -72,7 +74,7 @@ fun CalendarAppBar(
             enabled = hasCalendarAccess) {
               Icon(
                   Icons.Filled.Today,
-                  contentDescription = "Перейти к сегодня",
+                  contentDescription = stringResource(R.string.go_to_today),
               )
             }
       },
@@ -91,7 +93,7 @@ fun CalendarAppBar(
               shape = IconButtonDefaults.smallRoundShape) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
-                    contentDescription = "Настройки",
+                    contentDescription = stringResource(R.string.settings),
                 )
               }
         }

@@ -169,4 +169,17 @@
         <item quantity="many">Осталось %d дней</item>
         <item quantity="other">Осталось %d дня</item>
     </plurals>
+    <string name="create_event">Создать событие</string>
+    <string name="go_to_today">Перейти к сегодня</string>
+    <string name="edit">Изменить</string>
+    <string name="details">Подробнее</string>
+    <string name="calendar_access_title">Доступ к календарю</string>
+    <string name="calendar_access_body">Caliinda работает с календарями на телефоне. Google Календарь синхронизируется сюда автоматически.</string>
+    <string name="allow_access">Разрешить доступ</string>
+    <string name="intro_finish">Готово</string>
+    <string name="intro_next">Далее</string>
+    <string name="calendars">Календари</string>
+    <string name="new_events_saved_to">Новые события сохраняются в</string>
+    <string name="syncing_calendars">Синхронизация календарей…</string>
+    <string name="no_title">(Без названия)</string>
 </resources>

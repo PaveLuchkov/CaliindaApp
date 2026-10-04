@@ -37,7 +37,7 @@ fun CalendarEffectHandler(
     merge(calendarViewModel.eventFlow, eventManagementViewModel.eventFlow).collect { event ->
       when (event) {
         is CalendarUiEvent.ShowMessage -> {
-          snackbarHostState.showSnackbar(event.message)
+          snackbarHostState.showSnackbar(event.message.asString(context))
         }
         is EventManagementUiEvent.ShowMessage -> {
           snackbarHostState.showSnackbar(event.message.asString(context))

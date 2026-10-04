@@ -33,12 +33,12 @@ fun CalendarDatePickerDialog(
                     state.selectedDateMillis?.let(onConfirm)
                 }
             ) {
-                Text("OK")
+                Text(stringResource(android.R.string.ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     ) {

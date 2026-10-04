@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import com.lpavs.caliinda.core.data.utils.UiText
+import com.lpavs.caliinda.R
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -210,7 +212,7 @@ constructor(
   fun syncCalendars() {
     viewModelScope.launch {
       calendarRepository.requestSync()
-      _eventFlow.emit(CalendarUiEvent.ShowMessage("Syncing calendars…"))
+      _eventFlow.emit(CalendarUiEvent.ShowMessage(UiText.from(R.string.syncing_calendars)))
     }
   }
 
@@ -228,5 +230,5 @@ constructor(
 }
 
 sealed class CalendarUiEvent {
-  data class ShowMessage(val message: String) : CalendarUiEvent()
+  data class ShowMessage(val message: UiText) : CalendarUiEvent()
 }

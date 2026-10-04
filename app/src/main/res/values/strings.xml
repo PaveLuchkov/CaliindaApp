@@ -328,4 +328,17 @@
         <item quantity="one">%d day left</item>
         <item quantity="other">%d days left</item>
     </plurals>
+    <string name="create_event">Create event</string>
+    <string name="go_to_today">Go to today</string>
+    <string name="edit">Edit</string>
+    <string name="details">Details</string>
+    <string name="calendar_access_title">Calendar access</string>
+    <string name="calendar_access_body">Caliinda works with the calendars on your phone. Google Calendar syncs here automatically.</string>
+    <string name="allow_access">Allow access</string>
+    <string name="intro_finish">Finish</string>
+    <string name="intro_next">Next</string>
+    <string name="calendars">Calendars</string>
+    <string name="new_events_saved_to">New events are saved to</string>
+    <string name="syncing_calendars">Syncing calendars…</string>
+    <string name="no_title">(No title)</string>
 </resources>

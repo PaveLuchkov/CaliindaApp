@@ -54,7 +54,7 @@ fun HandlePickerLogic(
                   }
                   onDismiss()
                 }) {
-                  Text("OK")
+                  Text(stringResource(android.R.string.ok))
                 }
           },
           dismissButton = {
@@ -91,7 +91,7 @@ fun HandlePickerLogic(
                   onStateChange(state.copy(startTime = selectedTime, endTime = newEndTime))
                   onDismiss()
                 }) {
-                  Text("OK")
+                  Text(stringResource(android.R.string.ok))
                 }
           }) {
             TimePicker(state = timePickerState)
@@ -124,7 +124,7 @@ fun HandlePickerLogic(
                   }
                   onDismiss()
                 }) {
-                  Text("OK")
+                  Text(stringResource(android.R.string.ok))
                 }
           }) {
             DatePicker(state = datePickerState)
@@ -158,7 +158,7 @@ fun HandlePickerLogic(
                     onDismiss()
                   }
                 }) {
-                  Text("OK")
+                  Text(stringResource(android.R.string.ok))
                 }
           }) {
             TimePicker(state = timePickerState)
@@ -185,7 +185,7 @@ fun HandlePickerLogic(
                   }
                   onDismiss()
                 }) {
-                  Text("OK")
+                  Text(stringResource(android.R.string.ok))
                 }
           }) {
             DatePicker(state = datePickerState)

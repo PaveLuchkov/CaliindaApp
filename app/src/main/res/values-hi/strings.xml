@@ -166,4 +166,17 @@
         <item quantity="one">%d दिन बाकी</item>
         <item quantity="other">%d दिन बाकी</item>
     </plurals>
+    <string name="create_event">इवेंट बनाएं</string>
+    <string name="go_to_today">आज पर जाएं</string>
+    <string name="edit">संपादित करें</string>
+    <string name="details">विवरण</string>
+    <string name="calendar_access_title">कैलेंडर एक्सेस</string>
+    <string name="calendar_access_body">Caliinda आपके फ़ोन के कैलेंडर के साथ काम करता है। Google Calendar यहाँ अपने आप सिंक होता है।</string>
+    <string name="allow_access">एक्सेस दें</string>
+    <string name="intro_finish">समाप्त</string>
+    <string name="intro_next">आगे</string>
+    <string name="calendars">कैलेंडर</string>
+    <string name="new_events_saved_to">नए इवेंट यहाँ सहेजे जाते हैं</string>
+    <string name="syncing_calendars">कैलेंडर सिंक हो रहे हैं…</string>
+    <string name="no_title">(कोई शीर्षक नहीं)</string>
 </resources>

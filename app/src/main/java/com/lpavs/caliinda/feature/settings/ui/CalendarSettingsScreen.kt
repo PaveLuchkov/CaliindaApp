@@ -49,7 +49,7 @@ fun CalendarSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> U
   Scaffold(
       topBar = {
         TopAppBar(
-            title = { Text("Calendars") },
+            title = { Text(stringResource(R.string.calendars)) },
             navigationIcon = {
               IconButton(onClick = onNavigateBack) {
                 Icon(
@@ -63,7 +63,7 @@ fun CalendarSettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> U
             verticalArrangement = Arrangement.spacedBy(cuid.ItemVerticalPadding)) {
               item {
                 Text(
-                    text = "New events are saved to",
+                    text = stringResource(R.string.new_events_saved_to),
                     style = typography.titleSmall,
                     color = colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp))

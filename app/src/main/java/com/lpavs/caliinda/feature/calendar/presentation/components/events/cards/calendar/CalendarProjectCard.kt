@@ -310,16 +310,16 @@ fun CalendarProjectItem(
                           shape = IconButtonDefaults.smallRoundShape) {
                             Icon(
                                 imageVector = Icons.Filled.Info,
-                                contentDescription = "info",
+                                contentDescription = stringResource(R.string.details),
                             )
                           }
                       Spacer(modifier = Modifier.width(4.dp))
                       Button(
                           onClick = { onEditClickFromList() },
                           contentPadding = PaddingValues(horizontal = 12.dp)) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                            Icon(Icons.Filled.Edit, contentDescription = null)
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Edit")
+                            Text(stringResource(R.string.edit))
                           }
                       FilledIconButton(
                           onClick = { onDeleteClickFromList() },
@@ -331,7 +331,7 @@ fun CalendarProjectItem(
                           shape = IconButtonDefaults.smallRoundShape) {
                             Icon(
                                 imageVector = Icons.Filled.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.delete),
                             )
                           }
                     }
