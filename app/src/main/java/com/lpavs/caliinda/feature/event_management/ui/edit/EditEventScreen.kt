@@ -91,7 +91,9 @@ fun EditEventScreen(
         updateMode = selectedUpdateMode)
   }
 
-  Column(modifier = Modifier.fillMaxSize()) {
+  // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
+  // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.
+  Column(modifier = Modifier.fillMaxWidth()) {
     EventFormContent(
         summary = summary,
         onSummaryChange = { summary = it },
@@ -106,7 +108,7 @@ fun EditEventScreen(
         isLoading = uiState.isLoading,
         suggestedChips = suggestedChips,
         onSave = save,
-        modifier = Modifier.weight(1f))
+        modifier = Modifier.weight(1f, fill = false))
     SaveBar(enabled = summary.isNotBlank(), isLoading = uiState.isLoading, onSave = save)
   }
 }
