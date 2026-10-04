@@ -190,4 +190,6 @@
     <string name="widget_now">अभी</string>
     <string name="widget_no_more_events">आज और कोई इवेंट नहीं</string>
     <string name="widget_no_access">कैलेंडर एक्सेस देने के लिए Caliinda खोलें</string>
+    <string name="widget_preview_title">डिज़ाइन रिव्यू</string>
+    <string name="widget_preview_time">2:00 PM – 3:00 PM</string>
 </resources>

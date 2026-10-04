@@ -191,4 +191,6 @@
     <string name="widget_now">jetzt</string>
     <string name="widget_no_more_events">Heute keine weiteren Termine</string>
     <string name="widget_no_access">Öffne Caliinda, um Kalenderzugriff zu erlauben</string>
+    <string name="widget_preview_title">Design-Review</string>
+    <string name="widget_preview_time">14:00 – 15:00</string>
 </resources>

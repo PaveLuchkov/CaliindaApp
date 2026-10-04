@@ -192,4 +192,6 @@
     <string name="widget_now">maintenant</string>
     <string name="widget_no_more_events">Plus d’événements aujourd’hui</string>
     <string name="widget_no_access">Ouvrez Caliinda pour autoriser l’accès au calendrier</string>
+    <string name="widget_preview_title">Revue design</string>
+    <string name="widget_preview_time">14:00 – 15:00</string>
 </resources>
