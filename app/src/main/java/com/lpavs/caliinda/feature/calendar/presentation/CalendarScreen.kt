@@ -142,8 +142,11 @@ fun CalendarScreen(
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
   var showCreateEventSheet by remember { mutableStateOf(false) }
   var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
+  var createAsProject by remember { mutableStateOf(false) }
   val CreateEventAction = {
-    selectedDateForSheet = currentVisibleDate
+    // С экрана проектов (страница 0) сразу предлагаем промежуток дней, начиная с сегодня.
+    createAsProject = horizontalPagerState.currentPage == 0
+    selectedDateForSheet = if (createAsProject) today else currentVisibleDate
     showCreateEventSheet = true
   }
   var showEditEventSheet by remember { mutableStateOf(false) }
@@ -262,6 +265,7 @@ fun CalendarScreen(
     CreateEventScreen(
         userTimeZone = timeZone.value,
         initialDate = selectedDateForSheet,
+        initialProject = createAsProject,
         onDismiss = {
           scope
               .launch { sheetState.hide() }
