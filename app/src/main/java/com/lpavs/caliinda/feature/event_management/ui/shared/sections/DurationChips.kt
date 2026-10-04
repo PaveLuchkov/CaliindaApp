@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,7 +37,7 @@ fun DurationChips(
   val current = state.endTime?.let { Duration.between(start, LocalDateTime.of(state.endDate, it)) }
   val haptic = LocalHapticFeedback.current
 
-  LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(cuid.padding)) {
+  LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(cuid.padding, Alignment.CenterHorizontally)) {
     items(QUICK_DURATIONS, key = { it.toMinutes() }) { duration ->
       FilterChip(
           selected = current == duration,
