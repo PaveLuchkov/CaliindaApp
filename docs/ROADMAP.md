@@ -18,13 +18,13 @@
   зависимые flow при смене дня.
 - [x] **1.3 Время по умолчанию около полуночи.** `CreateEventScreen.kt`: при `now + 1h`
   через полночь стартовая дата должна сдвигаться на следующий день.
-- [ ] **1.4 Пикер даты в шапке** открывается со старой датой — синхронизировать
+- [x] **1.4 Пикер даты в шапке** открывается со старой датой — синхронизировать
   `datePickerState` с `currentVisibleDate` при открытии; убрать пустую строку
   `datePickerState.selectableDates`.
-- [ ] **1.5 «days left».** Округление вверх, «последний день» вместо 0, вынести в `plurals`.
-- [ ] **1.6 Локализация.** Строки в коде → ресурсы: «Syncing calendars…», «(No title)»,
+- [x] **1.5 «days left».** Округление вверх, «последний день» вместо 0, вынести в `plurals`.
+- [x] **1.6 Локализация.** Строки в коде → ресурсы: «Syncing calendars…», «(No title)»,
   «Edit», «Cancel», «OK», «Regular events», `contentDescription` в AppBar/BottomBar/карточках.
-- [ ] **1.7 Мусор.** `app/release/` в `.gitignore`; удалить/доделать неиспользуемое:
+- [x] **1.7 Мусор.** `app/release/` в `.gitignore`; удалить/доделать неиспользуемое:
   `WeekState`, пустой `ManagementScreen`/`AppMode.MANAGEMENT`, `validationError`/
   `generalError` в форме, дублирующий `requestEventDetails` в `EventManagementViewModel`.
 
