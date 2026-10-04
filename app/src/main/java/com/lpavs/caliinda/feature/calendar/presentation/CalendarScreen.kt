@@ -40,6 +40,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
+import com.lpavs.caliinda.core.ui.util.fromPickerMillis
+import com.lpavs.caliinda.core.ui.util.toPickerMillis
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
@@ -55,9 +57,7 @@ import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -73,7 +73,6 @@ fun CalendarScreen(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val timeZone = settignsViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
-  val userTimeZoneId = ZoneId.of(timeZone.value)
 
   val snackbarHostState = remember { SnackbarHostState() }
   val haptic = LocalHapticFeedback.current
@@ -136,7 +135,7 @@ fun CalendarScreen(
   val datePickerState =
       rememberDatePickerState(
           initialSelectedDateMillis =
-              currentVisibleDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
+              currentVisibleDate.toPickerMillis(),
       )
 
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -243,7 +242,7 @@ fun CalendarScreen(
       onConfirm = { millis ->
         showDatePicker = false
 
-        val selectedDate = Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+        val selectedDate = millis.fromPickerMillis()
 
         if (selectedDate != currentVisibleDate) {
           calendarViewModel.onVisibleDateChanged(selectedDate)
@@ -289,7 +288,6 @@ fun CalendarScreen(
       }) {
         EditEventScreen(
             viewModel = eventManagementViewModel,
-            userTimeZone = timeZone.value,
             eventToEdit = eventToEdit!!,
             selectedUpdateMode = mode!!,
             onDismiss = {

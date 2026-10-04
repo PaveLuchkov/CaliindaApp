@@ -151,7 +151,6 @@ fun CreateEventScreen(
           eventDateTimeState = it
           validationError = null
         },
-        userTimeZoneId = userTimeZoneId,
         isLoading = uiState.isLoading,
         suggestedChips = suggestedChips)
 

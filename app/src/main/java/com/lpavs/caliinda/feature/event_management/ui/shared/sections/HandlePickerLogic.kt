@@ -17,9 +17,9 @@ import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.feature.event_management.ui.shared.ActivePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
-import java.time.Instant
+import com.lpavs.caliinda.core.ui.util.fromPickerMillis
+import com.lpavs.caliinda.core.ui.util.toPickerMillis
 import java.time.LocalTime
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +28,6 @@ fun HandlePickerLogic(
     onDismiss: () -> Unit,
     state: EventDateTimeState,
     onStateChange: (EventDateTimeState) -> Unit,
-    userTimeZoneId: ZoneId,
     context: Context
 ) {
   when (activePicker) {
@@ -36,7 +35,7 @@ fun HandlePickerLogic(
       val datePickerState =
           rememberDatePickerState(
               initialSelectedDateMillis =
-                  state.startDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli())
+                  state.startDate.toPickerMillis())
       DatePickerDialog(
           onDismissRequest = onDismiss,
           confirmButton = {
@@ -44,7 +43,7 @@ fun HandlePickerLogic(
                 onClick = {
                   datePickerState.selectedDateMillis?.let { millis ->
                     val selectedDate =
-                        Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()
+                        millis.fromPickerMillis()
 
                     onStateChange(
                         state.copy(
@@ -103,12 +102,12 @@ fun HandlePickerLogic(
       val datePickerState =
           rememberDatePickerState(
               initialSelectedDateMillis =
-                  state.endDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli(),
+                  state.endDate.toPickerMillis(),
               selectableDates =
                   object : SelectableDates {
                     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                       val startMillis =
-                          state.startDate.atStartOfDay(userTimeZoneId).toInstant().toEpochMilli()
+                          state.startDate.toPickerMillis()
                       return utcTimeMillis >= startMillis
                     }
                   })
@@ -121,7 +120,7 @@ fun HandlePickerLogic(
                     onStateChange(
                         state.copy(
                             endDate =
-                                Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate()))
+                                millis.fromPickerMillis()))
                   }
                   onDismiss()
                 }) {
@@ -170,12 +169,7 @@ fun HandlePickerLogic(
       val datePickerState =
           rememberDatePickerState(
               initialSelectedDateMillis =
-                  state.recurrenceEndDate?.atStartOfDay(userTimeZoneId)?.toInstant()?.toEpochMilli()
-                      ?: state.startDate
-                          .plusMonths(1)
-                          .atStartOfDay(userTimeZoneId)
-                          .toInstant()
-                          .toEpochMilli())
+                  (state.recurrenceEndDate ?: state.startDate.plusMonths(1)).toPickerMillis())
       DatePickerDialog(
           onDismissRequest = onDismiss,
           confirmButton = {
@@ -185,7 +179,7 @@ fun HandlePickerLogic(
                     onStateChange(
                         state.copy(
                             recurrenceEndDate =
-                                Instant.ofEpochMilli(millis).atZone(userTimeZoneId).toLocalDate(),
+                                millis.fromPickerMillis(),
                             recurrenceEndType = RecurrenceEndType.DATE,
                             recurrenceCount = null))
                   }

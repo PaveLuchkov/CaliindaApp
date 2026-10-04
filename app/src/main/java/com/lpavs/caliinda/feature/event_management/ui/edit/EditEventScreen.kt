@@ -37,14 +37,12 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.EventFormContent
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiEvent
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditEventScreen(
     viewModel: EventManagementViewModel,
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
-    userTimeZone: String,
     eventToEdit: EventDto,
     selectedUpdateMode: EventUpdateMode,
     onDismiss: () -> Unit,
@@ -61,7 +59,6 @@ fun EditEventScreen(
   val uiState by viewModel.uiState.collectAsState()
 
   // Вспомогательные переменные
-  val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
   val initialEventDateTimeState =
       remember(eventToEdit.id) { viewModel.parseEventToState(eventToEdit) }
   var eventDateTimeState by remember(eventToEdit.id) { mutableStateOf(initialEventDateTimeState) }
@@ -124,7 +121,6 @@ fun EditEventScreen(
           eventDateTimeState = it
           validationError = null
         },
-        userTimeZoneId = userTimeZoneId,
         isLoading = uiState.isLoading,
         suggestedChips = suggestedChips)
 
