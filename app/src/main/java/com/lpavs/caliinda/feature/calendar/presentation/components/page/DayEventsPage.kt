@@ -17,8 +17,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.core.common.EventNetworkState
-import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.FullScreenLoader
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
@@ -27,7 +25,6 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.SystemEventsList
 import com.lpavs.caliinda.feature.event_management.EventActions
-import com.lpavs.caliinda.feature.event_management.SuggestionActions
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -36,13 +33,11 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DayEventsPage(
-    isLoading: Boolean,
-    isSignedIn: Boolean,
-    onSignInClick: () -> Unit,
+    hasCalendarAccess: Boolean,
+    onGrantAccessClick: () -> Unit,
     date: LocalDate,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
-    agentViewModel: AgentViewModel,
     createEventClick: () -> Unit,
     introductionState: IntroState
 ) {
@@ -58,13 +53,7 @@ fun DayEventsPage(
             onEdit = eventManagementViewModel::requestEditEvent,
             onDetails = viewModel::requestEventDetails)
       }
-  val sugActions =
-      remember(eventManagementViewModel) {
-        SuggestionActions(onApprove = eventManagementViewModel::createSuggestionEvent, onDeny = eventManagementViewModel::deleteEventLocaly)
-      }
-  val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
-  val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
-  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
+  val isBusy = pageState.isLoading
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
       launch {
@@ -87,19 +76,19 @@ fun DayEventsPage(
     Spacer(modifier = Modifier.height(2.dp))
 
     val showIntro = !introductionState.isFinished && !isBusy
-    val showAuth = !isSignedIn && !isBusy
+    val showAccess = !hasCalendarAccess
 
-    if (showIntro || showAuth) {
+    if (showIntro || showAccess) {
       SystemEventsList(
-          isSignedIn = isSignedIn,
+          hasCalendarAccess = hasCalendarAccess,
           introStep = introductionState.currentStep,
-          onSignInClick = onSignInClick,
+          onGrantAccessClick = onGrantAccessClick,
           onIntroNext = { viewModel.onIntroNext() },
           projectView = false)
       return
     }
 
-    val hasContent = pageState.timedEvents.isNotEmpty() || !agentResponse?.mainText.isNullOrBlank()
+    val hasContent = pageState.timedEvents.isNotEmpty()
     val hasAllDayEvents = pageState.allDayEvents.isNotEmpty()
 
     when {
@@ -107,8 +96,7 @@ fun DayEventsPage(
         DailyCardsList(
             events = pageState.timedEvents,
             listState = listState,
-            actions = actions,
-            sugActions = sugActions)
+            actions = actions)
       }
       isBusy -> {
         FullScreenLoader()

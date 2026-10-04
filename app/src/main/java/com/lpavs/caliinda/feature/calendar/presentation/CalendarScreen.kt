@@ -1,7 +1,9 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
 import android.app.Activity
-import android.util.Log
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -27,19 +29,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.core.data.auth.AuthViewModel
+import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
-import com.lpavs.caliinda.feature.agent.presentation.indicators.AiVisualizer
-import com.lpavs.caliinda.feature.agent.presentation.vm.AgentViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
@@ -66,25 +66,14 @@ fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
     settignsViewModel: SettingsViewModel,
-    agentViewModel: AgentViewModel,
-    authViewModel: AuthViewModel,
     onNavigateToSettings: () -> Unit,
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val introductionState by calendarViewModel.introState.collectAsStateWithLifecycle()
-  val agentState by agentViewModel.agentState.collectAsStateWithLifecycle()
-  val recState by agentViewModel.recState.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
-  val authState by authViewModel.authState.collectAsStateWithLifecycle()
   val timeZone = settignsViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
   val userTimeZoneId = ZoneId.of(timeZone.value)
-
-  //  val agentResponse by agentViewModel.agentResponse.collectAsStateWithLifecycle()
-  //  val suggestions = agentResponse?.suggestions ?: emptyList()
-
-  var textFieldState by remember { mutableStateOf(TextFieldValue("")) }
-  val isTextInputVisible by remember { mutableStateOf(false) }
 
   val snackbarHostState = remember { SnackbarHostState() }
   val haptic = LocalHapticFeedback.current
@@ -101,31 +90,47 @@ fun CalendarScreen(
   val weekViewPagerState =
       rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
   val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()
-  val activity = context as? Activity
-  val authorizationLauncher =
-      rememberLauncherForActivityResult(
-          contract = ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-              result.data?.let { authViewModel.handleAuthorizationResult(it) }
-            } else {
-              Log.w("MainScreen", "Authorization flow was cancelled by user.")
-              authViewModel.signOut()
-            }
-          }
-  val isOverallLoading = calendarState.isLoading || eventManagementState.isLoading
+  var openSettingsForAccess by remember { mutableStateOf(false) }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+          results ->
+        calendarViewModel.onCalendarPermissionChanged()
+        val activity = context as? Activity
+        // Отказали "навсегда" — системный диалог больше не появится, остаются только настройки.
+        openSettingsForAccess =
+            activity != null &&
+                results.values.any { granted -> !granted } &&
+                CalendarPermissionManager.PERMISSIONS.none {
+                  activity.shouldShowRequestPermissionRationale(it)
+                }
+      }
+  val requestCalendarAccess: () -> Unit = {
+    if (openSettingsForAccess) {
+      context.startActivity(
+          Intent(
+              Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+              Uri.fromParts("package", context.packageName, null)))
+    } else {
+      permissionLauncher.launch(CalendarPermissionManager.PERMISSIONS)
+    }
+  }
+  var autoRequestedAccess by rememberSaveable { mutableStateOf(false) }
+  LaunchedEffect(Unit) {
+    if (!calendarState.hasCalendarPermission && !autoRequestedAccess) {
+      autoRequestedAccess = true
+      requestCalendarAccess()
+    }
+  }
   val eventToEdit = eventManagementState.eventBeingEdited
   val mode = eventManagementState.selectedUpdateMode
   val currentCalendarScreenMode = calendarState.currentMode
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
-      agentViewModel = agentViewModel,
-      authViewModel = authViewModel,
       pagerState = pagerState,
       snackbarHostState = snackbarHostState,
       initialPageIndex = initialPageIndex,
-      today = today,
-      authorizationLauncher = authorizationLauncher)
+      today = today)
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
@@ -176,8 +181,6 @@ fun CalendarScreen(
                 if (pagerState.currentPage != initialPageIndex) {
                   calendarViewModel.onVisibleDateChanged(today)
                   pagerState.animateScrollToPage(initialPageIndex)
-                } else {
-                  calendarViewModel.refreshCurrentVisibleDate()
                 }
               }
             },
@@ -188,10 +191,10 @@ fun CalendarScreen(
             },
             onTitleHold = {
               haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-              calendarViewModel.refreshCurrentVisibleDate()
+              calendarViewModel.syncCalendars()
             },
             date = currentVisibleDate,
-            isSignedIn = !calendarState.signInRequired,
+            hasCalendarAccess = calendarState.hasCalendarPermission,
             currentCalendarScreenMode = currentCalendarScreenMode)
       },
   ) { paddingValues ->
@@ -206,17 +209,14 @@ fun CalendarScreen(
                 CalendarPagerScreen(
                     calendarViewModel = calendarViewModel,
                     eventManagementViewModel = eventManagementViewModel,
-                    authViewModel = authViewModel,
-                    agentViewModel = agentViewModel,
                     calendarPagerState = horizontalPagerState,
                     dailyViewPagerState = pagerState,
                     weekViewPagerState = weekViewPagerState,
-                    signedIn = !calendarState.signInRequired,
+                    hasCalendarAccess = calendarState.hasCalendarPermission,
+                    onGrantAccessClick = requestCalendarAccess,
                     createEventAction = CreateEventAction,
-                    isOverallLoading = isOverallLoading,
                     initialPageIndex = initialPageIndex,
                     today = today,
-                    activity = activity,
                     introductionState = introductionState)
               }
               AppMode.MANAGEMENT -> {
@@ -225,24 +225,10 @@ fun CalendarScreen(
             }
           }
 
-      AiVisualizer(aiState = agentState, modifier = Modifier.fillMaxSize())
-      if (!calendarState.signInRequired) {
+      if (calendarState.hasCalendarPermission) {
         BottomBar(
-            textFieldValue = textFieldState,
-            onTextChanged = { textFieldState = it },
-            onSendClick = { messageText ->
-              agentViewModel.sendTextMessage(messageText)
-              textFieldState = TextFieldValue("")
-            },
-            isTextInputVisible = isTextInputVisible,
             modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
-            onCreateEventClick = CreateEventAction,
-            recordState = recState,
-            authState = authState,
-            changeScenery = calendarViewModel::changeScenery,
-            currentMode = currentCalendarScreenMode
-            //            suggestions = suggestions
-            )
+            onCreateEventClick = CreateEventAction)
       }
     }
   }

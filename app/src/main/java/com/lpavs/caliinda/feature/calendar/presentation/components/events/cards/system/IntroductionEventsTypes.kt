@@ -5,7 +5,6 @@ enum class IntroStep {
     CALENDAR,
     VIEWS,
     EVENTS,
-    SUGGESTIONS,
     START;
     companion object {
         fun next(current: IntroStep): IntroStep? {

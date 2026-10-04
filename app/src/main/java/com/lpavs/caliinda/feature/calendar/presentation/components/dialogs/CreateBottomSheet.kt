@@ -7,8 +7,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

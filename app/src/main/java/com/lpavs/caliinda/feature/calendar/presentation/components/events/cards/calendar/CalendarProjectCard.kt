@@ -69,7 +69,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
@@ -376,9 +376,8 @@ val normalProjectEvent =
                 endTime = "2025-10-19T00:00:00+03:00",
                 description = null,
                 location = null,
-                isAllDay = false,
-                isPhantom = false),
-        isPhantom = false)
+                isAllDay = false),
+    )
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable

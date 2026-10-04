@@ -1,471 +1,462 @@
 package com.lpavs.caliinda.core.data.repository
 
+import android.content.ContentValues
+import android.provider.CalendarContract.Events
 import android.util.Log
 import com.lpavs.caliinda.app.di.IoDispatcher
-import com.lpavs.caliinda.core.common.EventNetworkState
-import com.lpavs.caliinda.core.data.auth.AuthEvent
-import com.lpavs.caliinda.core.data.auth.AuthManager
-import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
-import com.lpavs.caliinda.core.data.local.CalendarLocalDataSource
-import com.lpavs.caliinda.core.data.remote.calendar.CalendarRemoteDataSource
-import com.lpavs.caliinda.core.data.remote.calendar.EventDeleteMode
-import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
-import com.lpavs.caliinda.core.data.repository.mapper.EventMapper
-import com.lpavs.caliinda.feature.event_management.PendingSuggestion
+import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
+import com.lpavs.caliinda.core.data.calendar.CalendarProviderDataSource
+import com.lpavs.caliinda.core.data.calendar.EventRow
+import com.lpavs.caliinda.core.data.calendar.InstanceRow
+import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
+import com.lpavs.caliinda.core.data.calendar.model.EventDeleteMode
+import com.lpavs.caliinda.core.data.calendar.model.EventDraft
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
-import java.util.concurrent.CancellationException
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class CalendarRepository
 @Inject
 constructor(
-    private val remotreDataSource: CalendarRemoteDataSource,
-    private val localDataSource: CalendarLocalDataSource,
+    private val dataSource: CalendarProviderDataSource,
+    private val permissionManager: CalendarPermissionManager,
     private val settingsRepository: SettingsRepository,
-    private val calendarStateHolder: ICalendarStateHolder,
-    private val authManager: AuthManager,
-    private val eventMapper: EventMapper,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
-  private val _loadedDateRange = MutableStateFlow<ClosedRange<LocalDate>?>(null)
-  private val _rangeNetworkState = MutableStateFlow<EventNetworkState>(EventNetworkState.Idle)
-  private var fetchJobHolder: JobHolder? = null
-  private val fetchJobMutex = Mutex()
+  private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
-  private data class JobHolder(val job: Job, val requestedRange: ClosedRange<LocalDate>)
-
-  private var activeFetchJob: Job? = null
-  private val managerScope = CoroutineScope(SupervisorJob() + ioDispatcher)
-  val rangeNetworkState: StateFlow<EventNetworkState> = _rangeNetworkState.asStateFlow()
-
-  companion object {
-    const val INITIAL_LOAD_DAYS_AROUND = 2L
-    const val UPDATE_LOAD_DAYS_AROUND = 5L
-    const val TRIGGER_PREFETCH_THRESHOLD = 1L
-    const val EXPAND_CHUNK_DAYS = 14L
-    const val JUMP_DETECTION_BUFFER_DAYS = 10L
-    private const val TAG = "CalendarDataManager"
-  }
-
-  init {
-    managerScope.launch {
-      authManager.authEvents.collect { event ->
-        when (event) {
-          AuthEvent.SignedOut -> clearLocalDataOnSignOut()
-        }
-      }
-    }
-  }
-
-  // --- Секция Предоставление данных ---
-  /** Предоставляет Flow событий из БД для указанной даты */
-  @OptIn(ExperimentalCoroutinesApi::class)
-  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> {
-    return settingsRepository.timeZoneFlow
-        .flatMapLatest { timeZoneIdString ->
-          val zoneId = parseTimeZone(timeZoneIdString)
-          val (startMillis, endMillis) = calculateLocalBounds(date, zoneId)
-
-          localDataSource.getEventsForDateRangeFlow(startMillis, endMillis).map { entityList ->
-            entityList
-                .filter { entity -> isEventValidForDayDate(entity, startMillis, endMillis) }
-                .map { entity -> eventMapper.mapToDomain(entity, zoneId.toString()) }
+  /** Эмитит true/false (есть ли доступ) при старте и при каждом изменении данных календаря. */
+  private val dataChanges: Flow<Boolean> =
+      permissionManager.isGranted
+          .flatMapLatest { granted ->
+            if (granted) dataSource.observeChanges().map { true } else flowOf(false)
           }
-        }
-        .catch { e ->
-          Log.e(TAG, "Error processing events Flow for date $date", e)
-          emit(emptyList())
-        }
-        .flowOn(ioDispatcher)
-  }
+          .shareIn(scope, SharingStarted.WhileSubscribed(5000), replay = 1)
 
-  /** Предоставляет Flow событий из БД для указанной даты */
-  @OptIn(ExperimentalCoroutinesApi::class)
-  fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> {
-    return settingsRepository.timeZoneFlow
-        .flatMapLatest { timeZoneIdString ->
-          val zoneId = parseTimeZone(timeZoneIdString)
-          val (startMillis, endMillis) = calculateLocalBounds(date, zoneId)
-
-          localDataSource.getProjectsForDateRangeFlow(startMillis, endMillis).map { entityList ->
-            entityList
-                .filter { entity -> isEventValidForProjectRange(entity, startMillis, endMillis) }
-                .map { entity -> eventMapper.mapToDomain(entity, zoneId.toString()) }
+  private fun <T> observeCalendar(load: (ZoneId) -> T, empty: T): Flow<T> =
+      combine(dataChanges, settingsRepository.timeZoneFlow) { granted, tz -> granted to tz }
+          .mapLatest { (granted, tz) -> if (granted) load(parseTimeZone(tz)) else empty }
+          .catch { e ->
+            Log.e(TAG, "Error reading calendar", e)
+            emit(empty)
           }
-        }
-        .catch { e ->
-          Log.e(TAG, "Error processing events Flow for date $date", e)
-          emit(emptyList())
-        }
-        .flowOn(ioDispatcher)
-  }
+          .flowOn(ioDispatcher)
 
-  /** Безопасный парсинг часового пояса */
-  private fun parseTimeZone(timeZoneIdString: String): ZoneId {
-    return try {
-      ZoneId.of(timeZoneIdString.ifEmpty { ZoneId.systemDefault().id })
-    } catch (e: Exception) {
-      Log.w(TAG, "Invalid timezone: $timeZoneIdString, using system default", e)
-      ZoneId.systemDefault()
-    }
-  }
+  // --- Чтение ---
 
-  /** Вычисляет границы дня в локальном часовом поясе */
-  private fun calculateLocalBounds(date: LocalDate, zoneId: ZoneId): Pair<Long, Long> {
-    val startOfDay = date.atStartOfDay(zoneId)
-    val endOfDay = startOfDay.plusDays(1)
-
-    return Pair(startOfDay.toInstant().toEpochMilli(), endOfDay.toInstant().toEpochMilli())
-  }
-
-  /** Проверяет, валидно ли событие для указанной даты */
-  private fun isEventValidForDayDate(
-      entity: CalendarEventEntity,
-      startMillis: Long,
-      endMillis: Long
-  ): Boolean {
-      val durationMillis = entity.endTimeMillis - entity.startTimeMillis
-      val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
-      val toleranceMillis = TimeUnit.MINUTES.toMillis(5)
-
-    return if (!entity.isAllDay) {
-        (entity.endTimeMillis > startMillis && entity.startTimeMillis < endMillis) && (durationMillis < twentyFourHoursMillis)
-    } else {
-      (durationMillis >= twentyFourHoursMillis - toleranceMillis) &&
-          (durationMillis <= twentyFourHoursMillis + toleranceMillis) &&
-          (entity.startTimeMillis >= startMillis && entity.startTimeMillis < endMillis)
-    }
-  }
-
-  private fun isEventValidForProjectRange(
-      entity: CalendarEventEntity,
-      startMillis: Long,
-      endMillis: Long
-  ): Boolean {
-    val durationMillis = entity.endTimeMillis - entity.startTimeMillis
-    val twentyFourHoursMillis = TimeUnit.HOURS.toMillis(24)
-    return !(entity.endTimeMillis < endMillis && entity.startTimeMillis > startMillis) &&
-        (durationMillis > twentyFourHoursMillis)
-  }
-
-  // --- Секция Запрос данных ---
-  suspend fun fetchAndStoreDateRange(range: ClosedRange<LocalDate>, replace: Boolean, suggestion: PendingSuggestion?) {
-    _rangeNetworkState.value = EventNetworkState.Loading
-    val result = remotreDataSource.getEvents(range.start, range.endInclusive, suggestion)
-    withContext(ioDispatcher) {
-      result
-          .onSuccess { dtoList ->
-            val zoneIdString =
-                settingsRepository.timeZoneFlow.first().ifEmpty { ZoneId.systemDefault().id }
-            val zoneId = ZoneId.of(zoneIdString)
-            val entities = dtoList.mapNotNull { eventMapper.mapToEntity(it, zoneIdString) }
-            val startRangeMillis = range.start.atStartOfDay(zoneId).toInstant().toEpochMilli()
-            val endRangeMillis =
-                range.endInclusive.plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli()
-            localDataSource.clearAndInsertEventsForRange(
-                startRangeMillis = startRangeMillis,
-                endRangeMillis = endRangeMillis,
-                newEvents = entities)
-            updateLoadedRange(range, replace)
-            _rangeNetworkState.value = EventNetworkState.Idle
-          }
-          .onFailure { exception ->
-            val errorMessage = exception.message ?: "Unknown error"
-            _rangeNetworkState.value = EventNetworkState.Error(errorMessage)
-          }
-    }
-  }
-
-  private fun updateLoadedRange(fetchedRange: ClosedRange<LocalDate>, replace: Boolean) {
-    if (replace) {
-      _loadedDateRange.value = fetchedRange
-      Log.d(TAG, "Replaced loaded range with: $fetchedRange")
-    } else {
-      _loadedDateRange.update { current ->
-        val updatedRange = current?.union(fetchedRange) ?: fetchedRange
-        Log.d(
-            TAG,
-            "Merged fetched range $fetchedRange with current ${current}. New loaded range: $updatedRange")
-        updatedRange
-      }
-    }
-  }
-
-  private fun ClosedRange<LocalDate>.union(other: ClosedRange<LocalDate>): ClosedRange<LocalDate> {
-    val newStart = minOf(this.start, other.start)
-    val newEnd = maxOf(this.endInclusive, other.endInclusive)
-    return newStart..newEnd
-  }
-
-  /** Принудительно обновляет данные для указанной даты */
-  suspend fun refreshDate(centerDateToRefreshAround: LocalDate, suggestionRequestIncluded: PendingSuggestion? = null) {
-    Log.d(TAG, "Manual refresh triggered around date: $centerDateToRefreshAround")
-
-    activeFetchJob?.cancel(
-        CancellationException("Manual refresh triggered for $centerDateToRefreshAround"))
-    Log.d(TAG, "refreshDate: Previous activeFetchJob (ensure...) cancelled (if existed).")
-
-    val targetRefreshRangeStart = centerDateToRefreshAround.minusDays(UPDATE_LOAD_DAYS_AROUND)
-    val targetRefreshRangeEnd = centerDateToRefreshAround.plusDays(UPDATE_LOAD_DAYS_AROUND)
-    val targetRefreshRange = targetRefreshRangeStart..targetRefreshRangeEnd
-    Log.d(TAG, "refreshDate: Target refresh range is $targetRefreshRange")
-
-    fetchJobMutex.withLock {
-      fetchJobHolder
-          ?.job
-          ?.cancel(CancellationException("Force refresh for $centerDateToRefreshAround"))
-      fetchJobHolder = null
-      Log.d(TAG, "refreshDate: Cancelled existing fetchJobHolder due to force refresh.")
-    }
-
-    launchProtectedFetch(targetRefreshRange, true, suggestionRequestIncluded)
-  }
-
-  private fun launchProtectedFetch(rangeToFetch: ClosedRange<LocalDate>, replace: Boolean = true, suggestion: PendingSuggestion? = null) {
-    managerScope.launch {
-      fetchJobMutex.withLock {
-        val currentActiveJobDetails = fetchJobHolder?.takeIf { it.job.isActive }
-
-        if (currentActiveJobDetails != null) {
-          val currentlyFetchingRange = currentActiveJobDetails.requestedRange
-
-          if (rangeToFetch.start >= currentlyFetchingRange.start &&
-              rangeToFetch.endInclusive <= currentlyFetchingRange.endInclusive) {
-            Log.d(
-                TAG,
-                "launchProtectedFetch: New range $rangeToFetch is covered by ongoing $currentlyFetchingRange. Skipping.")
-            return@launch
-          }
-          if (_rangeNetworkState.value == EventNetworkState.Loading) {
-            Log.d(
-                TAG,
-                "launchProtectedFetch: Network is already Loading (for $currentlyFetchingRange). New request for $rangeToFetch will be deferred. Skipping new launch.")
-            return@launch
-          }
-          Log.d(
-              TAG,
-              "launchProtectedFetch: New range $rangeToFetch. Cancelling previous job (if any was active but not in Loading state) for $currentlyFetchingRange.")
-          currentActiveJobDetails.job.cancel(
-              CancellationException("Superseded by new fetch for $rangeToFetch"))
-        }
-
-        _rangeNetworkState.value = EventNetworkState.Loading
-        Log.i(
-            TAG,
-            "launchProtectedFetch: Set _rangeNetworkState to Loading. Starting fetch for $rangeToFetch.")
-
-        val newActualFetchJob =
-            managerScope.launch {
-              try {
-                fetchAndStoreDateRange(rangeToFetch.start..rangeToFetch.endInclusive, replace, suggestion = suggestion)
-              } catch (e: kotlin.coroutines.cancellation.CancellationException) {
-                Log.i(
-                    TAG,
-                    "launchProtectedFetch/newActualFetchJob: Fetch job for $rangeToFetch was cancelled.",
-                    e)
-                throw e
-              } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "launchProtectedFetch/newActualFetchJob: Exception in fetch job for $rangeToFetch",
-                    e)
-                if (_rangeNetworkState.value !is EventNetworkState.Error &&
-                    _rangeNetworkState.value != EventNetworkState.Idle) {
-                  _rangeNetworkState.value =
-                      EventNetworkState.Error("FADR Error unhandled: ${e.message}")
-                }
-              } finally {
-                fetchJobMutex.withLock {
-                  if (fetchJobHolder?.job == coroutineContext[Job]) {
-                    fetchJobHolder = null
-                    Log.d(
-                        TAG,
-                        "launchProtectedFetch (finally of newActualFetchJob): Cleared fetchJobHolder for $rangeToFetch.")
+  /** События дня: обычные (< 24ч) и однодневные all-day. */
+  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
+      observeCalendar(
+          load = { zone ->
+            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            loadInstances(dayStart, dayEnd, zone)
+                .filter { inst ->
+                  if (inst.row.isAllDay) {
+                    inst.allDayStart == date && inst.allDayEndExclusive == date.plusDays(1)
+                  } else {
+                    inst.endMillis > dayStart &&
+                        inst.startMillis < dayEnd &&
+                        inst.endMillis - inst.startMillis < DAY_MILLIS
                   }
                 }
-                if (_rangeNetworkState.value == EventNetworkState.Loading &&
-                    !coroutineContext.isActive) {
-                  Log.w(
-                      TAG,
-                      "launchProtectedFetch (finally of newActualFetchJob): Job for $rangeToFetch ended, but state is still Loading. Resetting to Idle.")
-                  _rangeNetworkState.value = EventNetworkState.Idle
+                .map { it.toDto(zone) }
+          },
+          empty = emptyList())
+
+  /** "Проекты": многодневные события, которые идут в указанную дату. */
+  fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> =
+      observeCalendar(
+          load = { zone ->
+            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            loadInstances(dayStart, dayEnd, zone)
+                .filter { inst ->
+                  inst.endMillis > dayStart &&
+                      inst.startMillis < dayEnd &&
+                      if (inst.row.isAllDay) {
+                        ChronoUnit.DAYS.between(inst.allDayStart, inst.allDayEndExclusive) > 1
+                      } else {
+                        inst.endMillis - inst.startMillis >= DAY_MILLIS
+                      }
                 }
-              }
-            }
-        fetchJobHolder = JobHolder(newActualFetchJob, rangeToFetch)
-      }
-    }
-  }
+                .map { it.toDto(zone) }
+          },
+          empty = emptyList())
 
-  /** Проверяет, нужно ли загружать/расширять диапазон дат */
-  suspend fun ensureDateRangeLoadedAround(centerDate: LocalDate, forceLoad: Boolean = false) =
+  /** Календари, в которые можно записывать события. */
+  fun getWritableCalendars(): Flow<List<DeviceCalendar>> =
+      dataChanges
+          .mapLatest { granted -> if (granted) dataSource.queryWritableCalendars() else emptyList() }
+          .catch { e ->
+            Log.e(TAG, "Error reading calendars", e)
+            emit(emptyList())
+          }
+          .flowOn(ioDispatcher)
+
+  /** Календарь, в который сейчас будут создаваться события (с учётом автоподбора). */
+  fun getDefaultCalendarId(): Flow<Long?> =
+      combine(getWritableCalendars(), settingsRepository.defaultCalendarIdFlow) { calendars, saved
+        ->
+        (calendars.firstOrNull { it.id == saved } ?: pickDefaultCalendar(calendars))?.id
+      }
+
+  /** Просит систему подтянуть свежие данные из Google и других аккаунтов. */
+  suspend fun requestSync() =
       withContext(ioDispatcher) {
-        val currentlyLoaded = _loadedDateRange.value
-        val initialOrJumpTargetRange =
-            centerDate.minusDays(INITIAL_LOAD_DAYS_AROUND)..centerDate.plusDays(
-                    INITIAL_LOAD_DAYS_AROUND)
-        Log.d(
-            TAG,
-            "ensureDateRange: center=$centerDate, current=$currentlyLoaded, initialOrJumpTarget=$initialOrJumpTargetRange, forceLoad=$forceLoad")
-
-        if (forceLoad) {
-          Log.i(
-              TAG,
-              "Force load requested for $centerDate. Fetching range: $initialOrJumpTargetRange")
-          fetchJobMutex.withLock {
-            fetchJobHolder?.job?.cancel(CancellationException("Force load for $centerDate"))
-            fetchJobHolder = null
-            Log.d(
-                TAG,
-                "ensureDateRangeLoadedAround: Cancelled existing fetchJobHolder due to forceLoad.")
-          }
-          launchProtectedFetch(initialOrJumpTargetRange, true)
-          return@withContext
+        if (permissionManager.isGranted.value) {
+          runCatching { dataSource.requestSync() }
+              .onFailure { Log.w(TAG, "requestSync failed", it) }
         }
+      }
 
-        if (currentlyLoaded == null) {
-          Log.i(TAG, "Initial load for $centerDate. Fetching range: $initialOrJumpTargetRange")
-          launchProtectedFetch(initialOrJumpTargetRange, true)
-        } else {
-          val isJump =
-              centerDate < currentlyLoaded.start.minusDays(JUMP_DETECTION_BUFFER_DAYS) ||
-                  centerDate > currentlyLoaded.endInclusive.plusDays(JUMP_DETECTION_BUFFER_DAYS)
+  // --- Запись ---
 
-          if (isJump) {
-            Log.i(
-                TAG, "Jump detected for $centerDate. Fetching new range: $initialOrJumpTargetRange")
-            fetchJobMutex.withLock {
-              fetchJobHolder?.job?.cancel(CancellationException("Jump detected for $centerDate"))
-              fetchJobHolder = null
-              Log.d(
-                  TAG,
-                  "ensureDateRangeLoadedAround: Cancelled existing fetchJobHolder due to jump.")
-            }
-            launchProtectedFetch(initialOrJumpTargetRange, true)
-          } else {
-            var rangeToFetchDeltaStart: LocalDate? = null
-            var rangeToFetchDeltaEnd: LocalDate? = null
+  suspend fun createEvent(draft: EventDraft): Result<Unit> = write {
+    val values =
+        draft.contentValues().apply {
+          put(Events.CALENDAR_ID, resolveTargetCalendarId())
+          putTiming(timingOf(draft, draft.startDate, draft.endDate), draft.recurrenceRule)
+        }
+    dataSource.insertEvent(values)
+  }
 
-            if (centerDate >= currentlyLoaded.endInclusive.minusDays(TRIGGER_PREFETCH_THRESHOLD)) {
-              rangeToFetchDeltaStart = currentlyLoaded.endInclusive.plusDays(1)
-              rangeToFetchDeltaEnd = rangeToFetchDeltaStart.plusDays(EXPAND_CHUNK_DAYS - 1)
-              Log.i(
-                  TAG,
-                  "Forward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
-            } else if (centerDate <= currentlyLoaded.start.plusDays(TRIGGER_PREFETCH_THRESHOLD)) {
-              rangeToFetchDeltaEnd = currentlyLoaded.start.minusDays(1)
-              rangeToFetchDeltaStart = rangeToFetchDeltaEnd.minusDays(EXPAND_CHUNK_DAYS - 1)
-              Log.i(
-                  TAG,
-                  "Backward prefetch triggered at $centerDate. Need to fetch DELTA: [$rangeToFetchDeltaStart .. $rangeToFetchDeltaEnd]")
-            }
+  suspend fun updateEvent(event: EventDto, draft: EventDraft, mode: EventUpdateMode): Result<Unit> =
+      write {
+        val isException = event.originalEventId != null
+        val isSeriesInstance = event.recurrenceRule != null
+        val timing = timingOf(draft, draft.startDate, draft.endDate)
 
-            if (rangeToFetchDeltaStart != null && rangeToFetchDeltaEnd != null) {
-              launchProtectedFetch(rangeToFetchDeltaStart..rangeToFetchDeltaEnd, false)
-            } else {
-              Log.d(
-                  TAG,
-                  "No delta load needed for $centerDate. It is comfortably within $currentlyLoaded.")
-            }
+        when {
+          mode == EventUpdateMode.SINGLE_INSTANCE && isSeriesInstance -> {
+            // Строки-исключения (ORIGINAL_ID) провайдер плохо переваривает для ещё не
+            // синхронизированных серий, поэтому: исключаем дату из серии + отдельное событие.
+            excludeInstance(event.eventId, event.instanceBegin)
+            val values =
+                draft.contentValues().apply {
+                  put(Events.CALENDAR_ID, event.calendarId)
+                  putTiming(timing, rrule = null)
+                }
+            dataSource.insertEvent(values)
+          }
+          mode == EventUpdateMode.SINGLE_INSTANCE && isException -> {
+            dataSource.updateEvent(
+                event.eventId, draft.contentValues().apply { putExceptionTiming(timing) })
+          }
+          mode == EventUpdateMode.ALL_IN_SERIES && (isSeriesInstance || isException) -> {
+            val masterId = event.originalEventId ?: event.eventId
+            val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
+            val zone = parseTimeZone(draft.timeZoneId)
+            // Исключение само не знает RRULE серии — берём его у мастер-события.
+            val seriesDraft =
+                if (isException) draft.copy(recurrenceRule = draft.recurrenceRule ?: master.rrule)
+                else draft
+            val values =
+                seriesDraft.contentValues().apply {
+                  putTiming(
+                      seriesTiming(event, master.dtStart, master.isAllDay, seriesDraft, zone),
+                      seriesDraft.recurrenceRule)
+                }
+            dataSource.updateEvent(masterId, values)
+          }
+          else -> {
+            dataSource.updateEvent(
+                event.eventId,
+                draft.contentValues().apply { putTiming(timing, draft.recurrenceRule) })
           }
         }
       }
 
-  // --- Секция CRUD
-  suspend fun createEvent(request: EventRequest, requestSuggestion: PendingSuggestion?): Result<Unit> {
-    val result = remotreDataSource.createEvent(request)
-    if (result.isSuccess) {
-      refreshDate(calendarStateHolder.currentVisibleDate.value, requestSuggestion)
-    }
-    return result
-  }
+  suspend fun deleteEvent(event: EventDto, mode: EventDeleteMode): Result<Unit> = write {
+    val masterId = event.originalEventId ?: event.eventId
+    val isException = event.originalEventId != null
 
-  suspend fun deleteEvent(
-      eventId: String,
-      mode: EventDeleteMode = EventDeleteMode.DEFAULT
-  ): Result<Unit> {
-      localDataSource.deleteEventById(eventId)
-    val result = remotreDataSource.deleteEvent(eventId, mode)
-    if (result.isSuccess) {
-      refreshDate(calendarStateHolder.currentVisibleDate.value)
-    }
-    return result
-  }
-
-    suspend fun deleteEventLocaly(eventId: String): Result<Unit> {
-        return runCatching {
-            val rowsDeleted = localDataSource.deleteEventById(eventId)
-            if (rowsDeleted == 0) {
-                throw NoSuchElementException("Event with id $eventId not found")
-            }
+    when (mode) {
+      EventDeleteMode.DEFAULT,
+      EventDeleteMode.INSTANCE_ONLY ->
+          if (isException) {
+            // Перенесённый экземпляр: исключаем исходную дату из серии и убираем саму строку.
+            excludeInstance(masterId, event.originalInstanceTimeOrBegin())
+            dataSource.deleteEvent(event.eventId)
+          } else if (mode == EventDeleteMode.INSTANCE_ONLY) {
+            excludeInstance(event.eventId, event.instanceBegin)
+          } else {
+            dataSource.deleteEvent(event.eventId)
+          }
+      EventDeleteMode.ALL_IN_SERIES -> dataSource.deleteEvent(masterId)
+      EventDeleteMode.THIS_AND_FOLLOWING -> {
+        val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
+        val rrule = master.rrule
+        val instanceTime = event.originalInstanceTimeOrBegin()
+        if (rrule == null || instanceTime <= master.dtStart) {
+          dataSource.deleteEvent(masterId)
+        } else {
+          val values =
+              master.seriesValues().apply {
+                put(Events.RRULE, rruleEndingBefore(rrule, instanceTime, master.isAllDay))
+              }
+          dataSource.updateEvent(masterId, values)
         }
+      }
     }
+  }
 
-    suspend fun checkFreeSlots(
-        duration: java.time.Duration,
-        startSlotTimeMillis: Long
-    ): Boolean{
-        val endSlotMillis = startSlotTimeMillis + duration.toMillis()
-        return localDataSource
-            .checkSlotForEvents(startSlotTimeMillis, endSlotMillis)
-            .first()
-            .isEmpty()
-    }
+  // --- Внутреннее ---
 
+  private suspend fun write(block: suspend () -> Any): Result<Unit> =
+      withContext(ioDispatcher) {
+        runCatching {
+              block()
+              Unit
+            }
+            .onFailure { Log.e(TAG, "Calendar write failed", it) }
+      }
 
-  suspend fun updateEvent(
-      eventId: String,
-      updateData: EventRequest,
-      mode: EventUpdateMode
-  ): Result<Unit> {
-    val result = remotreDataSource.updateEvent(eventId, mode, updateData)
-    if (result.isSuccess) {
-      refreshDate(calendarStateHolder.currentVisibleDate.value)
-    }
-    return result
+  /** Добавляет экземпляр (сырой Instances.BEGIN) в EXDATE серии. */
+  private fun excludeInstance(masterId: Long, instanceBegin: Long) {
+    val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
+    val date =
+        if (master.isAllDay) utcDate(instanceBegin).format(DateTimeFormatter.BASIC_ISO_DATE)
+        else
+            Instant.ofEpochMilli(instanceBegin)
+                .atZone(ZoneOffset.UTC)
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
+    val exdate = listOfNotNull(master.exdate, date).joinToString(",")
+    dataSource.updateEvent(masterId, master.seriesValues().apply { put(Events.EXDATE, exdate) })
   }
 
   /**
-   * Очищает все локальные данные о событиях в БД. Вызывается при выходе пользователя из системы.
+   * Полный набор полей времени серии. Провайдер пересобирает Instances, только если они все
+   * пришли в update — правка одного RRULE/EXDATE оставляет старые экземпляры.
    */
-  suspend fun clearLocalDataOnSignOut() {
-    Log.i(TAG, "Starting local database clear on sign out...")
-    try {
-      withContext(ioDispatcher) {
-        localDataSource.deleteAllEvents()
-        Log.i(TAG, "Local database cleared successfully.")
+  private fun EventRow.seriesValues() =
+      ContentValues().apply {
+        put(Events.DTSTART, dtStart)
+        put(Events.DURATION, duration)
+        put(Events.RRULE, rrule)
+        put(Events.EXDATE, exdate)
+        put(Events.EVENT_TIMEZONE, timeZone)
+        put(Events.ALL_DAY, if (isAllDay) 1 else 0)
       }
-      _loadedDateRange.value = null
-      Log.d(TAG, "Reset _loadedDateRange state.")
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to clear local database on sign out", e)
+
+  private suspend fun resolveTargetCalendarId(): Long {
+    val calendars = dataSource.queryWritableCalendars()
+    val saved = settingsRepository.defaultCalendarIdFlow.first()
+    return (calendars.firstOrNull { it.id == saved } ?: pickDefaultCalendar(calendars))?.id
+        ?: dataSource.createLocalCalendar()
+  }
+
+  private fun pickDefaultCalendar(calendars: List<DeviceCalendar>): DeviceCalendar? =
+      calendars.firstOrNull { it.isPrimary && it.accountType == GOOGLE_ACCOUNT_TYPE }
+          ?: calendars.firstOrNull { it.isPrimary }
+          ?: calendars.firstOrNull()
+
+  /** Экземпляр с временем, приведённым к локальному часовому поясу пользователя. */
+  private class LocalInstance(
+      val row: InstanceRow,
+      val startMillis: Long,
+      val endMillis: Long,
+      val allDayStart: LocalDate?,
+      val allDayEndExclusive: LocalDate?,
+  )
+
+  private fun loadInstances(dayStart: Long, dayEnd: Long, zone: ZoneId): List<LocalInstance> =
+      // All-day события хранятся в UTC, поэтому расширяем окно на сутки в обе стороны.
+      dataSource.queryInstances(dayStart - DAY_MILLIS, dayEnd + DAY_MILLIS).map { row ->
+        if (row.isAllDay) {
+          val start = utcDate(row.begin)
+          val end = utcDate(row.end).let { if (it.isAfter(start)) it else start.plusDays(1) }
+          LocalInstance(
+              row,
+              start.atStartOfDay(zone).toInstant().toEpochMilli(),
+              end.atStartOfDay(zone).toInstant().toEpochMilli(),
+              start,
+              end)
+        } else {
+          LocalInstance(row, row.begin, maxOf(row.end, row.begin), null, null)
+        }
+      }
+
+  private fun LocalInstance.toDto(zone: ZoneId): EventDto {
+    val originalTime =
+        row.originalInstanceTime?.let { time ->
+          if (row.isAllDay) utcDate(time).atStartOfDay(zone).toInstant().toEpochMilli() else time
+        } ?: startMillis.takeIf { row.rrule != null }
+
+    return EventDto(
+        id = "${row.eventId}_${row.begin}",
+        summary = row.title?.takeIf { it.isNotBlank() } ?: NO_TITLE,
+        startTime = isoString(startMillis, zone),
+        endTime = isoString(endMillis, zone),
+        description = row.description?.takeIf { it.isNotBlank() },
+        location = row.location?.takeIf { it.isNotBlank() },
+        isAllDay = row.isAllDay,
+        recurringEventId =
+            if (row.rrule != null) row.eventId.toString() else row.originalId?.toString(),
+        originalStartTime = originalTime?.let { isoString(it, zone) },
+        recurrenceRule = row.rrule,
+        eventId = row.eventId,
+        instanceBegin = row.begin,
+        originalEventId = row.originalId,
+        calendarId = row.calendarId,
+        color = row.color)
+  }
+
+  private fun EventDto.originalInstanceTimeOrBegin(): Long {
+    if (originalEventId == null) return instanceBegin
+    // Для исключения нужно исходное время экземпляра в серии, а не перенесённое.
+    val original = originalStartTime ?: return instanceBegin
+    return if (isAllDay) {
+      LocalDate.parse(original.take(10)).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+    } else OffsetDateTime.parse(original).toInstant().toEpochMilli()
+  }
+
+  private data class EventTiming(
+      val dtStart: Long,
+      val dtEnd: Long,
+      val timeZone: String,
+      val isAllDay: Boolean
+  )
+
+  private fun timingOf(draft: EventDraft, startDate: LocalDate, endDate: LocalDate): EventTiming {
+    if (draft.isAllDay) {
+      return EventTiming(
+          dtStart = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+          dtEnd = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+          timeZone = "UTC",
+          isAllDay = true)
     }
+    val zone = parseTimeZone(draft.timeZoneId)
+    val startTime = requireNotNull(draft.startTime) { "Timed event without start time" }
+    val endTime = requireNotNull(draft.endTime) { "Timed event without end time" }
+    return EventTiming(
+        dtStart = startDate.atTime(startTime).atZone(zone).toInstant().toEpochMilli(),
+        dtEnd = endDate.atTime(endTime).atZone(zone).toInstant().toEpochMilli(),
+        timeZone = zone.id,
+        isAllDay = false)
+  }
+
+  /**
+   * Время для правки всей серии: сдвигаем дату начала серии на столько же дней, на сколько
+   * пользователь сдвинул редактируемый экземпляр, а время/длительность берём из формы.
+   */
+  private fun seriesTiming(
+      event: EventDto,
+      masterStart: Long,
+      masterAllDay: Boolean,
+      draft: EventDraft,
+      zone: ZoneId
+  ): EventTiming {
+    // Повторение убрали — событие становится одиночным там, где его поставили в форме.
+    if (draft.recurrenceRule == null) return timingOf(draft, draft.startDate, draft.endDate)
+
+    val span = ChronoUnit.DAYS.between(draft.startDate, draft.endDate)
+    val instanceDate = LocalDate.parse((event.originalStartTime ?: event.startTime)!!.take(10))
+    val masterDate =
+        if (masterAllDay) utcDate(masterStart)
+        else Instant.ofEpochMilli(masterStart).atZone(zone).toLocalDate()
+    val newStart = masterDate.plusDays(ChronoUnit.DAYS.between(instanceDate, draft.startDate))
+    return timingOf(draft, newStart, newStart.plusDays(span))
+  }
+
+  private fun EventDraft.contentValues() =
+      ContentValues().apply {
+        put(Events.TITLE, summary)
+        put(Events.DESCRIPTION, description)
+        put(Events.EVENT_LOCATION, location)
+      }
+
+  private fun ContentValues.putTiming(timing: EventTiming, rrule: String?) {
+    put(Events.DTSTART, timing.dtStart)
+    put(Events.EVENT_TIMEZONE, timing.timeZone)
+    put(Events.ALL_DAY, if (timing.isAllDay) 1 else 0)
+    if (rrule != null) {
+      // Повторяющимся событиям провайдер требует DURATION вместо DTEND.
+      put(Events.RRULE, rrule)
+      put(Events.DURATION, durationOf(timing))
+      putNull(Events.DTEND)
+    } else {
+      putNull(Events.RRULE)
+      putNull(Events.DURATION)
+      put(Events.DTEND, timing.dtEnd)
+    }
+  }
+
+  private fun ContentValues.putExceptionTiming(timing: EventTiming) {
+    put(Events.DTSTART, timing.dtStart)
+    put(Events.DTEND, timing.dtEnd)
+    put(Events.EVENT_TIMEZONE, timing.timeZone)
+    put(Events.ALL_DAY, if (timing.isAllDay) 1 else 0)
+  }
+
+  private fun durationOf(timing: EventTiming): String {
+    val millis = (timing.dtEnd - timing.dtStart).coerceAtLeast(0)
+    return if (timing.isAllDay) "P${TimeUnit.MILLISECONDS.toDays(millis).coerceAtLeast(1)}D"
+    else "P${TimeUnit.MILLISECONDS.toSeconds(millis)}S"
+  }
+
+  /** Обрезает серию так, чтобы последний экземпляр был строго до instanceTime. */
+  private fun rruleEndingBefore(rrule: String, instanceTime: Long, allDay: Boolean): String {
+    val until =
+        if (allDay) {
+          utcDate(instanceTime).minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE)
+        } else {
+          Instant.ofEpochMilli(instanceTime - 1000)
+              .atZone(ZoneOffset.UTC)
+              .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
+        }
+    val parts =
+        rrule.removePrefix("RRULE:").split(';').filterNot {
+          it.startsWith("UNTIL=", ignoreCase = true) || it.startsWith("COUNT=", ignoreCase = true)
+        }
+    return (parts + "UNTIL=$until").joinToString(";")
+  }
+
+  private fun utcDate(millis: Long): LocalDate =
+      Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+
+  private fun isoString(millis: Long, zone: ZoneId): String =
+      Instant.ofEpochMilli(millis).atZone(zone).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
+  private fun parseTimeZone(timeZoneIdString: String): ZoneId =
+      try {
+        ZoneId.of(timeZoneIdString.ifEmpty { ZoneId.systemDefault().id })
+      } catch (e: Exception) {
+        Log.w(TAG, "Invalid timezone: $timeZoneIdString, using system default", e)
+        ZoneId.systemDefault()
+      }
+
+  companion object {
+    private const val TAG = "CalendarRepository"
+    private const val GOOGLE_ACCOUNT_TYPE = "com.google"
+    private const val NO_TITLE = "(No title)"
+    private val DAY_MILLIS = TimeUnit.DAYS.toMillis(1)
   }
 }

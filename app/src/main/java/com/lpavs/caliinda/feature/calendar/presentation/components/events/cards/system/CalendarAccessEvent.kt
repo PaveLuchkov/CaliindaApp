@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -48,8 +48,8 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable
-fun LogInEvent(
-    onSignInClick: () -> Unit,
+fun CalendarAccessEvent(
+    onGrantAccessClick: () -> Unit,
 ) {
   val darkerShadowColor = Color.Black
   val cardElevation = cuid.CurrentEventElevation
@@ -117,12 +117,19 @@ fun LogInEvent(
               contentAlignment = Alignment.TopStart) {
                 Column(verticalArrangement = Arrangement.Top) {
                   Text(
-                      text = "Log in with Google", // TODO тоже заменить
+                      text = "Calendar access",
                       color = cardTextColor,
                       style = textStyle,
                       fontFamily = cardFontFamily,
                       maxLines = 1,
                       overflow = TextOverflow.Ellipsis)
+                  Spacer(Modifier.height(8.dp))
+                  Text(
+                      text =
+                          "Caliinda works with the calendars on your phone. " +
+                              "Google Calendar syncs here automatically.",
+                      color = cardTextColor,
+                      style = Typography.bodyMedium)
                 }
               }
           Row(
@@ -132,11 +139,11 @@ fun LogInEvent(
               horizontalArrangement = Arrangement.End,
               verticalAlignment = Alignment.CenterVertically) {
                 Button(
-                    onClick = { onSignInClick() },
+                    onClick = { onGrantAccessClick() },
                     contentPadding = PaddingValues(horizontal = 12.dp)) {
-                      Icon(Icons.AutoMirrored.Filled.Login, contentDescription = "Log in")
+                      Icon(Icons.Rounded.CalendarMonth, contentDescription = null)
                       Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                      Text("Log in") // TODO заменить
+                      Text("Allow access")
                     }
               }
         }
@@ -145,6 +152,6 @@ fun LogInEvent(
 
 @Preview(showBackground = true, wallpaper = Wallpapers.GREEN_DOMINATED_EXAMPLE)
 @Composable
-fun LogInEventPreview() {
-  CaliindaTheme { LogInEvent(onSignInClick = {}) }
+fun CalendarAccessEventPreview() {
+  CaliindaTheme { CalendarAccessEvent(onGrantAccessClick = {}) }
 }

@@ -5,7 +5,7 @@ sealed class NavRoutes(val route: String) {
 
   object Settings : NavRoutes("settings")
 
-  object AISettings : NavRoutes("aiSettings")
+  object CalendarSettings : NavRoutes("calendarSettings")
 
   object TimeSettings : NavRoutes("timeSettings")
 

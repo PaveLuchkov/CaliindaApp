@@ -37,7 +37,7 @@ fun CalendarAppBar(
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit,
     date: LocalDate,
-    isSignedIn: Boolean,
+    hasCalendarAccess: Boolean,
     currentCalendarScreenMode: AppMode = AppMode.CALENDAR
 ) {
   CenterAlignedTopAppBar(
@@ -46,7 +46,7 @@ fun CalendarAppBar(
           AppMode.CALENDAR ->
               CalendarDateTitle(
                   date = date,
-                  isSignedIn = isSignedIn,
+                  hasCalendarAccess = hasCalendarAccess,
                   onTitleHold = onTitleHold,
                   onTitleClick = onTitleClick)
           AppMode.MANAGEMENT -> ManagementTitle()
@@ -67,7 +67,7 @@ fun CalendarAppBar(
                         )
                     ),
             shape = IconButtonDefaults.smallRoundShape,
-            enabled = isSignedIn) {
+            enabled = hasCalendarAccess) {
               Icon(
                   Icons.Filled.Today,
                   contentDescription = "Перейти к сегодня",
@@ -107,6 +107,6 @@ fun CalendarEventPreview() {
         onNavigateToSettings = {},
         onTitleHold = {},
         date = LocalDate.now(),
-        isSignedIn = true)
+        hasCalendarAccess = true)
   }
 }

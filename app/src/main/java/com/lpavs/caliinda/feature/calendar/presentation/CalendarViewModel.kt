@@ -3,11 +3,10 @@ package com.lpavs.caliinda.feature.calendar.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lpavs.caliinda.core.common.EventNetworkState
-import com.lpavs.caliinda.core.data.auth.AuthManager
+import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.di.ITimeTicker
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
@@ -43,7 +42,7 @@ import javax.inject.Inject
 class CalendarViewModel
 @Inject
 constructor(
-    private val authManager: AuthManager,
+    private val permissionManager: CalendarPermissionManager,
     private val calendarRepository: CalendarRepository,
     timeTicker: ITimeTicker,
     private val calendarStateHolder: ICalendarStateHolder,
@@ -54,12 +53,12 @@ constructor(
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
-  private val _uiState = MutableStateFlow(CalendarState())
+  private val _uiState =
+      MutableStateFlow(CalendarState(hasCalendarPermission = permissionManager.isGranted.value))
   val state: StateFlow<CalendarState> = _uiState.asStateFlow()
 
   private val _introState = MutableStateFlow(IntroState())
   val introState: StateFlow<IntroState> = _introState.asStateFlow()
-  private var initialAuthCheckCompletedAndProcessed = false
 
   // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
@@ -70,15 +69,12 @@ constructor(
 
   // Состояния Календаря
   val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate
-  val rangeNetworkState: StateFlow<EventNetworkState> = calendarRepository.rangeNetworkState
 
   private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()
   val eventFlow: SharedFlow<CalendarUiEvent> = _eventFlow.asSharedFlow()
 
   init {
-    observeAuthState()
-    observeCalendarNetworkState()
-    observeVisibleDateChanges()
+    observeCalendarPermission()
     observeIntroduction()
   }
 
@@ -104,91 +100,26 @@ constructor(
         }
     }
 
-  private fun observeVisibleDateChanges() {
+  private fun observeCalendarPermission() {
     viewModelScope.launch {
-      // Как только дата в холдере меняется...
-      calendarStateHolder.currentVisibleDate.collect { newDate ->
-        Log.d("ViewModel", "Date changed to $newDate, telling repository to load.")
-        calendarRepository.ensureDateRangeLoadedAround(newDate)
+      permissionManager.isGranted.collect { granted ->
+        _uiState.update { it.copy(hasCalendarPermission = granted) }
       }
     }
   }
 
-  private fun observeAuthState() {
-    viewModelScope.launch {
-      authManager.authState.collect { authState ->
-        val previousUiState = _uiState.value
-        _uiState.update { currentState ->
-          currentState.copy(
-              isSignedIn = authState.isSignedIn,
-              isLoading = calculateIsLoading(authLoading = authState.isLoading),
-          )
-        }
-
-        authState.authError?.let { error ->
-          _eventFlow.emit(CalendarUiEvent.ShowMessage(error))
-          authManager.clearAuthError()
-        }
-        if (!initialAuthCheckCompletedAndProcessed && !authState.isLoading) {
-          initialAuthCheckCompletedAndProcessed = true
-          Log.d(TAG, "Initial auth check completed and processed.")
-          if (!authState.isSignedIn && authState.authError == null) {
-            Log.d(TAG, "Initial auth check: Showing sign-in required dialog.")
-            _uiState.update { it.copy(signInRequired = true) }
-          } else {
-            _uiState.update { it.copy(signInRequired = false) }
-          }
-        }
-        if (authState.isSignedIn && _uiState.value.signInRequired) {
-          _uiState.update { it.copy(signInRequired = false) }
-        }
-        if (authState.isSignedIn && !previousUiState.isSignedIn) {
-          _uiState.update { it.copy(signInRequired = false) }
-        }
-        if (authState.isSignedIn && !previousUiState.isSignedIn) {
-          Log.d(TAG, "Auth observer: User signed in. Triggering calendar refresh")
-          val currentDate = calendarStateHolder.currentVisibleDate.value
-          calendarRepository.ensureDateRangeLoadedAround(currentDate)
-        }
-      }
-    }
-  }
-
-  private fun observeCalendarNetworkState() {
-    viewModelScope.launch {
-      calendarRepository.rangeNetworkState.collect { network ->
-        _uiState.update { it.copy(isLoading = calculateIsLoading(networkState = network)) }
-
-        if (network is EventNetworkState.Error) {
-          if (authManager.authState.value.authError == null) {
-            _eventFlow.emit(CalendarUiEvent.ShowMessage(network.message))
-          }
-        }
-      }
-    }
-  }
-
-  // --- ПРИВАТНЫЙ ХЕЛПЕР ДЛЯ РАСЧЕТА ОБЩЕГО isLoading ---
-  /** Рассчитывает общее состояние загрузки, комбинируя состояния менеджеров */
-  private fun calculateIsLoading(
-      authLoading: Boolean =
-          authManager.authState.value.isLoading, // Берем текущие значения по умолчанию
-      networkState: EventNetworkState = calendarRepository.rangeNetworkState.value,
-  ): Boolean {
-    val calendarLoading = networkState is EventNetworkState.Loading
-
-    return authLoading || calendarLoading
+  /** Вызывается после системного диалога разрешений и при возврате в приложение. */
+  fun onCalendarPermissionChanged() {
+    permissionManager.refresh()
   }
 
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
     val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
-    val rangeNetworkStateFlow = calendarRepository.rangeNetworkState
 
     return calendarRepository
         .getEventsFlowForDate(date)
         .combine(currentTime) { events, now -> events to now }
-        .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
-        .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
+        .combine(timeZoneIdFlow) { (events, now), zoneId ->
           val isToday = date == LocalDate.now()
           val zoneId = zoneId.toString()
 
@@ -240,7 +171,7 @@ constructor(
                   project = false)
 
           DayPageUiState(
-              isLoading = networkState is EventNetworkState.Loading,
+              isLoading = false,
               allDayEvents = allDayDtos,
               timedEvents = timedUiModels,
               targetScrollIndex = scrollIndex)
@@ -251,13 +182,11 @@ constructor(
 
   fun getProjectsPageUiState(date: LocalDate = LocalDate.now()): Flow<EventsPageUiState> {
     val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
-    val rangeNetworkStateFlow = calendarRepository.rangeNetworkState
 
     return calendarRepository
         .getEventsFlowForProjects(LocalDate.now())
         .combine(currentTime) { events, now -> events to now }
-        .combine(timeZoneIdFlow) { (events, now), zoneId -> Triple(events, now, zoneId) }
-        .combine(rangeNetworkStateFlow) { (events, now, zoneId), networkState ->
+        .combine(timeZoneIdFlow) { (events, now), zoneId ->
           val zoneId = zoneId.toString()
           val projectUIModels =
               eventUiModelMapper.mapToUiModels(
@@ -267,8 +196,7 @@ constructor(
                   date = date,
                   project = true)
 
-          EventsPageUiState(
-              isLoading = networkState is EventNetworkState.Loading, events = projectUIModels)
+          EventsPageUiState(isLoading = false, events = projectUIModels)
         }
         .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
         .distinctUntilChanged()
@@ -295,9 +223,11 @@ constructor(
     Log.d(TAG, "Cancelled event details view.")
   }
 
-  fun refreshCurrentVisibleDate() {
+  /** Просит систему синхронизировать аккаунты; UI обновится сам через ContentObserver. */
+  fun syncCalendars() {
     viewModelScope.launch {
-      calendarRepository.refreshDate(calendarStateHolder.currentVisibleDate.value)
+      calendarRepository.requestSync()
+      _eventFlow.emit(CalendarUiEvent.ShowMessage("Syncing calendars…"))
     }
   }
 

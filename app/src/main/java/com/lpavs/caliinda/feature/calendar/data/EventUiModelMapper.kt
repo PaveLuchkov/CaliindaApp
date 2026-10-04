@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.os.ConfigurationCompat
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
@@ -92,7 +92,6 @@ constructor(
               endInstant != null &&
               !currentTime.isBefore(startInstant) &&
               currentTime.isBefore(endInstant)
-        val isPhantom = event.isPhantom
       val isNext =
           if (nextStartTime == null) false
           else (startInstant != null && startInstant == nextStartTime)
@@ -136,7 +135,6 @@ constructor(
               proximityRatio = proximityRatio,
               shapeParams = generateShapeParams(event.id), // Твой генератор фигур
               originalEvent = event,
-              isPhantom = isPhantom,
               daysLeft = daysLeft
               )
       event

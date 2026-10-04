@@ -32,7 +32,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CalendarDateTitle(
     date: LocalDate,
-    isSignedIn: Boolean,
+    hasCalendarAccess: Boolean,
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit
 ) {
@@ -84,7 +84,7 @@ fun CalendarDateTitle(
                 .clip(RoundedCornerShape(25.dp))
                 .background(color = headerBackgroundColor)
                 .pointerInput(Unit) {
-                    if (isSignedIn) {
+                    if (hasCalendarAccess) {
                         detectTapGestures(
                             onPress = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)

@@ -4,16 +4,15 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.calendar.EventDeleteMode
-import com.lpavs.caliinda.core.data.remote.calendar.EventUpdateMode
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventRequest
+import com.lpavs.caliinda.core.data.calendar.model.EventDeleteMode
+import com.lpavs.caliinda.core.data.calendar.model.EventDraft
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.core.ui.util.IDateTimeUtils
 import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
-import com.lpavs.caliinda.feature.event_management.PendingSuggestion
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
@@ -30,16 +29,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -62,42 +58,7 @@ constructor(
           viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
   private val untilFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 
-  fun confirmEventUpdate(updatedEventData: EventRequest, modeFromUi: EventUpdateMode) {
-    val originalEvent = _uiState.value.eventBeingEdited ?: return
-    viewModelScope.launch {
-      _uiState.update { it.copy(isLoading = true, operationError = null) }
-      val result =
-          calendarRepository.updateEvent(
-              eventId = originalEvent.id, updateData = updatedEventData, mode = modeFromUi)
-      _uiState.update { it.copy(isLoading = false) }
-      if (result.isSuccess) {
-        val message = funMessages.getEventUpdatedMessage(originalEvent.summary)
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-      } else {
-        val message =
-            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                ?: funMessages.getUpdateErrorMessage()
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-      }
-    }
-  }
-
-    private suspend fun isSuggestionNeeded(
-        eventDateTimeState: EventDateTimeState
-    ): Boolean {
-        val endTime = eventDateTimeState.endTime ?: return false
-
-        val endTimeMillis = LocalDateTime
-            .of(eventDateTimeState.endDate, endTime)
-            .atZone(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
-
-        val duration = Duration.ofHours(1)
-
-        return calendarRepository.checkFreeSlots(duration, endTimeMillis)
-    }
+  // --- Создание ---
 
   fun createEvent(
       summary: String,
@@ -106,106 +67,22 @@ constructor(
       dateTimeState: EventDateTimeState
   ) {
     viewModelScope.launch {
-      // 1. Валидация
       if (!validateInput(summary, dateTimeState)) {
         _eventFlow.emit(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
         return@launch
       }
-
-      _uiState.update { it.copy(isLoading = true, operationError = null) }
-
-      // 2. Форматирование строк времени
-      val (startStr, endStr) = formatEventTimesForSaving(dateTimeState)
-      if (startStr == null || endStr == null) {
-        _uiState.update { it.copy(isLoading = false) }
-        _eventFlow.emit(
-            EventManagementUiEvent.ShowMessage(
-                UiText.from(R.string.error_failed_to_format_datetime)))
-        Log.e(
-            TAG,
-            "Failed to format strings based on state: $dateTimeState and TimeZone: ${timeZone.value}")
-        return@launch
-      }
-
-      // 3. Построение RRULE
-      val finalRecurrenceRule = buildRecurrenceRule(dateTimeState)
-      Log.d(TAG, "Final RRULE to send: $finalRecurrenceRule")
-      val request =
-          EventRequest(
-              summary = summary.trim(),
-              startTime = startStr,
-              endTime = endStr,
-              isAllDay = dateTimeState.isAllDay,
-              timeZoneId = if (dateTimeState.isAllDay) null else timeZone.value,
-              description = description.trim().takeIf { it.isNotEmpty() },
-              location = location.trim().takeIf { it.isNotEmpty() },
-              recurrence = finalRecurrenceRule?.let { listOf("RRULE:$it") })
-        val suggestionRequest = if (isSuggestionNeeded(dateTimeState)) {
-            PendingSuggestion(
-                previousEvent = request.summary ?: "Relaxing",
-                startEventSuggestion = request.endTime
-            )
-        } else {
-            null
-        }
-      // 5. Отправка в репозиторий
-      val result = calendarRepository.createEvent(request, requestSuggestion = suggestionRequest)
-      _uiState.update { it.copy(isLoading = false) }
-
-      // 6. Обработка результата
-      if (result.isSuccess) {
-        val message = funMessages.getEventCreatedMessage(request.summary)
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-      } else {
-        val message =
-            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                ?: funMessages.getCreateErrorMessage()
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-      }
+      val draft =
+          buildDraft(summary, description, location, dateTimeState, buildRecurrenceRule(dateTimeState))
+      runOperation(
+          operation = { calendarRepository.createEvent(draft) },
+          successMessage = { funMessages.getEventCreatedMessage(draft.summary) },
+          errorMessage = { funMessages.getCreateErrorMessage() })
     }
   }
-    fun createSuggestionEvent(
-        summary: String,
-        startStr: String?,
-        endStr: String?
-    ) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, operationError = null) }
 
-            val request =
-                EventRequest(
-                    summary = summary.trim(),
-                    startTime = startStr,
-                    endTime = endStr,
-                    timeZoneId = timeZone.value,
-                    isAllDay = false)
-            // 5. Отправка в репозиторий
-            val result = calendarRepository.createEvent(request, requestSuggestion = null)
-            _uiState.update { it.copy(isLoading = false) }
+  // --- Редактирование ---
 
-            // 6. Обработка результата
-            if (result.isSuccess) {
-                val message = funMessages.getEventCreatedMessage(request.summary)
-                _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-                _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-            } else {
-                val message =
-                    result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                        ?: funMessages.getCreateErrorMessage()
-                _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-            }
-        }
-    }
-
-    fun deleteEventLocaly(
-        eventId: String
-    ){
-        viewModelScope.launch {
-            calendarRepository.deleteEventLocaly(eventId)
-        }
-    }
   fun updateEvent(
       summary: String,
       description: String,
@@ -219,95 +96,127 @@ constructor(
         Log.e(TAG, "updateEvent called but originalEvent is null")
         return@launch
       }
-
       if (!validateInput(summary, dateTimeState)) {
         _eventFlow.emit(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
         return@launch
       }
 
-      _uiState.update { it.copy(isLoading = true) }
+      // Форма умеет не все части RRULE (INTERVAL, BYMONTHDAY...). Если повторение не трогали —
+      // сохраняем исходное правило как есть, чтобы не потерять их.
+      val originalState = parseEventToState(originalEvent)
+      val formRule = buildRecurrenceRule(dateTimeState)
+      val recurrenceRule =
+          if (formRule == buildRecurrenceRule(originalState)) originalEvent.recurrenceRule
+          else formRule
 
-      val (startStr, endStr) = formatEventTimesForSaving(dateTimeState)
-      if (startStr == null || endStr == null) {
-        _uiState.update { it.copy(isLoading = false) }
-        _eventFlow.emit(
-            EventManagementUiEvent.ShowMessage(
-                UiText.from(R.string.error_failed_to_format_datetime)))
-        return@launch
-      }
-
-      val finalRecurrenceRule = buildRecurrenceRule(dateTimeState)
-
-      val updateRequest =
-          buildUpdateEventApiRequest(
-              originalEvent = originalEvent,
-              currentSummary = summary.trim(),
-              currentDescription = description.trim(),
-              currentLocation = location.trim(),
-              currentDateTimeState = dateTimeState,
-              formattedStartStr = startStr,
-              formattedEndStr = endStr,
-              finalRRuleStringFromUi = finalRecurrenceRule,
-              selectedUpdateMode = updateMode)
-
-      if (updateRequest == null) {
-        _uiState.update { it.copy(isLoading = false) }
+      val draft = buildDraft(summary, description, location, dateTimeState, recurrenceRule)
+      val unchangedDraft =
+          buildDraft(
+              originalEvent.summary,
+              originalEvent.description.orEmpty(),
+              originalEvent.location.orEmpty(),
+              originalState,
+              originalEvent.recurrenceRule)
+      if (draft == unchangedDraft) {
         _eventFlow.emit(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.no_changes_to_save)))
-        _eventFlow.emit(EventManagementUiEvent.OperationSuccess) // Закрываем экран
+        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
         return@launch
       }
 
-      confirmEventUpdate(updateRequest, updateMode)
+      runOperation(
+          operation = { calendarRepository.updateEvent(originalEvent, draft, updateMode) },
+          successMessage = { funMessages.getEventUpdatedMessage(originalEvent.summary) },
+          errorMessage = { funMessages.getUpdateErrorMessage() })
     }
   }
+
+  // --- Удаление ---
+
+  fun confirmDeleteEvent() {
+    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+    _uiState.update {
+      it.copy(showDeleteConfirmationDialog = false, eventPendingDeletion = null)
+    }
+    viewModelScope.launch {
+      runOperation(
+          operation = { calendarRepository.deleteEvent(eventToDelete, EventDeleteMode.DEFAULT) },
+          successMessage = { funMessages.getEventDeletedMessage(eventToDelete.summary) },
+          errorMessage = { funMessages.getDeleteErrorMessage() })
+    }
+  }
+
+  fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
+    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
+    _uiState.update {
+      it.copy(
+          showDeleteConfirmationDialog = false,
+          showRecurringDeleteOptionsDialog = false,
+          eventPendingDeletion = null)
+    }
+    val mode =
+        when (choice) {
+          RecurringDeleteChoice.SINGLE_INSTANCE -> EventDeleteMode.INSTANCE_ONLY
+          RecurringDeleteChoice.THIS_AND_FOLLOWING -> EventDeleteMode.THIS_AND_FOLLOWING
+          RecurringDeleteChoice.ALL_IN_SERIES -> EventDeleteMode.ALL_IN_SERIES
+        }
+    viewModelScope.launch {
+      runOperation(
+          operation = { calendarRepository.deleteEvent(eventToDelete, mode) },
+          successMessage = {
+            if (mode == EventDeleteMode.INSTANCE_ONLY)
+                funMessages.getEventDeletedMessage(eventToDelete.summary)
+            else funMessages.getSeriesDeletedMessage()
+          },
+          errorMessage = { funMessages.getDeleteErrorMessage() })
+    }
+  }
+
+  private suspend fun runOperation(
+      operation: suspend () -> Result<Unit>,
+      successMessage: () -> UiText,
+      errorMessage: () -> UiText
+  ) {
+    _uiState.update { it.copy(isLoading = true) }
+    val result = operation()
+    _uiState.update { it.copy(isLoading = false) }
+    if (result.isSuccess) {
+      _eventFlow.emit(EventManagementUiEvent.ShowMessage(successMessage()))
+      _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+    } else {
+      _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage()))
+    }
+  }
+
+  // --- Форма <-> модель ---
+
+  private fun buildDraft(
+      summary: String,
+      description: String,
+      location: String,
+      state: EventDateTimeState,
+      recurrenceRule: String?
+  ) =
+      EventDraft(
+          summary = summary.trim(),
+          description = description.trim().takeIf { it.isNotEmpty() },
+          location = location.trim().takeIf { it.isNotEmpty() },
+          isAllDay = state.isAllDay,
+          startDate = state.startDate,
+          startTime = if (state.isAllDay) null else state.startTime,
+          endDate = state.endDate,
+          endTime = if (state.isAllDay) null else state.endTime,
+          timeZoneId = timeZone.value,
+          recurrenceRule = recurrenceRule)
 
   private fun validateInput(summary: String, state: EventDateTimeState): Boolean {
-    if (summary.isBlank()) {
-      // Можно добавить специальное событие для подсветки поля, если нужно
-      return false
-    }
-    if (!state.isAllDay && (state.startTime == null || state.endTime == null)) {
-      return false
-    }
-    val (start, end) = formatEventTimesForSaving(state)
-    return start != null && end != null
-  }
-
-  private fun formatEventTimesForSaving(state: EventDateTimeState): Pair<String?, String?> {
-    return if (state.isAllDay) {
-      val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-      val startDateStr =
-          try {
-            state.startDate.format(formatter)
-          } catch (_: Exception) {
-            null
-          }
-      // Для all-day событий, конечная дата должна быть на день позже и не включаться
-      val effectiveEndDate = state.endDate.plusDays(1)
-      val endDateStr =
-          try {
-            effectiveEndDate.format(formatter)
-          } catch (_: Exception) {
-            null
-          }
-      Pair(startDateStr, endDateStr)
-    } else {
-      val timeZoneId = timeZone.value
-      if (timeZoneId.isBlank()) {
-        Log.e(TAG, "Cannot format timed event without TimeZone ID!")
-        return Pair(null, null)
-      }
-      // Используем ISO_OFFSET_DATE_TIME для бэкенда
-      val startTimeIso =
-          dateTimeUtils.formatDateTimeToIsoWithOffset(
-              state.startDate, state.startTime, false, timeZoneId)
-      val endTimeIso =
-          dateTimeUtils.formatDateTimeToIsoWithOffset(
-              state.endDate, state.endTime, false, timeZoneId)
-      Pair(startTimeIso, endTimeIso)
-    }
+    if (summary.isBlank()) return false
+    if (state.endDate.isBefore(state.startDate)) return false
+    if (state.isAllDay) return true
+    val startTime = state.startTime ?: return false
+    val endTime = state.endTime ?: return false
+    return LocalDateTime.of(state.endDate, endTime).isAfter(LocalDateTime.of(state.startDate, startTime))
   }
 
   private fun buildRecurrenceRule(state: EventDateTimeState): String? {
@@ -334,21 +243,24 @@ constructor(
     when (state.recurrenceEndType) {
       RecurrenceEndType.DATE -> {
         state.recurrenceEndDate?.let { endDate ->
-          val endDateTimeUtc =
-              endDate
-                  .atTime(23, 59, 59)
-                  .atZone(ZoneId.of(timeZone.value))
-                  .withZoneSameInstant(ZoneOffset.UTC)
-          val untilString = untilFormatter.format(endDateTimeUtc)
-          ruleParts.add("UNTIL=$untilString")
+          val until =
+              if (state.isAllDay) {
+                // Для all-day серий UNTIL должен быть датой (RFC 5545).
+                endDate.format(DateTimeFormatter.BASIC_ISO_DATE)
+              } else {
+                untilFormatter.format(
+                    endDate
+                        .atTime(23, 59, 59)
+                        .atZone(ZoneId.of(timeZone.value))
+                        .withZoneSameInstant(ZoneOffset.UTC))
+              }
+          ruleParts.add("UNTIL=$until")
         }
       }
       RecurrenceEndType.COUNT -> {
         state.recurrenceCount?.let { count -> ruleParts.add("COUNT=$count") }
       }
-      RecurrenceEndType.NEVER -> {
-        /* Ничего не добавляем */
-      }
+      RecurrenceEndType.NEVER -> {}
     }
 
     return ruleParts.joinToString(";")
@@ -358,104 +270,69 @@ constructor(
     val userTimeZoneId = timeZone.value
     val isAllDay = event.isAllDay
 
-      var parsedStartDate = LocalDate.of(1970, 1, 1)
-      var parsedEndDate = LocalDate.of(1970, 1, 1)
-      var parsedStartTime: LocalTime? = null
-      var parsedEndTime: LocalTime? = null
+    var parsedStartDate = LocalDate.now()
+    var parsedEndDate = LocalDate.now()
+    var parsedStartTime: LocalTime? = null
+    var parsedEndTime: LocalTime? = null
 
-      try {
-          if (isAllDay) {
-              // Для AllDay берем только первые 10 символов (ГГГГ-ММ-ДД)
-              // Это спасет, если сервер прислал "2026-01-27T00:00:00"
-              val startStr = event.startTime?.take(10)
-              val endStr = event.endTime?.take(10)
-
-              parsedStartDate = LocalDate.parse(startStr)
-              val rawEndDate = LocalDate.parse(endStr)
-
-              // ЛОГИКА КОНЦА ДНЯ:
-              // Если сервер шлет эксклюзивную дату (конец = следующий день), вычитаем 1.
-              // Если сервер шлет включительную (конец = тот же день), оставляем как есть.
-              parsedEndDate = if (rawEndDate.isAfter(parsedStartDate)) {
-                  rawEndDate.minusDays(1)
-              } else {
-                  rawEndDate
-              }
-          } else {
-              // Для событий с временем используем твой dateTimeUtils или стандартный парсер
-              val startInstant = dateTimeUtils.parseToInstant(event.startTime, userTimeZoneId)
-              val endInstant = dateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)
-
-              startInstant?.atZone(ZoneId.of(userTimeZoneId))?.let {
-                  parsedStartDate = it.toLocalDate()
-                  parsedStartTime = it.toLocalTime().withNano(0)
-              }
-              endInstant?.atZone(ZoneId.of(userTimeZoneId))?.let {
-                  parsedEndDate = it.toLocalDate()
-                  parsedEndTime = it.toLocalTime().withNano(0)
-              }
-          }
-      } catch (e: Exception) {
-          Log.e("DEBUG_PARSE", "Ошибка парсинга события ${event.id}: ${e.message}. Данные: Start=${event.startTime}, End=${event.endTime}")
-          // Если совсем всё плохо, тогда уже сегодня
-          parsedStartDate = LocalDate.now()
-          parsedEndDate = LocalDate.now()
+    try {
+      if (isAllDay) {
+        // startTime/endTime — локальная полночь; конец эксклюзивный.
+        parsedStartDate = LocalDate.parse(event.startTime?.take(10))
+        val rawEndDate = LocalDate.parse(event.endTime?.take(10))
+        parsedEndDate =
+            if (rawEndDate.isAfter(parsedStartDate)) rawEndDate.minusDays(1) else rawEndDate
+      } else {
+        val zone = ZoneId.of(userTimeZoneId)
+        dateTimeUtils.parseToInstant(event.startTime, userTimeZoneId)?.atZone(zone)?.let {
+          parsedStartDate = it.toLocalDate()
+          parsedStartTime = it.toLocalTime().withNano(0)
+        }
+        dateTimeUtils.parseToInstant(event.endTime, userTimeZoneId)?.atZone(zone)?.let {
+          parsedEndDate = it.toLocalDate()
+          parsedEndTime = it.toLocalTime().withNano(0)
+        }
       }
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to parse event ${event.id}: start=${event.startTime}, end=${event.endTime}", e)
+    }
 
     var recurrenceOption: RecurrenceOption? = null
     var selectedWeekdays: Set<DayOfWeek> = emptySet()
     var recurrenceEndType = RecurrenceEndType.NEVER
     var recurrenceEndDate: LocalDate? = null
     var recurrenceCount: Int? = null
-    var isRecurring = false
 
-    event.recurrenceRule?.let { rruleString ->
-      isRecurring = true
-      val rules = rruleString.split(';')
-      rules.forEach { rulePart ->
-        val parts = rulePart.split('=')
-        if (parts.size == 2) {
-          val key = parts[0]
-          val value = parts[1]
-          when (key) {
-            "FREQ" -> {
-              recurrenceOption =
-                  RecurrenceOption.ALL_OPTIONS.find { it.rruleValue == "FREQ=$value" }
-            }
-            "BYDAY" -> {
-              selectedWeekdays =
-                  value
-                      .split(',')
-                      .mapNotNull { dayStr ->
-                        when (dayStr) {
-                          "MO" -> DayOfWeek.MONDAY
-                          "TU" -> DayOfWeek.TUESDAY
-                          "WE" -> DayOfWeek.WEDNESDAY
-                          "TH" -> DayOfWeek.THURSDAY
-                          "FR" -> DayOfWeek.FRIDAY
-                          "SA" -> DayOfWeek.SATURDAY
-                          "SU" -> DayOfWeek.SUNDAY
-                          else -> null
-                        }
+    event.recurrenceRule?.removePrefix("RRULE:")?.split(';')?.forEach { rulePart ->
+      val parts = rulePart.split('=')
+      if (parts.size != 2) return@forEach
+      val (key, value) = parts
+      when (key.uppercase()) {
+        "FREQ" -> recurrenceOption = RecurrenceOption.ALL_OPTIONS.find { it.rruleValue == "FREQ=$value" }
+        "BYDAY" ->
+            selectedWeekdays =
+                value
+                    .split(',')
+                    .mapNotNull { dayStr ->
+                      when (dayStr.takeLast(2)) {
+                        "MO" -> DayOfWeek.MONDAY
+                        "TU" -> DayOfWeek.TUESDAY
+                        "WE" -> DayOfWeek.WEDNESDAY
+                        "TH" -> DayOfWeek.THURSDAY
+                        "FR" -> DayOfWeek.FRIDAY
+                        "SA" -> DayOfWeek.SATURDAY
+                        "SU" -> DayOfWeek.SUNDAY
+                        else -> null
                       }
-                      .toSet()
-            }
-            "UNTIL" -> {
-              try {
-                val zonedDateTime =
-                    ZonedDateTime.parse(value, untilFormatter.withZone(ZoneOffset.UTC))
-                recurrenceEndDate =
-                    zonedDateTime.withZoneSameInstant(ZoneId.of(userTimeZoneId)).toLocalDate()
-                recurrenceEndType = RecurrenceEndType.DATE
-              } catch (e: Exception) {
-                Log.e(TAG, "Error parsing UNTIL value: $value - ${e.message}")
-              }
-            }
-            "COUNT" -> {
-              recurrenceCount = value.toIntOrNull()
-              if (recurrenceCount != null) recurrenceEndType = RecurrenceEndType.COUNT
-            }
-          }
+                    }
+                    .toSet()
+        "UNTIL" -> {
+          recurrenceEndDate = parseUntil(value, userTimeZoneId)
+          if (recurrenceEndDate != null) recurrenceEndType = RecurrenceEndType.DATE
+        }
+        "COUNT" -> {
+          recurrenceCount = value.toIntOrNull()
+          if (recurrenceCount != null) recurrenceEndType = RecurrenceEndType.COUNT
         }
       }
     }
@@ -466,7 +343,7 @@ constructor(
         endDate = parsedEndDate,
         endTime = parsedEndTime,
         isAllDay = isAllDay,
-        isRecurring = isRecurring,
+        isRecurring = event.recurrenceRule != null,
         recurrenceRule = recurrenceOption?.rruleValue,
         selectedWeekdays = selectedWeekdays,
         recurrenceEndType = recurrenceEndType,
@@ -474,117 +351,29 @@ constructor(
         recurrenceCount = recurrenceCount)
   }
 
-  private fun buildUpdateEventApiRequest(
-      originalEvent: EventDto,
-      currentSummary: String,
-      currentDescription: String,
-      currentLocation: String,
-      currentDateTimeState: EventDateTimeState,
-      formattedStartStr: String,
-      formattedEndStr: String,
-      finalRRuleStringFromUi: String?,
-      selectedUpdateMode: EventUpdateMode
-  ): EventRequest? {
-    var hasChanges = false
-
-    val summaryUpdate =
-        currentSummary.takeIf { it != originalEvent.summary }?.also { hasChanges = true }
-    val descriptionUpdate =
-        currentDescription
-            .takeIf { it != (originalEvent.description ?: "") }
-            ?.also { hasChanges = true }
-    val locationUpdate =
-        currentLocation.takeIf { it != (originalEvent.location ?: "") }?.also { hasChanges = true }
-
-    var startTimeUpdate: String? = null
-    var endTimeUpdate: String? = null
-    var isAllDayUpdate: Boolean? = null
-    var timeZoneIdUpdate: String? = null
-
-    val originalRRuleString = originalEvent.recurrenceRule?.takeIf { it.isNotBlank() }
-    val currentRRuleString = finalRRuleStringFromUi?.takeIf { it.isNotBlank() }
-    val recurrenceRuleChanged = currentRRuleString != originalRRuleString
-
-    val isOnlyRecurrenceChangeForAllEvents =
-        recurrenceRuleChanged &&
-            selectedUpdateMode == EventUpdateMode.ALL_IN_SERIES &&
-            currentSummary == originalEvent.summary &&
-            currentDescription == (originalEvent.description ?: "") &&
-            currentLocation == (originalEvent.location ?: "") &&
-            currentDateTimeState.isAllDay == originalEvent.isAllDay
-
-    if (!isOnlyRecurrenceChangeForAllEvents) {
-      if (currentDateTimeState.isAllDay != originalEvent.isAllDay) {
-        isAllDayUpdate = currentDateTimeState.isAllDay
-        hasChanges = true
-      }
-
-      val originalStartTimeState = parseEventToState(originalEvent)
-      val (originalStartStr, originalEndStr) = formatEventTimesForSaving(originalStartTimeState)
-
-      if (formattedStartStr != originalStartStr) {
-        startTimeUpdate = formattedStartStr
-        hasChanges = true
-      }
-      if (formattedEndStr != originalEndStr) {
-        endTimeUpdate = formattedEndStr
-        hasChanges = true
-      }
-
-      if (!currentDateTimeState.isAllDay) {
-        if (timeZone.value.isNotBlank()) {
-          if (isAllDayUpdate == false ||
-              (isAllDayUpdate == null && (startTimeUpdate != null || endTimeUpdate != null))) {
-            timeZoneIdUpdate = timeZone.value
-            // Считаем изменение таймзоны изменением только если она действительно поменялась, а не
-            // просто добавляется
-            // hasChanges = true
-          }
+  private fun parseUntil(value: String, userTimeZoneId: String): LocalDate? =
+      try {
+        if (value.length == 8) {
+          LocalDate.parse(value, DateTimeFormatter.BASIC_ISO_DATE)
+        } else {
+          ZonedDateTime.parse(value, untilFormatter.withZone(ZoneOffset.UTC))
+              .withZoneSameInstant(ZoneId.of(userTimeZoneId))
+              .toLocalDate()
         }
+      } catch (e: Exception) {
+        Log.e(TAG, "Error parsing UNTIL value: $value", e)
+        null
       }
-    }
 
-    var recurrenceForApiRequest: List<String>? = null
-    if (recurrenceRuleChanged) {
-      hasChanges = true
-      recurrenceForApiRequest =
-          if (currentRRuleString != null) {
-            listOf("RRULE:$currentRRuleString")
-          } else {
-            emptyList() // Для удаления правила
-          }
-    }
-
-    if (selectedUpdateMode == EventUpdateMode.SINGLE_INSTANCE && recurrenceForApiRequest != null) {
-      recurrenceForApiRequest = null // Нельзя менять правило для одного экземпляра
-    }
-
-    if (!hasChanges) {
-      Log.d(TAG, "No actual changes to save after considering all fields.")
-      return null
-    }
-
-    return EventRequest(
-        summary = summaryUpdate,
-        description = descriptionUpdate,
-        location = locationUpdate,
-        startTime = startTimeUpdate,
-        endTime = endTimeUpdate,
-        isAllDay = isAllDayUpdate,
-        timeZoneId = timeZoneIdUpdate,
-        recurrence = recurrenceForApiRequest)
-  }
+  // --- Состояние диалогов ---
 
   fun requestDeleteConfirmation(event: EventDto) {
+    val isRecurring = event.recurringEventId != null
     _uiState.update {
-      val isActuallyRecurring = event.recurringEventId != null || event.originalStartTime != null
-      Log.d(
-          TAG,
-          "requestDeleteConfirmation for event: ${event.id}, summary: '${event.summary}', isAllDay: ${event.isAllDay}, recurringId: ${event.recurringEventId}, originalStart: ${event.originalStartTime}, calculatedIsRecurring: $isActuallyRecurring")
       it.copy(
           eventPendingDeletion = event,
-          showDeleteConfirmationDialog = !isActuallyRecurring,
-          showRecurringDeleteOptionsDialog = isActuallyRecurring,
+          showDeleteConfirmationDialog = !isRecurring,
+          showRecurringDeleteOptionsDialog = isRecurring,
       )
     }
   }
@@ -598,193 +387,24 @@ constructor(
     }
   }
 
-  fun confirmDeleteEvent() {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-
-    viewModelScope.launch {
-      _uiState.update {
-        it.copy(
-            isLoading = true,
-            showDeleteConfirmationDialog = false,
-            eventPendingDeletion = null,
-            operationError = null)
-      }
-
-      val result = calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.DEFAULT)
-
-      _uiState.update { it.copy(isLoading = false) }
-      if (result.isSuccess) {
-        val message = funMessages.getEventDeletedMessage(eventToDelete.summary)
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-      } else {
-        val errorMessage: UiText =
-            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                ?: run { funMessages.getDeleteErrorMessage() }
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-      }
-    }
-  }
-
-  fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-    _uiState.update {
-      it.copy(
-          isLoading = true,
-          showDeleteConfirmationDialog = false,
-          eventPendingDeletion = null,
-          operationError = null)
-    }
-
-    when (choice) {
-      RecurringDeleteChoice.SINGLE_INSTANCE -> {
-        viewModelScope.launch {
-          val result =
-              calendarRepository.deleteEvent(eventToDelete.id, EventDeleteMode.INSTANCE_ONLY)
-          _uiState.update { it.copy(isLoading = false) }
-
-          if (result.isSuccess) {
-            val message = funMessages.getSeriesDeletedMessage()
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-          } else {
-            val errorMessage: UiText =
-                result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                    ?: run { funMessages.getGenericErrorMessage() }
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-          }
-        }
-      }
-
-      RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
-        handleThisAndFollowingDelete(eventToDelete)
-      }
-
-      RecurringDeleteChoice.ALL_IN_SERIES -> {
-        val idForBackendCall = eventToDelete.recurringEventId ?: eventToDelete.id
-        viewModelScope.launch {
-          val result = calendarRepository.deleteEvent(idForBackendCall, EventDeleteMode.DEFAULT)
-          _uiState.update { it.copy(isLoading = false) }
-
-          if (result.isSuccess) {
-            val message = funMessages.getSeriesDeletedMessage()
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-            _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-          } else {
-            val errorMessage: UiText =
-                result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                    ?: run { funMessages.getGenericErrorMessage() }
-            _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-          }
-        }
-      }
-    }
-  }
-
-  private fun handleThisAndFollowingDelete(eventInstance: EventDto) {
-    val originalRRule = eventInstance.recurrenceRule
-    if (originalRRule.isNullOrBlank()) {
-      Log.e(
-          TAG,
-          "Cannot perform 'this and following' delete: Event ${eventInstance.id} has no recurrence rule.")
-      _uiState.update { it.copy(operationError = funMessages.getGenericErrorMessage()) }
-      return
-    }
-
-    val masterEventId = eventInstance.recurringEventId ?: eventInstance.id
-
-    val instanceStartDate: LocalDate =
-        try {
-          OffsetDateTime.parse(eventInstance.startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-              .toLocalDate()
-        } catch (_: DateTimeParseException) {
-          try {
-            LocalDate.parse(eventInstance.startTime, DateTimeFormatter.ISO_LOCAL_DATE)
-          } catch (e2: DateTimeParseException) {
-            Log.e(
-                TAG,
-                "Failed to parse event start time in any known format: ${eventInstance.startTime}",
-                e2)
-            _uiState.update { it.copy(operationError = funMessages.getGenericErrorMessage()) }
-            return
-          }
-        }
-
-    val newUntilDate = instanceStartDate.minusDays(1)
-
-    val untilString =
-        newUntilDate
-            .atTime(23, 59, 59)
-            .atZone(ZoneOffset.UTC)
-            .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
-
-    val ruleParts =
-        originalRRule.split(';').filterNot {
-          it.startsWith("UNTIL=", ignoreCase = true) || it.startsWith("COUNT=", ignoreCase = true)
-        }
-    val newRRuleString = "RRULE:" + ruleParts.joinToString(";") + ";UNTIL=$untilString"
-
-    val updateRequest = EventRequest(recurrence = listOf(newRRuleString))
-
-    Log.d(
-        TAG, "Updating master event $masterEventId to stop recurrence. New RRULE: $newRRuleString")
-
-    viewModelScope.launch {
-      val result =
-          calendarRepository.updateEvent(
-              eventId = masterEventId,
-              updateData = updateRequest,
-              mode = EventUpdateMode.ALL_IN_SERIES)
-      _uiState.update { it.copy(isLoading = false) }
-      if (result.isSuccess) {
-        val message = funMessages.getSeriesDeletedMessage()
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(message))
-        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
-      } else {
-        val errorMessage: UiText =
-            result.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                ?: run { funMessages.getGenericErrorMessage() }
-        _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage))
-      }
-    }
-  }
-
   fun requestEditEvent(event: EventDto) {
-    val isAlreadyRecurring =
-        event.recurringEventId != null ||
-            event.originalStartTime != null ||
-            !event.recurrenceRule.isNullOrEmpty()
-
+    val isRecurring = event.recurringEventId != null
     _uiState.update {
       it.copy(
           eventBeingEdited = event,
-          showRecurringEditOptionsDialog = isAlreadyRecurring,
-          showEditEventDialog = !isAlreadyRecurring,
-          selectedUpdateMode =
-              if (!isAlreadyRecurring) {
-                EventUpdateMode.ALL_IN_SERIES
-              } else {
-                it.selectedUpdateMode
-              },
+          showRecurringEditOptionsDialog = isRecurring,
+          showEditEventDialog = !isRecurring,
+          selectedUpdateMode = if (!isRecurring) EventUpdateMode.ALL_IN_SERIES else it.selectedUpdateMode,
       )
     }
-    Log.d(
-        TAG,
-        "Requested edit for event ID: ${event.id}, isAlreadyRecurring: $isAlreadyRecurring, initial selectedUpdateMode for form: ${_uiState.value.selectedUpdateMode}")
   }
 
   fun onRecurringEditOptionSelected(choice: EventUpdateMode) {
-    val currentEvent = _uiState.value.eventBeingEdited
-    if (currentEvent == null) {
+    if (_uiState.value.eventBeingEdited == null) {
       Log.e(TAG, "onRecurringEditOptionSelected called but eventBeingEdited is null.")
       cancelEditEvent()
       return
     }
-
-    Log.d(
-        TAG,
-        "Recurring edit mode selected: $choice for event: ${currentEvent.id}. Current RRULE in event: ${currentEvent.recurrenceRule}")
-
     _uiState.update {
       it.copy(
           showRecurringEditOptionsDialog = false,
@@ -800,21 +420,14 @@ constructor(
           showRecurringEditOptionsDialog = false,
           showEditEventDialog = false)
     }
-    Log.d(TAG, "Event editing cancelled.")
   }
 
   fun requestEventDetails(event: EventDto) {
-    _uiState.update { currentState ->
-      currentState.copy(eventForDetailedView = event, showEventDetailedView = true)
-    }
-    Log.d(TAG, "Requested event details for event ID: ${event.id}")
+    _uiState.update { it.copy(eventForDetailedView = event, showEventDetailedView = true) }
   }
 
   fun cancelEventDetails() {
-    _uiState.update { currentState ->
-      currentState.copy(eventForDetailedView = null, showEventDetailedView = false)
-    }
-    Log.d(TAG, "Cancelled event details view.")
+    _uiState.update { it.copy(eventForDetailedView = null, showEventDetailedView = false) }
   }
 
   companion object {
@@ -823,9 +436,7 @@ constructor(
 }
 
 data class EventManagementUiState(
-    val operationError: UiText? = null,
     val isLoading: Boolean = false,
-    val eventToDeleteId: String? = null,
     val eventPendingDeletion: EventDto? = null,
     val showDeleteConfirmationDialog: Boolean = false,
     val showRecurringDeleteOptionsDialog: Boolean = false,
