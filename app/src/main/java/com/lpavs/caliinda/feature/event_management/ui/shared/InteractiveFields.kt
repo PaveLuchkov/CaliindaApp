@@ -39,7 +39,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem

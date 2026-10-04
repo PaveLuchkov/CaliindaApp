@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.core.common.EventNetworkState
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
@@ -27,7 +26,8 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProjectEventsPage(
-    isLoading: Boolean,
+    hasCalendarAccess: Boolean,
+    onGrantAccessClick: () -> Unit,
     viewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
     createEventClick: () -> Unit,
@@ -38,8 +38,7 @@ fun ProjectEventsPage(
       viewModel
           .getProjectsPageUiState(LocalDate.now())
           .collectAsStateWithLifecycle(initialValue = EventsPageUiState(isLoading = true))
-  val rangeNetworkState by viewModel.rangeNetworkState.collectAsStateWithLifecycle()
-  val isBusy = isLoading || rangeNetworkState is EventNetworkState.Loading
+  val isBusy = pageState.isLoading
   val actions =
       remember(eventManagementViewModel, viewModel) {
         EventActions(
@@ -50,11 +49,11 @@ fun ProjectEventsPage(
 
   val noEmptyEvents = pageState.events.isNotEmpty()
   Column(modifier = Modifier.fillMaxSize()) {
-    if (!introductionState.isFinished && !isBusy) {
+    if (!hasCalendarAccess || (!introductionState.isFinished && !isBusy)) {
       SystemEventsList(
-          isSignedIn = true,
+          hasCalendarAccess = hasCalendarAccess,
           introStep = introductionState.currentStep,
-          onSignInClick = {},
+          onGrantAccessClick = onGrantAccessClick,
           projectView = true,
           onIntroNext = {})
     } else {

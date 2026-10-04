@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Caliinda</string>
-    <string name="type_message">संदेश टाइप करें</string>
     <string name="no_events">कोई इवेंट नहीं</string>
     <string name="cancel">रद्द करें</string>
     <string name="save">सहेजें</string>
     <string name="back">वापस</string>
     <string name="delete">मिटाएँ</string>
 
-    <string name="google_login">गूगल लॉगिन</string>
-    <string name="login">लॉग इन करें</string>
-    <string name="logout">लॉग आउट करें</string>
-    <string name="loginplease">गूगल खाता</string>
-    <string name="error_account_check">खाता सत्यापन त्रुटि: %1$s</string>
-    <string name="logout_success">आप सफलतापूर्वक लॉग आउट हो गए</string>
-    <string name="account">खाता</string>
-    <string name="log_to_continue">Google से लॉग इन करके अपने नए AI कैलेंडर को एक्सप्लोर करें</string>
     <string name="pick_time">समय चुनें</string>
     <string name="pick_date">दिनांक चुनें</string>
     <string name="time">समय</string>
@@ -103,7 +94,6 @@
     <string name="no_changes_to_save">सहेजने के लिए कोई बदलाव नहीं</string>
     <string name="error_summary_cannot_be_empty">शीर्षक खाली नहीं हो सकता</string>
     <string name="error_specify_start_and_end_time">प्रारंभ और अंतिम समय निर्दिष्ट करें</string>
-    <string name="error_failed_to_format_datetime">सबमिशन के लिए दिनांक/समय प्रारूपित करने में विफल</string>
     <string name="event_updated_successfully">इवेंट सफलतापूर्वक अपडेट किया गया</string>
 
     <string name="settings">सेटिंग्स</string>
@@ -113,14 +103,7 @@
     <string name="terms">शर्तें</string>
     <string name="terms_of_use">उपयोग की शर्तें</string>
 
-    <string name="ai">एआई</string>
-    <string name="aisettings">एआई सेटिंग्स</string>
-    <string name="temper_ai">सहायक का स्वभाव</string>
-    <string name="temper_example">उदाहरण: मधुर और विनम्र रहें</string>
-    <string name="temper_saved">स्वभाव सेटिंग सहेजी गई</string>
 
-    <string name="suggested_event_test">टेस्ट</string>
-    <string name="suggested_event_test_full">इवेंट का परीक्षण</string>
     <string name="suggested_event_work">काम</string>
     <string name="suggested_event_work_full">💼 काम कर रहा हूँ</string>
     <string name="suggested_event_dinner">रात का खाना</string>
@@ -171,8 +154,6 @@
     <string name="suggested_event_call_full">📞 फोन कॉल</string>
     <string name="suggested_event_errand">काम</string>
     <string name="suggested_event_errand_full">🏃 काम</string>
-    <string name="suggested_event_relax_bath">आराम करें</string>
-    <string name="suggested_event_relax_bath_full">🛀 आराम का समय</string>
     <string name="suggested_event_sleep">नींद</string>
     <string name="suggested_event_sleep_full">😴 सोने का समय</string>
     <string name="suggested_event_breakfast">नाश्ता</string>

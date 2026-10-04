@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Caliinda</string>
-    <string name="type_message">Nachricht eingeben</string>
     <string name="no_events">Keine Ereignisse</string>
     <string name="cancel">Abbrechen</string>
     <string name="save">Speichern</string>
     <string name="back">Zurück</string>
     <string name="delete">Löschen</string>
 
-    <string name="google_login">Google Login</string>
-    <string name="login">Anmelden</string>
-    <string name="logout">Abmelden</string>
-    <string name="loginplease">Google-Konto</string>
-    <string name="error_account_check">Kontoverifizierungsfehler: %1$s</string>
-    <string name="logout_success">Sie wurden erfolgreich abgemeldet</string>
-    <string name="account">Konto</string>
-    <string name="log_to_continue">Melden Sie sich mit Google an, um Ihren neuen KI-Kalender zu erkunden</string>
 
     <string name="pick_time">Uhrzeit auswählen</string>
     <string name="pick_date">Datum auswählen</string>
@@ -104,7 +95,6 @@
     <string name="no_changes_to_save">Keine Änderungen zum Speichern</string>
     <string name="error_summary_cannot_be_empty">Titel darf nicht leer sein</string>
     <string name="error_specify_start_and_end_time">Start- und Endzeit angeben</string>
-    <string name="error_failed_to_format_datetime">Datum/Uhrzeit konnte nicht für die Übermittlung formatiert werden</string>
     <string name="event_updated_successfully">Ereignis erfolgreich aktualisiert</string>
 
     <string name="settings">Einstellungen</string>
@@ -114,14 +104,7 @@
     <string name="terms">Bedingungen</string>
     <string name="terms_of_use">Nutzungsbedingungen</string>
 
-    <string name="ai">KI</string>
-    <string name="aisettings">KI-Einstellungen</string>
-    <string name="temper_ai">Charakter des Assistenten</string>
-    <string name="temper_example">z.B.: Sei lieb und bescheiden</string>
-    <string name="temper_saved">Charaktereinstellung gespeichert</string>
 
-    <string name="suggested_event_test">Test</string>
-    <string name="suggested_event_test_full">Test-Ereignis</string>
     <string name="suggested_event_work">Arbeit</string>
     <string name="suggested_event_work_full">💼 Arbeiten</string>
     <string name="suggested_event_dinner">Abendessen</string>
@@ -172,8 +155,6 @@
     <string name="suggested_event_call_full">📞 Telefonanruf</string>
     <string name="suggested_event_errand">Besorgung</string>
     <string name="suggested_event_errand_full">🏃 Besorgung machen</string>
-    <string name="suggested_event_relax_bath">Entspannen</string>
-    <string name="suggested_event_relax_bath_full">🛀 Entspannungszeit</string>
     <string name="suggested_event_sleep">Schlaf</string>
     <string name="suggested_event_sleep_full">😴 Schlafenszeit</string>
     <string name="suggested_event_breakfast">Frühstück</string>

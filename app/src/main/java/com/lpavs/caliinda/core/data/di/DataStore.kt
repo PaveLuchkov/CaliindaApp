@@ -9,7 +9,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
 import javax.inject.Singleton
 
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "app_settings")
@@ -24,7 +23,3 @@ object DataStoreModule {
     return appContext.settingsDataStore
   }
 }
-
-@Qualifier @Retention(AnnotationRetention.BINARY) annotation class BackendUrl
-
-@Qualifier @Retention(AnnotationRetention.BINARY) annotation class WebClientId

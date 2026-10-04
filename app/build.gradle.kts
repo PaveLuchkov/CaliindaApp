@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
-    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -19,15 +18,6 @@ android {
         versionName = "Breakfast-1.21"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        val backendUrl: String = findProperty("BACKEND_BASE_URL") as? String ?: ""
-        val webClientId: String = findProperty("BACKEND_WEB_CLIENT_ID") as? String ?: ""
-
-        buildConfigField("String", "BACKEND_BASE_URL", "\"$backendUrl\"")
-        buildConfigField("String", "BACKEND_WEB_CLIENT_ID", "\"$webClientId\"")
-    }
-    packaging {
-        resources.excludes.add("META-INF/DEPENDENCIES")
     }
 
     buildTypes {
@@ -63,18 +53,9 @@ java {
 }
 
 dependencies {
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit2.kotlinx.serialization.converter)
-    implementation(libs.coil.compose)
-    implementation(libs.androidx.security.crypto)
-    implementation(libs.coil.network.okhttp)
-    implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.foundation)
-    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.junit)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.hilt.android)
     ksp(libs.dagger.hilt.compiler)
     implementation(libs.androidx.datastore.preferences)
@@ -82,21 +63,12 @@ dependencies {
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.accompanist.systemuicontroller)
-    implementation(libs.kotlinx.coroutines.play.services)
-    implementation(libs.googleid)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.material)
     implementation(libs.androidx.material)
     implementation(libs.material3)
-    implementation(libs.logging.interceptor)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.play.services.auth)
-    implementation(libs.google.api.client.android)
-    implementation(libs.google.api.services.calendar)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.okhttp)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -128,9 +100,6 @@ dependencies {
 
 // Truth for assertions (optional but recommended)
     testImplementation(libs.truth)
-
-// Tasks API for mocking Google Play Services Tasks
-    testImplementation(libs.play.services.tasks) // Используй версию, совместимую с твоей основной
 
     testImplementation(libs.hilt.android.testing)
 }

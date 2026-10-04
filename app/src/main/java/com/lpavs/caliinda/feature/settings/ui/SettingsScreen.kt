@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.AccessTimeFilled
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Error
@@ -58,10 +59,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.auth.AuthState
-import com.lpavs.caliinda.core.data.auth.AuthViewModel
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.getThemePrimaryColor
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
@@ -70,18 +68,14 @@ import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
-    authViewModel: AuthViewModel,
     settignsViewModel: SettingsViewModel,
-    onSignInClick: () -> Unit,
     onNavigateBack: () -> Unit,
-    onNavigateToAISettings: () -> Unit,
+    onNavigateToCalendarSettings: () -> Unit,
     onNavigateToTimeSettings: () -> Unit,
     onNavigateToAbout: () -> Unit
 ) {
     val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
-  val state by authViewModel.authState.collectAsState()
   val snackbarHostState = remember { SnackbarHostState() }
-  val isOverallLoading = state.isLoading
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -101,16 +95,6 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
                 .fillMaxWidth()) {
-              if (isOverallLoading && !state.isSignedIn) {
-                LoadingIndicator()
-                Spacer(modifier = Modifier.height(16.dp))
-              }
-              GoogleAccountSection(
-                  modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
-                  state = state,
-                  authViewModel = authViewModel,
-                  onSignInClick = onSignInClick,
-              )
             ThemePickerItem(
                 modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                 currentMode =  themeMode,
@@ -118,21 +102,17 @@ fun SettingsScreen(
                     settignsViewModel.updateThemeMode(newMode)
                 }
             )
-                  /**
               SettingsItem(
                     modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                   icon = {
                     Icon(
-                        painter = painterResource(id = R.drawable.ar_sticker),
+                        Icons.Rounded.CalendarMonth,
                         tint = colorScheme.onPrimaryContainer,
-                        contentDescription = stringResource(R.string.ai))
+                        contentDescription = null)
                   },
-                  title = stringResource(R.string.aisettings),
-                  onClick = onNavigateToAISettings,
+                  title = "Calendars",
+                  onClick = onNavigateToCalendarSettings,
                   shape = MaterialShapes.Clover4Leaf.toShape())
-              Spacer(modifier = Modifier.height(10.dp))
-                    **/
-
               SettingsItem(
                   modifier = Modifier.padding(vertical = cuid.ItemVerticalPadding),
                   icon = {
@@ -191,85 +171,6 @@ fun SettingsItem(
         Text(text = title, modifier = Modifier
             .padding(16.dp)
             .align(Alignment.Center))
-      }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun GoogleAccountSection(
-    modifier: Modifier = Modifier,
-    state: AuthState,
-    authViewModel: AuthViewModel,
-    onSignInClick: () -> Unit,
-) {
-  val email = state.userEmail ?: stringResource(R.string.loginplease)
-  val displayName = state.displayName ?: email.substringBefore("@")
-  val photo: Uri? = state.photoUrl
-  val cornerRadius = cuid.SettingsItemCornerRadius
-
-  Box(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(cornerRadius))
-              .background(color = colorScheme.surfaceContainer)
-              .height(120.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-              Box(
-                  modifier =
-                      Modifier
-                          .size(80.dp)
-                          .clip(
-                              if (photo == null) MaterialShapes.Circle.toShape()
-                              else MaterialShapes.Cookie7Sided.toShape()
-                          )
-                          .background(color = colorScheme.primaryContainer),
-                  contentAlignment = Alignment.Center) {
-                    if (photo == null) {
-                      Icon(
-                          Icons.Rounded.AccountCircle,
-                          tint = colorScheme.onPrimaryContainer,
-                          contentDescription = stringResource(R.string.account),
-                          modifier = Modifier.size(40.dp))
-                    } else {
-                      AsyncImage(
-                          modifier = Modifier.fillMaxSize(),
-                          model = photo,
-                          contentDescription = stringResource(R.string.account),
-                          contentScale = ContentScale.Fit,
-                          placeholder = rememberVectorPainter(image = Icons.Rounded.AccountCircle),
-                          error = rememberVectorPainter(image = Icons.Rounded.Error),
-                      )
-                    }
-                  }
-              Spacer(modifier = Modifier.width(16.dp))
-              Box(modifier = Modifier.width(130.dp)) {
-                Text(text = displayName, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
-              }
-              Spacer(Modifier.weight(1f))
-              Box(modifier = Modifier.padding(6.dp)) {
-                Box {
-                  if (!state.isSignedIn) {
-                    Button(
-                        onClick = onSignInClick, // Вызываем лямбду
-                    ) {
-                      Text(stringResource(R.string.login))
-                    }
-                  } else {
-                    Button(onClick = { authViewModel.signOut() }, enabled = !state.isLoading) {
-                      Icon(
-                          Icons.AutoMirrored.Rounded.Logout,
-                          contentDescription = stringResource(R.string.account),
-                          modifier = Modifier.size(20.dp))
-                    }
-                  }
-                }
-              }
-            }
       }
 }
 

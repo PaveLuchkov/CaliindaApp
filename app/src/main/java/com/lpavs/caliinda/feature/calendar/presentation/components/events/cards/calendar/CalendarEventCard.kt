@@ -71,8 +71,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.data.remote.agent.PreviewAction
-import com.lpavs.caliinda.core.data.remote.calendar.dto.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
@@ -88,7 +87,6 @@ import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
 fun CalendarEventItem(
     uiModel: EventUiModel,
     isExpanded: Boolean,
-    highlightAction: PreviewAction?,
     onToggleExpand: () -> Unit,
     onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
@@ -392,9 +390,8 @@ val normalEvent =
                 endTime = "2025-08-18T17:45:00+03:00",
                 description = null,
                 location = null,
-                isAllDay = false,
-                isPhantom = false),
-        isPhantom = false)
+                isAllDay = false),
+    )
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE, apiLevel = 29)
 @Composable
@@ -408,7 +405,6 @@ fun CalendarEventPreview() {
         isExpanded = false,
         onEditClickFromList = {},
         onDeleteClickFromList = {},
-        uiModel = normalEvent,
-        highlightAction = PreviewAction.SEARCH)
+        uiModel = normalEvent)
   }
 }

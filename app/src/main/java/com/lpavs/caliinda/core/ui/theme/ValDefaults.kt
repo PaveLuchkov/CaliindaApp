@@ -9,7 +9,6 @@ object CalendarUiDefaults {
   val ItemVerticalPadding = 3.dp // Базовый вертикальный отступ между элементами
   val MicroItemContentVerticalPadding = 1.dp
   val StandardItemContentVerticalPadding = 3.dp
-  val AgentCardVerticalPadding = 4.dp
   val AllDayItemPadding = 16.dp
   val AllDayItemVerticalContentPadding = 6.dp
   val padding = 8.dp
