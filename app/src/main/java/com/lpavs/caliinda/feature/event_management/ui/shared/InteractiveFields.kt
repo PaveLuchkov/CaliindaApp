@@ -84,7 +84,7 @@ fun CustomOutlinedTextField(
       singleLine = true,
       isError = isError,
       supportingText = supportingText,
-      shape = RoundedCornerShape(25.dp))
+      shape = RoundedCornerShape(cuid.ContainerCornerRadius))
 }
 
 @Composable

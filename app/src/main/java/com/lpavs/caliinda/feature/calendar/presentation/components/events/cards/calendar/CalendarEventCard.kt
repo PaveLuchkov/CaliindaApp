@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 import java.time.OffsetDateTime
@@ -7,7 +8,6 @@ import java.time.OffsetDateTime
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -105,12 +105,12 @@ fun CalendarEventItem(
   val animatedHeight by
       animateDpAsState(
           targetValue = targetHeight,
-          animationSpec = tween(durationMillis = 250),
+          animationSpec = AppMotion.defaultSpatialSpec(),
           label = "eventItemHeightAnimation")
   val animatedElevation by
       animateDpAsState(
           targetValue = targetElevatioion,
-          animationSpec = tween(durationMillis = 250),
+          animationSpec = AppMotion.defaultEffectsSpec(),
           label = "eventItemHeightAnimation")
   val starShape =
       remember(shapeParams.numVertices, shapeParams.radiusSeed) {
@@ -290,14 +290,14 @@ fun CalendarEventItem(
           AnimatedVisibility(
               visible = isExpanded,
               enter =
-                  fadeIn(animationSpec = tween(durationMillis = 150, delayMillis = 100)) +
+                  fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                       expandVertically(
-                          animationSpec = tween(durationMillis = 250, delayMillis = 50),
+                          animationSpec = AppMotion.defaultSpatialSpec(),
                           expandFrom = Alignment.Top),
               exit =
                   shrinkVertically(
-                      animationSpec = tween(durationMillis = 250), shrinkTowards = Alignment.Top) +
-                      fadeOut(animationSpec = tween(durationMillis = 150))) {
+                      animationSpec = AppMotion.defaultSpatialSpec(), shrinkTowards = Alignment.Top) +
+                      fadeOut(animationSpec = AppMotion.fastEffectsSpec())) {
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()

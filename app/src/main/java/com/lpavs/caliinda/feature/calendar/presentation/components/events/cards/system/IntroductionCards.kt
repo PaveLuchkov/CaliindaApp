@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system
 
+import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
@@ -7,7 +8,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -157,8 +157,8 @@ val cardText = if (projectView) textOfStageProjectView else textOfStageDailyView
                     AnimatedContent(
                         targetState = cardText,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(300)) togetherWith
-                                    fadeOut(animationSpec = tween(300))
+                            fadeIn(animationSpec = AppMotion.fastEffectsSpec()) togetherWith
+                                    fadeOut(animationSpec = AppMotion.fastEffectsSpec())
                         },
                         label = "TextAnimation"
                     ) { cardText ->

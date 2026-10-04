@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import com.lpavs.caliinda.core.ui.theme.cuid
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -100,7 +101,7 @@ fun EventFormContent(
                         focusedContainerColor = colorScheme.surfaceContainerHighest,
                         unfocusedContainerColor = colorScheme.surfaceContainerHigh,
                     ),
-                    shape = RoundedCornerShape(25.dp)
+                    shape = RoundedCornerShape(cuid.ContainerCornerRadius)
                 )
 
                 OutlinedTextField(
@@ -116,7 +117,7 @@ fun EventFormContent(
                         focusedContainerColor = colorScheme.surfaceContainerHighest,
                         unfocusedContainerColor = colorScheme.surfaceContainerHigh,
                     ),
-                    shape = RoundedCornerShape(25.dp)
+                    shape = RoundedCornerShape(cuid.ContainerCornerRadius)
                 )
             }
         }

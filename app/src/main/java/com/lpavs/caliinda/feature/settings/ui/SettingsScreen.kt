@@ -61,7 +61,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.core.ui.theme.getThemePrimaryColor
+import com.lpavs.caliinda.core.ui.theme.themeColorScheme
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 
@@ -191,12 +191,10 @@ fun ThemeItem(
         ThemeMode.PINKY -> MaterialShapes.Heart.toShape()
     }
 
-    // 2. Получаем цвет для превью (функция из предыдущего ответа)
-    val previewColor = getThemePrimaryColor(themeMode = mode)
-
-    // Цвет галочки (контрастный к цвету темы)
-    // Можно упростить и всегда брать белый или черный, или вычислить luminance
-    val checkMarkColor = Color.White
+    // Цвет превью и контрастная к нему галочка — из схемы самой темы.
+    val previewScheme = themeColorScheme(themeMode = mode)
+    val previewColor = previewScheme.primary
+    val checkMarkColor = previewScheme.onPrimary
 
     Box(
         modifier = Modifier

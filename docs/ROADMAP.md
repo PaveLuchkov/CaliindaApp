@@ -30,9 +30,9 @@
 
 ## Этап 2 — Дизайн-система
 
-- [ ] **2.1** `CaliindaTheme` → `MaterialExpressiveTheme` (expressive motionScheme, shapes).
-- [ ] **2.2** Почистить `Theme.kt`: убрать дублирование dynamic-схем и `dynamicColor && true`.
-- [ ] **2.3** Пройтись по UI на соответствие чек-листу `DESIGN.md` (хардкод цветов, радиусов,
+- [x] **2.1** `CaliindaTheme` → `MaterialExpressiveTheme` (expressive motionScheme, shapes).
+- [x] **2.2** Почистить `Theme.kt`: убрать дублирование dynamic-схем и `dynamicColor && true`.
+- [x] **2.3** Пройтись по UI на соответствие чек-листу `DESIGN.md` (хардкод цветов, радиусов,
   tween → spring).
 
 ## Этап 3 — UX создания событий

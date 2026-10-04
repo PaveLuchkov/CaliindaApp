@@ -1,22 +1,18 @@
 package com.lpavs.caliinda.core.ui.theme
 
-import android.os.Build
+import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import com.lpavs.caliinda.feature.settings.vm.ThemeMode
-import com.lpavs.caliinda.core.ui.theme.cold.ColdLightScheme
 import com.lpavs.caliinda.core.ui.theme.cold.ColdDarkScheme
+import com.lpavs.caliinda.core.ui.theme.cold.ColdLightScheme
 import com.lpavs.caliinda.core.ui.theme.green.GreenDarkScheme
 import com.lpavs.caliinda.core.ui.theme.green.GreenLightScheme
 import com.lpavs.caliinda.core.ui.theme.pinky.PinkyDarkScheme
@@ -25,102 +21,51 @@ import com.lpavs.caliinda.core.ui.theme.sunny.SunnyDarkScheme
 import com.lpavs.caliinda.core.ui.theme.sunny.SunnyLightScheme
 import com.lpavs.caliinda.core.ui.theme.warm.WarmDarkScheme
 import com.lpavs.caliinda.core.ui.theme.warm.WarmLightScheme
+import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 
-data class FixedAccentColors(
-    val primaryFixed: Color,
-    val onPrimaryFixed: Color,
-    val secondaryFixed: Color,
-    val onSecondaryFixed: Color,
-    val tertiaryFixed: Color,
-    val onTertiaryFixed: Color,
-    val primaryFixedDim: Color,
-    val secondaryFixedDim: Color,
-    val tertiaryFixedDim: Color,
-)
+/**
+ * Цветовая схема для режима темы. SYSTEM — динамические цвета от обоев (minSdk 32, доступны
+ * всегда), остальные — собственные M3-схемы.
+ */
+fun colorSchemeFor(themeMode: ThemeMode, darkTheme: Boolean, context: Context): ColorScheme =
+    when (themeMode) {
+      ThemeMode.SYSTEM ->
+          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+      ThemeMode.COLD -> if (darkTheme) ColdDarkScheme else ColdLightScheme
+      ThemeMode.WARM -> if (darkTheme) WarmDarkScheme else WarmLightScheme
+      ThemeMode.PINKY -> if (darkTheme) PinkyDarkScheme else PinkyLightScheme
+      ThemeMode.GREEN -> if (darkTheme) GreenDarkScheme else GreenLightScheme
+      ThemeMode.SUNNY -> if (darkTheme) SunnyDarkScheme else SunnyLightScheme
+    }
 
-val LocalFixedAccentColors =
-    compositionLocalOf<FixedAccentColors> { error("No FixedAccentColors provided") }
+/**
+ * Движение приложения. Та же схема отдаётся в MaterialExpressiveTheme, а здесь доступна и вне
+ * composable — в transitionSpec у AnimatedContent и переходах навигации.
+ * Spatial — позиция и размер (пружина с отскоком), effects — цвет и прозрачность (без отскока).
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+val AppMotion: MotionScheme = MotionScheme.expressive()
 
-@Composable
-fun rememberFixedAccentColors(
-    colorSchemeLight: ColorScheme,
-    colorSchemeDark: ColorScheme
-): FixedAccentColors {
-  return remember(colorSchemeLight, colorSchemeDark) {
-    FixedAccentColors(
-        primaryFixed = colorSchemeLight.primaryContainer,
-        onPrimaryFixed = colorSchemeLight.onPrimaryContainer,
-        secondaryFixed = colorSchemeLight.secondaryContainer,
-        onSecondaryFixed = colorSchemeLight.onSecondaryContainer,
-        tertiaryFixed = colorSchemeLight.tertiaryContainer,
-        onTertiaryFixed = colorSchemeLight.onTertiaryContainer,
-        primaryFixedDim = colorSchemeDark.primary,
-        secondaryFixedDim = colorSchemeDark.secondary,
-        tertiaryFixedDim = colorSchemeDark.tertiary)
-  }
-}
-
-// -------------------- Calendar Theme --------------------
-
+/** Тема приложения: M3 Expressive — пружинная motion scheme и expressive-формы по умолчанию. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CaliindaTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
   val context = LocalContext.current
+  val colorScheme =
+      remember(themeMode, darkTheme, context) { colorSchemeFor(themeMode, darkTheme, context) }
 
-  val lightColors =
-      when {
-        dynamicColor && true ->
-            dynamicLightColorScheme(context)
-        else -> lightColorScheme()
-      }
-
-  val darkColors =
-      when {
-        dynamicColor && true ->
-            dynamicDarkColorScheme(context)
-        else -> darkColorScheme()
-      }
-
-    val colorScheme: ColorScheme = when (themeMode) {
-        ThemeMode.SYSTEM -> {
-            // Логика для системной темы (Dynamic Colors или стандартные)
-            val dynamicColorsAvailable = true
-            if (darkTheme) {
-                if (dynamicColorsAvailable) dynamicDarkColorScheme(context) else darkColorScheme() // стандартный dark fallback
-            } else {
-                if (dynamicColorsAvailable) dynamicLightColorScheme(context) else lightColorScheme() // стандартный light fallback
-            }
-        }
-        ThemeMode.COLD -> if (darkTheme) ColdDarkScheme else ColdLightScheme
-        ThemeMode.WARM -> if (darkTheme) WarmDarkScheme else WarmLightScheme
-        ThemeMode.PINKY -> if (darkTheme) PinkyDarkScheme else PinkyLightScheme // пример
-        ThemeMode.GREEN -> if (darkTheme) GreenDarkScheme else GreenLightScheme // пример
-        ThemeMode.SUNNY -> if (darkTheme) SunnyDarkScheme else SunnyLightScheme // пример
-    }
-
-  val fixedAccentColors = rememberFixedAccentColors(lightColors, darkColors)
-
-  CompositionLocalProvider(LocalFixedAccentColors provides fixedAccentColors) {
-    MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
-  }
+  MaterialExpressiveTheme(
+      colorScheme = colorScheme,
+      motionScheme = AppMotion,
+      typography = Typography,
+      content = content)
 }
 
+/** Схема произвольной темы — для превью выбора темы в настройках. */
 @Composable
-fun getThemePrimaryColor(themeMode: ThemeMode, darkTheme: Boolean = isSystemInDarkTheme()): Color {
-    val context = LocalContext.current
-
-    return when (themeMode) {
-        ThemeMode.SYSTEM -> {
-            if (darkTheme) dynamicDarkColorScheme(context).primary else dynamicLightColorScheme(context).primary
-        }
-        ThemeMode.COLD -> if (darkTheme) ColdDarkScheme.primary else ColdLightScheme.primary
-        ThemeMode.WARM -> if (darkTheme) WarmDarkScheme.primary else WarmLightScheme.primary
-        ThemeMode.PINKY -> if (darkTheme) PinkyDarkScheme.primary else PinkyLightScheme.primary
-        ThemeMode.GREEN -> if (darkTheme) GreenDarkScheme.primary else GreenLightScheme.primary
-        ThemeMode.SUNNY -> if (darkTheme) SunnyDarkScheme.primary else SunnyLightScheme.primary
-    }
-}
+fun themeColorScheme(themeMode: ThemeMode, darkTheme: Boolean = isSystemInDarkTheme()): ColorScheme =
+    colorSchemeFor(themeMode, darkTheme, LocalContext.current)

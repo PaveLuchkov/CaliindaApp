@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
 import androidx.compose.foundation.background
@@ -72,7 +73,7 @@ fun CalendarDateTitle(
         modifier =
             Modifier.fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(25.dp))
+                .clip(RoundedCornerShape(cuid.ContainerCornerRadius))
                 .background(color = headerBackgroundColor)
                 .pointerInput(Unit) {
                     if (hasCalendarAccess) {
