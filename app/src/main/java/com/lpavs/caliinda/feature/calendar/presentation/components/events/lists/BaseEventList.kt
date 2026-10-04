@@ -42,9 +42,10 @@ fun <T : Any> BaseEventList(
     itemContent: @Composable (T, Boolean, () -> Unit) -> Unit
 ) {
     var expandedId by remember { mutableStateOf<Any?>(null) }
+    val springy = rememberSpringyScrollState(listState)
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().springyScrollContainer(springy),
         state = listState,
         userScrollEnabled = userScrollEnabled,
         contentPadding = PaddingValues(bottom = 100.dp)
@@ -55,7 +56,7 @@ fun <T : Any> BaseEventList(
 
         items(items = items, key = key) { item ->
             val itemId = key(item)
-            Box(modifier = eventItemAnimation()) {
+            Box(modifier = eventItemAnimation().springyScrollItem(springy, itemId)) {
                 itemContent(
                     item,
                     expandedId == itemId,
