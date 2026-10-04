@@ -3,6 +3,7 @@ package com.lpavs.caliinda.core.ui.util
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.ui.graphics.Shape
+import androidx.graphics.shapes.RoundedPolygon
 import kotlin.math.abs
 
 /**
@@ -27,5 +28,7 @@ private val projectFamily by lazy {
   )
 }
 
-fun projectShape(eventId: String): Shape =
-    RoundedPolygonShape(projectFamily[abs(eventId.hashCode()) % projectFamily.size])
+fun projectFamilyPolygon(eventId: String): RoundedPolygon =
+    projectFamily[abs(eventId.hashCode()) % projectFamily.size]
+
+fun projectShape(eventId: String): Shape = RoundedPolygonShape(projectFamilyPolygon(eventId))

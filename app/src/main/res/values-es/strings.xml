@@ -187,4 +187,9 @@
     <string name="undo">Deshacer</string>
     <string name="event_deleted">«%1$s» eliminado</string>
     <string name="project_day_of">día %1$d de %2$d</string>
+    <string name="widget_name">Caliinda · día</string>
+    <string name="widget_description">Evento actual, lo siguiente y proyectos en curso</string>
+    <string name="widget_now">ahora</string>
+    <string name="widget_no_more_events">No hay más eventos hoy</string>
+    <string name="widget_no_access">Abre Caliinda para permitir el acceso al calendario</string>
 </resources>

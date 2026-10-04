@@ -187,4 +187,9 @@
     <string name="undo">Annuler</string>
     <string name="event_deleted">« %1$s » supprimé</string>
     <string name="project_day_of">jour %1$d sur %2$d</string>
+    <string name="widget_name">Caliinda · jour</string>
+    <string name="widget_description">Événement en cours, la suite et projets en cours</string>
+    <string name="widget_now">maintenant</string>
+    <string name="widget_no_more_events">Plus d’événements aujourd’hui</string>
+    <string name="widget_no_access">Ouvrez Caliinda pour autoriser l’accès au calendrier</string>
 </resources>

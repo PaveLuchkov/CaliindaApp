@@ -4,6 +4,7 @@ agp = "8.10.1"
 coreTesting = "2.2.0"
 datastorePreferences = "1.2.0"
 foundation = "1.10.1"
+glance = "1.2.0"
 graphicsShapes = "1.1.0"
 hiltAndroid = "2.57"
 hiltAndroidTesting = "2.56.2"
@@ -33,6 +34,8 @@ junitJupiter = "5.8.2"
 junitJunit = "4.13.2"
 
 [libraries]
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }

@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
+import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Job
@@ -50,6 +51,7 @@ constructor(
     private val calendarRepository: CalendarRepository,
     private val funMessages: IFunMessages,
     private val pendingDeletions: PendingDeletions,
+    private val widgetRefresher: WidgetRefresher,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
@@ -177,6 +179,7 @@ constructor(
     val result = calendarRepository.deleteEvent(event, EventDeleteMode.DEFAULT)
     // Снимаем скрытие после записи: провайдер уже без события, и карточка не мигнёт обратно.
     pendingDeletions.remove(event.id)
+    if (result.isSuccess) widgetRefresher.refresh()
     if (result.isFailure) {
       _eventFlow.emit(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
     }
@@ -228,6 +231,7 @@ constructor(
     val result = operation()
     _uiState.update { it.copy(isLoading = false) }
     if (result.isSuccess) {
+      widgetRefresher.refresh()
       _eventFlow.emit(EventManagementUiEvent.ShowMessage(successMessage()))
       _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
     } else {
