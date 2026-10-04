@@ -70,16 +70,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
+import com.lpavs.caliinda.core.ui.util.projectShape
 import com.lpavs.caliinda.core.ui.util.calculateProjectShapeContainerSize
 import com.lpavs.caliinda.core.ui.util.lerpOkLab
 import com.lpavs.caliinda.feature.calendar.data.EventUiModel
@@ -114,14 +111,6 @@ fun CalendarProjectItem(
           targetValue = targetElevatioion,
           animationSpec = AppMotion.defaultEffectsSpec(),
           label = "eventItemHeightAnimation")
-  val starShape =
-      remember(shapeParams.numVertices, shapeParams.radiusSeed) {
-        RoundedPolygon.star(
-            numVerticesPerRadius = shapeParams.numVertices,
-            radius = shapeParams.radiusSeed,
-            innerRadius = cuid.SHAPEINNERRADIUS,
-            rounding = CornerRounding(cuid.ShapeCornerRounding))
-      }
   val shadowColor = if (!darkTheme) Color.Black else Color.White
   val cardElevation =
       Shadow(
@@ -129,7 +118,8 @@ fun CalendarProjectItem(
           spread = 0.dp,
           color = shadowColor.copy(0.5f),
           offset = DpOffset(x = 0.dp, 0.dp))
-  val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+  // У проектов свои фигуры, отличные от звёзд событий дня (см. ProjectShapes.kt).
+  val clipStar = remember(uiModel.id) { projectShape(uiModel.id) }
   val starContainerSize =
       remember(uiModel.durationMinutes, micro) {
         if (micro || uiModel.durationMinutes <= 0L) 0.dp
