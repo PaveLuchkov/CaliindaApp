@@ -21,20 +21,22 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.sign
 import kotlin.math.sqrt
 
 // Карточка — грузик на пружинке, привязанный к своему месту в списке.
 private const val STIFFNESS = 280f // 1/с²
-private const val DAMPING_RATIO = 0.55f // < 1 — лёгкий перелёт при остановке
+private const val DAMPING_RATIO = 0.5f // < 1 — лёгкий перелёт при остановке
 private val DAMPING = 2f * DAMPING_RATIO * sqrt(STIFFNESS)
 
 /** Какая доля отставания доходит до карточки на максимальном удалении от пальца. */
-private const val LAG_COUPLING = 0.3f
-private val MAX_LAG = 40.dp
+private const val LAG_COUPLING = 1.5f
+private val MAX_LAG = 96.dp
 
 /**
- * «Вес» карточек при прокрутке: карточки отстают от прокрутки тем сильнее, чем дальше они от
- * пальца, и догоняют с пружинным перелётом. Значение меняется только в graphicsLayer, поэтому
+ * «Вес» карточек при прокрутке: карточки позади пальца отстают от прокрутки тем сильнее, чем
+ * дальше они от него, и догоняют с пружинным перелётом. Карточки впереди пальца не смещаются —
+ * иначе при узких промежутках они наезжали бы друг на друга. Значение меняется только в graphicsLayer, поэтому
  * рекомпозиций нет — перерисовываются лишь слои карточек.
  */
 @Stable
@@ -111,7 +113,8 @@ class SpringyScrollState internal constructor(
     if (viewport <= 0f) return 0f
     val anchor = if (anchorY.isNaN()) viewport / 2f else anchorY
     val center = item.offset + item.size / 2f
-    val distance = (abs(center - anchor) / viewport).coerceIn(0f, 1f)
+    // Отстают только карточки позади пальца (со стороны, куда их тянет отставание).
+    val distance = ((center - anchor) * sign(x) / viewport).coerceIn(0f, 1f)
     return (x * LAG_COUPLING * distance).coerceIn(-maxLagPx, maxLagPx)
   }
 }
