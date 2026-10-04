@@ -12,12 +12,14 @@ fun DailyCardsList(
     listState: LazyListState,
     actions: EventActions,
     userScrollEnabled: Boolean = true,
+    pagePosition: (() -> Float)? = null,
 ) {
     BaseEventList(
         items = events,
         key = { it.id },
         listState = listState,
-        userScrollEnabled = userScrollEnabled
+        userScrollEnabled = userScrollEnabled,
+        pagePosition = pagePosition
     ) { event, isExpanded, toggleExpand ->
         CalendarEventItem(
             uiModel = event,

@@ -38,11 +38,13 @@ fun <T : Any> BaseEventList(
     listState: LazyListState,
     modifier: Modifier = Modifier,
     userScrollEnabled: Boolean = true,
+    pagePosition: (() -> Float)? = null,
     headerContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T, Boolean, () -> Unit) -> Unit
 ) {
     var expandedId by remember { mutableStateOf<Any?>(null) }
     val springy = rememberSpringyScrollState(listState)
+    if (pagePosition != null) SpringyPageScrollEffect(springy, pagePosition)
 
     LazyColumn(
         modifier = modifier.fillMaxSize().springyScrollContainer(springy),

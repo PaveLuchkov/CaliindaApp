@@ -34,6 +34,7 @@ import java.time.LocalDate
 @Composable
 fun DayEventsPage(
     listScrollEnabled: Boolean,
+    pagePosition: () -> Float,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     date: LocalDate,
@@ -99,7 +100,8 @@ fun DayEventsPage(
             events = pageState.timedEvents,
             listState = listState,
             actions = actions,
-            userScrollEnabled = listScrollEnabled)
+            userScrollEnabled = listScrollEnabled,
+            pagePosition = pagePosition)
       }
       isBusy -> {
         FullScreenLoader()

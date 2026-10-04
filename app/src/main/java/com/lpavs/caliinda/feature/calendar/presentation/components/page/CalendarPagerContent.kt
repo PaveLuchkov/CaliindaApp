@@ -71,10 +71,23 @@ fun CalendarPagerScreen(
                         remember(pageIndex) {
                           today.plusDays((pageIndex - initialPageIndex).toLong())
                         }
+                    // Сдвиг пейджера относительно этой страницы в px — для «веса» карточек при
+                    // перелистывании. Считаем от pageIndex: абсолютный номер страницы огромный,
+                    // и во Float мелкие сдвиги потерялись бы.
+                    val pagePosition =
+                        remember(pageIndex) {
+                          {
+                            val info = dailyViewPagerState.layoutInfo
+                            (dailyViewPagerState.currentPage - pageIndex +
+                                dailyViewPagerState.currentPageOffsetFraction) *
+                                (info.pageSize + info.pageSpacing)
+                          }
+                        }
                     DayEventsPage(
                         // Пока пейджер листается, жест должен достаться ему, а не списку
                         // страницы — иначе они "дерутся" и пейджер застревает между днями.
                         listScrollEnabled = !dailyViewPagerState.isScrollInProgress,
+                        pagePosition = pagePosition,
                         hasCalendarAccess = hasCalendarAccess,
                         onGrantAccessClick = onGrantAccessClick,
                         date = pageDate,
