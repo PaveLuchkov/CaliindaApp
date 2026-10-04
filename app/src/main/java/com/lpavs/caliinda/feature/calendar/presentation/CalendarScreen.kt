@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import java.time.YearMonth
 import androidx.compose.material3.SheetValue
 import android.app.Activity
 import android.content.Intent
@@ -84,6 +85,16 @@ fun CalendarScreen(
   val initialHorizontalPageIndex = remember { 1 }
   val horizontalPagerState =
       rememberPagerState(initialPage = initialHorizontalPageIndex, pageCount = { 2 })
+  val anchorMonth = rememberSaveable { YearMonth.from(today) }
+  val monthPagerState =
+      rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
+  val pageForMonth: (YearMonth) -> Int = { month ->
+    (initialPageIndex.toLong() + ChronoUnit.MONTHS.between(anchorMonth, month))
+        .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
+        .toInt()
+  }
+  val visibleMonth =
+      anchorMonth.plusMonths((monthPagerState.currentPage - initialPageIndex).toLong())
   val pageForDate: (LocalDate) -> Int = { date ->
     (initialPageIndex.toLong() + ChronoUnit.DAYS.between(anchorDate, date))
         .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
@@ -145,7 +156,12 @@ fun CalendarScreen(
   val CreateEventAction = {
     // С экрана проектов (страница 0) сразу предлагаем промежуток дней, начиная с сегодня.
     createAsProject = horizontalPagerState.currentPage == 0
-    selectedDateForSheet = if (createAsProject) today else currentVisibleDate
+    selectedDateForSheet =
+        when {
+          !createAsProject -> currentVisibleDate
+          visibleMonth == YearMonth.from(today) -> today
+          else -> visibleMonth.atDay(1)
+        }
     showCreateEventSheet = true
   }
   var showEditEventSheet by remember { mutableStateOf(false) }
@@ -180,6 +196,10 @@ fun CalendarScreen(
             onNavigateToSettings = onNavigateToSettings,
             onGoToTodayClick = {
               scope.launch {
+                if (horizontalPagerState.currentPage == 0) {
+                  monthPagerState.animateScrollToPage(pageForMonth(YearMonth.from(today)))
+                  return@launch
+                }
                 val todayPage = pageForDate(today)
                 if (pagerState.currentPage != todayPage) {
                   calendarViewModel.onVisibleDateChanged(today)
@@ -200,6 +220,7 @@ fun CalendarScreen(
             },
             date = currentVisibleDate,
             today = today,
+            month = if (horizontalPagerState.currentPage == 0) visibleMonth else null,
             hasCalendarAccess = calendarState.hasCalendarPermission)
       },
   ) { paddingValues ->
@@ -210,6 +231,8 @@ fun CalendarScreen(
           eventManagementViewModel = eventManagementViewModel,
           calendarPagerState = horizontalPagerState,
           dailyViewPagerState = pagerState,
+          monthPagerState = monthPagerState,
+          anchorMonth = anchorMonth,
           hasCalendarAccess = calendarState.hasCalendarPermission,
           onGrantAccessClick = requestCalendarAccess,
           createEventAction = CreateEventAction,
@@ -238,6 +261,10 @@ fun CalendarScreen(
           calendarViewModel.onVisibleDateChanged(selectedDate)
 
           scope.launch { pagerState.scrollToPage(pageForDate(selectedDate)) }
+        }
+        // Выбор даты с экрана проектов — переходим к этому дню.
+        if (horizontalPagerState.currentPage == 0) {
+          scope.launch { horizontalPagerState.animateScrollToPage(1) }
         }
       })
   CreateBottomSheet(

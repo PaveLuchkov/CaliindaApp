@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.bars
 
+import java.time.YearMonth
 import com.lpavs.caliinda.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Row
@@ -39,6 +40,7 @@ fun CalendarAppBar(
     onTitleHold: () -> Unit,
     date: LocalDate,
     today: LocalDate,
+    month: YearMonth? = null,
     hasCalendarAccess: Boolean,
 ) {
   CenterAlignedTopAppBar(
@@ -46,6 +48,7 @@ fun CalendarAppBar(
         CalendarDateTitle(
             date = date,
             today = today,
+            month = month,
             hasCalendarAccess = hasCalendarAccess,
             onTitleHold = onTitleHold,
             onTitleClick = onTitleClick)

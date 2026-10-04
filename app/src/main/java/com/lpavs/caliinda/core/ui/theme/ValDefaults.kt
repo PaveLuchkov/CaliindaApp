@@ -19,6 +19,7 @@ object CalendarUiDefaults {
   const val MicroEventMaxDurationMinutes = 25L
   val MinStarContainerSize = 120.dp // Размер контейнера для декоративной звезды
   val MaxStarContainerSize = 360.dp // Размер контейнера для декоративной звезды
+  val MaxProjectStarContainerSize = 220.dp // Карточки проектов ниже — фигура меньше
 
   // Для настроек
   val SettingsItemCornerRadius = 25.dp

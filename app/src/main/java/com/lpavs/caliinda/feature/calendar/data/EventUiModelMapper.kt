@@ -46,10 +46,11 @@ constructor(
           if (endInstant.isAfter(startInstant)) Duration.between(startInstant, endInstant).toMinutes()
           else 0L
       val isMicroEvent = durationMinutes > 0 && durationMinutes <= cuid.MicroEventMaxDurationMinutes
-      // «Осталось дней» — только для уже идущих проектов; у предстоящих видна дата начала.
+      // «Осталось дней» — только для идущих проектов: у предстоящих видна дата начала, у
+      // прошедших (история на страницах прошлых месяцев) считать уже нечего.
       // Считаем календарные дни включая сегодняшний, поэтому в последний день будет 1, а не 0.
       val daysLeft =
-          if (project && !currentTime.isBefore(startInstant)) {
+          if (project && !currentTime.isBefore(startInstant) && currentTime.isBefore(endInstant)) {
             val zone = ZoneId.of(timeZoneId)
             val lastDay = endInstant.minusNanos(1).atZone(zone).toLocalDate()
             (ChronoUnit.DAYS.between(currentTime.atZone(zone).toLocalDate(), lastDay) + 1)

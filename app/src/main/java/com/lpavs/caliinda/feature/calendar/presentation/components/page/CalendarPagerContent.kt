@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.page
 
+import java.time.YearMonth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
@@ -22,6 +23,8 @@ fun CalendarPagerScreen(
     eventManagementViewModel: EventManagementViewModel,
     calendarPagerState: PagerState,
     dailyViewPagerState: PagerState,
+    monthPagerState: PagerState,
+    anchorMonth: YearMonth,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     createEventAction: () -> Unit,
@@ -37,13 +40,31 @@ fun CalendarPagerScreen(
     ) { page ->
         when (page) {
           0 ->
-              ProjectEventsPage(
-                  hasCalendarAccess = hasCalendarAccess,
-                  onGrantAccessClick = onGrantAccessClick,
-                  viewModel = calendarViewModel,
-                  eventManagementViewModel = eventManagementViewModel,
-                  createEventClick = createEventAction,
-                  introductionState = introductionState)
+              // Вниз — следующие месяцы, вверх — история.
+              VerticalPager(
+                  state = monthPagerState,
+                  modifier = Modifier.fillMaxSize(),
+                  key = { index ->
+                    anchorMonth.plusMonths((index - initialPageIndex).toLong()).toString()
+                  },
+                  flingBehavior =
+                      PagerDefaults.flingBehavior(
+                          state = monthPagerState, snapPositionalThreshold = 0.05f),
+                  userScrollEnabled = hasCalendarAccess,
+                  beyondViewportPageCount = 1) { pageIndex ->
+                    val month =
+                        remember(pageIndex) {
+                          anchorMonth.plusMonths((pageIndex - initialPageIndex).toLong())
+                        }
+                    MonthProjectsPage(
+                        month = month,
+                        hasCalendarAccess = hasCalendarAccess,
+                        onGrantAccessClick = onGrantAccessClick,
+                        viewModel = calendarViewModel,
+                        eventManagementViewModel = eventManagementViewModel,
+                        createEventClick = createEventAction,
+                        introductionState = introductionState)
+                  }
 
           1 ->
               VerticalPager(

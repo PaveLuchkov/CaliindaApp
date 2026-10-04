@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.page
 
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.ProjectRibbons
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -75,6 +76,8 @@ fun DayEventsPage(
         onDetailsRequest = viewModel::requestEventDetails,
         userScrollEnabled = listScrollEnabled,
     )
+
+    ProjectRibbons(ribbons = pageState.projects, onClick = viewModel::requestEventDetails)
 
     Spacer(modifier = Modifier.height(2.dp))
 

@@ -17,7 +17,11 @@ import com.lpavs.caliinda.feature.calendar.data.EventUiModelMapper
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroStep
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayPageUiState
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.EventsPageUiState
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.MonthPageUiState
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectRibbon
+import com.lpavs.caliinda.feature.calendar.data.dateRange
+import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -127,11 +131,19 @@ constructor(
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
     val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
 
-    return calendarRepository
-        .getEventsFlowForDate(date)
-        .withoutPendingDeletions()
-        .combine(currentTime) { events, now -> events to now }
-        .combine(timeZoneIdFlow) { (events, now), zoneId ->
+    return combine(
+            calendarRepository.getEventsFlowForDate(date).withoutPendingDeletions(),
+            calendarRepository.getProjectsFlowForDate(date).withoutPendingDeletions(),
+            currentTime,
+            timeZoneIdFlow) { events, projects, now, zoneId ->
+          val ribbons =
+              projects.map { project ->
+                val range = project.dateRange(zoneId)
+                ProjectRibbon(
+                    event = project,
+                    dayNumber = ChronoUnit.DAYS.between(range.start, date).toInt() + 1,
+                    totalDays = ChronoUnit.DAYS.between(range.start, range.endInclusive).toInt() + 1)
+              }
           val isToday = date == now.atZone(zoneId).toLocalDate()
           val zoneId = zoneId.toString()
 
@@ -161,36 +173,31 @@ constructor(
               isLoading = false,
               allDayEvents = allDayDtos,
               timedEvents = timedUiModels,
+              projects = ribbons,
               targetScrollIndex = scrollIndex)
         }
         .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
         .distinctUntilChanged()
   }
 
-  fun getProjectsPageUiState(): Flow<EventsPageUiState> {
-    // Окно проектов отсчитывается от сегодня — после полуночи перезапрашиваем.
-    return today
-        .flatMapLatest { date ->
-          calendarRepository.getEventsFlowForProjects(date).withoutPendingDeletions().map { events ->
-            date to events
+  /** Страница месяца на экране проектов: карточки проектов, которые пересекают этот месяц. */
+  fun getMonthPageUiState(month: YearMonth): Flow<MonthPageUiState> =
+      combine(
+              calendarRepository.getMonthProjectsFlow(month).withoutPendingDeletions(),
+              currentTime,
+              timeZone) { projects, now, zone ->
+            MonthPageUiState(
+                isLoading = false,
+                events =
+                    eventUiModelMapper.mapToUiModels(
+                        events = projects,
+                        currentTime = now,
+                        timeZoneId = zone,
+                        date = now.atZone(parseZone(zone)).toLocalDate(),
+                        project = true))
           }
-        }
-        .combine(currentTime) { dated, now -> dated to now }
-        .combine(timeZone) { (dated, now), zoneId ->
-          val (date, events) = dated
-          val projectUIModels =
-              eventUiModelMapper.mapToUiModels(
-                  events = events,
-                  currentTime = now,
-                  timeZoneId = zoneId,
-                  date = date,
-                  project = true)
-
-          EventsPageUiState(isLoading = false, events = projectUIModels)
-        }
-        .flowOn(Dispatchers.Default) // Вся эта работа - в фоновом потоке
-        .distinctUntilChanged()
-  }
+          .flowOn(Dispatchers.Default)
+          .distinctUntilChanged()
 
   // --- ДЕЙСТВИЯ КАЛЕНДАРЯ ---
   fun onVisibleDateChanged(newDate: LocalDate) {

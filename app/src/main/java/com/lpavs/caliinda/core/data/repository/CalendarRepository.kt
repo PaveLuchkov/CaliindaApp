@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.core.data.repository
 
+import java.time.YearMonth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import com.lpavs.caliinda.R
@@ -103,15 +104,33 @@ constructor(
             val windowEnd =
                 date.plusDays(PROJECTS_LOOKAHEAD_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
             loadInstances(dayStart, windowEnd, zone)
-                .filter { inst ->
-                  inst.endMillis > dayStart &&
-                      inst.startMillis < windowEnd &&
-                      if (inst.row.isAllDay) {
-                        ChronoUnit.DAYS.between(inst.allDayStart, inst.allDayEndExclusive) > 1
-                      } else {
-                        inst.endMillis - inst.startMillis >= DAY_MILLIS
-                      }
-                }
+                .filter { inst -> inst.overlaps(dayStart, windowEnd) && inst.isProject() }
+                .map { it.toDto(zone) }
+          },
+          empty = emptyList())
+
+  /** Проекты, которые идут в указанный день, — для лент на странице дня. */
+  fun getProjectsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
+      observeCalendar(
+          load = { zone ->
+            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            loadInstances(dayStart, dayEnd, zone)
+                .filter { inst -> inst.overlaps(dayStart, dayEnd) && inst.isProject() }
+                .sortedBy { it.startMillis }
+                .map { it.toDto(zone) }
+          },
+          empty = emptyList())
+
+  /** Многодневные события, пересекающие месяц (в том числе уже прошедшие) — страница месяца. */
+  fun getMonthProjectsFlow(month: YearMonth): Flow<List<EventDto>> =
+      observeCalendar(
+          load = { zone ->
+            val first = month.atDay(1)
+            val monthStart = first.atStartOfDay(zone).toInstant().toEpochMilli()
+            val monthEnd = first.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli()
+            loadInstances(monthStart, monthEnd, zone)
+                .filter { it.overlaps(monthStart, monthEnd) && it.isProject() }
                 .map { it.toDto(zone) }
           },
           empty = emptyList())
@@ -291,6 +310,14 @@ constructor(
       val allDayStart: LocalDate?,
       val allDayEndExclusive: LocalDate?,
   )
+
+  private fun LocalInstance.overlaps(fromMillis: Long, toMillis: Long): Boolean =
+      endMillis > fromMillis && startMillis < toMillis
+
+  /** «Проект» — событие на несколько дней: all-day от двух дней или обычное от суток. */
+  private fun LocalInstance.isProject(): Boolean =
+      if (row.isAllDay) ChronoUnit.DAYS.between(allDayStart, allDayEndExclusive) > 1
+      else endMillis - startMillis >= DAY_MILLIS
 
   private fun loadInstances(dayStart: Long, dayEnd: Long, zone: ZoneId): List<LocalInstance> =
       // All-day события хранятся в UTC, поэтому расширяем окно на сутки в обе стороны.

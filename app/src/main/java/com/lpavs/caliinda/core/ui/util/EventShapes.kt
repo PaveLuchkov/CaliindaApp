@@ -21,6 +21,18 @@ fun calculateShapeContainerSize(durationMinutes: Long): Dp {
     return calculatedHeight.coerceIn(minStarContainerSize, maxStarContainerSize)
 }
 
+/**
+ * Размер фигуры для карточки проекта. Минутная шкала событий дня тут не годится: у проекта
+ * десятки тысяч минут, и фигура раздувается так, что уходит за край невысокой карточки. Считаем
+ * по дням — от двух дней до месяца.
+ */
+fun calculateProjectShapeContainerSize(durationMinutes: Long): Dp {
+    val days = durationMinutes / (24f * 60f)
+    val ratio = ((days - 2f) / 28f).coerceIn(0f, 1f)
+    return cuid.MinStarContainerSize +
+        (cuid.MaxProjectStarContainerSize - cuid.MinStarContainerSize) * ratio
+}
+
 fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
     val startOklab = start.convert(ColorSpaces.Oklab)
     val stopOklab = stop.convert(ColorSpaces.Oklab)
