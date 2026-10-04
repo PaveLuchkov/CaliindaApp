@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.exp
@@ -30,7 +31,7 @@ constructor(
   ): List<EventUiModel> {
     val sortedEvents =
         (if (project) events else events.filter { !it.isAllDay }).sortedBy { it.startTime }
-    val isToday = date == LocalDate.now()
+    val isToday = date == currentTime.atZone(ZoneId.of(timeZoneId)).toLocalDate()
     val nextStartTime: Instant? =
         if (!isToday) {
           null

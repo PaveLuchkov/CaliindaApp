@@ -34,12 +34,13 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CalendarDateTitle(
     date: LocalDate,
+    today: LocalDate,
     hasCalendarAccess: Boolean,
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit
 ) {
-    val isToday = date == LocalDate.now()
-    val isCurrentYear = date.year == LocalDate.now().year
+    val isToday = date == today
+    val isCurrentYear = date.year == today.year
     val headerBackgroundColor =
         if (isToday) {
             colorScheme.tertiary

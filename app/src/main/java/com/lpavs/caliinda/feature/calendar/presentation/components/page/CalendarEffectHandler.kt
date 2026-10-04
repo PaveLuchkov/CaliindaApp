@@ -23,13 +23,13 @@ fun CalendarEffectHandler(
     snackbarHostState: SnackbarHostState,
     context: Context = LocalContext.current,
     initialPageIndex: Int,
-    today: LocalDate,
+    anchorDate: LocalDate,
 ) {
   // Разрешение могли выдать/отозвать в системных настройках, пока приложение было свёрнуто.
   LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { calendarViewModel.onCalendarPermissionChanged() }
 
   LaunchedEffect(pagerState.targetPage) {
-    val settledDate = today.plusDays((pagerState.targetPage - initialPageIndex).toLong())
+    val settledDate = anchorDate.plusDays((pagerState.targetPage - initialPageIndex).toLong())
     calendarViewModel.onVisibleDateChanged(settledDate)
   }
 

@@ -37,6 +37,7 @@ fun CalendarAppBar(
     onTitleClick: () -> Unit,
     onTitleHold: () -> Unit,
     date: LocalDate,
+    today: LocalDate,
     hasCalendarAccess: Boolean,
     currentCalendarScreenMode: AppMode = AppMode.CALENDAR
 ) {
@@ -46,6 +47,7 @@ fun CalendarAppBar(
           AppMode.CALENDAR ->
               CalendarDateTitle(
                   date = date,
+                  today = today,
                   hasCalendarAccess = hasCalendarAccess,
                   onTitleHold = onTitleHold,
                   onTitleClick = onTitleClick)
@@ -107,6 +109,7 @@ fun CalendarEventPreview() {
         onNavigateToSettings = {},
         onTitleHold = {},
         date = LocalDate.now(),
+        today = LocalDate.now(),
         hasCalendarAccess = true)
   }
 }

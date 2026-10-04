@@ -79,7 +79,10 @@ fun CalendarScreen(
 
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
-  val today = remember { LocalDate.now() }
+  val today by calendarViewModel.today.collectAsStateWithLifecycle()
+  // Дата, от которой отсчитываются страницы пейджера дней. Не двигается в полночь, иначе
+  // открытая страница молча сменила бы дату; переживает и пересоздание процесса вместе с пейджером.
+  val anchorDate = rememberSaveable { today }
   val initialPageIndex = remember { Int.MAX_VALUE / 2 }
   val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { Int.MAX_VALUE })
   val initialHorizontalPageIndex = remember { 1 }
@@ -88,6 +91,11 @@ fun CalendarScreen(
   val initialWeekViewPageIndex = remember { 1 }
   val weekViewPagerState =
       rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
+  val pageForDate: (LocalDate) -> Int = { date ->
+    (initialPageIndex.toLong() + ChronoUnit.DAYS.between(anchorDate, date))
+        .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
+        .toInt()
+  }
   val currentVisibleDate by calendarViewModel.currentVisibleDate.collectAsStateWithLifecycle()
   var openSettingsForAccess by remember { mutableStateOf(false) }
   val permissionLauncher =
@@ -129,7 +137,7 @@ fun CalendarScreen(
       pagerState = pagerState,
       snackbarHostState = snackbarHostState,
       initialPageIndex = initialPageIndex,
-      today = today)
+      anchorDate = anchorDate)
 
   var showDatePicker by remember { mutableStateOf(false) }
   val datePickerState =
@@ -180,9 +188,10 @@ fun CalendarScreen(
             onNavigateToSettings = onNavigateToSettings,
             onGoToTodayClick = {
               scope.launch {
-                if (pagerState.currentPage != initialPageIndex) {
+                val todayPage = pageForDate(today)
+                if (pagerState.currentPage != todayPage) {
                   calendarViewModel.onVisibleDateChanged(today)
-                  pagerState.animateScrollToPage(initialPageIndex)
+                  pagerState.animateScrollToPage(todayPage)
                 }
               }
             },
@@ -196,6 +205,7 @@ fun CalendarScreen(
               calendarViewModel.syncCalendars()
             },
             date = currentVisibleDate,
+            today = today,
             hasCalendarAccess = calendarState.hasCalendarPermission,
             currentCalendarScreenMode = currentCalendarScreenMode)
       },
@@ -218,7 +228,7 @@ fun CalendarScreen(
                     onGrantAccessClick = requestCalendarAccess,
                     createEventAction = CreateEventAction,
                     initialPageIndex = initialPageIndex,
-                    today = today,
+                    anchorDate = anchorDate,
                     introductionState = introductionState)
               }
               AppMode.MANAGEMENT -> {
@@ -247,13 +257,7 @@ fun CalendarScreen(
         if (selectedDate != currentVisibleDate) {
           calendarViewModel.onVisibleDateChanged(selectedDate)
 
-          val daysDiff = ChronoUnit.DAYS.between(today, selectedDate)
-          val targetPage =
-              (initialPageIndex.toLong() + daysDiff)
-                  .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
-                  .toInt()
-
-          scope.launch { pagerState.scrollToPage(targetPage.toInt()) }
+          scope.launch { pagerState.scrollToPage(pageForDate(selectedDate)) }
         }
       })
   CreateBottomSheet(
