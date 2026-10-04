@@ -1,20 +1,11 @@
 <resources>
     <string name="app_name">Caliinda</string>
-    <string name="type_message">Type message</string>
     <string name="no_events">No events</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="back">Back</string>
     <string name="delete">Delete</string>
 
-    <string name="google_login">Google log in</string>
-    <string name="login">Log In</string>
-    <string name="logout">Log Out</string>
-    <string name="loginplease">Google Account</string>
-    <string name="error_account_check">Account verification error: %1$s</string>
-    <string name="logout_success">You logged out successfully</string>
-    <string name="account">Account</string>
-    <string name="log_to_continue">Log in with Google to explore your new AI calendar</string>
 
     <string name="pick_time">Pick a Time</string>
     <string name="pick_date">Pick a Date</string>
@@ -35,16 +26,6 @@
     <string name="error">Error</string>
     <string name="funny_error">Unknown error </string>
 
-    <string name="speech_recognizer_error_audio">Audio error</string>
-    <string name="speech_recognizer_error_client">Client error</string>
-    <string name="speech_recognizer_error_insufficient_permissions">Insufficient audio recording permissions</string>
-    <string name="speech_recognizer_error_network">Network error during recognition</string>
-    <string name="speech_recognizer_error_network_timeout">Network timeout during recognition</string>
-    <string name="speech_recognizer_error_no_match">No speech recognized</string>
-    <string name="speech_recognizer_error_recognizer_busy">Speech recognizer is busy</string>
-    <string name="speech_recognizer_error_server">Server error during recognition</string>
-    <string name="speech_recognizer_error_speech_timeout">Speech input timed out</string>
-    <string name="speech_recognizer_error_unknown">Unknown recognition error: %1$d</string>
 
     <string name="recurrence_event">Repeat</string>
     <string name="recurrence_settings_title">Recurrence</string>
@@ -120,22 +101,11 @@
     <string name="no_changes_to_save">No changes to save</string>
     <string name="error_summary_cannot_be_empty">Title cannot be empty</string>
     <string name="error_specify_start_and_end_time">Specify start and end time</string>
-    <string name="error_failed_to_format_datetime">Failed to format date/time for submission</string>
     <string name="event_updated_successfully">Event updated successfully</string>
 
     <string name="error_summary_empty">Summary cannot be empty</string>
     <string name="error_start_end_time_required">Start and end times must be specified</string>
-    <string name="error_authentication">Authentication error</string>
-    <string name="error_data_preparation">Data preparation error</string>
-    <string name="error_network">Network error</string>
     <string name="error_unknown">Unknown error</string>
-    <string name="error_sync_local_delete_failed">Sync error: Event processed on server but not deleted locally.</string>
-    <string name="error_update_data_preparation">Error preparing update data.</string>
-    <string name="error_update_server_response">Server response error after update.</string>
-    <string name="error_update_empty_response">Empty server response after update.</string>
-    <string name="error_json_parsing">JSON parsing error</string>
-    <string name="error_server">Server error</string>
-    <string name="error_server_code_format">Server error (%d)</string>
     <string name="event_no_title">No title</string>
 
     <string name="settings">Settings</string>
@@ -147,14 +117,7 @@
     <string name="delete_data">Delete Data</string>
     <string name="terms_of_use">Terms of use</string>
 
-    <string name="ai">AI</string>
-    <string name="aisettings">AI Settings</string>
-    <string name="temper_ai">Temper of Assistant</string>
-    <string name="temper_example">e.g.: be sweet and humble</string>
-    <string name="temper_saved">Temper setting saved</string>
 
-    <string name="suggested_event_test">Test</string>
-    <string name="suggested_event_test_full">Testing EVENT</string>
     <string name="suggested_event_work">Work</string>
     <string name="suggested_event_work_full">💼 Working</string>
     <string name="suggested_event_dinner">Dinner</string>
@@ -205,8 +168,6 @@
     <string name="suggested_event_call_full">📞 Phone Call</string>
     <string name="suggested_event_errand">Errand</string>
     <string name="suggested_event_errand_full">🏃 Errand</string>
-    <string name="suggested_event_relax_bath">Relax</string>
-    <string name="suggested_event_relax_bath_full">🛀 Relax Time</string>
     <string name="suggested_event_sleep">Sleep</string>
     <string name="suggested_event_sleep_full">😴 Sleep time</string>
     <string name="suggested_event_breakfast">Breakfast</string>
@@ -359,7 +320,6 @@
     <string name="seasonal_spooky_success">🎃 Spooky success!</string>
     <string name="seasonal_fall_vibes">🍁 Fall vibes!</string>
     <string name="recurring_this_and_following_error">Something went wrong. Cannot perform this and following delete.</string>
-    <string name="voice_no_permission">No permission for voice messaging</string>
     <string name="use_system_time_zone">Use system time zone</string>
     <string name="see_you_soon">See you soon! :)</string>
     <string name="revoke_access">Revoke access</string>

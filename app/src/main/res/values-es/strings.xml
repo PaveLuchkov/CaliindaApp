@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Caliinda</string>
-    <string name="type_message">Escribe un mensaje</string>
     <string name="no_events">No hay eventos</string>
     <string name="cancel">Cancelar</string>
     <string name="save">Guardar</string>
     <string name="back">Atrás</string>
     <string name="delete">Eliminar</string>
 
-    <string name="google_login">Iniciar sesión con Google</string>
-    <string name="login">Iniciar sesión</string>
-    <string name="logout">Cerrar sesión</string>
-    <string name="loginplease">Cuenta de Google</string>
-    <string name="error_account_check">Error de verificación de cuenta: %1$s</string>
-    <string name="logout_success">Has cerrado sesión con éxito</string>
-    <string name="account">Cuenta</string>
-    <string name="log_to_continue">Inicia sesión con Google para explorar tu nuevo calendario de IA</string>
 
     <string name="pick_time">Seleccionar hora</string>
     <string name="pick_date">Seleccionar fecha</string>
@@ -104,7 +95,6 @@
     <string name="no_changes_to_save">No hay cambios para guardar</string>
     <string name="error_summary_cannot_be_empty">El título no puede estar vacío</string>
     <string name="error_specify_start_and_end_time">Especifica la hora de inicio y finalización</string>
-    <string name="error_failed_to_format_datetime">Error al formatear fecha/hora para enviar</string>
     <string name="event_updated_successfully">Evento actualizado con éxito</string>
 
     <string name="settings">Ajustes</string>
@@ -114,14 +104,7 @@
     <string name="terms">Términos</string>
     <string name="terms_of_use">Términos de uso</string>
 
-    <string name="ai">IA</string>
-    <string name="aisettings">Ajustes de IA</string>
-    <string name="temper_ai">Carácter del asistente</string>
-    <string name="temper_example">ej.: sé amable y humilde</string>
-    <string name="temper_saved">Ajuste de carácter guardado</string>
 
-    <string name="suggested_event_test">Prueba</string>
-    <string name="suggested_event_test_full">Evento de prueba</string>
     <string name="suggested_event_work">Trabajo</string>
     <string name="suggested_event_work_full">💼 Trabajando</string>
     <string name="suggested_event_dinner">Cena</string>
@@ -172,8 +155,6 @@
     <string name="suggested_event_call_full">📞 Llamada telefónica</string>
     <string name="suggested_event_errand">Recado</string>
     <string name="suggested_event_errand_full">🏃 Recado</string>
-    <string name="suggested_event_relax_bath">Relajarse</string>
-    <string name="suggested_event_relax_bath_full">🛀 Tiempo para relajarse</string>
     <string name="suggested_event_sleep">Dormir</string>
     <string name="suggested_event_sleep_full">😴 Hora de dormir</string>
     <string name="suggested_event_breakfast">Desayuno</string>
