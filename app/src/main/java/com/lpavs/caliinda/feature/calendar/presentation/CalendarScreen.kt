@@ -6,10 +6,6 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -51,7 +47,6 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EditB
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarPagerScreen
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.ManagementScreen
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -88,9 +83,6 @@ fun CalendarScreen(
   val initialHorizontalPageIndex = remember { 1 }
   val horizontalPagerState =
       rememberPagerState(initialPage = initialHorizontalPageIndex, pageCount = { 2 })
-  val initialWeekViewPageIndex = remember { 1 }
-  val weekViewPagerState =
-      rememberPagerState(initialPage = initialWeekViewPageIndex, pageCount = { 3 })
   val pageForDate: (LocalDate) -> Int = { date ->
     (initialPageIndex.toLong() + ChronoUnit.DAYS.between(anchorDate, date))
         .coerceIn(0L, Int.MAX_VALUE.toLong() - 1)
@@ -130,7 +122,6 @@ fun CalendarScreen(
   }
   val eventToEdit = eventManagementState.eventBeingEdited
   val mode = eventManagementState.selectedUpdateMode
-  val currentCalendarScreenMode = calendarState.currentMode
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
@@ -208,36 +199,22 @@ fun CalendarScreen(
             },
             date = currentVisibleDate,
             today = today,
-            hasCalendarAccess = calendarState.hasCalendarPermission,
-            currentCalendarScreenMode = currentCalendarScreenMode)
+            hasCalendarAccess = calendarState.hasCalendarPermission)
       },
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
       BackgroundShapes(context = BackgroundShapeContext.Main, themeMode = themeMode)
-      AnimatedContent(
-          targetState = currentCalendarScreenMode,
-          label = "ChangeInScenery",
-          transitionSpec = { fadeIn() togetherWith fadeOut() }) { mode ->
-            when (mode) {
-              AppMode.CALENDAR -> {
-                CalendarPagerScreen(
-                    calendarViewModel = calendarViewModel,
-                    eventManagementViewModel = eventManagementViewModel,
-                    calendarPagerState = horizontalPagerState,
-                    dailyViewPagerState = pagerState,
-                    weekViewPagerState = weekViewPagerState,
-                    hasCalendarAccess = calendarState.hasCalendarPermission,
-                    onGrantAccessClick = requestCalendarAccess,
-                    createEventAction = CreateEventAction,
-                    initialPageIndex = initialPageIndex,
-                    anchorDate = anchorDate,
-                    introductionState = introductionState)
-              }
-              AppMode.MANAGEMENT -> {
-                ManagementScreen()
-              }
-            }
-          }
+      CalendarPagerScreen(
+          calendarViewModel = calendarViewModel,
+          eventManagementViewModel = eventManagementViewModel,
+          calendarPagerState = horizontalPagerState,
+          dailyViewPagerState = pagerState,
+          hasCalendarAccess = calendarState.hasCalendarPermission,
+          onGrantAccessClick = requestCalendarAccess,
+          createEventAction = CreateEventAction,
+          initialPageIndex = initialPageIndex,
+          anchorDate = anchorDate,
+          introductionState = introductionState)
 
       if (calendarState.hasCalendarPermission) {
         BottomBar(

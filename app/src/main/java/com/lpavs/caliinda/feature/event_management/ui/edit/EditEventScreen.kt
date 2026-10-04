@@ -55,7 +55,6 @@ fun EditEventScreen(
 
   // Состояние ошибок и валидации
   var summaryError by remember { mutableStateOf<String?>(null) }
-  var validationError by remember { mutableStateOf<String?>(null) }
   val uiState by viewModel.uiState.collectAsState()
 
   // Вспомогательные переменные
@@ -117,19 +116,8 @@ fun EditEventScreen(
         location = location,
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,
-        onDateTimeStateChange = {
-          eventDateTimeState = it
-          validationError = null
-        },
+        onDateTimeStateChange = { eventDateTimeState = it },
         isLoading = uiState.isLoading,
         suggestedChips = suggestedChips)
-
-    validationError?.let {
-      Text(
-          text = it,
-          color = colorScheme.error,
-          style = typography.bodySmall,
-          modifier = Modifier.padding(horizontal = 16.dp))
-    }
   }
 }

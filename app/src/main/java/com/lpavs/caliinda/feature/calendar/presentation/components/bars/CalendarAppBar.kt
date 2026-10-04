@@ -25,7 +25,6 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
-import com.lpavs.caliinda.feature.calendar.presentation.AppMode
 import java.time.LocalDate
 
 @OptIn(
@@ -41,20 +40,15 @@ fun CalendarAppBar(
     date: LocalDate,
     today: LocalDate,
     hasCalendarAccess: Boolean,
-    currentCalendarScreenMode: AppMode = AppMode.CALENDAR
 ) {
   CenterAlignedTopAppBar(
       title = {
-        when (currentCalendarScreenMode) {
-          AppMode.CALENDAR ->
-              CalendarDateTitle(
-                  date = date,
-                  today = today,
-                  hasCalendarAccess = hasCalendarAccess,
-                  onTitleHold = onTitleHold,
-                  onTitleClick = onTitleClick)
-          AppMode.MANAGEMENT -> ManagementTitle()
-        }
+        CalendarDateTitle(
+            date = date,
+            today = today,
+            hasCalendarAccess = hasCalendarAccess,
+            onTitleHold = onTitleHold,
+            onTitleClick = onTitleClick)
       },
       navigationIcon = {
           val haptic = LocalHapticFeedback.current

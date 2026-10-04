@@ -216,10 +216,6 @@ constructor(
     }
   }
 
-  fun changeScenery(appMode: AppMode) {
-    _uiState.update { currentState -> currentState.copy(currentMode = appMode) }
-  }
-
   private fun parseZone(zone: String): ZoneId =
       runCatching { ZoneId.of(zone) }.getOrDefault(ZoneId.systemDefault())
 

@@ -22,7 +22,6 @@ fun CalendarPagerScreen(
     eventManagementViewModel: EventManagementViewModel,
     calendarPagerState: PagerState,
     dailyViewPagerState: PagerState,
-    weekViewPagerState: PagerState,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     createEventAction: () -> Unit,
@@ -38,22 +37,13 @@ fun CalendarPagerScreen(
     ) { page ->
         when (page) {
           0 ->
-              VerticalPager(
-                  state = weekViewPagerState,
-                  modifier = Modifier.fillMaxSize(),
-                  flingBehavior =
-                      PagerDefaults.flingBehavior(
-                          state = weekViewPagerState, snapPositionalThreshold = 0.05f),
-                  userScrollEnabled = false,
-                  beyondViewportPageCount = 1) { _ ->
-                    ProjectEventsPage(
-                        hasCalendarAccess = hasCalendarAccess,
-                        onGrantAccessClick = onGrantAccessClick,
-                        viewModel = calendarViewModel,
-                        eventManagementViewModel = eventManagementViewModel,
-                        createEventClick = createEventAction,
-                        introductionState = introductionState)
-                  }
+              ProjectEventsPage(
+                  hasCalendarAccess = hasCalendarAccess,
+                  onGrantAccessClick = onGrantAccessClick,
+                  viewModel = calendarViewModel,
+                  eventManagementViewModel = eventManagementViewModel,
+                  createEventClick = createEventAction,
+                  introductionState = introductionState)
 
           1 ->
               VerticalPager(

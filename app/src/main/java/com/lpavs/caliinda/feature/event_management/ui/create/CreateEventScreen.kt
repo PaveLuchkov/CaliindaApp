@@ -57,8 +57,6 @@ fun CreateEventScreen(
 
   // Ошибки
   var summaryError by remember { mutableStateOf<String?>(null) }
-  var validationError by remember { mutableStateOf<String?>(null) }
-  var generalError by remember { mutableStateOf<String?>(null) }
 
   val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
   val uiState by viewModel.uiState.collectAsState()
@@ -151,19 +149,8 @@ fun CreateEventScreen(
         location = location,
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,
-        onDateTimeStateChange = {
-          eventDateTimeState = it
-          validationError = null
-        },
+        onDateTimeStateChange = { eventDateTimeState = it },
         isLoading = uiState.isLoading,
         suggestedChips = suggestedChips)
-
-    // Вывод ошибок валидации
-    validationError?.let {
-      Text(it, color = colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
-    }
-    generalError?.let {
-      Text(it, color = colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
-    }
   }
 }
