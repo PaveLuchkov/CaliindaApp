@@ -4,7 +4,6 @@ import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
-import com.lpavs.caliinda.feature.calendar.data.dateRange
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -12,7 +11,6 @@ import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 
 /** Что показывает виджет в данный момент. */
 data class WidgetData(
@@ -22,13 +20,9 @@ data class WidgetData(
     /** Идущее сейчас событие, а если его нет — ближайшее следующее. */
     val focus: EventDto?,
     val focusIsNow: Boolean,
-    val upcoming: List<EventDto>,
-    val projects: List<WidgetProject>,
     /** Когда виджету стоит обновиться самому: начало или конец ближайшего события, полночь. */
     val nextChange: Instant,
 )
-
-data class WidgetProject(val event: EventDto, val dayNumber: Int, val totalDays: Int)
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -52,7 +46,7 @@ suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): Widge
   val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
 
   if (!permissionManager().isGranted.value) {
-    return WidgetData(false, today, zone, null, false, emptyList(), emptyList(), midnight)
+    return WidgetData(false, today, zone, null, false, midnight)
   }
 
   val timed =
@@ -62,14 +56,6 @@ suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): Widge
           .filter { !it.isAllDay && it.endTime.isAfter(now) }
           .sortedBy { it.startTime }
   val focus = timed.firstOrNull()
-  val projects =
-      calendarRepository().getProjectsFlowForDate(today).first().map { project ->
-        val range = project.dateRange(zone)
-        WidgetProject(
-            event = project,
-            dayNumber = ChronoUnit.DAYS.between(range.start, today).toInt() + 1,
-            totalDays = ChronoUnit.DAYS.between(range.start, range.endInclusive).toInt() + 1)
-      }
   val nextChange =
       timed
           .flatMap { listOf(it.startTime, it.endTime) }
@@ -83,7 +69,5 @@ suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): Widge
       zone = zone,
       focus = focus,
       focusIsNow = focus != null && !focus.startTime.isAfter(now),
-      upcoming = timed.drop(1).take(2),
-      projects = projects,
       nextChange = nextChange)
 }
