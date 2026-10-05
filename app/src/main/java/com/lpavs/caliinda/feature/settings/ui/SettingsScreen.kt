@@ -1,10 +1,14 @@
 package com.lpavs.caliinda.feature.settings.ui
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +34,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,7 +74,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.BuildConfig
 import com.lpavs.caliinda.R
@@ -113,6 +121,33 @@ fun SettingsScreen(
   val currentZone = if (usesSystemZone) systemZone else savedZone
   var showZonePicker by rememberSaveable { mutableStateOf(false) }
   val context = LocalContext.current
+
+  // Live-уведомление: включаем только с разрешением; отказали — дальше ведём в системные настройки.
+  val liveEnabled by settingsViewModel.liveNotification.collectAsStateWithLifecycle()
+  var notificationsAllowed by remember {
+    mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+  }
+  LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+    notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+  }
+  var permissionDenied by rememberSaveable { mutableStateOf(false) }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        notificationsAllowed = granted
+        permissionDenied = !granted
+        if (granted) settingsViewModel.setLiveNotification(true)
+      }
+  val onLiveToggle: (Boolean) -> Unit = { checked ->
+    when {
+      !checked -> settingsViewModel.setLiveNotification(false)
+      notificationsAllowed -> settingsViewModel.setLiveNotification(true)
+      permissionDenied || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ->
+          context.startActivitySafely(
+              Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                  .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+      else -> permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+  }
 
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
   Scaffold(
@@ -180,6 +215,30 @@ fun SettingsScreen(
                       },
                       supportingContent = { Text(stringResource(R.string.chips_settings_summary)) }) {
                         Text(stringResource(R.string.chips_settings_title))
+                      }
+                }
+              }
+
+              section(R.string.settings_notifications) {
+                item {
+                  val checked = liveEnabled && notificationsAllowed
+                  SegmentedListItem(
+                      checked = checked,
+                      onCheckedChange = onLiveToggle,
+                      shapes = ListItemDefaults.segmentedShapes(index = 0, count = 1),
+                      colors = settingsItemColors(),
+                      leadingContent = {
+                        Icon(Icons.Rounded.NotificationsActive, contentDescription = null)
+                      },
+                      trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+                      supportingContent = {
+                        Text(
+                            stringResource(
+                                if (permissionDenied && !notificationsAllowed) {
+                                  R.string.live_permission_denied
+                                } else R.string.live_setting_summary))
+                      }) {
+                        Text(stringResource(R.string.live_setting_title))
                       }
                 }
               }

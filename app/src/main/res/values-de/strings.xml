@@ -244,4 +244,14 @@
     <string name="chips_reset">Auf Standard zurücksetzen</string>
     <string name="chips_reset_done">Standard-Chips wiederhergestellt</string>
     <string name="chip_custom">Eigener Chip</string>
+
+    <!-- Live-уведомление -->
+    <string name="live_channel_name">Aktueller Termin</string>
+    <string name="live_channel_desc">Fortschritt des laufenden Termins</string>
+    <string name="live_until">Bis %1$s</string>
+    <string name="live_next">Nächster Termin: %1$s um %2$s</string>
+    <string name="settings_notifications">Benachrichtigungen</string>
+    <string name="live_setting_title">Aktueller Termin in der Leiste</string>
+    <string name="live_setting_summary">Fortschritt und der direkt folgende Termin</string>
+    <string name="live_permission_denied">Benachrichtigungen in den Systemeinstellungen erlauben</string>
 </resources>
