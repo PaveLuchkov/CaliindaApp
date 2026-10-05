@@ -78,7 +78,6 @@
     <string name="settings">Ajustes</string>
     <string name="time_zone">Zona horaria</string>
     <string name="time_zone_save">Zona horaria guardada: %1$s</string>
-    <string name="time_format">Hora y formato</string>
     <string name="terms">Términos</string>
     <string name="terms_of_use">Términos de uso</string>
 
@@ -223,4 +222,14 @@
     <string name="recurrence_decrease">Menos</string>
     <string name="recurrence_increase">Más</string>
     <string name="recurrence_change_end_date">Cambiar fecha de fin</string>
+
+    <!-- Экран настроек -->
+    <string name="settings_appearance">Apariencia</string>
+    <string name="use_system_time_zone">Usar zona horaria del sistema</string>
+    <string name="privacy_policy">Política de privacidad</string>
+    <string name="delete_data">Eliminar datos</string>
+    <string name="delete_data_summary">Borra el almacenamiento o revoca el acceso al calendario en los ajustes del sistema</string>
+    <string name="no_calendars_found">No se encontraron calendarios. Permite el acceso al calendario o añade una cuenta en los ajustes del sistema; si no, Caliinda creará un calendario local con el primer evento.</string>
+    <string name="search_time_zone">Buscar zona horaria</string>
+    <string name="app_version">Versión</string>
 </resources>

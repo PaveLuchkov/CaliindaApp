@@ -78,7 +78,6 @@
     <string name="settings">Настройки</string>
     <string name="time_zone">Часовой пояс</string>
     <string name="time_zone_save">Часовой пояс сохранен: %1$s</string>
-    <string name="time_format">Время и формат</string>
     <string name="terms">Условия</string>
     <string name="terms_of_use">Условия использования</string>
 
@@ -233,4 +232,14 @@
     <string name="recurrence_decrease">Меньше</string>
     <string name="recurrence_increase">Больше</string>
     <string name="recurrence_change_end_date">Изменить дату окончания</string>
+
+    <!-- Экран настроек -->
+    <string name="settings_appearance">Оформление</string>
+    <string name="use_system_time_zone">Системный часовой пояс</string>
+    <string name="privacy_policy">Политика конфиденциальности</string>
+    <string name="delete_data">Удалить данные</string>
+    <string name="delete_data_summary">Очистить хранилище или отозвать доступ к календарю в настройках системы</string>
+    <string name="no_calendars_found">Календари не найдены. Разрешите доступ к календарю или добавьте аккаунт в настройках системы — иначе Caliinda создаст локальный календарь с первым событием.</string>
+    <string name="search_time_zone">Поиск часового пояса</string>
+    <string name="app_version">Версия</string>
 </resources>
