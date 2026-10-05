@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.lists
 
+import com.lpavs.caliinda.core.ui.util.displayTitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +46,7 @@ fun ProjectRibbons(ribbons: List<ProjectRibbon>, onClick: (EventDto) -> Unit) {
                       .padding(horizontal = 16.dp, vertical = 8.dp),
               verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = ribbon.event.summary,
+                    text = ribbon.event.displayTitle(),
                     style = typography.labelLarge,
                     fontFamily = CaliindaFonts.Card,
                     color = colorScheme.onSecondaryContainer,

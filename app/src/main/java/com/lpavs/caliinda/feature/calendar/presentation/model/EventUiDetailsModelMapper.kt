@@ -1,5 +1,6 @@
-package com.lpavs.caliinda.feature.calendar.data
+package com.lpavs.caliinda.feature.calendar.presentation.model
 
+import com.lpavs.caliinda.core.ui.util.displayTitle
 import android.content.Context
 import androidx.core.os.ConfigurationCompat
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
@@ -26,7 +27,7 @@ constructor(
 
     val eventDetailsUiModel =
         EventDetailsUiModel(
-            summary = event.summary,
+            summary = event.displayTitle(context),
             formattedTimeString =
                 dateTimeFormatterUtil.formatEventDetailsTime(
                     context,

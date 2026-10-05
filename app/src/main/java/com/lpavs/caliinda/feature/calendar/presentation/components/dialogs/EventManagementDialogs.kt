@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
+import com.lpavs.caliinda.core.ui.util.displayTitle
 import androidx.compose.runtime.Composable
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
@@ -19,12 +20,12 @@ fun EventManagementDialogs(
   when (dialog) {
     is EventDialog.ChooseEditMode ->
         RecurringEventEditOptionsDialog(
-            eventName = dialog.event.summary,
+            eventName = dialog.event.displayTitle(),
             onDismiss = onDismiss,
             onOptionSelected = onEditModeSelected)
     is EventDialog.ChooseDeleteMode ->
         RecurringEventDeleteOptionsDialog(
-            eventName = dialog.event.summary,
+            eventName = dialog.event.displayTitle(),
             onDismiss = onDismiss,
             onOptionSelected = onDeleteModeSelected)
     else -> {}

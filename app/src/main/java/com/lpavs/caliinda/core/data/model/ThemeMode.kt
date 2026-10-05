@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.settings.vm
+package com.lpavs.caliinda.core.data.model
 
 enum class ThemeMode {
     SYSTEM,

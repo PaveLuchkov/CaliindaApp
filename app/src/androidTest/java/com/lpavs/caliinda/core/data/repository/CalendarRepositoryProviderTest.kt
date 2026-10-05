@@ -46,8 +46,7 @@ class CalendarRepositoryProviderTest {
     calendarId = dataSource.createLocalCalendar()
     settings.saveDefaultCalendarId(calendarId)
     repository =
-        CalendarRepository(
-            dataSource, CalendarPermissionManager(context), settings, context, Dispatchers.IO)
+        CalendarRepository(dataSource, CalendarPermissionManager(context), settings, Dispatchers.IO)
   }
 
   @After

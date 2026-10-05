@@ -21,7 +21,7 @@ import com.lpavs.caliinda.core.ui.theme.sunny.SunnyDarkScheme
 import com.lpavs.caliinda.core.ui.theme.sunny.SunnyLightScheme
 import com.lpavs.caliinda.core.ui.theme.warm.WarmDarkScheme
 import com.lpavs.caliinda.core.ui.theme.warm.WarmLightScheme
-import com.lpavs.caliinda.feature.settings.vm.ThemeMode
+import com.lpavs.caliinda.core.data.model.ThemeMode
 
 /**
  * Цветовая схема для режима темы. SYSTEM — динамические цвета от обоев (minSdk 32, доступны

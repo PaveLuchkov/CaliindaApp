@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.data
+package com.lpavs.caliinda.feature.calendar.presentation.model
 
 import androidx.compose.ui.unit.Dp
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
@@ -29,12 +29,4 @@ data class EventDetailsUiModel(
     val formattedTimeString: String,
     val isCurrent: Boolean,
     val originalEvent: EventDto
-)
-
-data class HabbitModel(
-    val id: String,
-    val title: String,
-    val desciption: String,
-    val emoji: String,
-    val primary: Boolean
 )

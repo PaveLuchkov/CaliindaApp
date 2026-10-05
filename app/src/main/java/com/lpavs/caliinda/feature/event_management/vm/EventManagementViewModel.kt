@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
+import com.lpavs.caliinda.core.ui.util.titleText
 import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
@@ -17,7 +18,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText
-import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
+import com.lpavs.caliinda.feature.event_management.messages.IFunMessages
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.recurrenceRuleAfterEdit
@@ -128,7 +129,7 @@ constructor(
 
       runOperation(
           operation = { calendarRepository.updateEvent(originalEvent, draft, updateMode) },
-          successMessage = { funMessages.getEventUpdatedMessage(originalEvent.summary) },
+          successMessage = { funMessages.getEventUpdatedMessage(originalEvent.nameForMessage()) },
           errorMessage = { funMessages.getUpdateErrorMessage() })
     }
   }
@@ -154,7 +155,7 @@ constructor(
     viewModelScope.launch {
       _events.send(
           EventManagementUiEvent.ShowUndoDelete(
-              event.id, UiText.from(R.string.event_deleted, event.summary)))
+              event.id, UiText.from(R.string.event_deleted, event.titleText)))
     }
   }
 
@@ -206,7 +207,7 @@ constructor(
           operation = { calendarRepository.deleteEvent(eventToDelete, mode) },
           successMessage = {
             if (mode == EventDeleteMode.INSTANCE_ONLY)
-                funMessages.getEventDeletedMessage(eventToDelete.summary)
+                funMessages.getEventDeletedMessage(eventToDelete.nameForMessage())
             else funMessages.getSeriesDeletedMessage()
           },
           errorMessage = { funMessages.getDeleteErrorMessage() })
@@ -285,6 +286,9 @@ constructor(
   fun dismissDialog() {
     _uiState.update { it.copy(dialog = EventDialog.None) }
   }
+
+  /** Без названия — общая фраза вместо «Событие '' обновлено». */
+  private fun EventDto.nameForMessage(): String? = summary.takeUnless { isUntitled }
 
   companion object {
     private const val TAG = "EventManagementViewModel"

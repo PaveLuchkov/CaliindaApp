@@ -1,6 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
-import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
+import com.lpavs.caliinda.feature.calendar.presentation.model.EventDetailsUiModel
 
 data class CalendarState(
     val hasCalendarPermission: Boolean = false,

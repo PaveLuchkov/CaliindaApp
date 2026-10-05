@@ -32,7 +32,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
-import com.lpavs.caliinda.feature.settings.vm.ThemeMode
+import com.lpavs.caliinda.core.data.model.ThemeMode
 import kotlin.math.max
 
 enum class BackgroundShapeContext {

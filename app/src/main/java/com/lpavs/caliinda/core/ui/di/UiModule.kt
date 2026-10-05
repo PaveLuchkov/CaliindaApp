@@ -1,9 +1,7 @@
-package com.lpavs.caliinda.core.data.di
+package com.lpavs.caliinda.core.ui.di
 
 import com.lpavs.caliinda.core.ui.util.DateTimeFormatterUtilImpl
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
-import com.lpavs.caliinda.feature.calendar.presentation.components.FunMessagesImpl
-import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -12,11 +10,9 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class UtilModule {
+abstract class UiModule {
 
   @Binds
   @Singleton
   abstract fun bindDateTimeFormatterUtil(impl: DateTimeFormatterUtilImpl): IDateTimeFormatterUtil
-
-  @Binds @Singleton abstract fun bindFunMessages(impl: FunMessagesImpl): IFunMessages
 }

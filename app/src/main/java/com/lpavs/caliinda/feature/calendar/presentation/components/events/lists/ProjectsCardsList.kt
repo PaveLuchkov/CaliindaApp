@@ -2,7 +2,7 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.events.lists
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
-import com.lpavs.caliinda.feature.calendar.data.EventUiModel
+import com.lpavs.caliinda.feature.calendar.presentation.model.EventUiModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarProjectItem
 import com.lpavs.caliinda.feature.event_management.EventActions
 
