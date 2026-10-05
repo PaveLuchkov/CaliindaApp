@@ -25,7 +25,6 @@
 
     <string name="recurrence_event">Wiederholen</string>
     <string name="recurrence_settings_title">Wiederholung</string>
-    <string name="recurrence_rule_label">Regel</string>
     <string name="recurrence_none">Nicht wiederholen</string>
     <string name="recurrence_daily">Täglich</string>
     <string name="recurrence_weekly">Wöchentlich</string>
@@ -36,30 +35,9 @@
     <string name="recurrence_end_never">Nie</string>
     <string name="recurrence_end_date">Datum</string>
     <string name="recurrence_end_count">Anzahl</string>
-    <string name="recurrence_occurrences">Wiederholungen</string>
-    <string name="recurrence_end_date_field">Enddatum</string>
-    <string name="recurrence_count_field">Anzahl Wiederholungen</string>
 
-    <string name="recurrence_repeats">Wiederholt sich</string>
-    <string name="recurrence_daily_lower">täglich</string>
-    <string name="recurrence_weekly_lower">wöchentlich</string>
-    <string name="recurrence_monthly_lower">monatlich</string>
-    <string name="recurrence_yearly_lower">jährlich</string>
-    <string name="recurrence_on_days">am %1$s</string>
     <string name="recurrence_until">bis %1$s</string>
-    <string name="recurrence_count">%1$d Mal</string>
-    <string name="recurrence_interval">alle %1$d %2$s</string>
-    <string name="recurrence_on_day_of_month">am %1$d. Tag des Monats</string>
-    <string name="recurrence_in_months">im %1$s</string>
-    <string name="recurrence_unknown">Wiederholt sich</string>
 
-    <string name="day_monday">Montag</string>
-    <string name="day_tuesday">Dienstag</string>
-    <string name="day_wednesday">Mittwoch</string>
-    <string name="day_thursday">Donnerstag</string>
-    <string name="day_friday">Freitag</string>
-    <string name="day_saturday">Samstag</string>
-    <string name="day_sunday">Sonntag</string>
 
     <string name="month_january">Januar</string>
     <string name="month_february">Februar</string>
@@ -193,4 +171,46 @@
     <string name="widget_no_access">Öffne Caliinda, um Kalenderzugriff zu erlauben</string>
     <string name="widget_preview_title">Design-Review</string>
     <string name="widget_preview_time">14:00 – 15:00</string>
+
+    <!-- Шторка повторения -->
+    <plurals name="recurrence_every_n_days">
+        <item quantity="one">Jeden %d. Tag</item>
+        <item quantity="other">Alle %d Tage</item>
+    </plurals>
+    <plurals name="recurrence_every_n_weeks">
+        <item quantity="one">Jede %d. Woche</item>
+        <item quantity="other">Alle %d Wochen</item>
+    </plurals>
+    <plurals name="recurrence_every_n_months">
+        <item quantity="one">Jeden %d. Monat</item>
+        <item quantity="other">Alle %d Monate</item>
+    </plurals>
+    <plurals name="recurrence_every_n_years">
+        <item quantity="one">Jedes %d. Jahr</item>
+        <item quantity="other">Alle %d Jahre</item>
+    </plurals>
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">Tag</item>
+        <item quantity="other">Tage</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">Woche</item>
+        <item quantity="other">Wochen</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">Monat</item>
+        <item quantity="other">Monate</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">Jahr</item>
+        <item quantity="other">Jahre</item>
+    </plurals>
+    <plurals name="recurrence_times">
+        <item quantity="one">%d Mal</item>
+        <item quantity="other">%d Mal</item>
+    </plurals>
+    <string name="recurrence_done">Fertig</string>
+    <string name="recurrence_decrease">Weniger</string>
+    <string name="recurrence_increase">Mehr</string>
+    <string name="recurrence_change_end_date">Enddatum ändern</string>
 </resources>

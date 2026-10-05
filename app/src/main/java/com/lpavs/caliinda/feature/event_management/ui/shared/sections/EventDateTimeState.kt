@@ -26,6 +26,8 @@ data class EventDateTimeState(
     val isRecurring: Boolean,
     /** Выбранная частота в виде "FREQ=…" (см. [RecurrenceOption]), null — не повторяется. */
     val recurrenceRule: String? = null,
+    /** Каждые N единиц частоты («через день» — 2 у DAILY). */
+    val recurrenceInterval: Int = 1,
     val selectedWeekdays: Set<DayOfWeek> = emptySet(),
     val recurrenceEndType: RecurrenceEndType = RecurrenceEndType.NEVER,
     val recurrenceEndDate: LocalDate? = null,
@@ -97,6 +99,7 @@ data class EventDateTimeState(
     val weekly = recurrenceRule == RecurrenceOption.Weekly.rruleValue
     return Rrule(
         freq = freq,
+        interval = recurrenceInterval.takeIf { it > 1 },
         byDay = if (weekly) selectedWeekdays.sorted() else emptyList(),
         until =
             recurrenceEndDate
@@ -135,6 +138,7 @@ fun EventDto.toDateTimeState(zone: ZoneId): EventDateTimeState {
       isRecurring = recurrenceRule != null,
       recurrenceRule =
           RecurrenceOption.ALL_OPTIONS.find { it.rruleValue == "FREQ=${rule?.freq}" }?.rruleValue,
+      recurrenceInterval = rule?.interval ?: 1,
       selectedWeekdays = rule?.byDay.orEmpty().toSet(),
       recurrenceEndType =
           when {
@@ -149,7 +153,7 @@ fun EventDto.toDateTimeState(zone: ZoneId): EventDateTimeState {
 /**
  * RRULE, который надо сохранить после правки. Повторение не трогали — исходное правило как
  * есть. Сменили концовку или дни, но не частоту — переносим части, которых форма не показывает
- * (INTERVAL, BYMONTHDAY…), иначе «каждые 2 недели» молча стали бы «каждую неделю».
+ * (BYMONTHDAY, WKST…), чтобы правка не теряла их молча.
  */
 fun recurrenceRuleAfterEdit(original: EventDto, form: EventDateTimeState, zone: ZoneId): String? {
   val formRule = form.toRrule(zone)

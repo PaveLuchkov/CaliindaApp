@@ -131,7 +131,18 @@ class EventDateTimeStateTest {
             .toDateTimeState(moscow)
             .copy(recurrenceEndType = RecurrenceEndType.COUNT, recurrenceCount = 4)
     assertEquals(
-        "FREQ=WEEKLY;BYDAY=MO;INTERVAL=2;COUNT=4", recurrenceRuleAfterEdit(original, form, moscow))
+        "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO;COUNT=4", recurrenceRuleAfterEdit(original, form, moscow))
+  }
+
+  @Test
+  fun `интервал из формы — через день`() {
+    val original = event("FREQ=DAILY")
+    val form = original.toDateTimeState(moscow)
+    assertEquals(1, form.recurrenceInterval)
+    assertEquals(
+        "FREQ=DAILY;INTERVAL=2",
+        recurrenceRuleAfterEdit(original, form.copy(recurrenceInterval = 2), moscow))
+    assertEquals(2, event("FREQ=DAILY;INTERVAL=2").toDateTimeState(moscow).recurrenceInterval)
   }
 
   @Test

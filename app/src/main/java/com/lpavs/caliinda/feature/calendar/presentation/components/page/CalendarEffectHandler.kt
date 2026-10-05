@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarUiEvent
@@ -40,6 +41,7 @@ fun CalendarEffectHandler(
   }
 
   val accessibilityManager = LocalAccessibilityManager.current
+  val undoLabel = stringResource(R.string.undo)
   LaunchedEffect(Unit) {
     merge(calendarViewModel.events, eventManagementViewModel.events).collect { event ->
       when (event) {
@@ -64,7 +66,7 @@ fun CalendarEffectHandler(
                   withTimeoutOrNull(window) {
                     snackbarHostState.showSnackbar(
                         message = event.message.asString(context),
-                        actionLabel = context.getString(R.string.undo),
+                        actionLabel = undoLabel,
                         duration = SnackbarDuration.Indefinite)
                   }
               if (result == SnackbarResult.ActionPerformed) {

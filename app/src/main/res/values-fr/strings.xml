@@ -25,7 +25,6 @@
 
     <string name="recurrence_event">Répéter</string>
     <string name="recurrence_settings_title">Récurrence</string>
-    <string name="recurrence_rule_label">Règle</string>
     <string name="recurrence_none">Ne pas répéter</string>
     <string name="recurrence_daily">Quotidiennement</string>
     <string name="recurrence_weekly">Hebdomadairement</string>
@@ -36,30 +35,9 @@
     <string name="recurrence_end_never">Jamais</string>
     <string name="recurrence_end_date">Date</string>
     <string name="recurrence_end_count">Nombre</string>
-    <string name="recurrence_occurrences">répétitions</string>
-    <string name="recurrence_end_date_field">Date de fin</string>
-    <string name="recurrence_count_field">Nombre de répétitions</string>
 
-    <string name="recurrence_repeats">Répétitions</string>
-    <string name="recurrence_daily_lower">quotidiennement</string>
-    <string name="recurrence_weekly_lower">hebdomadairement</string>
-    <string name="recurrence_monthly_lower">mensuellement</string>
-    <string name="recurrence_yearly_lower">annuellement</string>
-    <string name="recurrence_on_days">le %1$s</string>
     <string name="recurrence_until">jusqu\'au %1$s</string>
-    <string name="recurrence_count">%1$d fois</string>
-    <string name="recurrence_interval">tous les %1$d %2$s</string>
-    <string name="recurrence_on_day_of_month">le %1$d du mois</string>
-    <string name="recurrence_in_months">en %1$s</string>
-    <string name="recurrence_unknown">Répétitions</string>
 
-    <string name="day_monday">Lundi</string>
-    <string name="day_tuesday">Mardi</string>
-    <string name="day_wednesday">Mercredi</string>
-    <string name="day_thursday">Jeudi</string>
-    <string name="day_friday">Vendredi</string>
-    <string name="day_saturday">Samedi</string>
-    <string name="day_sunday">Dimanche</string>
 
     <string name="month_january">Janvier</string>
     <string name="month_february">Février</string>
@@ -194,4 +172,55 @@
     <string name="widget_no_access">Ouvrez Caliinda pour autoriser l’accès au calendrier</string>
     <string name="widget_preview_title">Revue design</string>
     <string name="widget_preview_time">14:00 – 15:00</string>
+
+    <!-- Шторка повторения -->
+    <plurals name="recurrence_every_n_days">
+        <item quantity="one">Tous les %d jour</item>
+        <item quantity="many">Tous les %d jours</item>
+        <item quantity="other">Tous les %d jours</item>
+    </plurals>
+    <plurals name="recurrence_every_n_weeks">
+        <item quantity="one">Toutes les %d semaine</item>
+        <item quantity="many">Toutes les %d semaines</item>
+        <item quantity="other">Toutes les %d semaines</item>
+    </plurals>
+    <plurals name="recurrence_every_n_months">
+        <item quantity="one">Tous les %d mois</item>
+        <item quantity="many">Tous les %d mois</item>
+        <item quantity="other">Tous les %d mois</item>
+    </plurals>
+    <plurals name="recurrence_every_n_years">
+        <item quantity="one">Tous les %d an</item>
+        <item quantity="many">Tous les %d ans</item>
+        <item quantity="other">Tous les %d ans</item>
+    </plurals>
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">Jour</item>
+        <item quantity="many">Jours</item>
+        <item quantity="other">Jours</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">Semaine</item>
+        <item quantity="many">Semaines</item>
+        <item quantity="other">Semaines</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">Mois</item>
+        <item quantity="many">Mois</item>
+        <item quantity="other">Mois</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">An</item>
+        <item quantity="many">Ans</item>
+        <item quantity="other">Ans</item>
+    </plurals>
+    <plurals name="recurrence_times">
+        <item quantity="one">%d fois</item>
+        <item quantity="many">%d fois</item>
+        <item quantity="other">%d fois</item>
+    </plurals>
+    <string name="recurrence_done">OK</string>
+    <string name="recurrence_decrease">Moins</string>
+    <string name="recurrence_increase">Plus</string>
+    <string name="recurrence_change_end_date">Modifier la date de fin</string>
 </resources>

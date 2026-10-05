@@ -25,7 +25,6 @@
 
     <string name="recurrence_event">Повторять</string>
     <string name="recurrence_settings_title">Повторение</string>
-    <string name="recurrence_rule_label">Правило</string>
     <string name="recurrence_none">Не повторять</string>
     <string name="recurrence_daily">Ежедневно</string>
     <string name="recurrence_weekly">Еженедельно</string>
@@ -36,30 +35,9 @@
     <string name="recurrence_end_never">Никогда</string>
     <string name="recurrence_end_date">Дата</string>
     <string name="recurrence_end_count">Количество</string>
-    <string name="recurrence_occurrences">повторений</string>
-    <string name="recurrence_end_date_field">Дата окончания</string>
-    <string name="recurrence_count_field">Количество повторений</string>
 
-    <string name="recurrence_repeats">Повторяется</string>
-    <string name="recurrence_daily_lower">ежедневно</string>
-    <string name="recurrence_weekly_lower">еженедельно</string>
-    <string name="recurrence_monthly_lower">ежемесячно</string>
-    <string name="recurrence_yearly_lower">ежегодно</string>
-    <string name="recurrence_on_days">по %1$s</string>
     <string name="recurrence_until">до %1$s</string>
-    <string name="recurrence_count">%1$d раз(а)</string>
-    <string name="recurrence_interval">каждые %1$d %2$s</string>
-    <string name="recurrence_on_day_of_month">в %1$d день месяца</string>
-    <string name="recurrence_in_months">в %1$s</string>
-    <string name="recurrence_unknown">Повторяется</string>
 
-    <string name="day_monday">Понедельник</string>
-    <string name="day_tuesday">Вторник</string>
-    <string name="day_wednesday">Среда</string>
-    <string name="day_thursday">Четверг</string>
-    <string name="day_friday">Пятница</string>
-    <string name="day_saturday">Суббота</string>
-    <string name="day_sunday">Воскресенье</string>
 
     <string name="month_january">Январь</string>
     <string name="month_february">Февраль</string>
@@ -195,4 +173,64 @@
     <string name="widget_no_access">Откройте Caliinda и разрешите доступ к календарю</string>
     <string name="widget_preview_title">Дизайн-ревью</string>
     <string name="widget_preview_time">14:00 – 15:00</string>
+
+    <!-- Шторка повторения -->
+    <plurals name="recurrence_every_n_days">
+        <item quantity="one">Каждый %d день</item>
+        <item quantity="few">Каждые %d дня</item>
+        <item quantity="many">Каждые %d дней</item>
+        <item quantity="other">Каждые %d дня</item>
+    </plurals>
+    <plurals name="recurrence_every_n_weeks">
+        <item quantity="one">Каждую %d неделю</item>
+        <item quantity="few">Каждые %d недели</item>
+        <item quantity="many">Каждые %d недель</item>
+        <item quantity="other">Каждые %d недели</item>
+    </plurals>
+    <plurals name="recurrence_every_n_months">
+        <item quantity="one">Каждый %d месяц</item>
+        <item quantity="few">Каждые %d месяца</item>
+        <item quantity="many">Каждые %d месяцев</item>
+        <item quantity="other">Каждые %d месяца</item>
+    </plurals>
+    <plurals name="recurrence_every_n_years">
+        <item quantity="one">Каждый %d год</item>
+        <item quantity="few">Каждые %d года</item>
+        <item quantity="many">Каждые %d лет</item>
+        <item quantity="other">Каждые %d года</item>
+    </plurals>
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">день</item>
+        <item quantity="few">дня</item>
+        <item quantity="many">дней</item>
+        <item quantity="other">дня</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">неделя</item>
+        <item quantity="few">недели</item>
+        <item quantity="many">недель</item>
+        <item quantity="other">недели</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">месяц</item>
+        <item quantity="few">месяца</item>
+        <item quantity="many">месяцев</item>
+        <item quantity="other">месяца</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">год</item>
+        <item quantity="few">года</item>
+        <item quantity="many">лет</item>
+        <item quantity="other">года</item>
+    </plurals>
+    <plurals name="recurrence_times">
+        <item quantity="one">%d раз</item>
+        <item quantity="few">%d раза</item>
+        <item quantity="many">%d раз</item>
+        <item quantity="other">%d раза</item>
+    </plurals>
+    <string name="recurrence_done">Готово</string>
+    <string name="recurrence_decrease">Меньше</string>
+    <string name="recurrence_increase">Больше</string>
+    <string name="recurrence_change_end_date">Изменить дату окончания</string>
 </resources>

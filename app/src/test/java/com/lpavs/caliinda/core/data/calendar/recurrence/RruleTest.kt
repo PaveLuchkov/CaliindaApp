@@ -29,8 +29,9 @@ class RruleTest {
   @Test
   fun `незнакомые части сохраняются при форматировании`() {
     val rule = Rrule.parse("FREQ=WEEKLY;INTERVAL=2;WKST=SU;BYDAY=MO")
-    assertEquals(listOf("INTERVAL=2", "WKST=SU"), rule.other)
-    assertEquals("FREQ=WEEKLY;BYDAY=MO;INTERVAL=2;WKST=SU", rule.format())
+    assertEquals(2, rule.interval)
+    assertEquals(listOf("WKST=SU"), rule.other)
+    assertEquals("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO;WKST=SU", rule.format())
   }
 
   @Test

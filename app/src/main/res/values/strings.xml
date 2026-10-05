@@ -29,7 +29,6 @@
 
     <string name="recurrence_event">Repeat</string>
     <string name="recurrence_settings_title">Recurrence</string>
-    <string name="recurrence_rule_label">Rule</string>
     <string name="recurrence_none">Do not repeat</string>
     <string name="recurrence_daily">Daily</string>
     <string name="recurrence_weekly">Weekly</string>
@@ -40,30 +39,9 @@
     <string name="recurrence_end_never">Never</string>
     <string name="recurrence_end_date">Date</string>
     <string name="recurrence_end_count">Count</string>
-    <string name="recurrence_occurrences">repetitions</string>
-    <string name="recurrence_end_date_field">Date ending</string>
-    <string name="recurrence_count_field">Count repetitions</string>
 
-    <string name="recurrence_repeats">Repeats</string>
-    <string name="recurrence_daily_lower">daily</string>
-    <string name="recurrence_weekly_lower">weekly</string>
-    <string name="recurrence_monthly_lower">monthly</string>
-    <string name="recurrence_yearly_lower">yearly</string>
-    <string name="recurrence_on_days">on %1$s</string>
     <string name="recurrence_until">until %1$s</string>
-    <string name="recurrence_count">%1$d time(s)</string>
-    <string name="recurrence_interval">every %1$d %2$s</string>
-    <string name="recurrence_on_day_of_month">on day %1$d</string>
-    <string name="recurrence_in_months">in %1$s</string>
-    <string name="recurrence_unknown">Repeats</string>
 
-    <string name="day_monday">Monday</string>
-    <string name="day_tuesday">Tuesday</string>
-    <string name="day_wednesday">Wednesday</string>
-    <string name="day_thursday">Thursday</string>
-    <string name="day_friday">Friday</string>
-    <string name="day_saturday">Saturday</string>
-    <string name="day_sunday">Sunday</string>
 
     <string name="month_january">January</string>
     <string name="month_february">February</string>
@@ -354,4 +332,46 @@
     <string name="widget_no_access">Open Caliinda to allow calendar access</string>
     <string name="widget_preview_title">Design review</string>
     <string name="widget_preview_time">2:00 PM – 3:00 PM</string>
+
+    <!-- Шторка повторения -->
+    <plurals name="recurrence_every_n_days">
+        <item quantity="one">Every %d day</item>
+        <item quantity="other">Every %d days</item>
+    </plurals>
+    <plurals name="recurrence_every_n_weeks">
+        <item quantity="one">Every %d week</item>
+        <item quantity="other">Every %d weeks</item>
+    </plurals>
+    <plurals name="recurrence_every_n_months">
+        <item quantity="one">Every %d month</item>
+        <item quantity="other">Every %d months</item>
+    </plurals>
+    <plurals name="recurrence_every_n_years">
+        <item quantity="one">Every %d year</item>
+        <item quantity="other">Every %d years</item>
+    </plurals>
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">Day</item>
+        <item quantity="other">Days</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">Week</item>
+        <item quantity="other">Weeks</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">Month</item>
+        <item quantity="other">Months</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">Year</item>
+        <item quantity="other">Years</item>
+    </plurals>
+    <plurals name="recurrence_times">
+        <item quantity="one">%d time</item>
+        <item quantity="other">%d times</item>
+    </plurals>
+    <string name="recurrence_done">Done</string>
+    <string name="recurrence_decrease">Less</string>
+    <string name="recurrence_increase">More</string>
+    <string name="recurrence_change_end_date">Change end date</string>
 </resources>
