@@ -17,6 +17,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventDeleteMode
 import com.lpavs.caliinda.core.data.calendar.model.EventDraft
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
+import com.lpavs.caliinda.core.data.calendar.recurrence.Rrule
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,7 +38,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -167,7 +167,7 @@ constructor(
     val values =
         draft.contentValues().apply {
           put(Events.CALENDAR_ID, resolveTargetCalendarId())
-          putTiming(timingOf(draft, draft.startDate, draft.endDate), draft.recurrenceRule)
+          putTiming(timingOf(draft), draft.recurrenceRule)
         }
     dataSource.insertEvent(values)
   }
@@ -176,7 +176,7 @@ constructor(
       write {
         val isException = event.originalEventId != null
         val isSeriesInstance = event.recurrenceRule != null
-        val timing = timingOf(draft, draft.startDate, draft.endDate)
+        val timing = timingOf(draft)
 
         when {
           mode == EventUpdateMode.SINGLE_INSTANCE && isSeriesInstance -> {
@@ -197,7 +197,6 @@ constructor(
           mode == EventUpdateMode.ALL_IN_SERIES && (isSeriesInstance || isException) -> {
             val masterId = event.originalEventId ?: event.eventId
             val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
-            val zone = draft.zone
             // Исключение само не знает RRULE серии — берём его у мастер-события.
             val seriesDraft =
                 if (isException) draft.copy(recurrenceRule = draft.recurrenceRule ?: master.rrule)
@@ -205,7 +204,7 @@ constructor(
             val values =
                 seriesDraft.contentValues().apply {
                   putTiming(
-                      seriesTiming(event, master.dtStart, master.isAllDay, seriesDraft, zone),
+                      seriesTiming(event, master.dtStart, master.isAllDay, seriesDraft),
                       seriesDraft.recurrenceRule)
                 }
             dataSource.updateEvent(masterId, values)
@@ -244,7 +243,9 @@ constructor(
         } else {
           val values =
               master.seriesValues().apply {
-                put(Events.RRULE, rruleEndingBefore(rrule, instanceTime, master.isAllDay))
+                put(
+                    Events.RRULE,
+                    Rrule.parse(rrule).endingBefore(instanceTime, master.isAllDay).format())
               }
           dataSource.updateEvent(masterId, values)
         }
@@ -266,12 +267,7 @@ constructor(
   /** Добавляет экземпляр (сырой Instances.BEGIN) в EXDATE серии. */
   private fun excludeInstance(masterId: Long, instanceBegin: Long) {
     val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
-    val date =
-        if (master.isAllDay) utcDate(instanceBegin).format(DateTimeFormatter.BASIC_ISO_DATE)
-        else
-            Instant.ofEpochMilli(instanceBegin)
-                .atZone(ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
+    val date = Rrule.exdateValue(instanceBegin, master.isAllDay)
     val exdate = listOfNotNull(master.exdate, date).joinToString(",")
     dataSource.updateEvent(masterId, master.seriesValues().apply { put(Events.EXDATE, exdate) })
   }
@@ -366,54 +362,6 @@ constructor(
   /** Сырое время экземпляра в серии (для перенесённого — исходное, до переноса). */
   private fun EventDto.originalInstanceTimeOrBegin(): Long = originalInstanceBegin ?: instanceBegin
 
-  private data class EventTiming(
-      val dtStart: Long,
-      val dtEnd: Long,
-      val timeZone: String,
-      val isAllDay: Boolean
-  )
-
-  private fun timingOf(draft: EventDraft, startDate: LocalDate, endDate: LocalDate): EventTiming {
-    if (draft.isAllDay) {
-      return EventTiming(
-          dtStart = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-          dtEnd = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-          timeZone = "UTC",
-          isAllDay = true)
-    }
-    val zone = draft.zone
-    val startTime = requireNotNull(draft.startTime) { "Timed event without start time" }
-    val endTime = requireNotNull(draft.endTime) { "Timed event without end time" }
-    return EventTiming(
-        dtStart = startDate.atTime(startTime).atZone(zone).toInstant().toEpochMilli(),
-        dtEnd = endDate.atTime(endTime).atZone(zone).toInstant().toEpochMilli(),
-        timeZone = zone.id,
-        isAllDay = false)
-  }
-
-  /**
-   * Время для правки всей серии: сдвигаем дату начала серии на столько же дней, на сколько
-   * пользователь сдвинул редактируемый экземпляр, а время/длительность берём из формы.
-   */
-  private fun seriesTiming(
-      event: EventDto,
-      masterStart: Long,
-      masterAllDay: Boolean,
-      draft: EventDraft,
-      zone: ZoneId
-  ): EventTiming {
-    // Повторение убрали — событие становится одиночным там, где его поставили в форме.
-    if (draft.recurrenceRule == null) return timingOf(draft, draft.startDate, draft.endDate)
-
-    val span = ChronoUnit.DAYS.between(draft.startDate, draft.endDate)
-    val instanceDate = (event.originalStartTime ?: event.startTime).atZone(zone).toLocalDate()
-    val masterDate =
-        if (masterAllDay) utcDate(masterStart)
-        else Instant.ofEpochMilli(masterStart).atZone(zone).toLocalDate()
-    val newStart = masterDate.plusDays(ChronoUnit.DAYS.between(instanceDate, draft.startDate))
-    return timingOf(draft, newStart, newStart.plusDays(span))
-  }
-
   private fun EventDraft.contentValues() =
       ContentValues().apply {
         put(Events.TITLE, summary)
@@ -428,7 +376,7 @@ constructor(
     if (rrule != null) {
       // Повторяющимся событиям провайдер требует DURATION вместо DTEND.
       put(Events.RRULE, rrule)
-      put(Events.DURATION, durationOf(timing))
+      put(Events.DURATION, timing.duration)
       putNull(Events.DTEND)
     } else {
       putNull(Events.RRULE)
@@ -442,29 +390,6 @@ constructor(
     put(Events.DTEND, timing.dtEnd)
     put(Events.EVENT_TIMEZONE, timing.timeZone)
     put(Events.ALL_DAY, if (timing.isAllDay) 1 else 0)
-  }
-
-  private fun durationOf(timing: EventTiming): String {
-    val millis = (timing.dtEnd - timing.dtStart).coerceAtLeast(0)
-    return if (timing.isAllDay) "P${TimeUnit.MILLISECONDS.toDays(millis).coerceAtLeast(1)}D"
-    else "P${TimeUnit.MILLISECONDS.toSeconds(millis)}S"
-  }
-
-  /** Обрезает серию так, чтобы последний экземпляр был строго до instanceTime. */
-  private fun rruleEndingBefore(rrule: String, instanceTime: Long, allDay: Boolean): String {
-    val until =
-        if (allDay) {
-          utcDate(instanceTime).minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE)
-        } else {
-          Instant.ofEpochMilli(instanceTime - 1000)
-              .atZone(ZoneOffset.UTC)
-              .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
-        }
-    val parts =
-        rrule.removePrefix("RRULE:").split(';').filterNot {
-          it.startsWith("UNTIL=", ignoreCase = true) || it.startsWith("COUNT=", ignoreCase = true)
-        }
-    return (parts + "UNTIL=$until").joinToString(";")
   }
 
   private fun utcDate(millis: Long): LocalDate =
