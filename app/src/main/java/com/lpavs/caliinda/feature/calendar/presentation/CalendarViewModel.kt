@@ -3,7 +3,6 @@ package com.lpavs.caliinda.feature.calendar.presentation
 import com.lpavs.caliinda.core.data.repository.PendingDeletions
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.R
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
@@ -26,16 +25,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -85,8 +82,8 @@ constructor(
   // Состояния Календаря
   val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate
 
-  private val _eventFlow = MutableSharedFlow<CalendarUiEvent>()
-  val eventFlow: SharedFlow<CalendarUiEvent> = _eventFlow.asSharedFlow()
+  private val _events = Channel<CalendarUiEvent>(Channel.BUFFERED)
+  val events: Flow<CalendarUiEvent> = _events.receiveAsFlow()
 
   init {
     observeCalendarPermission()
@@ -202,26 +199,19 @@ constructor(
   }
 
   fun requestEventDetails(event: EventDto) {
-    _uiState.update { currentState ->
-      val eventForDetails =
-          eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
-      currentState.copy(eventForDetailedView = eventForDetails, showEventDetailedView = true)
-    }
-    Log.d(TAG, "Requested event details for event ID: ${event.id}")
+    val details = eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
+    _uiState.update { it.copy(eventDetails = details) }
   }
 
   fun cancelEventDetails() {
-    _uiState.update { currentState ->
-      currentState.copy(eventForDetailedView = null, showEventDetailedView = false)
-    }
-    Log.d(TAG, "Cancelled event details view.")
+    _uiState.update { it.copy(eventDetails = null) }
   }
 
   /** Просит систему синхронизировать аккаунты; UI обновится сам через ContentObserver. */
   fun syncCalendars() {
     viewModelScope.launch {
       calendarRepository.requestSync()
-      _eventFlow.emit(CalendarUiEvent.ShowMessage(UiText.from(R.string.syncing_calendars)))
+      _events.send(CalendarUiEvent.ShowMessage(UiText.from(R.string.syncing_calendars)))
     }
   }
 
@@ -230,11 +220,6 @@ constructor(
       combine(pendingDeletions.ids) { events, hidden ->
         if (hidden.isEmpty()) events else events.filterNot { it.id in hidden }
       }
-
-  // --- COMPANION ---
-  companion object {
-    private const val TAG = "CalendarViewModel" // Используем один TAG
-  }
 }
 
 sealed class CalendarUiEvent {

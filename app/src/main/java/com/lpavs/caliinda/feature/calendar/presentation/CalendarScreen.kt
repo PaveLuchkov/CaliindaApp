@@ -1,7 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
 import java.time.YearMonth
-import androidx.compose.material3.SheetValue
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -20,7 +19,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,14 +41,14 @@ import com.lpavs.caliinda.core.ui.util.toPickerMillis
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
-import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CreateBottomSheet
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
-import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EditBottomSheet
+import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventFormSheet
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarPagerScreen
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
+import com.lpavs.caliinda.feature.event_management.vm.EventDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
@@ -132,8 +130,6 @@ fun CalendarScreen(
       requestCalendarAccess()
     }
   }
-  val eventToEdit = eventManagementState.eventBeingEdited
-  val mode = eventManagementState.selectedUpdateMode
   CalendarEffectHandler(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
@@ -149,46 +145,17 @@ fun CalendarScreen(
               currentVisibleDate.toPickerMillis(),
       )
 
-  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-  var showCreateEventSheet by remember { mutableStateOf(false) }
-  var selectedDateForSheet by remember { mutableStateOf<LocalDate>(today) }
-  var createAsProject by remember { mutableStateOf(false) }
-  val CreateEventAction = {
+  val createEventAction = {
     // С экрана проектов (страница 0) сразу предлагаем промежуток дней, начиная с сегодня.
-    createAsProject = horizontalPagerState.currentPage == 0
-    selectedDateForSheet =
+    val asProject = horizontalPagerState.currentPage == 0
+    val date =
         when {
-          !createAsProject -> currentVisibleDate
+          !asProject -> currentVisibleDate
           visibleMonth == YearMonth.from(today) -> today
           else -> visibleMonth.atDay(1)
         }
-    showCreateEventSheet = true
+    eventManagementViewModel.openCreate(date, asProject)
   }
-  var showEditEventSheet by remember { mutableStateOf(false) }
-  val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-  LaunchedEffect(eventManagementState.showEditEventDialog, eventManagementState.eventBeingEdited) {
-    if (eventManagementState.showEditEventDialog && eventManagementState.eventBeingEdited != null) {
-      showEditEventSheet = true
-    } else {
-      if (showEditEventSheet) {
-        scope
-            .launch { editSheetState.hide() }
-            .invokeOnCompletion {
-              if (!editSheetState.isVisible) {
-                showEditEventSheet = false
-              }
-            }
-      }
-    }
-  }
-  LaunchedEffect(editSheetState.isVisible) {
-    if (!editSheetState.isVisible && showEditEventSheet) {
-      showEditEventSheet = false
-      eventManagementViewModel.cancelEditEvent()
-    }
-  }
-
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -235,7 +202,7 @@ fun CalendarScreen(
           anchorMonth = anchorMonth,
           hasCalendarAccess = calendarState.hasCalendarPermission,
           onGrantAccessClick = requestCalendarAccess,
-          createEventAction = CreateEventAction,
+          createEventAction = createEventAction,
           initialPageIndex = initialPageIndex,
           anchorDate = anchorDate,
           introductionState = introductionState)
@@ -243,7 +210,7 @@ fun CalendarScreen(
       if (calendarState.hasCalendarPermission) {
         BottomBar(
             modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
-            onCreateEventClick = CreateEventAction)
+            onCreateEventClick = createEventAction)
       }
     }
   }
@@ -267,67 +234,38 @@ fun CalendarScreen(
           scope.launch { horizontalPagerState.animateScrollToPage(1) }
         }
       })
-  CreateBottomSheet(
-      show = showCreateEventSheet,
-      sheetState = sheetState,
-      onDismiss = { showCreateEventSheet = false },
-  ) {
-    CreateEventScreen(
-        userTimeZone = timeZone,
-        initialDate = selectedDateForSheet,
-        initialProject = createAsProject,
-        sheetSettled = sheetState.currentValue != SheetValue.Hidden,
-        onDismiss = {
-          scope
-              .launch { sheetState.hide() }
-              .invokeOnCompletion {
-                if (!sheetState.isVisible) {
-                  showCreateEventSheet = false
-                }
-              }
-        },
-    )
-  }
-
-  EditBottomSheet(
-      show = showEditEventSheet,
-      sheetState = editSheetState,
-      eventToEdit = eventToEdit,
-      mode = mode,
-      onDismiss = {
-        showEditEventSheet = false
-        eventManagementViewModel.cancelEditEvent()
-      }) {
-        EditEventScreen(
-            viewModel = eventManagementViewModel,
-            eventToEdit = eventToEdit!!,
-            selectedUpdateMode = mode!!,
-            onDismiss = {
-              scope
-                  .launch { editSheetState.hide() }
-                  .invokeOnCompletion {
-                    if (!editSheetState.isVisible) {
-                      showEditEventSheet = false
-                      eventManagementViewModel.cancelEditEvent()
-                    }
-                  }
-            },
-            currentSheetValue = editSheetState.currentValue)
+  EventFormSheet(
+      dialog = eventManagementState.dialog, onDismiss = eventManagementViewModel::dismissDialog) {
+          dialog,
+          sheetSettled ->
+        when (dialog) {
+          is EventDialog.Creating ->
+              CreateEventScreen(
+                  viewModel = eventManagementViewModel,
+                  userTimeZone = timeZone,
+                  initialDate = dialog.date,
+                  initialProject = dialog.asProject,
+                  sheetSettled = sheetSettled)
+          is EventDialog.Editing ->
+              EditEventScreen(
+                  viewModel = eventManagementViewModel,
+                  eventToEdit = dialog.event,
+                  selectedUpdateMode = dialog.mode)
+          else -> {}
+        }
       }
 
-  if (calendarState.showEventDetailedView && calendarState.eventForDetailedView != null) {
+  calendarState.eventDetails?.let { details ->
     CustomEventDetailsDialog(
-        event = calendarState.eventForDetailedView!!,
+        event = details,
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone,
         eventManagementViewModel = eventManagementViewModel,
         themeMode = themeMode)
   }
-  EventManagementDialogs(state = eventManagementState, viewModel = eventManagementViewModel)
-
-  LaunchedEffect(sheetState.isVisible) {
-    if (!sheetState.isVisible && showCreateEventSheet) {
-      showCreateEventSheet = false
-    }
-  }
+  EventManagementDialogs(
+      dialog = eventManagementState.dialog,
+      onEditModeSelected = eventManagementViewModel::onRecurringEditOptionSelected,
+      onDeleteModeSelected = eventManagementViewModel::confirmRecurringDelete,
+      onDismiss = eventManagementViewModel::dismissDialog)
 }
