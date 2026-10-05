@@ -1,11 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.lists
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import com.lpavs.caliinda.feature.event_management.EventActions
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,7 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.AllDayEventItem
@@ -25,9 +19,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 @Composable
 fun HeadCardsList(
     events: List<EventDto>,
-    onDeleteRequest: (EventDto) -> Unit,
-    onEditRequest: (EventDto) -> Unit,
-    onDetailsRequest: (EventDto) -> Unit,
+    actions: EventActions,
     userScrollEnabled: Boolean = true,
 ) {
   var expandedEventId by remember { mutableStateOf<String?>(null) }
@@ -50,9 +42,9 @@ fun HeadCardsList(
                         event.id
                       }
                 },
-                onDeleteClick = { onDeleteRequest(event) },
-                onEditClick = { onEditRequest(event) },
-                onDetailsClick = { onDetailsRequest(event) },
+                onDeleteClick = { actions.onDelete(event) },
+                onEditClick = { actions.onEdit(event) },
+                onDetailsClick = { actions.onDetails(event) },
             )
           }
     }

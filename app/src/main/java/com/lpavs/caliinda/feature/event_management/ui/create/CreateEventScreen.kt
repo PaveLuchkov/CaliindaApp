@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.create
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.OnSaveEvent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,7 +19,6 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.SaveBar
 import androidx.compose.ui.focus.FocusRequester
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -27,13 +27,14 @@ import java.time.temporal.ChronoUnit
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CreateEventScreen(
-    viewModel: EventManagementViewModel = hiltViewModel(),
-    suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
     userTimeZone: ZoneId,
+    isLoading: Boolean,
+    onSave: OnSaveEvent,
     initialDate: LocalDate,
     initialProject: Boolean = false,
     /** Шторка встала на место — можно звать клавиатуру, не сбивая анимацию появления. */
     sheetSettled: Boolean = true,
+    suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
 ) {
   // Состояние полей
   var summary by remember { mutableStateOf("") }
@@ -43,7 +44,6 @@ fun CreateEventScreen(
   // Ошибки
   var summaryError by remember { mutableStateOf<String?>(null) }
 
-  val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
   // Начальное состояние даты и времени
   var eventDateTimeState by remember {
@@ -84,13 +84,7 @@ fun CreateEventScreen(
   }
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
-  val save = {
-    viewModel.createEvent(
-        summary = summary,
-        description = description,
-        location = location,
-        dateTimeState = eventDateTimeState)
-  }
+  val save = { onSave(summary, description, location, eventDateTimeState) }
   // Сразу клавиатура в названии: типичное событие — это название и время.
   val nameFocusRequester = remember { FocusRequester() }
   LaunchedEffect(sheetSettled) {
@@ -111,11 +105,11 @@ fun CreateEventScreen(
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
-        isLoading = uiState.isLoading,
+        isLoading = isLoading,
         suggestedChips = suggestedChips,
         onSave = save,
         nameFocusRequester = nameFocusRequester,
         modifier = Modifier.weight(1f, fill = false))
-    SaveBar(enabled = summary.isNotBlank(), isLoading = uiState.isLoading, onSave = save)
+    SaveBar(enabled = summary.isNotBlank(), isLoading = isLoading, onSave = save)
   }
 }

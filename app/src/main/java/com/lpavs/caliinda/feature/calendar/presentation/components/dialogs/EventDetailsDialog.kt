@@ -51,7 +51,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.core.ui.util.formatRRule
 import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -60,7 +60,8 @@ fun CustomEventDetailsDialog(
     event: EventDetailsUiModel,
     userTimeZone: ZoneId,
     onDismissRequest: () -> Unit,
-    eventManagementViewModel: EventManagementViewModel,
+    onEdit: (EventDto) -> Unit,
+    onDelete: (EventDto) -> Unit,
     themeMode: ThemeMode = ThemeMode.SYSTEM
 ) {
     val modeShape: Shape = when(themeMode) {
@@ -150,7 +151,7 @@ fun CustomEventDetailsDialog(
                           horizontalArrangement = Arrangement.End) {
                             Button(
                                 onClick = {
-                                  eventManagementViewModel.requestEditEvent(event.originalEvent)
+                                  onEdit(event.originalEvent)
                                 },
                                 contentPadding = PaddingValues(horizontal = 12.dp)) {
                                   Icon(Icons.Filled.Edit, contentDescription = null)
@@ -160,7 +161,7 @@ fun CustomEventDetailsDialog(
                             //                    Spacer(modifier = Modifier.width(4.dp))
                             FilledIconButton(
                                 onClick = {
-                                  eventManagementViewModel.requestDelete(event.originalEvent)
+                                  onDelete(event.originalEvent)
                                   // Карточка исчезнет сразу — подробности удалённого не нужны.
                                   onDismissRequest()
                                 },

@@ -254,8 +254,6 @@ constructor(
   private fun validateInput(summary: String, state: EventDateTimeState): Boolean =
       summary.isNotBlank() && state.validationError == null
 
-  fun parseEventToState(event: EventDto): EventDateTimeState = event.toDateTimeState(timeZone.value)
-
   // --- Состояние диалогов ---
 
   fun openCreate(date: LocalDate, asProject: Boolean) {

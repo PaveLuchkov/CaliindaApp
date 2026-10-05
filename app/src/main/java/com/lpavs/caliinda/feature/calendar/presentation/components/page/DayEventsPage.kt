@@ -11,14 +11,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.FullScreenLoader
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarCreateEventItem
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
@@ -26,36 +20,22 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.HeadCardsList
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.lists.SystemEventsList
 import com.lpavs.caliinda.feature.event_management.EventActions
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DayEventsPage(
+    pageState: DayPageUiState,
+    actions: EventActions,
     listScrollEnabled: Boolean,
     pagePosition: () -> Float,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
-    date: LocalDate,
-    viewModel: CalendarViewModel,
-    eventManagementViewModel: EventManagementViewModel,
     createEventClick: () -> Unit,
-    introductionState: IntroState
+    introductionState: IntroState,
+    onIntroNext: () -> Unit,
 ) {
-  // Flow создаём один раз на дату: иначе каждая рекомпозиция перезапускает запрос к календарю.
-  val pageStateFlow = remember(viewModel, date) { viewModel.getDayPageUiState(date) }
-  val pageState by
-      pageStateFlow.collectAsStateWithLifecycle(initialValue = DayPageUiState(isLoading = true))
   val listState = rememberLazyListState()
-  val actions =
-      remember(eventManagementViewModel, viewModel) {
-        EventActions(
-            onDelete = eventManagementViewModel::requestDelete,
-            onEdit = eventManagementViewModel::requestEditEvent,
-            onDetails = viewModel::requestEventDetails)
-      }
   val isBusy = pageState.isLoading
   LaunchedEffect(pageState.targetScrollIndex) {
     if (pageState.targetScrollIndex != -1) {
@@ -71,13 +51,11 @@ fun DayEventsPage(
   Column(modifier = Modifier.fillMaxSize()) {
     HeadCardsList(
         events = pageState.allDayEvents,
-        onDeleteRequest = eventManagementViewModel::requestDelete,
-        onEditRequest = eventManagementViewModel::requestEditEvent,
-        onDetailsRequest = viewModel::requestEventDetails,
+        actions = actions,
         userScrollEnabled = listScrollEnabled,
     )
 
-    ProjectRibbons(ribbons = pageState.projects, onClick = viewModel::requestEventDetails)
+    ProjectRibbons(ribbons = pageState.projects, onClick = actions.onDetails)
 
     Spacer(modifier = Modifier.height(2.dp))
 
@@ -89,7 +67,7 @@ fun DayEventsPage(
           hasCalendarAccess = hasCalendarAccess,
           introStep = introductionState.currentStep,
           onGrantAccessClick = onGrantAccessClick,
-          onIntroNext = { viewModel.onIntroNext() },
+          onIntroNext = onIntroNext,
           projectView = false)
       return
     }

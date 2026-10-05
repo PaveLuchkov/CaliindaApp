@@ -63,6 +63,10 @@ data class EventDateTimeState(
   }
 }
 
+/** Сохранить форму: название, описание, место, дата и время. */
+typealias OnSaveEvent =
+    (summary: String, description: String, location: String, dateTime: EventDateTimeState) -> Unit
+
 /** Состояние формы для правки существующего события. */
 fun EventDto.toDateTimeState(zone: ZoneId): EventDateTimeState {
   val start = startTime.atZone(zone)

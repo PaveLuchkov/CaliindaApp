@@ -1,5 +1,8 @@
 package com.lpavs.caliinda.feature.event_management.ui.edit
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.toDateTimeState
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.OnSaveEvent
+import java.time.ZoneId
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,20 +16,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.feature.event_management.ui.shared.EventFormContent
 import com.lpavs.caliinda.feature.event_management.ui.shared.SaveBar
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditEventScreen(
-    viewModel: EventManagementViewModel,
-    suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
     eventToEdit: EventDto,
-    selectedUpdateMode: EventUpdateMode,
+    userTimeZone: ZoneId,
+    isLoading: Boolean,
+    onSave: OnSaveEvent,
+    suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
 ) {
   // Состояние данных
   // Подпись «(Без названия)» — только для показа, в поле её подставлять нельзя: сохранится как
@@ -40,11 +42,10 @@ fun EditEventScreen(
 
   // Состояние ошибок и валидации
   var summaryError by remember { mutableStateOf<String?>(null) }
-  val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
   // Вспомогательные переменные
   val initialEventDateTimeState =
-      remember(eventToEdit.id) { viewModel.parseEventToState(eventToEdit) }
+      remember(eventToEdit.id) { eventToEdit.toDateTimeState(userTimeZone) }
   var eventDateTimeState by remember(eventToEdit.id) { mutableStateOf(initialEventDateTimeState) }
 
   // Подписки на события
@@ -55,14 +56,7 @@ fun EditEventScreen(
         eventDateTimeState.startTime, eventDateTimeState.isAllDay)
   }
 
-  val save = {
-    viewModel.updateEvent(
-        summary = summary,
-        description = description,
-        location = location,
-        dateTimeState = eventDateTimeState,
-        updateMode = selectedUpdateMode)
-  }
+  val save = { onSave(summary, description, location, eventDateTimeState) }
 
   // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
   // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.
@@ -78,10 +72,10 @@ fun EditEventScreen(
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
-        isLoading = uiState.isLoading,
+        isLoading = isLoading,
         suggestedChips = suggestedChips,
         onSave = save,
         modifier = Modifier.weight(1f, fill = false))
-    SaveBar(enabled = summary.isNotBlank(), isLoading = uiState.isLoading, onSave = save)
+    SaveBar(enabled = summary.isNotBlank(), isLoading = isLoading, onSave = save)
   }
 }
