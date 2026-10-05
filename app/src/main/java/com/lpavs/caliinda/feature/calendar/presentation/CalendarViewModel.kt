@@ -132,10 +132,12 @@ constructor(
 
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
     return combine(
-            calendarRepository.getEventsFlowForDate(date).withoutPendingDeletions(),
-            calendarRepository.getProjectsFlowForDate(date).withoutPendingDeletions(),
+            calendarRepository.getDayFlow(date),
+            pendingDeletions.ids,
             currentTime,
-            timeZone) { events, projects, now, zoneId ->
+            timeZone) { day, hidden, now, zoneId ->
+          val events = day.events.withoutHidden(hidden)
+          val projects = day.projects.withoutHidden(hidden)
           val ribbons =
               projects.map { project ->
                 val range = project.dateRange(zoneId)
@@ -222,9 +224,10 @@ constructor(
 
   /** Прячет события, удалённые с возможностью отмены, до их настоящего удаления. */
   private fun Flow<List<EventDto>>.withoutPendingDeletions(): Flow<List<EventDto>> =
-      combine(pendingDeletions.ids) { events, hidden ->
-        if (hidden.isEmpty()) events else events.filterNot { it.id in hidden }
-      }
+      combine(pendingDeletions.ids) { events, hidden -> events.withoutHidden(hidden) }
+
+  private fun List<EventDto>.withoutHidden(hidden: Set<String>): List<EventDto> =
+      if (hidden.isEmpty()) this else filterNot { it.id in hidden }
 }
 
 sealed class CalendarUiEvent {

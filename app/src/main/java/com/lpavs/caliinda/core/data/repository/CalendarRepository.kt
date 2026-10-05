@@ -71,25 +71,39 @@ constructor(
 
   // --- Чтение ---
 
-  /** События дня: обычные (< 24ч) и однодневные all-day. */
-  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
+  /**
+   * Страница дня одним запросом к провайдеру: события дня (обычные < 24ч и однодневные all-day)
+   * и проекты, которые идут в этот день, — для лент под шапкой.
+   */
+  fun getDayFlow(date: LocalDate): Flow<DayEvents> =
       observeCalendar(
           load = { zone ->
             val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
             val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            loadInstances(dayStart, dayEnd, zone)
-                .filter { inst ->
-                  if (inst.row.isAllDay) {
-                    inst.allDayStart == date && inst.allDayEndExclusive == date.plusDays(1)
-                  } else {
-                    inst.endMillis > dayStart &&
-                        inst.startMillis < dayEnd &&
-                        inst.endMillis - inst.startMillis < DAY_MILLIS
-                  }
-                }
-                .map { it.toDto(zone) }
+            val instances = loadInstances(dayStart, dayEnd, zone)
+            DayEvents(
+                events =
+                    instances
+                        .filter { inst ->
+                          if (inst.row.isAllDay) {
+                            inst.allDayStart == date && inst.allDayEndExclusive == date.plusDays(1)
+                          } else {
+                            inst.overlaps(dayStart, dayEnd) &&
+                                inst.endMillis - inst.startMillis < DAY_MILLIS
+                          }
+                        }
+                        .map { it.toDto(zone) },
+                projects =
+                    instances
+                        .filter { inst -> inst.overlaps(dayStart, dayEnd) && inst.isProject() }
+                        .sortedBy { it.startMillis }
+                        .map { it.toDto(zone) })
           },
-          empty = emptyList())
+          empty = DayEvents(emptyList(), emptyList()))
+
+  /** События дня без проектов — для виджета. */
+  fun getEventsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
+      getDayFlow(date).map { it.events }
 
   /** "Проекты": многодневные события, которые идут в указанную дату. */
   fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> =
@@ -101,19 +115,6 @@ constructor(
                 date.plusDays(PROJECTS_LOOKAHEAD_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
             loadInstances(dayStart, windowEnd, zone)
                 .filter { inst -> inst.overlaps(dayStart, windowEnd) && inst.isProject() }
-                .map { it.toDto(zone) }
-          },
-          empty = emptyList())
-
-  /** Проекты, которые идут в указанный день, — для лент на странице дня. */
-  fun getProjectsFlowForDate(date: LocalDate): Flow<List<EventDto>> =
-      observeCalendar(
-          load = { zone ->
-            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
-            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            loadInstances(dayStart, dayEnd, zone)
-                .filter { inst -> inst.overlaps(dayStart, dayEnd) && inst.isProject() }
-                .sortedBy { it.startMillis }
                 .map { it.toDto(zone) }
           },
           empty = emptyList())
@@ -398,3 +399,6 @@ constructor(
     private const val PROJECTS_LOOKAHEAD_DAYS = 180L
   }
 }
+
+/** Страница дня: события самого дня и проекты, которые его захватывают. */
+data class DayEvents(val events: List<EventDto>, val projects: List<EventDto>)
