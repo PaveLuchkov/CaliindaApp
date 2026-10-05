@@ -8,6 +8,7 @@ import androidx.core.os.ConfigurationCompat
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
+import com.lpavs.caliinda.core.ui.util.projectHeightFraction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Duration
 import java.time.Instant
@@ -58,14 +59,7 @@ constructor(
           } else {
             null
           }
-      val baseHeight = calculateEventHeight(
-          durationMinutes,
-          isMicroEvent,
-          isProject = project,
-          startInstant = startInstant,
-          endInstant =endInstant,
-          currentTime = currentTime
-      )
+      val baseHeight = calculateEventHeight(durationMinutes, isMicroEvent, isProject = project)
 
       val buttonsRowHeight = 56.dp
       val expandedAdditionalHeight =
@@ -137,59 +131,21 @@ constructor(
         durationMinutes: Long,
         isMicroEvent: Boolean,
         isProject: Boolean,
-        startInstant: Instant,
-        endInstant: Instant,
-        currentTime: Instant
     ): Dp {
-
         if (isMicroEvent) return cuid.MicroEventHeight
 
         val minHeight = cuid.MinEventHeight
         val maxHeight = cuid.MaxEventHeight
 
-        val durationDouble = durationMinutes.toDouble()
-        val heightRange = maxHeight - minHeight
+        // Проект: высота только от длительности — не от того, сколько уже прошло, иначе
+        // ещё не начавшийся проект оказывался выше идущего той же длины.
+        if (isProject) return minHeight + (maxHeight - minHeight) * projectHeightFraction(durationMinutes)
 
-        val isNotProjectType = durationMinutes / 60 < 24
-
-        val midpoint =
-            if (isNotProjectType) cuid.HeightSigmoidMidpointMinutes
-            else cuid.HeightSigmoidProjectMidpointMinutes
-
-        val steepness =
-            if (isNotProjectType) cuid.HeightSigmoidSteepness
-            else cuid.HeightSigmoidProjectSteepness
-
-        val scaleFactor =
-            if (isNotProjectType) cuid.HeightSigmoidScaleFactor
-            else cuid.HeightSigmoidProjectScaleFactor
-
-        val x = (durationDouble - midpoint) / scaleFactor
-        val sigmoidOutput = 1.0 / (1.0 + exp(-steepness * x))
-
-        val baseHeight = minHeight + (heightRange * sigmoidOutput.toFloat())
-
-        if (!isProject)
-            return baseHeight.coerceIn(minHeight, maxHeight)
-
-        // 🔥 Новая логика для project
-
-        val totalDuration = Duration.between(startInstant, endInstant).toMillis()
-        if (totalDuration <= 0) return minHeight
-
-        val elapsed = Duration.between(startInstant, currentTime).toMillis()
-            .coerceIn(0, totalDuration)
-
-        val progress = elapsed.toFloat() / totalDuration.toFloat()
-
-        // линейное уменьшение от 1.0 до 0.0
-        val progressFactor = 1f - progress
-
-        val scaledHeight = minHeight + (baseHeight - minHeight) * progressFactor
-
-        return scaledHeight.coerceIn(minHeight, maxHeight)
+        val x = (durationMinutes - cuid.HeightSigmoidMidpointMinutes) / cuid.HeightSigmoidScaleFactor
+        val sigmoidOutput = 1.0 / (1.0 + exp(-cuid.HeightSigmoidSteepness * x))
+        return (minHeight + (maxHeight - minHeight) * sigmoidOutput.toFloat())
+            .coerceIn(minHeight, maxHeight)
     }
-
 
     private fun timeProgress(start: Instant, end: Instant, now: Instant): Float {
         val total = Duration.between(start, end).toMillis()

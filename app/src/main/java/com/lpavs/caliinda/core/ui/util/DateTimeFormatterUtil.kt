@@ -88,6 +88,10 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
       return when {
           event.isAllDay ->
               "${formatDate(startInstant)} - ${formatDate(endInstant.minus(1, ChronoUnit.DAYS))}"
+          // В списке проектов многодневному событию хватает дат — время тут шум. Конец ровно в
+          // полночь — это предыдущий день.
+          project && formatDate(startInstant) != formatDate(endInstant) ->
+              "${formatDate(startInstant)} - ${formatDate(endInstant.minusMillis(1))}"
           formatDate(startInstant) == formatDate(endInstant) ->
               "${formatTime(startInstant)} - ${formatTime(endInstant)}"
           else ->
