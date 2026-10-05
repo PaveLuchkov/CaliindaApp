@@ -78,7 +78,6 @@
     <string name="settings">Einstellungen</string>
     <string name="time_zone">Zeitzone</string>
     <string name="time_zone_save">Zeitzone gespeichert: %1$s</string>
-    <string name="time_format">Zeit &amp; Format</string>
     <string name="terms">Bedingungen</string>
     <string name="terms_of_use">Nutzungsbedingungen</string>
 
@@ -213,4 +212,14 @@
     <string name="recurrence_decrease">Weniger</string>
     <string name="recurrence_increase">Mehr</string>
     <string name="recurrence_change_end_date">Enddatum ändern</string>
+
+    <!-- Экран настроек -->
+    <string name="settings_appearance">Darstellung</string>
+    <string name="use_system_time_zone">Systemzeitzone verwenden</string>
+    <string name="privacy_policy">Datenschutzerklärung</string>
+    <string name="delete_data">Daten löschen</string>
+    <string name="delete_data_summary">Speicher leeren oder Kalenderzugriff in den Systemeinstellungen entziehen</string>
+    <string name="no_calendars_found">Keine Kalender gefunden. Erlaube den Kalenderzugriff oder füge in den Systemeinstellungen ein Konto hinzu – sonst legt Caliinda beim ersten Termin einen lokalen Kalender an.</string>
+    <string name="search_time_zone">Zeitzone suchen</string>
+    <string name="app_version">Version</string>
 </resources>

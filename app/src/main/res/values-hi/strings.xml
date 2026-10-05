@@ -77,7 +77,6 @@
     <string name="settings">सेटिंग्स</string>
     <string name="time_zone">समय क्षेत्र</string>
     <string name="time_zone_save">समय क्षेत्र सहेजा गया: %1$s</string>
-    <string name="time_format">समय और प्रारूप</string>
     <string name="terms">शर्तें</string>
     <string name="terms_of_use">उपयोग की शर्तें</string>
 
@@ -212,4 +211,14 @@
     <string name="recurrence_decrease">कम</string>
     <string name="recurrence_increase">ज़्यादा</string>
     <string name="recurrence_change_end_date">समाप्ति तिथि बदलें</string>
+
+    <!-- Экран настроек -->
+    <string name="settings_appearance">रूप-रंग</string>
+    <string name="use_system_time_zone">सिस्टम का समय क्षेत्र इस्तेमाल करें</string>
+    <string name="privacy_policy">गोपनीयता नीति</string>
+    <string name="delete_data">डेटा हटाएँ</string>
+    <string name="delete_data_summary">सिस्टम सेटिंग में स्टोरेज साफ़ करें या कैलेंडर की अनुमति वापस लें</string>
+    <string name="no_calendars_found">कोई कैलेंडर नहीं मिला। सिस्टम सेटिंग में कैलेंडर की अनुमति दें या खाता जोड़ें — वरना Caliinda पहले इवेंट के साथ एक लोकल कैलेंडर बनाएगा।</string>
+    <string name="search_time_zone">समय क्षेत्र खोजें</string>
+    <string name="app_version">संस्करण</string>
 </resources>

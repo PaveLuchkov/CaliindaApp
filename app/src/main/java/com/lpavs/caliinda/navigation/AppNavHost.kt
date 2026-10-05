@@ -2,8 +2,6 @@
 
 package com.lpavs.caliinda.navigation
 
-import com.lpavs.caliinda.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 import com.lpavs.caliinda.core.ui.theme.AppMotion
@@ -19,10 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarScreen
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import com.lpavs.caliinda.feature.settings.ui.CalendarSettingsScreen
 import com.lpavs.caliinda.feature.settings.ui.SettingsScreen
-import com.lpavs.caliinda.feature.settings.ui.AboutScreen
-import com.lpavs.caliinda.feature.settings.ui.TimeSettingsScreen
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 
 @Composable
@@ -70,34 +65,7 @@ fun AppNavHost(
         val settingsViewModel: SettingsViewModel = hiltViewModel()
 
       SettingsScreen(
-          settingsViewModel = settingsViewModel,
-          onNavigateBack = { navController.popBackStack() },
-          onNavigateToCalendarSettings = {
-            navController.navigate(NavRoutes.CalendarSettings.route)
-          },
-          onNavigateToTimeSettings = { navController.navigate(NavRoutes.TimeSettings.route) },
-          onNavigateToAbout = { navController.navigate(NavRoutes.Terms.route) })
-    }
-    composable(
-        NavRoutes.CalendarSettings.route,
-    ) {
-        val settingsViewModel: SettingsViewModel = hiltViewModel()
-      CalendarSettingsScreen(
-          viewModel = settingsViewModel, onNavigateBack = { navController.popBackStack() })
-    }
-    composable(
-        NavRoutes.TimeSettings.route,
-    ) {
-      val settingsViewModel: SettingsViewModel = hiltViewModel()
-      TimeSettingsScreen(
-          viewModel = settingsViewModel,
-          onNavigateBack = { navController.popBackStack() },
-          title = stringResource(R.string.time_format))
-    }
-    composable(
-        NavRoutes.Terms.route,
-    ) {
-      AboutScreen(onNavigateBack = { navController.popBackStack() }, title = stringResource(R.string.about))
+          settingsViewModel = settingsViewModel, onNavigateBack = { navController.popBackStack() })
     }
   }
 }
