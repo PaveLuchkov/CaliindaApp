@@ -222,4 +222,26 @@
     <string name="no_calendars_found">Keine Kalender gefunden. Erlaube den Kalenderzugriff oder füge in den Systemeinstellungen ein Konto hinzu – sonst legt Caliinda beim ersten Termin einen lokalen Kalender an.</string>
     <string name="search_time_zone">Zeitzone suchen</string>
     <string name="app_version">Version</string>
+    <string name="suggested_event_road">Weg</string>
+    <string name="suggested_event_road_full">🛣️ Unterwegs</string>
+
+    <!-- Чипы-подсказки -->
+    <string name="settings_suggestions">Vorschläge</string>
+    <string name="chips_settings_title">Vorschlags-Chips</string>
+    <string name="chips_settings_summary">Beschriftungen und Uhrzeiten für schnelle Titel</string>
+    <string name="chip_add">Chip hinzufügen</string>
+    <string name="chip_new_title">Neuer Chip</string>
+    <string name="chip_edit_title">Chip bearbeiten</string>
+    <string name="chip_short_name">Chip-Beschriftung</string>
+    <string name="chip_full_name">Termintitel</string>
+    <string name="chip_full_name_hint">Leer – wie die Beschriftung</string>
+    <string name="chip_hours">Empfohlene Uhrzeit</string>
+    <string name="chip_hours_summary">Zu diesen Zeiten steht der Chip vorne</string>
+    <string name="chip_any_time">Jederzeit</string>
+    <string name="chip_from">Von</string>
+    <string name="chip_to">Bis</string>
+    <string name="chip_deleted">Chip „%1$s“ gelöscht</string>
+    <string name="chips_reset">Auf Standard zurücksetzen</string>
+    <string name="chips_reset_done">Standard-Chips wiederhergestellt</string>
+    <string name="chip_custom">Eigener Chip</string>
 </resources>

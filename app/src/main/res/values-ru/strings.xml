@@ -242,4 +242,26 @@
     <string name="no_calendars_found">Календари не найдены. Разрешите доступ к календарю или добавьте аккаунт в настройках системы — иначе Caliinda создаст локальный календарь с первым событием.</string>
     <string name="search_time_zone">Поиск часового пояса</string>
     <string name="app_version">Версия</string>
+    <string name="suggested_event_road">Дорога</string>
+    <string name="suggested_event_road_full">🛣️ Дорога</string>
+
+    <!-- Чипы-подсказки -->
+    <string name="settings_suggestions">Подсказки</string>
+    <string name="chips_settings_title">Чипы-подсказки</string>
+    <string name="chips_settings_summary">Подписи и часы для быстрых названий</string>
+    <string name="chip_add">Добавить чип</string>
+    <string name="chip_new_title">Новый чип</string>
+    <string name="chip_edit_title">Изменить чип</string>
+    <string name="chip_short_name">Подпись на чипе</string>
+    <string name="chip_full_name">Название события</string>
+    <string name="chip_full_name_hint">Пусто — как подпись</string>
+    <string name="chip_hours">Рекомендуемые часы</string>
+    <string name="chip_hours_summary">В эти часы чип стоит первым</string>
+    <string name="chip_any_time">В любое время</string>
+    <string name="chip_from">С</string>
+    <string name="chip_to">До</string>
+    <string name="chip_deleted">Чип «%1$s» удалён</string>
+    <string name="chips_reset">Вернуть стандартные</string>
+    <string name="chips_reset_done">Стандартные чипы возвращены</string>
+    <string name="chip_custom">Ваш чип</string>
 </resources>

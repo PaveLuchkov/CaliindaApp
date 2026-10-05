@@ -102,7 +102,7 @@ fun ChipsRow(
       modifier = Modifier.fillMaxWidth().padding(horizontal = cuid.padding),
       horizontalArrangement = Arrangement.spacedBy(cuid.padding),
       contentPadding = PaddingValues(bottom = cuid.padding)) {
-        items(chips, key = { it.name }) { chip ->
+        items(chips, key = { it.key }) { chip ->
           SuggestionChip(
               onClick = { onChipClick(chip) },
               label = { Text(chip.name) },
