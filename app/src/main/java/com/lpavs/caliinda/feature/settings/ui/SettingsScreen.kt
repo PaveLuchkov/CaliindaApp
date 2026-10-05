@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -44,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -120,6 +123,7 @@ fun SettingsScreen(
   val usesSystemZone = savedZone.isEmpty() || savedZone == systemZone
   val currentZone = if (usesSystemZone) systemZone else savedZone
   var showZonePicker by rememberSaveable { mutableStateOf(false) }
+  var calendarsExpanded by rememberSaveable { mutableStateOf(false) }
   val context = LocalContext.current
 
   // Live-уведомление: включаем только с разрешением; отказали — дальше ведём в системные настройки.
@@ -193,13 +197,41 @@ fun SettingsScreen(
                         modifier = Modifier.padding(horizontal = 16.dp))
                   }
                 }
-                itemsIndexed(calendars, key = { _, it -> it.id }) { index, calendar ->
+                // Сверху — только выбранный; остальные раскрываются кнопкой второй строкой.
+                val selected = calendars.firstOrNull { it.id == defaultCalendarId } ?: calendars.firstOrNull()
+                val shown = if (calendarsExpanded) calendars else listOfNotNull(selected)
+                val hasToggle = calendars.size > 1
+                val rows = shown.size + if (hasToggle) 1 else 0
+                itemsIndexed(shown, key = { _, it -> "calendar_${it.id}" }) { index, calendar ->
                   CalendarRow(
                       calendar = calendar,
                       selected = calendar.id == defaultCalendarId,
                       index = index,
-                      count = calendars.size,
-                      onClick = { settingsViewModel.selectDefaultCalendar(calendar.id) })
+                      count = rows,
+                      onClick = {
+                        settingsViewModel.selectDefaultCalendar(calendar.id)
+                        calendarsExpanded = false
+                      },
+                      modifier = Modifier.animateItem())
+                }
+                if (hasToggle) {
+                  item(key = "calendars_toggle") {
+                    SegmentedListItem(
+                        onClick = { calendarsExpanded = !calendarsExpanded },
+                        shapes = settingsShapes(index = rows - 1, count = rows),
+                        colors = settingsItemColors(),
+                        leadingContent = {
+                          Icon(
+                              if (calendarsExpanded) Icons.Rounded.ExpandLess
+                              else Icons.Rounded.ExpandMore,
+                              contentDescription = null)
+                        },
+                        modifier = Modifier.animateItem()) {
+                          Text(
+                              if (calendarsExpanded) stringResource(R.string.calendars_collapse)
+                              else stringResource(R.string.calendars_show_all, calendars.size))
+                        }
+                  }
                 }
               }
 
@@ -207,7 +239,7 @@ fun SettingsScreen(
                 item {
                   SegmentedListItem(
                       onClick = onNavigateToChips,
-                      shapes = ListItemDefaults.segmentedShapes(index = 0, count = 1),
+                      shapes = settingsShapes(index = 0, count = 1),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
                       trailingContent = {
@@ -225,7 +257,7 @@ fun SettingsScreen(
                   SegmentedListItem(
                       checked = checked,
                       onCheckedChange = onLiveToggle,
-                      shapes = ListItemDefaults.segmentedShapes(index = 0, count = 1),
+                      shapes = settingsShapes(index = 0, count = 1),
                       colors = settingsItemColors(),
                       leadingContent = {
                         Icon(Icons.Rounded.NotificationsActive, contentDescription = null)
@@ -252,7 +284,7 @@ fun SettingsScreen(
                         if (checked) settingsViewModel.updateTimeZoneSetting(systemZone)
                         else showZonePicker = true
                       },
-                      shapes = ListItemDefaults.segmentedShapes(index = 0, count = 2),
+                      shapes = settingsShapes(index = 0, count = 2),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.Language, contentDescription = null) },
                       trailingContent = { Switch(checked = usesSystemZone, onCheckedChange = null) },
@@ -264,7 +296,7 @@ fun SettingsScreen(
                   SegmentedListItem(
                       onClick = { showZonePicker = true },
                       enabled = !usesSystemZone,
-                      shapes = ListItemDefaults.segmentedShapes(index = 1, count = 2),
+                      shapes = settingsShapes(index = 1, count = 2),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.Public, contentDescription = null) },
                       supportingContent = { Text(zoneLabel(currentZone)) }) {
@@ -280,7 +312,7 @@ fun SettingsScreen(
                         context.startActivitySafely(
                             Intent(Intent.ACTION_VIEW, PRIVACY_POLICY_URL.toUri()))
                       },
-                      shapes = ListItemDefaults.segmentedShapes(index = 0, count = 3),
+                      shapes = settingsShapes(index = 0, count = 3),
                       colors = settingsItemColors(),
                       leadingContent = {
                         Icon(painterResource(R.drawable.doc), contentDescription = null)
@@ -301,7 +333,7 @@ fun SettingsScreen(
                                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                 Uri.fromParts("package", context.packageName, null)))
                       },
-                      shapes = ListItemDefaults.segmentedShapes(index = 1, count = 3),
+                      shapes = settingsShapes(index = 1, count = 3),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null) },
                       supportingContent = { Text(stringResource(R.string.delete_data_summary)) }) {
@@ -316,7 +348,7 @@ fun SettingsScreen(
                       leadingContent = { Icon(Icons.Rounded.Info, contentDescription = null) },
                       colors = ListItemDefaults.colors(containerColor = colorScheme.surfaceContainer),
                       modifier =
-                          Modifier.clip(ListItemDefaults.segmentedShapes(index = 2, count = 3).shape))
+                          Modifier.clip(settingsShapes(index = 2, count = 3).shape))
                 }
               }
               item { Spacer(Modifier.height(24.dp)) }
@@ -333,6 +365,16 @@ fun SettingsScreen(
         onDismiss = { showZonePicker = false })
   }
 }
+
+/**
+ * Форма строки в группе. Одиночной M3 даёт мелкие углы, а внешние углы групп — крупные; чтобы
+ * секции из одной строки не выбивались, у неё крупные углы со всех сторон.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun settingsShapes(index: Int, count: Int): ListItemShapes =
+    if (count == 1) ListItemDefaults.shapes().copy(shape = MaterialTheme.shapes.large)
+    else ListItemDefaults.segmentedShapes(index = index, count = count)
 
 /** Подложка строк — как у выбора темы, чтобы группы читались на фоне экрана. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -362,11 +404,13 @@ private fun CalendarRow(
     index: Int,
     count: Int,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
   SegmentedListItem(
       selected = selected,
       onClick = onClick,
-      shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
+      modifier = modifier,
+      shapes = settingsShapes(index = index, count = count),
                       colors = settingsItemColors(),
       // Цвет календаря — только точкой: карточки красим ролями темы (DESIGN.md).
       leadingContent = {

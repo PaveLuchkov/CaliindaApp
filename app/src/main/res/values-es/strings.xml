@@ -264,4 +264,6 @@
     <string name="live_setting_title">Evento actual en el panel</string>
     <string name="live_setting_summary">Progreso y el evento que va justo después</string>
     <string name="live_permission_denied">Permite las notificaciones en los ajustes del sistema</string>
+    <string name="calendars_show_all">Todos los calendarios (%1$d)</string>
+    <string name="calendars_collapse">Contraer</string>
 </resources>

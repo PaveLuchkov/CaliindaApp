@@ -274,4 +274,6 @@
     <string name="live_setting_title">Текущее событие в шторке</string>
     <string name="live_setting_summary">Прогресс и событие сразу за ним</string>
     <string name="live_permission_denied">Разрешите уведомления в настройках системы</string>
+    <string name="calendars_show_all">Все календари (%1$d)</string>
+    <string name="calendars_collapse">Свернуть</string>
 </resources>
