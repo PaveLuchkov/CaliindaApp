@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.widget
 
+import com.lpavs.caliinda.core.ui.util.displayTitle
 import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
@@ -105,12 +106,12 @@ private fun WidgetCard(data: WidgetData) {
               val title =
                   widgetTitle(
                       context = context,
-                      text = focus.summary,
+                      text = focus.displayTitle(context),
                       maxWidthDp = size.width.value - 32f,
                       textSizeSp = 24f)
               Image(
                   provider = ImageProvider(title.bitmap),
-                  contentDescription = focus.summary,
+                  contentDescription = focus.displayTitle(context),
                   colorFilter = ColorFilter.tint(content),
                   modifier = GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
               Text(

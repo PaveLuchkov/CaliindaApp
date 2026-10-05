@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.data
 
+import com.lpavs.caliinda.core.ui.util.displayTitle
 import android.content.Context
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -104,7 +105,7 @@ constructor(
       val event =
           EventUiModel(
               id = event.id,
-              summary = event.summary,
+              summary = event.displayTitle(context),
               location = event.location,
               isAllDay = event.isAllDay,
               formattedTimeString =

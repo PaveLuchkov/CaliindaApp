@@ -19,6 +19,13 @@ sealed class UiText {
   object Empty : UiText()
 
   fun asString(context: Context): String {
+    // Аргументом может быть и другой UiText (например, «(Без названия)»).
+    val formatArgs =
+        when (this) {
+          is StringResource -> formatArgs
+          is PluralsResource -> formatArgs
+          else -> emptyList()
+        }.map { if (it is UiText) it.asString(context) else it }
     return when (this) {
       is DynamicString -> value
       is StringResource -> {

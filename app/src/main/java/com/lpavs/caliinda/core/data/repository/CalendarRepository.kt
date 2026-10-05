@@ -1,9 +1,6 @@
 package com.lpavs.caliinda.core.data.repository
 
 import java.time.YearMonth
-import dagger.hilt.android.qualifiers.ApplicationContext
-import android.content.Context
-import com.lpavs.caliinda.R
 import android.content.ContentValues
 import android.provider.CalendarContract.Events
 import android.util.Log
@@ -51,7 +48,6 @@ constructor(
     private val dataSource: CalendarProviderDataSource,
     private val permissionManager: CalendarPermissionManager,
     private val settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
   private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
@@ -340,7 +336,7 @@ constructor(
 
     return EventDto(
         id = "${row.eventId}_${row.begin}",
-        summary = row.title?.takeIf { it.isNotBlank() } ?: context.getString(R.string.no_title),
+        summary = row.title.orEmpty(),
         startTime = Instant.ofEpochMilli(startMillis),
         endTime = Instant.ofEpochMilli(endMillis),
         description = row.description?.takeIf { it.isNotBlank() },
@@ -355,8 +351,7 @@ constructor(
         originalEventId = row.originalId,
         originalInstanceBegin = row.originalInstanceTime,
         calendarId = row.calendarId,
-        color = row.color,
-        isUntitled = row.title.isNullOrBlank())
+        color = row.color)
   }
 
   /** Сырое время экземпляра в серии (для перенесённого — исходное, до переноса). */

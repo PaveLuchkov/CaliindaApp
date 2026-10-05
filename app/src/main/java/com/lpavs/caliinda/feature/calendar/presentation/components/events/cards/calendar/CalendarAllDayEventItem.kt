@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
+import com.lpavs.caliinda.core.ui.util.displayTitle
 import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
@@ -93,7 +94,7 @@ fun AllDayEventItem(
                         horizontal = CalendarUiDefaults.AllDayItemPadding,
                         vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
               Text(
-                  text = event.summary,
+                  text = event.displayTitle(),
                   style = Typography.bodyLargeEmphasized,
                   fontFamily = cardFontFamily,
                   fontWeight = FontWeight.Companion.Medium,
