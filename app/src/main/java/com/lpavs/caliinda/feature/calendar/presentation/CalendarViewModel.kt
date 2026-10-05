@@ -20,6 +20,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.page.MonthPag
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectRibbon
 import com.lpavs.caliinda.feature.calendar.data.dateRange
 import java.time.YearMonth
+import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 import java.time.temporal.ChronoUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +79,10 @@ constructor(
       combine(currentTime, timeZone) { now, zone -> now.atZone(zone).toLocalDate() }
           .distinctUntilChanged()
           .stateIn(viewModelScope, SharingStarted.Eagerly, LocalDate.now(timeZone.value))
+
+  val themeMode: StateFlow<ThemeMode> =
+      settingsRepository.themeModeFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
 
   // Состояния Календаря
   val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate

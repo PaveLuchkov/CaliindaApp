@@ -1,5 +1,8 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.page
 
+import com.lpavs.caliinda.feature.event_management.EventActions
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.Flow
 import java.time.YearMonth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -11,16 +14,17 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CalendarPagerScreen(
-    calendarViewModel: CalendarViewModel,
-    eventManagementViewModel: EventManagementViewModel,
+    /** Состояние страницы дня. Flow на дату создаётся один раз — см. [rememberPageState]. */
+    dayPageState: (LocalDate) -> Flow<DayPageUiState>,
+    monthPageState: (YearMonth) -> Flow<MonthPageUiState>,
+    actions: EventActions,
+    onIntroNext: () -> Unit,
     calendarPagerState: PagerState,
     dailyViewPagerState: PagerState,
     monthPagerState: PagerState,
@@ -57,11 +61,10 @@ fun CalendarPagerScreen(
                           anchorMonth.plusMonths((pageIndex - initialPageIndex).toLong())
                         }
                     MonthProjectsPage(
-                        month = month,
+                        pageState = rememberPageState(month, MonthPageUiState(), monthPageState),
+                        actions = actions,
                         hasCalendarAccess = hasCalendarAccess,
                         onGrantAccessClick = onGrantAccessClick,
-                        viewModel = calendarViewModel,
-                        eventManagementViewModel = eventManagementViewModel,
                         createEventClick = createEventAction,
                         introductionState = introductionState)
                   }
@@ -95,18 +98,26 @@ fun CalendarPagerScreen(
                           }
                         }
                     DayEventsPage(
+                        pageState =
+                            rememberPageState(pageDate, DayPageUiState(isLoading = true), dayPageState),
+                        actions = actions,
                         // Пока пейджер листается, жест должен достаться ему, а не списку
                         // страницы — иначе они "дерутся" и пейджер застревает между днями.
                         listScrollEnabled = !dailyViewPagerState.isScrollInProgress,
                         pagePosition = pagePosition,
                         hasCalendarAccess = hasCalendarAccess,
                         onGrantAccessClick = onGrantAccessClick,
-                        date = pageDate,
-                        viewModel = calendarViewModel,
-                        eventManagementViewModel = eventManagementViewModel,
                         createEventClick = createEventAction,
-                        introductionState = introductionState)
+                        introductionState = introductionState,
+                        onIntroNext = onIntroNext)
                   }
         }
       }
+}
+
+/** Flow создаём один раз на ключ: иначе каждая рекомпозиция перезапускала бы запрос к календарю. */
+@Composable
+private fun <K, S> rememberPageState(key: K, initial: S, flowFor: (K) -> Flow<S>): S {
+  val flow = remember(key) { flowFor(key) }
+  return flow.collectAsStateWithLifecycle(initialValue = initial).value
 }

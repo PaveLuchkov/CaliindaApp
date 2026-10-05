@@ -50,7 +50,7 @@ import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.vm.EventDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
-import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
+import com.lpavs.caliinda.feature.event_management.EventActions
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -60,14 +60,13 @@ import java.time.temporal.ChronoUnit
 fun CalendarScreen(
     calendarViewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
-    settignsViewModel: SettingsViewModel,
     onNavigateToSettings: () -> Unit,
 ) {
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val introductionState by calendarViewModel.introState.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val timeZone by calendarViewModel.timeZone.collectAsStateWithLifecycle()
-  val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
+  val themeMode by calendarViewModel.themeMode.collectAsStateWithLifecycle()
 
   val snackbarHostState = remember { SnackbarHostState() }
   val haptic = LocalHapticFeedback.current
@@ -145,6 +144,13 @@ fun CalendarScreen(
               currentVisibleDate.toPickerMillis(),
       )
 
+  val eventActions =
+      remember(eventManagementViewModel, calendarViewModel) {
+        EventActions(
+            onDelete = eventManagementViewModel::requestDelete,
+            onEdit = eventManagementViewModel::requestEditEvent,
+            onDetails = calendarViewModel::requestEventDetails)
+      }
   val createEventAction = {
     // С экрана проектов (страница 0) сразу предлагаем промежуток дней, начиная с сегодня.
     val asProject = horizontalPagerState.currentPage == 0
@@ -194,8 +200,10 @@ fun CalendarScreen(
     Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
       BackgroundShapes(context = BackgroundShapeContext.Main, themeMode = themeMode)
       CalendarPagerScreen(
-          calendarViewModel = calendarViewModel,
-          eventManagementViewModel = eventManagementViewModel,
+          dayPageState = calendarViewModel::getDayPageUiState,
+          monthPageState = calendarViewModel::getMonthPageUiState,
+          actions = eventActions,
+          onIntroNext = calendarViewModel::onIntroNext,
           calendarPagerState = horizontalPagerState,
           dailyViewPagerState = pagerState,
           monthPagerState = monthPagerState,
@@ -241,16 +249,21 @@ fun CalendarScreen(
         when (dialog) {
           is EventDialog.Creating ->
               CreateEventScreen(
-                  viewModel = eventManagementViewModel,
                   userTimeZone = timeZone,
+                  isLoading = eventManagementState.isLoading,
+                  onSave = eventManagementViewModel::createEvent,
                   initialDate = dialog.date,
                   initialProject = dialog.asProject,
                   sheetSettled = sheetSettled)
           is EventDialog.Editing ->
               EditEventScreen(
-                  viewModel = eventManagementViewModel,
                   eventToEdit = dialog.event,
-                  selectedUpdateMode = dialog.mode)
+                  userTimeZone = timeZone,
+                  isLoading = eventManagementState.isLoading,
+                  onSave = { summary, description, location, dateTime ->
+                    eventManagementViewModel.updateEvent(
+                        summary, description, location, dateTime, dialog.mode)
+                  })
           else -> {}
         }
       }
@@ -260,7 +273,8 @@ fun CalendarScreen(
         event = details,
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone,
-        eventManagementViewModel = eventManagementViewModel,
+        onEdit = eventManagementViewModel::requestEditEvent,
+        onDelete = eventManagementViewModel::requestDelete,
         themeMode = themeMode)
   }
   EventManagementDialogs(

@@ -56,13 +56,11 @@ fun AppNavHost(
     ) {
       val eventManagementViewModel: EventManagementViewModel = hiltViewModel()
       val calendarViewModel: CalendarViewModel = hiltViewModel()
-        val settingsViewModel: SettingsViewModel = hiltViewModel()
 
       CalendarScreen(
           calendarViewModel = calendarViewModel,
           onNavigateToSettings = { navController.navigate(NavRoutes.Settings.route) },
-          eventManagementViewModel = eventManagementViewModel,
-          settignsViewModel = settingsViewModel)
+          eventManagementViewModel = eventManagementViewModel)
     }
     composable(
         NavRoutes.Settings.route,
