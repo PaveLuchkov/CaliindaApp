@@ -26,6 +26,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     val THEME_MODE = stringPreferencesKey("theme_mode")
     val INTRO_COMPLETED = booleanPreferencesKey("introduction")
     val DEFAULT_CALENDAR_ID = longPreferencesKey("default_calendar_id")
+    val LIVE_NOTIFICATION = booleanPreferencesKey("live_notification")
   }
   val introFlow: Flow<Boolean> =
       dataStore.data
@@ -119,6 +120,14 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     } catch (e: IOException) {
       Log.e(TAG, "Error saving default calendar.", e)
     }
+  }
+
+  /** Live-уведомление о текущем событии. По умолчанию выключено: нужно разрешение. */
+  val liveNotificationFlow: Flow<Boolean> =
+      dataStore.data.map { prefs -> prefs[PreferencesKeys.LIVE_NOTIFICATION] ?: false }
+
+  suspend fun saveLiveNotification(enabled: Boolean) {
+    dataStore.edit { prefs -> prefs[PreferencesKeys.LIVE_NOTIFICATION] = enabled }
   }
 
   companion object {

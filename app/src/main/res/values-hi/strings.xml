@@ -243,4 +243,14 @@
     <string name="chips_reset">डिफ़ॉल्ट पर लौटें</string>
     <string name="chips_reset_done">डिफ़ॉल्ट चिप वापस आ गईं</string>
     <string name="chip_custom">आपकी चिप</string>
+
+    <!-- Live-уведомление -->
+    <string name="live_channel_name">मौजूदा इवेंट</string>
+    <string name="live_channel_desc">अभी चल रहे इवेंट की प्रगति</string>
+    <string name="live_until">%1$s तक</string>
+    <string name="live_next">अगला इवेंट: %1$s, %2$s बजे</string>
+    <string name="settings_notifications">सूचनाएँ</string>
+    <string name="live_setting_title">मौजूदा इवेंट सूचना पट्टी में</string>
+    <string name="live_setting_summary">प्रगति और ठीक बाद वाला इवेंट</string>
+    <string name="live_permission_denied">सिस्टम सेटिंग में सूचनाओं की अनुमति दें</string>
 </resources>

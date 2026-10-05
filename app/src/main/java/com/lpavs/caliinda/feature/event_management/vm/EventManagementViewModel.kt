@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
+import com.lpavs.caliinda.feature.live.LiveEventNotifier
 import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
@@ -46,6 +47,7 @@ constructor(
     private val funMessages: IFunMessages,
     private val pendingDeletions: PendingDeletions,
     private val widgetRefresher: WidgetRefresher,
+    private val liveEventNotifier: LiveEventNotifier,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
@@ -174,7 +176,7 @@ constructor(
     val result = calendarRepository.deleteEvent(event, EventDeleteMode.DEFAULT)
     // Снимаем скрытие после записи: провайдер уже без события, и карточка не мигнёт обратно.
     pendingDeletions.remove(event.id)
-    if (result.isSuccess) widgetRefresher.refresh()
+    if (result.isSuccess) refreshSurfaces()
     if (result.isFailure) {
       _events.send(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
     }
@@ -222,7 +224,7 @@ constructor(
     val result = operation()
     _uiState.update { it.copy(isLoading = false) }
     if (result.isSuccess) {
-      widgetRefresher.refresh()
+      refreshSurfaces()
       dismissDialog()
       _events.send(EventManagementUiEvent.ShowMessage(successMessage()))
     } else {
@@ -293,6 +295,12 @@ constructor(
   /** Закрыть шторку или диалог: отмена пользователем или успешное сохранение. */
   fun dismissDialog() {
     _uiState.update { it.copy(dialog = EventDialog.None) }
+  }
+
+  /** Виджет и live-уведомление сами не узнают о правке из приложения — будим их. */
+  private fun refreshSurfaces() {
+    widgetRefresher.refresh()
+    liveEventNotifier.refreshAsync()
   }
 
   /** Без названия — общая фраза вместо «Событие '' обновлено». */

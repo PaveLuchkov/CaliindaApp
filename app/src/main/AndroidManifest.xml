@@ -4,6 +4,15 @@
 
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- Live-уведомление о текущем событии -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Точный будильник к началу и концу события; календарям USE_EXACT_ALARM положен. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
 
     <application
         android:name="com.lpavs.caliinda.app.CaliindaApplication"
@@ -36,6 +45,26 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/caliinda_widget_info" />
+        </receiver>
+
+        <!-- exported: PROVIDER_CHANGED шлёт процесс календаря, а не система. Чужой вызов
+             лишь пересчитает уведомление — вреда нет. -->
+        <receiver
+            android:name="com.lpavs.caliinda.feature.live.LiveEventReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.lpavs.caliinda.action.LIVE_EVENT_REFRESH" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PROVIDER_CHANGED" />
+                <data
+                    android:host="com.android.calendar"
+                    android:scheme="content" />
+            </intent-filter>
         </receiver>
     </application>
 

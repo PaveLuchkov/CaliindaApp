@@ -402,4 +402,14 @@
     <string name="chips_reset">Reset to defaults</string>
     <string name="chips_reset_done">Default chips restored</string>
     <string name="chip_custom">Your chip</string>
+
+    <!-- Live-уведомление -->
+    <string name="live_channel_name">Current event</string>
+    <string name="live_channel_desc">Progress of the event happening now</string>
+    <string name="live_until">Until %1$s</string>
+    <string name="live_next">Next event: %1$s at %2$s</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="live_setting_title">Current event in the shade</string>
+    <string name="live_setting_summary">Progress and the event right after it</string>
+    <string name="live_permission_denied">Allow notifications in system settings</string>
 </resources>

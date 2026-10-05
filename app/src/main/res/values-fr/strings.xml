@@ -254,4 +254,14 @@
     <string name="chips_reset">Rétablir par défaut</string>
     <string name="chips_reset_done">Puces par défaut rétablies</string>
     <string name="chip_custom">Votre puce</string>
+
+    <!-- Live-уведомление -->
+    <string name="live_channel_name">Événement en cours</string>
+    <string name="live_channel_desc">Progression de l’événement en cours</string>
+    <string name="live_until">Jusqu’à %1$s</string>
+    <string name="live_next">Événement suivant : %1$s à %2$s</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="live_setting_title">Événement en cours dans le volet</string>
+    <string name="live_setting_summary">Progression et l’événement qui suit</string>
+    <string name="live_permission_denied">Autorisez les notifications dans les paramètres système</string>
 </resources>

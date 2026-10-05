@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
+import com.lpavs.caliinda.feature.live.LiveEventNotifier
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +22,20 @@ class SettingsViewModel
 constructor(
     private val settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
+    private val liveEventNotifier: LiveEventNotifier,
 ) : ViewModel() {
+
+  val liveNotification: StateFlow<Boolean> =
+      settingsRepository.liveNotificationFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+  fun setLiveNotification(enabled: Boolean) {
+    viewModelScope.launch {
+      settingsRepository.saveLiveNotification(enabled)
+      liveEventNotifier.refresh()
+    }
+  }
+
 
   val timeZone: StateFlow<String> =
       settingsRepository.timeZoneFlow.stateIn(

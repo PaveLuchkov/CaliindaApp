@@ -8,6 +8,7 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.event_management.messages.IFunMessages
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.toDateTimeState
+import com.lpavs.caliinda.feature.live.LiveEventNotifier
 import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,7 +58,12 @@ class EventManagementViewModelTest {
     val settings: SettingsRepository = mock { on { zoneFlow } doReturn flowOf(zone) }
     viewModel =
         EventManagementViewModel(
-            settings, repository, funMessages, PendingDeletions(), mock<WidgetRefresher>())
+            settings,
+            repository,
+            funMessages,
+            PendingDeletions(),
+            mock<WidgetRefresher>(),
+            mock<LiveEventNotifier>())
   }
 
   @After
