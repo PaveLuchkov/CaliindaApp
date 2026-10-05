@@ -187,7 +187,6 @@
     <string name="duration_minutes_short">%d мин</string>
     <string name="duration_hours_short">%d ч</string>
     <string name="undo">Отменить</string>
-    <string name="event_deleted">«%1$s» удалено</string>
     <string name="project_day_of">день %1$d из %2$d</string>
     <string name="widget_name">Caliinda · день</string>
     <string name="widget_description">Текущее событие, что дальше и идущие проекты</string>

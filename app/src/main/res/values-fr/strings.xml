@@ -186,7 +186,6 @@
     <string name="duration_minutes_short">%d min</string>
     <string name="duration_hours_short">%d h</string>
     <string name="undo">Annuler</string>
-    <string name="event_deleted">« %1$s » supprimé</string>
     <string name="project_day_of">jour %1$d sur %2$d</string>
     <string name="widget_name">Caliinda · jour</string>
     <string name="widget_description">Événement en cours, la suite et projets en cours</string>
