@@ -8,8 +8,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
+import com.lpavs.caliinda.core.data.calendar.recurrence.Rrule
 import java.time.Instant
-import java.time.LocalDateTime
+import java.time.DayOfWeek
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -166,19 +167,10 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
 fun formatRRule(rrule: String, zoneId: ZoneId): String {
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
 
-  val parts =
-      rrule.removePrefix("RRULE:").split(";").associate {
-        val (key, value) = it.split("=")
-        key to value
-      }
-
-  val freq = parts["FREQ"]
-  val byDay = parts["BYDAY"]
-  val until = parts["UNTIL"]
-  val count = parts["COUNT"]
+  val rule = Rrule.parse(rrule)
 
   val freqText =
-      when (freq) {
+      when (rule.freq) {
         "DAILY" -> stringResource(R.string.recurrence_daily_lower)
         "WEEKLY" -> stringResource(R.string.recurrence_weekly_lower)
         "MONTHLY" -> stringResource(R.string.recurrence_monthly_lower)
@@ -187,36 +179,27 @@ fun formatRRule(rrule: String, zoneId: ZoneId): String {
       }
 
   val daysText =
-      byDay
-          ?.split(",")
-          ?.mapNotNull {
+      rule.byDay
+          .takeIf { it.isNotEmpty() }
+          ?.map {
             when (it) {
-              "MO" -> stringResource(R.string.day_monday)
-              "TU" -> stringResource(R.string.day_tuesday)
-              "WE" -> stringResource(R.string.day_wednesday)
-              "TH" -> stringResource(R.string.day_thursday)
-              "FR" -> stringResource(R.string.day_friday)
-              "SA" -> stringResource(R.string.day_saturday)
-              "SU" -> stringResource(R.string.day_sunday)
-              else -> null
+              DayOfWeek.MONDAY -> stringResource(R.string.day_monday)
+              DayOfWeek.TUESDAY -> stringResource(R.string.day_tuesday)
+              DayOfWeek.WEDNESDAY -> stringResource(R.string.day_wednesday)
+              DayOfWeek.THURSDAY -> stringResource(R.string.day_thursday)
+              DayOfWeek.FRIDAY -> stringResource(R.string.day_friday)
+              DayOfWeek.SATURDAY -> stringResource(R.string.day_saturday)
+              DayOfWeek.SUNDAY -> stringResource(R.string.day_sunday)
             }
           }
           ?.joinToString(", ")
           ?.let { stringResource(R.string.recurrence_on_days, it) } ?: ""
 
   val untilDateFormatted =
-      try {
-        until?.let {
-          val formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
-          val date = LocalDateTime.parse(it, formatter).atZone(zoneId).toLocalDate()
-          date.format(DateTimeFormatter.ofPattern("d MMMM yyyy", currentLocale))
-        }
-      } catch (_: Exception) {
-        null
-      }
+      rule.untilDate(zoneId)?.format(DateTimeFormatter.ofPattern("d MMMM yyyy", currentLocale))
 
   val untilText = untilDateFormatted?.let { stringResource(R.string.recurrence_until, it) } ?: ""
-  val countText = count?.let { stringResource(R.string.recurrence_count, it.toInt()) } ?: ""
+  val countText = rule.count?.let { stringResource(R.string.recurrence_count, it) } ?: ""
 
   return buildString {
         append(stringResource(R.string.recurrence_repeats))

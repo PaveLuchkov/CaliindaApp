@@ -63,26 +63,6 @@ import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 
-enum class RecurrenceEndType {
-  NEVER,
-  DATE,
-  COUNT
-}
-
-data class EventDateTimeState(
-    val startDate: LocalDate,
-    val startTime: LocalTime?,
-    val endDate: LocalDate,
-    val endTime: LocalTime?,
-    val isAllDay: Boolean,
-    val isRecurring: Boolean,
-    val recurrenceRule: String? = null,
-    val selectedWeekdays: Set<DayOfWeek> = emptySet(),
-    val recurrenceEndType: RecurrenceEndType = RecurrenceEndType.NEVER,
-    val recurrenceEndDate: LocalDate? = null,
-    val recurrenceCount: Int? = null
-)
-
 @Composable
 fun EventDateTimePicker(
     modifier: Modifier = Modifier,
@@ -95,14 +75,12 @@ fun EventDateTimePicker(
     onRequestShowEndTimePicker: () -> Unit,
     onRequestShowRecurrenceEndDatePicker: () -> Unit,
 ) {
-  Log.d("EventDateTimePicker", "Received state: $state")
     val isAllDay = state.isAllDay
     val isOneDay = remember(state.startDate, state.endDate) {
         state.startDate == state.endDate
     }
 
 
-    var dateTimeError by remember { mutableStateOf<String?>(null) }
   val context = LocalContext.current
 
   val allDay = stringResource(R.string.all_day)
@@ -125,26 +103,7 @@ fun EventDateTimePicker(
         DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
       }
 
-  LaunchedEffect(state) {
-    dateTimeError = null
-    val actualIsOneDay = state.startDate == state.endDate
-
-    if (!actualIsOneDay && state.endDate.isBefore(state.startDate)) {
-      dateTimeError = context.getString(R.string.error_end_date_before_start)
-    } else if (!state.isAllDay) {
-      if (state.startTime == null) {
-        dateTimeError = context.getString(R.string.error_start_time_missing)
-      } else if (state.endTime == null) {
-        dateTimeError = context.getString(R.string.error_end_time_missing)
-      } else {
-        val startDateTime = state.startTime.atDate(state.startDate)
-        val endDateTime = state.endTime.atDate(state.endDate)
-        if (!startDateTime.isBefore(endDateTime)) {
-          dateTimeError = context.getString(R.string.error_end_time_not_after_start)
-        }
-      }
-    }
-  }
+  val dateTimeError = state.validationError?.let { stringResource(it) }
 
   Column(modifier = modifier) {
     Row(
@@ -629,7 +588,10 @@ sealed class RecurrenceOption(@StringRes val labelResId: Int, val rruleValue: St
   data object Yearly : RecurrenceOption(R.string.recurrence_yearly, "FREQ=YEARLY")
 
   companion object {
-    val ALL_OPTIONS: List<RecurrenceOption> = listOf(None, Daily, Weekly, Monthly, Yearly)
+    // Геттер, а не поле: поле компаньона инициализируется вместе с классом, и если первым
+    // тронули, например, Weekly, на его месте в списке оказался бы null.
+    val ALL_OPTIONS: List<RecurrenceOption>
+      get() = listOf(None, Daily, Weekly, Monthly, Yearly)
 
     fun fromRule(rule: String?): RecurrenceOption {
       return when (rule) {
