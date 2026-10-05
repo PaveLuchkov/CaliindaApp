@@ -20,8 +20,8 @@ import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
-import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceEndType
-import com.lpavs.caliinda.feature.event_management.ui.shared.sections.RecurrenceOption
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.recurrenceRuleAfterEdit
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.toDateTimeState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,14 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -64,7 +57,6 @@ constructor(
   val timeZone: StateFlow<ZoneId> =
       settingsRepository.zoneFlow.stateIn(
           viewModelScope, SharingStarted.Eagerly, ZoneId.systemDefault())
-  private val untilFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 
   // --- Создание ---
 
@@ -80,8 +72,10 @@ constructor(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
         return@launch
       }
+      val zone = timeZone.value
       val draft =
-          buildDraft(summary, description, location, dateTimeState, buildRecurrenceRule(dateTimeState))
+          buildDraft(
+              summary, description, location, dateTimeState, dateTimeState.toRrule(zone)?.format())
       runOperation(
           operation = { calendarRepository.createEvent(draft) },
           successMessage = { funMessages.getEventCreatedMessage(draft.summary) },
@@ -110,13 +104,9 @@ constructor(
         return@launch
       }
 
-      // Форма умеет не все части RRULE (INTERVAL, BYMONTHDAY...). Если повторение не трогали —
-      // сохраняем исходное правило как есть, чтобы не потерять их.
-      val originalState = parseEventToState(originalEvent)
-      val formRule = buildRecurrenceRule(dateTimeState)
-      val recurrenceRule =
-          if (formRule == buildRecurrenceRule(originalState)) originalEvent.recurrenceRule
-          else formRule
+      val zone = timeZone.value
+      val originalState = originalEvent.toDateTimeState(zone)
+      val recurrenceRule = recurrenceRuleAfterEdit(originalEvent, dateTimeState, zone)
 
       val draft = buildDraft(summary, description, location, dateTimeState, recurrenceRule)
       val unchangedDraft =
@@ -262,151 +252,10 @@ constructor(
           zone = timeZone.value,
           recurrenceRule = recurrenceRule)
 
-  private fun validateInput(summary: String, state: EventDateTimeState): Boolean {
-    if (summary.isBlank()) return false
-    if (state.endDate.isBefore(state.startDate)) return false
-    if (state.isAllDay) return true
-    val startTime = state.startTime ?: return false
-    val endTime = state.endTime ?: return false
-    return LocalDateTime.of(state.endDate, endTime).isAfter(LocalDateTime.of(state.startDate, startTime))
-  }
+  private fun validateInput(summary: String, state: EventDateTimeState): Boolean =
+      summary.isNotBlank() && state.validationError == null
 
-  private fun buildRecurrenceRule(state: EventDateTimeState): String? {
-    val baseRule = state.recurrenceRule?.takeIf { it.isNotBlank() } ?: return null
-
-    val ruleParts = mutableListOf(baseRule) // Начинаем с FREQ=...
-
-    if (baseRule == RecurrenceOption.Weekly.rruleValue && state.selectedWeekdays.isNotEmpty()) {
-      val bydayString =
-          state.selectedWeekdays.sorted().joinToString(",") { day ->
-            when (day) {
-              DayOfWeek.MONDAY -> "MO"
-              DayOfWeek.TUESDAY -> "TU"
-              DayOfWeek.WEDNESDAY -> "WE"
-              DayOfWeek.THURSDAY -> "TH"
-              DayOfWeek.FRIDAY -> "FR"
-              DayOfWeek.SATURDAY -> "SA"
-              DayOfWeek.SUNDAY -> "SU"
-            }
-          }
-      ruleParts.add("BYDAY=$bydayString")
-    }
-
-    when (state.recurrenceEndType) {
-      RecurrenceEndType.DATE -> {
-        state.recurrenceEndDate?.let { endDate ->
-          val until =
-              if (state.isAllDay) {
-                // Для all-day серий UNTIL должен быть датой (RFC 5545).
-                endDate.format(DateTimeFormatter.BASIC_ISO_DATE)
-              } else {
-                untilFormatter.format(
-                    endDate
-                        .atTime(23, 59, 59)
-                        .atZone(timeZone.value)
-                        .withZoneSameInstant(ZoneOffset.UTC))
-              }
-          ruleParts.add("UNTIL=$until")
-        }
-      }
-      RecurrenceEndType.COUNT -> {
-        state.recurrenceCount?.let { count -> ruleParts.add("COUNT=$count") }
-      }
-      RecurrenceEndType.NEVER -> {}
-    }
-
-    return ruleParts.joinToString(";")
-  }
-
-  fun parseEventToState(event: EventDto): EventDateTimeState {
-    val zone = timeZone.value
-    val isAllDay = event.isAllDay
-
-    val start = event.startTime.atZone(zone)
-    val end = event.endTime.atZone(zone)
-
-    val parsedStartDate = start.toLocalDate()
-    val parsedStartTime: LocalTime?
-    val parsedEndDate: LocalDate
-    val parsedEndTime: LocalTime?
-    if (isAllDay) {
-      // Конец all-day события эксклюзивный: последний день — предыдущий.
-      parsedStartTime = null
-      parsedEndTime = null
-      parsedEndDate = end.toLocalDate().let { if (it.isAfter(parsedStartDate)) it.minusDays(1) else it }
-    } else {
-      parsedStartTime = start.toLocalTime().withNano(0)
-      parsedEndDate = end.toLocalDate()
-      parsedEndTime = end.toLocalTime().withNano(0)
-    }
-
-    var recurrenceOption: RecurrenceOption? = null
-    var selectedWeekdays: Set<DayOfWeek> = emptySet()
-    var recurrenceEndType = RecurrenceEndType.NEVER
-    var recurrenceEndDate: LocalDate? = null
-    var recurrenceCount: Int? = null
-
-    event.recurrenceRule?.removePrefix("RRULE:")?.split(';')?.forEach { rulePart ->
-      val parts = rulePart.split('=')
-      if (parts.size != 2) return@forEach
-      val (key, value) = parts
-      when (key.uppercase()) {
-        "FREQ" -> recurrenceOption = RecurrenceOption.ALL_OPTIONS.find { it.rruleValue == "FREQ=$value" }
-        "BYDAY" ->
-            selectedWeekdays =
-                value
-                    .split(',')
-                    .mapNotNull { dayStr ->
-                      when (dayStr.takeLast(2)) {
-                        "MO" -> DayOfWeek.MONDAY
-                        "TU" -> DayOfWeek.TUESDAY
-                        "WE" -> DayOfWeek.WEDNESDAY
-                        "TH" -> DayOfWeek.THURSDAY
-                        "FR" -> DayOfWeek.FRIDAY
-                        "SA" -> DayOfWeek.SATURDAY
-                        "SU" -> DayOfWeek.SUNDAY
-                        else -> null
-                      }
-                    }
-                    .toSet()
-        "UNTIL" -> {
-          recurrenceEndDate = parseUntil(value, zone)
-          if (recurrenceEndDate != null) recurrenceEndType = RecurrenceEndType.DATE
-        }
-        "COUNT" -> {
-          recurrenceCount = value.toIntOrNull()
-          if (recurrenceCount != null) recurrenceEndType = RecurrenceEndType.COUNT
-        }
-      }
-    }
-
-    return EventDateTimeState(
-        startDate = parsedStartDate,
-        startTime = parsedStartTime,
-        endDate = parsedEndDate,
-        endTime = parsedEndTime,
-        isAllDay = isAllDay,
-        isRecurring = event.recurrenceRule != null,
-        recurrenceRule = recurrenceOption?.rruleValue,
-        selectedWeekdays = selectedWeekdays,
-        recurrenceEndType = recurrenceEndType,
-        recurrenceEndDate = recurrenceEndDate,
-        recurrenceCount = recurrenceCount)
-  }
-
-  private fun parseUntil(value: String, zone: ZoneId): LocalDate? =
-      try {
-        if (value.length == 8) {
-          LocalDate.parse(value, DateTimeFormatter.BASIC_ISO_DATE)
-        } else {
-          ZonedDateTime.parse(value, untilFormatter.withZone(ZoneOffset.UTC))
-              .withZoneSameInstant(zone)
-              .toLocalDate()
-        }
-      } catch (e: Exception) {
-        Log.e(TAG, "Error parsing UNTIL value: $value", e)
-        null
-      }
+  fun parseEventToState(event: EventDto): EventDateTimeState = event.toDateTimeState(timeZone.value)
 
   // --- Состояние диалогов ---
 
