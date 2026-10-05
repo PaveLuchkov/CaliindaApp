@@ -1,7 +1,5 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
@@ -40,10 +38,9 @@ fun EventFormSheet(
   }
 
   val current = shown ?: return
-  ModalBottomSheet(
-      sheetState = sheetState,
-      onDismissRequest = onDismiss,
-      contentWindowInsets = { WindowInsets.navigationBars }) {
+  // Отступы по умолчанию (safeDrawing сверху и снизу): верхний ModalBottomSheet гасит, пока
+  // шторка ниже статус-бара, и включает, когда клавиатура дотягивает её до верха экрана.
+  ModalBottomSheet(sheetState = sheetState, onDismissRequest = onDismiss) {
         // Шторка встала на место — форма может звать клавиатуру, не сбивая анимацию появления.
         content(current, sheetState.currentValue != SheetValue.Hidden)
       }
