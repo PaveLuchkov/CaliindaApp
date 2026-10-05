@@ -338,6 +338,7 @@
     <string name="intro_finish">Finish</string>
     <string name="intro_next">Next</string>
     <string name="calendars">Calendars</string>
+    <string name="about">About</string>
     <string name="new_events_saved_to">New events are saved to</string>
     <string name="syncing_calendars">Syncing calendars…</string>
     <string name="no_title">(No title)</string>

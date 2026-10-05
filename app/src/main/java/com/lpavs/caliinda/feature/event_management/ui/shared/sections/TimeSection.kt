@@ -2,6 +2,7 @@
 
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import java.time.ZoneId
 import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.animation.core.snap
 import android.text.format.DateFormat
@@ -53,7 +54,6 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.DatePickerField
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerField
 import java.time.DayOfWeek
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -65,6 +65,8 @@ fun EventDateTimePicker(
     modifier: Modifier = Modifier,
     state: EventDateTimeState,
     onStateChange: (EventDateTimeState) -> Unit,
+    /** Пояс из настроек — «сейчас» для кнопок времени считается в нём, а не в поясе устройства. */
+    zone: ZoneId,
     isLoading: Boolean = false,
     onRequestShowStartDatePicker: () -> Unit,
     onRequestShowStartTimePicker: () -> Unit,
@@ -109,96 +111,19 @@ fun EventDateTimePicker(
     ) {
       FilterChip(
           selected = isAllDay,
-          onClick = {
-            val newIsAllDay = !isAllDay
-
-            val newState: EventDateTimeState
-            if (newIsAllDay) {
-              newState = state.copy(isAllDay = true, startTime = null, endTime = null)
-            } else {
-              val defaultStartTime =
-                  state.startTime
-                      ?: LocalTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0)
-
-              var newEndTime = state.endTime
-              var newEndDate = state.endDate
-
-              if (state.startDate == state.endDate) {
-                if (newEndTime == null || !defaultStartTime.isBefore(newEndTime)) {
-                  newEndTime = defaultStartTime.plusHours(1)
-                }
-                if (newEndTime != null) {
-                  newEndTime = newEndTime.withNano(0)
-                }
-
-                if (newEndTime != null) {
-                  if (newEndTime.isBefore(defaultStartTime)) {
-                    newEndDate = state.startDate.plusDays(1)
-                  }
-                }
-              } else {
-                if (newEndTime == null) {
-                  newEndTime = defaultStartTime.plusHours(1)
-                }
-                if (newEndTime != null) {
-                  newEndTime = newEndTime.withNano(0)
-                }
-              }
-
-              newState =
-                  state.copy(
-                      isAllDay = false,
-                      startTime = defaultStartTime,
-                      endTime = newEndTime,
-                      endDate = newEndDate)
-            }
-            onStateChange(newState)
-          },
+          onClick = { onStateChange(state.toggledAllDay(LocalTime.now(zone))) },
           label = { Text(allDay) },
           enabled = !isLoading)
 
       FilterChip(
           selected = isOneDay,
-          onClick = {
-            val currentActualIsOneDay = state.startDate == state.endDate
-            val targetIsOneDay = !currentActualIsOneDay
-
-            val newEndDateCandidate: LocalDate
-            var newEndTimeCandidate = state.endTime
-
-            if (targetIsOneDay) {
-              newEndDateCandidate = state.startDate
-
-              if (!state.isAllDay && state.startTime != null) {
-                val currentStartTime = state.startTime
-                if (newEndTimeCandidate == null ||
-                    !currentStartTime.isBefore(newEndTimeCandidate)) {
-                  newEndTimeCandidate = currentStartTime.plusHours(1).withNano(0)
-                  if (newEndTimeCandidate.isBefore(currentStartTime)) {
-                    newEndTimeCandidate = LocalTime.of(23, 59, 0, 0)
-                  }
-                }
-              }
-            } else {
-              newEndDateCandidate = state.startDate.plusDays(1)
-            }
-            onStateChange(state.copy(endDate = newEndDateCandidate, endTime = newEndTimeCandidate))
-          },
+          onClick = { onStateChange(state.toggledOneDay()) },
           label = { Text(oneDay) },
           enabled = !isLoading)
 
       FilterChip(
           selected = state.isRecurring,
-          onClick = {
-            val newIsRecurring = !state.isRecurring
-            val newRule =
-                if (!newIsRecurring) {
-                  null
-                } else {
-                  state.recurrenceRule ?: RecurrenceOption.Daily.rruleValue
-                }
-            onStateChange(state.copy(isRecurring = newIsRecurring, recurrenceRule = newRule))
-          },
+          onClick = { onStateChange(state.toggledRecurring()) },
           label = { Text(recEvent) },
           enabled = !isLoading)
     }
@@ -285,18 +210,7 @@ fun EventDateTimePicker(
                                       isLoading,
                                       onRequestShowStartTimePicker,
                                       Modifier.width(100.dp),
-                                      onLongClick = {
-                                        val selectedTime = LocalTime.now()
-                                        var newEndTime = state.endTime
-                                        if (state.startDate == state.endDate &&
-                                            state.endTime != null &&
-                                            !selectedTime.isBefore(state.endTime)) {
-                                          newEndTime = selectedTime.plusHours(1).withNano(0)
-                                        }
-                                        onStateChange(
-                                            state.copy(
-                                                startTime = selectedTime, endTime = newEndTime))
-                                      })
+                                      onLongClick = { onStateChange(state.startingAt(LocalTime.now(zone))) })
                                   Box(
                                       modifier =
                                           Modifier.width(10.dp)
@@ -330,17 +244,7 @@ fun EventDateTimePicker(
                                 isLoading,
                                 onRequestShowStartTimePicker,
                                 Modifier.weight(1f),
-                                onLongClick = {
-                                  val selectedTime = LocalTime.now()
-                                  var newEndTime = state.endTime
-                                  if (state.startDate == state.endDate &&
-                                      state.endTime != null &&
-                                      !selectedTime.isBefore(state.endTime)) {
-                                    newEndTime = selectedTime.plusHours(1).withNano(0)
-                                  }
-                                  onStateChange(
-                                      state.copy(startTime = selectedTime, endTime = newEndTime))
-                                })
+                                onLongClick = { onStateChange(state.startingAt(LocalTime.now(zone))) })
                             TimePickerField(
                                 state.endTime,
                                 deviceTimeFormatter,

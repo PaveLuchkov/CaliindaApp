@@ -178,6 +178,7 @@
     <string name="intro_finish">Listo</string>
     <string name="intro_next">Siguiente</string>
     <string name="calendars">Calendarios</string>
+    <string name="about">Acerca de</string>
     <string name="new_events_saved_to">Los eventos nuevos se guardan en</string>
     <string name="syncing_calendars">Sincronizando calendarios…</string>
     <string name="no_title">(Sin título)</string>

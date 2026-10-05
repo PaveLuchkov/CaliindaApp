@@ -2,6 +2,8 @@
 
 package com.lpavs.caliinda.navigation
 
+import com.lpavs.caliinda.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 import com.lpavs.caliinda.core.ui.theme.AppMotion
@@ -68,7 +70,7 @@ fun AppNavHost(
         val settingsViewModel: SettingsViewModel = hiltViewModel()
 
       SettingsScreen(
-          settignsViewModel = settingsViewModel,
+          settingsViewModel = settingsViewModel,
           onNavigateBack = { navController.popBackStack() },
           onNavigateToCalendarSettings = {
             navController.navigate(NavRoutes.CalendarSettings.route)
@@ -90,12 +92,12 @@ fun AppNavHost(
       TimeSettingsScreen(
           viewModel = settingsViewModel,
           onNavigateBack = { navController.popBackStack() },
-          title = "Time & Format")
+          title = stringResource(R.string.time_format))
     }
     composable(
         NavRoutes.Terms.route,
     ) {
-      AboutScreen(onNavigateBack = { navController.popBackStack() }, title = "About")
+      AboutScreen(onNavigateBack = { navController.popBackStack() }, title = stringResource(R.string.about))
     }
   }
 }

@@ -8,6 +8,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 enum class RecurrenceEndType {
   NEVER,
@@ -43,6 +44,52 @@ data class EventDateTimeState(
       }
       return null
     }
+
+  /**
+   * Переключатель «Весь день». Обратно ко времени: начало — прежнее или следующий ровный час
+   * от [now], конец — не раньше начала (через час), при переходе за полночь — на следующий день.
+   */
+  fun toggledAllDay(now: LocalTime): EventDateTimeState {
+    if (!isAllDay) return copy(isAllDay = true, startTime = null, endTime = null)
+    val start = startTime ?: now.plusHours(1).truncatedTo(ChronoUnit.HOURS)
+    var end = endTime
+    var newEndDate = endDate
+    if (startDate == endDate) {
+      if (end == null || !start.isBefore(end)) end = start.plusHours(1)
+      end = end.withNano(0)
+      if (end.isBefore(start)) newEndDate = startDate.plusDays(1)
+    } else {
+      end = (end ?: start.plusHours(1)).withNano(0)
+    }
+    return copy(isAllDay = false, startTime = start, endTime = end, endDate = newEndDate)
+  }
+
+  /** Переключатель «Один день»: схлопнуть в день начала или растянуть на два дня. */
+  fun toggledOneDay(): EventDateTimeState {
+    if (startDate == endDate) return copy(endDate = startDate.plusDays(1))
+    var end = endTime
+    val start = startTime
+    if (!isAllDay && start != null && (end == null || !start.isBefore(end))) {
+      end = start.plusHours(1).withNano(0)
+      // Час после 23:xx уходит за полночь — в пределах дня остаётся только 23:59.
+      if (end.isBefore(start)) end = LocalTime.of(23, 59)
+    }
+    return copy(endDate = startDate, endTime = end)
+  }
+
+  /** Переключатель «Повтор»: по умолчанию — ежедневно, прежняя частота сохраняется. */
+  fun toggledRecurring(): EventDateTimeState =
+      if (isRecurring) copy(isRecurring = false, recurrenceRule = null)
+      else copy(isRecurring = true, recurrenceRule = recurrenceRule ?: RecurrenceOption.Daily.rruleValue)
+
+  /** Начать в [time] (долгое нажатие — «сейчас»); конец сдвигается, если оказался раньше. */
+  fun startingAt(time: LocalTime): EventDateTimeState {
+    val end = endTime
+    val newEnd =
+        if (startDate == endDate && end != null && !time.isBefore(end)) time.plusHours(1).withNano(0)
+        else end
+    return copy(startTime = time, endTime = newEnd)
+  }
 
   /** Правило повторения из полей формы; null — событие не повторяется. */
   fun toRrule(zone: ZoneId): Rrule? {

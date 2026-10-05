@@ -72,6 +72,7 @@ fun EditEventScreen(
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
+        zone = userTimeZone,
         isLoading = isLoading,
         suggestedChips = suggestedChips,
         onSave = save,

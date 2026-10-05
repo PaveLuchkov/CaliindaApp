@@ -148,4 +148,49 @@ class EventDateTimeStateTest {
     val form = original.toDateTimeState(moscow).copy(isRecurring = false, recurrenceRule = null)
     assertNull(recurrenceRuleAfterEdit(original, form, moscow))
   }
+
+  // --- Переключатели формы ---
+
+  @Test
+  fun `весь день и обратно — время возвращается`() {
+    val allDay = timed().toggledAllDay(LocalTime.of(15, 20))
+    assertNull(allDay.startTime)
+    // Времени не было — начало со следующего ровного часа от «сейчас».
+    val back = allDay.toggledAllDay(LocalTime.of(15, 20))
+    assertEquals(LocalTime.of(16, 0), back.startTime)
+    assertEquals(LocalTime.of(17, 0), back.endTime)
+    assertEquals(day, back.endDate)
+  }
+
+  @Test
+  fun `обратно из всего дня поздно вечером — конец на следующий день`() {
+    val back = timed(null, null).copy(isAllDay = true).toggledAllDay(LocalTime.of(23, 10))
+    assertEquals(LocalTime.of(0, 0), back.startTime)
+    assertEquals(LocalTime.of(1, 0), back.endTime)
+    assertEquals(day, back.endDate)
+  }
+
+  @Test
+  fun `один день — схлопываем и чиним конец раньше начала`() {
+    val twoDays = timed(LocalTime.of(23, 30), LocalTime.of(9, 0)).copy(endDate = day.plusDays(1))
+    val oneDay = twoDays.toggledOneDay()
+    assertEquals(day, oneDay.endDate)
+    assertEquals(LocalTime.of(23, 59), oneDay.endTime)
+    assertEquals(day.plusDays(1), oneDay.toggledOneDay().endDate)
+  }
+
+  @Test
+  fun `повтор по умолчанию ежедневно, выключение сбрасывает правило`() {
+    val on = timed().toggledRecurring()
+    assertEquals(RecurrenceOption.Daily.rruleValue, on.recurrenceRule)
+    assertNull(on.toggledRecurring().recurrenceRule)
+  }
+
+  @Test
+  fun `начать сейчас сдвигает конец, если он раньше`() {
+    val moved = timed().startingAt(LocalTime.of(10, 30))
+    assertEquals(LocalTime.of(11, 0), moved.endTime)
+    val late = timed().startingAt(LocalTime.of(11, 15))
+    assertEquals(LocalTime.of(12, 15), late.endTime)
+  }
 }

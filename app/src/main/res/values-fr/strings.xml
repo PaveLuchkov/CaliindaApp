@@ -178,6 +178,7 @@
     <string name="intro_finish">Terminer</string>
     <string name="intro_next">Suivant</string>
     <string name="calendars">Calendriers</string>
+    <string name="about">À propos</string>
     <string name="new_events_saved_to">Les nouveaux événements sont enregistrés dans</string>
     <string name="syncing_calendars">Synchronisation des calendriers…</string>
     <string name="no_title">(Sans titre)</string>

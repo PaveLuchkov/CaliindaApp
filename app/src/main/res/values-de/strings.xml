@@ -177,6 +177,7 @@
     <string name="intro_finish">Fertig</string>
     <string name="intro_next">Weiter</string>
     <string name="calendars">Kalender</string>
+    <string name="about">Über die App</string>
     <string name="new_events_saved_to">Neue Termine werden gespeichert in</string>
     <string name="syncing_calendars">Kalender werden synchronisiert…</string>
     <string name="no_title">(Kein Titel)</string>
