@@ -17,7 +17,9 @@ import androidx.navigation.compose.rememberNavController
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarScreen
 import com.lpavs.caliinda.feature.calendar.presentation.CalendarViewModel
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
+import com.lpavs.caliinda.feature.settings.ui.ChipsSettingsScreen
 import com.lpavs.caliinda.feature.settings.ui.SettingsScreen
+import com.lpavs.caliinda.feature.settings.vm.ChipsSettingsViewModel
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
 
 @Composable
@@ -65,7 +67,14 @@ fun AppNavHost(
         val settingsViewModel: SettingsViewModel = hiltViewModel()
 
       SettingsScreen(
-          settingsViewModel = settingsViewModel, onNavigateBack = { navController.popBackStack() })
+          settingsViewModel = settingsViewModel,
+          onNavigateBack = { navController.popBackStack() },
+          onNavigateToChips = { navController.navigate(NavRoutes.SuggestionChips.route) })
+    }
+    composable(NavRoutes.SuggestionChips.route) {
+      ChipsSettingsScreen(
+          viewModel = hiltViewModel<ChipsSettingsViewModel>(),
+          onNavigateBack = { navController.popBackStack() })
     }
   }
 }

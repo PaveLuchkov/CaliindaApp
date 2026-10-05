@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.foundation)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.junit)
+    testImplementation(libs.org.json)
     implementation(libs.hilt.android)
     ksp(libs.dagger.hilt.compiler)
     implementation(libs.androidx.datastore.preferences)

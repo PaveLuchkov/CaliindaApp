@@ -221,4 +221,26 @@
     <string name="no_calendars_found">कोई कैलेंडर नहीं मिला। सिस्टम सेटिंग में कैलेंडर की अनुमति दें या खाता जोड़ें — वरना Caliinda पहले इवेंट के साथ एक लोकल कैलेंडर बनाएगा।</string>
     <string name="search_time_zone">समय क्षेत्र खोजें</string>
     <string name="app_version">संस्करण</string>
+    <string name="suggested_event_road">रास्ता</string>
+    <string name="suggested_event_road_full">🛣️ रास्ता</string>
+
+    <!-- Чипы-подсказки -->
+    <string name="settings_suggestions">सुझाव</string>
+    <string name="chips_settings_title">सुझाव चिप</string>
+    <string name="chips_settings_summary">जल्दी शीर्षक के लिए लेबल और समय</string>
+    <string name="chip_add">चिप जोड़ें</string>
+    <string name="chip_new_title">नई चिप</string>
+    <string name="chip_edit_title">चिप बदलें</string>
+    <string name="chip_short_name">चिप का लेबल</string>
+    <string name="chip_full_name">इवेंट का शीर्षक</string>
+    <string name="chip_full_name_hint">खाली — लेबल जैसा</string>
+    <string name="chip_hours">सुझाया गया समय</string>
+    <string name="chip_hours_summary">इस समय चिप सबसे पहले दिखेगी</string>
+    <string name="chip_any_time">किसी भी समय</string>
+    <string name="chip_from">से</string>
+    <string name="chip_to">तक</string>
+    <string name="chip_deleted">चिप “%1$s” हटाई गई</string>
+    <string name="chips_reset">डिफ़ॉल्ट पर लौटें</string>
+    <string name="chips_reset_done">डिफ़ॉल्ट चिप वापस आ गईं</string>
+    <string name="chip_custom">आपकी चिप</string>
 </resources>

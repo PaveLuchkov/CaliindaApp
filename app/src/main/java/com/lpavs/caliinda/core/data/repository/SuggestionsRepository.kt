@@ -5,6 +5,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.lpavs.caliinda.core.data.suggestions.BuiltInChips
+import com.lpavs.caliinda.core.data.suggestions.SuggestionChip
+import com.lpavs.caliinda.core.data.suggestions.SuggestionChipsCodec
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -14,7 +18,23 @@ import javax.inject.Singleton
 class SuggestionsRepository @Inject constructor(private val dataStore: DataStore<Preferences>) {
 
   private object PreferencesKeys {
-    val SUGGESTION_WEIGHTS = stringPreferencesKey("suggestion_weights")
+    /** Список чипов целиком (JSON). Нет ключа — встроенные по умолчанию. */
+    val CHIPS = stringPreferencesKey("suggestion_chips_v1")
+  }
+
+  /** Чипы в порядке пользователя; без сохранённого списка — встроенные. */
+  val chipsFlow: Flow<List<SuggestionChip>> =
+      dataStore.data.map { prefs ->
+        prefs[PreferencesKeys.CHIPS]?.let(SuggestionChipsCodec::decode) ?: BuiltInChips.defaults
+      }
+
+  suspend fun saveChips(chips: List<SuggestionChip>) {
+    dataStore.edit { it[PreferencesKeys.CHIPS] = SuggestionChipsCodec.encode(chips) }
+  }
+
+  /** Вернуть встроенный набор: правки и свои чипы удаляются, история нажатий остаётся. */
+  suspend fun resetChips() {
+    dataStore.edit { it.remove(PreferencesKeys.CHIPS) }
   }
 
   suspend fun incrementWeight(suggestion: String) {

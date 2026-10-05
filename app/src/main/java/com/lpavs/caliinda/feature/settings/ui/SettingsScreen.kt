@@ -25,6 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
@@ -97,7 +99,11 @@ private fun Context.startActivitySafely(intent: Intent) {
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SettingsScreen(settingsViewModel: SettingsViewModel, onNavigateBack: () -> Unit) {
+fun SettingsScreen(
+    settingsViewModel: SettingsViewModel,
+    onNavigateBack: () -> Unit,
+    onNavigateToChips: () -> Unit,
+) {
   val themeMode by settingsViewModel.themeMode.collectAsStateWithLifecycle()
   val calendars by settingsViewModel.calendars.collectAsStateWithLifecycle()
   val defaultCalendarId by settingsViewModel.defaultCalendarId.collectAsStateWithLifecycle()
@@ -159,6 +165,22 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel, onNavigateBack: () -> U
                       index = index,
                       count = calendars.size,
                       onClick = { settingsViewModel.selectDefaultCalendar(calendar.id) })
+                }
+              }
+
+              section(R.string.settings_suggestions) {
+                item {
+                  SegmentedListItem(
+                      onClick = onNavigateToChips,
+                      shapes = ListItemDefaults.segmentedShapes(index = 0, count = 1),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
+                      trailingContent = {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
+                      },
+                      supportingContent = { Text(stringResource(R.string.chips_settings_summary)) }) {
+                        Text(stringResource(R.string.chips_settings_title))
+                      }
                 }
               }
 
