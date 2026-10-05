@@ -3,33 +3,30 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 import androidx.compose.runtime.Composable
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventDeleteOptionsDialog
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringEventEditOptionsDialog
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementUiState
-import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 
+import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
+import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
+import com.lpavs.caliinda.feature.event_management.vm.EventDialog
+
+/** Диалоги выбора режима для повторяющихся событий (обычные удаляются с «Отменить»). */
 @Composable
 fun EventManagementDialogs(
-    state: EventManagementUiState, // Замените на ваш тип стейта
-    viewModel: EventManagementViewModel
+    dialog: EventDialog,
+    onEditModeSelected: (EventUpdateMode) -> Unit,
+    onDeleteModeSelected: (RecurringDeleteChoice) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    // 1. Диалог выбора режима редактирования повторяющегося события
-    if (state.showRecurringEditOptionsDialog && state.eventBeingEdited != null) {
+  when (dialog) {
+    is EventDialog.ChooseEditMode ->
         RecurringEventEditOptionsDialog(
-            eventName = state.eventBeingEdited.summary,
-            onDismiss = { viewModel.cancelEditEvent() },
-            onOptionSelected = { choice ->
-                viewModel.onRecurringEditOptionSelected(choice)
-            }
-        )
-    }
-
-    // 2. Диалог выбора режима удаления повторяющегося события (обычные удаляются с «Отменить»)
-    if (state.showRecurringDeleteOptionsDialog && state.eventPendingDeletion != null) {
+            eventName = dialog.event.summary,
+            onDismiss = onDismiss,
+            onOptionSelected = onEditModeSelected)
+    is EventDialog.ChooseDeleteMode ->
         RecurringEventDeleteOptionsDialog(
-            eventName = state.eventPendingDeletion.summary,
-            onDismiss = { viewModel.cancelDelete() },
-            onOptionSelected = { choice ->
-                viewModel.confirmRecurringDelete(choice)
-            }
-        )
-    }
+            eventName = dialog.event.summary,
+            onDismiss = onDismiss,
+            onOptionSelected = onDeleteModeSelected)
+    else -> {}
+  }
 }

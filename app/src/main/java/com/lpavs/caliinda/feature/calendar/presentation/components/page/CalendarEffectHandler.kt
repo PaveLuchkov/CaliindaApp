@@ -38,7 +38,7 @@ fun CalendarEffectHandler(
   }
 
   LaunchedEffect(Unit) {
-    merge(calendarViewModel.eventFlow, eventManagementViewModel.eventFlow).collect { event ->
+    merge(calendarViewModel.events, eventManagementViewModel.events).collect { event ->
       when (event) {
         is CalendarUiEvent.ShowMessage -> {
           snackbarHostState.showSnackbar(event.message.asString(context))
@@ -46,7 +46,6 @@ fun CalendarEffectHandler(
         is EventManagementUiEvent.ShowMessage -> {
           snackbarHostState.showSnackbar(event.message.asString(context))
         }
-        is EventManagementUiEvent.OperationSuccess -> {}
         is EventManagementUiEvent.ShowUndoDelete ->
             // Отдельной корутиной: пока висит снекбар, остальные события тоже должны доходить.
             launch {

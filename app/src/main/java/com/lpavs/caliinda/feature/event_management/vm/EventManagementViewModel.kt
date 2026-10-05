@@ -23,16 +23,17 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateT
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.recurrenceRuleAfterEdit
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.toDateTimeState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 
@@ -49,8 +50,10 @@ constructor(
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
 
-  private val _eventFlow = MutableSharedFlow<EventManagementUiEvent>()
-  val eventFlow: SharedFlow<EventManagementUiEvent> = _eventFlow.asSharedFlow()
+  // Channel, а не SharedFlow: сообщение не теряется, пока экран не слушает, и отправитель не
+  // ждёт, пока получатель покажет предыдущий снекбар.
+  private val _events = Channel<EventManagementUiEvent>(Channel.BUFFERED)
+  val events: Flow<EventManagementUiEvent> = _events.receiveAsFlow()
 
   // Eagerly: пояс читается через .value при сохранении, а подписчиков в UI у него нет — с
   // WhileSubscribed здесь навсегда оставался бы системный пояс вместо выбранного в настройках.
@@ -68,7 +71,7 @@ constructor(
   ) {
     viewModelScope.launch {
       if (!validateInput(summary, dateTimeState)) {
-        _eventFlow.emit(
+        _events.send(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
         return@launch
       }
@@ -93,13 +96,13 @@ constructor(
       updateMode: EventUpdateMode
   ) {
     viewModelScope.launch {
-      val originalEvent = uiState.value.eventBeingEdited
+      val originalEvent = (uiState.value.dialog as? EventDialog.Editing)?.event
       if (originalEvent == null) {
-        Log.e(TAG, "updateEvent called but originalEvent is null")
+        Log.e(TAG, "updateEvent called without an event being edited")
         return@launch
       }
       if (!validateInput(summary, dateTimeState)) {
-        _eventFlow.emit(
+        _events.send(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
         return@launch
       }
@@ -117,9 +120,9 @@ constructor(
               originalState,
               originalEvent.recurrenceRule)
       if (draft == unchangedDraft) {
-        _eventFlow.emit(
+        _events.send(
             EventManagementUiEvent.ShowMessage(UiText.from(R.string.no_changes_to_save)))
-        _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+        dismissDialog()
         return@launch
       }
 
@@ -149,7 +152,7 @@ constructor(
         }
     undoableDeletes[event.id] = event to timer
     viewModelScope.launch {
-      _eventFlow.emit(
+      _events.send(
           EventManagementUiEvent.ShowUndoDelete(
               event.id, UiText.from(R.string.event_deleted, event.summary)))
     }
@@ -173,7 +176,7 @@ constructor(
     pendingDeletions.remove(event.id)
     if (result.isSuccess) widgetRefresher.refresh()
     if (result.isFailure) {
-      _eventFlow.emit(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
+      _events.send(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
     }
   }
 
@@ -190,12 +193,8 @@ constructor(
   }
 
   fun confirmRecurringDelete(choice: RecurringDeleteChoice) {
-    val eventToDelete = _uiState.value.eventPendingDeletion ?: return
-    _uiState.update {
-      it.copy(
-          showRecurringDeleteOptionsDialog = false,
-          eventPendingDeletion = null)
-    }
+    val eventToDelete = (_uiState.value.dialog as? EventDialog.ChooseDeleteMode)?.event ?: return
+    dismissDialog()
     val mode =
         when (choice) {
           RecurringDeleteChoice.SINGLE_INSTANCE -> EventDeleteMode.INSTANCE_ONLY
@@ -224,10 +223,10 @@ constructor(
     _uiState.update { it.copy(isLoading = false) }
     if (result.isSuccess) {
       widgetRefresher.refresh()
-      _eventFlow.emit(EventManagementUiEvent.ShowMessage(successMessage()))
-      _eventFlow.emit(EventManagementUiEvent.OperationSuccess)
+      dismissDialog()
+      _events.send(EventManagementUiEvent.ShowMessage(successMessage()))
     } else {
-      _eventFlow.emit(EventManagementUiEvent.ShowMessage(errorMessage()))
+      _events.send(EventManagementUiEvent.ShowMessage(errorMessage()))
     }
   }
 
@@ -259,56 +258,34 @@ constructor(
 
   // --- Состояние диалогов ---
 
+  fun openCreate(date: LocalDate, asProject: Boolean) {
+    _uiState.update { it.copy(dialog = EventDialog.Creating(date, asProject)) }
+  }
+
   fun requestDelete(event: EventDto) {
     if (event.recurringEventId == null) {
       deleteWithUndo(event)
       return
     }
     // У повторяющегося нужно выбрать, что именно удалять — тут без диалога не обойтись.
-    _uiState.update {
-      it.copy(eventPendingDeletion = event, showRecurringDeleteOptionsDialog = true)
-    }
-  }
-
-  fun cancelDelete() {
-    _uiState.update {
-      it.copy(eventPendingDeletion = null, showRecurringDeleteOptionsDialog = false)
-    }
+    _uiState.update { it.copy(dialog = EventDialog.ChooseDeleteMode(event)) }
   }
 
   fun requestEditEvent(event: EventDto) {
-    val isRecurring = event.recurringEventId != null
-    _uiState.update {
-      it.copy(
-          eventBeingEdited = event,
-          showRecurringEditOptionsDialog = isRecurring,
-          showEditEventDialog = !isRecurring,
-          selectedUpdateMode = if (!isRecurring) EventUpdateMode.ALL_IN_SERIES else it.selectedUpdateMode,
-      )
-    }
+    val dialog =
+        if (event.recurringEventId != null) EventDialog.ChooseEditMode(event)
+        else EventDialog.Editing(event, EventUpdateMode.ALL_IN_SERIES)
+    _uiState.update { it.copy(dialog = dialog) }
   }
 
   fun onRecurringEditOptionSelected(choice: EventUpdateMode) {
-    if (_uiState.value.eventBeingEdited == null) {
-      Log.e(TAG, "onRecurringEditOptionSelected called but eventBeingEdited is null.")
-      cancelEditEvent()
-      return
-    }
-    _uiState.update {
-      it.copy(
-          showRecurringEditOptionsDialog = false,
-          showEditEventDialog = true,
-          selectedUpdateMode = choice)
-    }
+    val event = (_uiState.value.dialog as? EventDialog.ChooseEditMode)?.event ?: return
+    _uiState.update { it.copy(dialog = EventDialog.Editing(event, choice)) }
   }
 
-  fun cancelEditEvent() {
-    _uiState.update {
-      it.copy(
-          eventBeingEdited = null,
-          showRecurringEditOptionsDialog = false,
-          showEditEventDialog = false)
-    }
+  /** Закрыть шторку или диалог: отмена пользователем или успешное сохранение. */
+  fun dismissDialog() {
+    _uiState.update { it.copy(dialog = EventDialog.None) }
   }
 
   companion object {
@@ -320,18 +297,28 @@ constructor(
 
 data class EventManagementUiState(
     val isLoading: Boolean = false,
-    val eventPendingDeletion: EventDto? = null,
-    val showRecurringDeleteOptionsDialog: Boolean = false,
-    val eventBeingEdited: EventDto? = null,
-    val showRecurringEditOptionsDialog: Boolean = false,
-    val showEditEventDialog: Boolean = false,
-    val selectedUpdateMode: EventUpdateMode? = null,
+    val dialog: EventDialog = EventDialog.None,
 )
 
-sealed class EventManagementUiEvent {
-  data class ShowMessage(val message: UiText) : EventManagementUiEvent()
+/** Что сейчас открыто поверх календаря. Одно значение вместо набора флагов. */
+sealed interface EventDialog {
+  data object None : EventDialog
 
-  data class ShowUndoDelete(val eventId: String, val message: UiText) : EventManagementUiEvent()
+  /** Шторка создания. */
+  data class Creating(val date: LocalDate, val asProject: Boolean) : EventDialog
 
-  object OperationSuccess : EventManagementUiEvent()
+  /** Повторяющееся событие: выбор, править один экземпляр или всю серию. */
+  data class ChooseEditMode(val event: EventDto) : EventDialog
+
+  /** Шторка редактирования. */
+  data class Editing(val event: EventDto, val mode: EventUpdateMode) : EventDialog
+
+  /** Повторяющееся событие: выбор, что удалять. */
+  data class ChooseDeleteMode(val event: EventDto) : EventDialog
+}
+
+sealed interface EventManagementUiEvent {
+  data class ShowMessage(val message: UiText) : EventManagementUiEvent
+
+  data class ShowUndoDelete(val eventId: String, val message: UiText) : EventManagementUiEvent
 }
