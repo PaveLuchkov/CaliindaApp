@@ -412,4 +412,6 @@
     <string name="live_setting_title">Current event in the shade</string>
     <string name="live_setting_summary">Progress and the event right after it</string>
     <string name="live_permission_denied">Allow notifications in system settings</string>
+    <string name="calendars_show_all">All calendars (%1$d)</string>
+    <string name="calendars_collapse">Collapse</string>
 </resources>

@@ -254,4 +254,6 @@
     <string name="live_setting_title">Aktueller Termin in der Leiste</string>
     <string name="live_setting_summary">Fortschritt und der direkt folgende Termin</string>
     <string name="live_permission_denied">Benachrichtigungen in den Systemeinstellungen erlauben</string>
+    <string name="calendars_show_all">Alle Kalender (%1$d)</string>
+    <string name="calendars_collapse">Einklappen</string>
 </resources>

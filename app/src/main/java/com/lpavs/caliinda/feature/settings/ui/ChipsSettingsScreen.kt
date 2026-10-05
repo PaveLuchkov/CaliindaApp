@@ -148,7 +148,7 @@ fun ChipsSettingsScreen(viewModel: ChipsSettingsViewModel, onNavigateBack: () ->
                 val deletedMessage = stringResource(R.string.chip_deleted, name)
                 SegmentedListItem(
                     onClick = { editingId = chip.id },
-                    shapes = ListItemDefaults.segmentedShapes(index = index, count = chips.size),
+                    shapes = settingsShapes(index = index, count = chips.size),
                     colors =
                         ListItemDefaults.segmentedColors(
                             containerColor = colorScheme.surfaceContainer),

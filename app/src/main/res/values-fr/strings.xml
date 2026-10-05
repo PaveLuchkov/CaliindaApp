@@ -264,4 +264,6 @@
     <string name="live_setting_title">Événement en cours dans le volet</string>
     <string name="live_setting_summary">Progression et l’événement qui suit</string>
     <string name="live_permission_denied">Autorisez les notifications dans les paramètres système</string>
+    <string name="calendars_show_all">Tous les agendas (%1$d)</string>
+    <string name="calendars_collapse">Réduire</string>
 </resources>

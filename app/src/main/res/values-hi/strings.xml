@@ -253,4 +253,6 @@
     <string name="live_setting_title">मौजूदा इवेंट सूचना पट्टी में</string>
     <string name="live_setting_summary">प्रगति और ठीक बाद वाला इवेंट</string>
     <string name="live_permission_denied">सिस्टम सेटिंग में सूचनाओं की अनुमति दें</string>
+    <string name="calendars_show_all">सभी कैलेंडर (%1$d)</string>
+    <string name="calendars_collapse">छोटा करें</string>
 </resources>
