@@ -278,7 +278,16 @@ constructor(
 
   fun onRecurringEditOptionSelected(choice: EventUpdateMode) {
     val event = (_uiState.value.dialog as? EventDialog.ChooseEditMode)?.event ?: return
-    _uiState.update { it.copy(dialog = EventDialog.Editing(event, choice)) }
+    // Перенесённый экземпляр (исключение) своего RRULE не хранит — при правке серии форма
+    // должна показать правило головного события, а не «не повторяется».
+    if (choice == EventUpdateMode.SINGLE_INSTANCE || event.recurrenceRule != null) {
+      _uiState.update { it.copy(dialog = EventDialog.Editing(event, choice)) }
+      return
+    }
+    viewModelScope.launch {
+      val withRule = event.copy(recurrenceRule = calendarRepository.seriesRule(event))
+      _uiState.update { it.copy(dialog = EventDialog.Editing(withRule, choice)) }
+    }
   }
 
   /** Закрыть шторку или диалог: отмена пользователем или успешное сохранение. */
@@ -308,7 +317,7 @@ sealed interface EventDialog {
   /** Шторка создания. */
   data class Creating(val date: LocalDate, val asProject: Boolean) : EventDialog
 
-  /** Повторяющееся событие: выбор, править один экземпляр или всю серию. */
+  /** Повторяющееся событие: выбор — один экземпляр, этот и следующие или вся серия. */
   data class ChooseEditMode(val event: EventDto) : EventDialog
 
   /** Шторка редактирования. */

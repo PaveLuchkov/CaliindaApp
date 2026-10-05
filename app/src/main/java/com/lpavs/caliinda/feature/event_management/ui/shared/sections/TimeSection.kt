@@ -73,6 +73,8 @@ fun EventDateTimePicker(
     onRequestShowEndDatePicker: () -> Unit,
     onRequestShowEndTimePicker: () -> Unit,
     onRequestShowRecurrenceEndDatePicker: () -> Unit,
+    /** false — правка одного экземпляра серии: своего правила у него быть не может. */
+    showRecurrence: Boolean = true,
 ) {
     val isAllDay = state.isAllDay
     val isOneDay = remember(state.startDate, state.endDate) {
@@ -121,11 +123,13 @@ fun EventDateTimePicker(
           label = { Text(oneDay) },
           enabled = !isLoading)
 
-      FilterChip(
-          selected = state.isRecurring,
-          onClick = { onStateChange(state.toggledRecurring()) },
-          label = { Text(recEvent) },
-          enabled = !isLoading)
+      if (showRecurrence) {
+        FilterChip(
+            selected = state.isRecurring,
+            onClick = { onStateChange(state.toggledRecurring()) },
+            label = { Text(recEvent) },
+            enabled = !isLoading)
+      }
     }
 
     AnimatedVisibility(
@@ -276,7 +280,7 @@ fun EventDateTimePicker(
         }
 
     AnimatedVisibility(
-        visible = state.isRecurring,
+        visible = showRecurrence && state.isRecurring,
         enter =
             fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                 expandVertically(animationSpec = AppMotion.defaultSpatialSpec()),

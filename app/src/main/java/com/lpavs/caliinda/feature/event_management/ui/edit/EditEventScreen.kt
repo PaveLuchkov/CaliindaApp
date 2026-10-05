@@ -28,6 +28,8 @@ fun EditEventScreen(
     userTimeZone: ZoneId,
     isLoading: Boolean,
     onSave: OnSaveEvent,
+    /** Правка одного экземпляра серии — блок повторения прячем. */
+    showRecurrence: Boolean = true,
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
 ) {
   // Состояние данных
@@ -76,6 +78,7 @@ fun EditEventScreen(
         isLoading = isLoading,
         suggestedChips = suggestedChips,
         onSave = save,
+        showRecurrence = showRecurrence,
         modifier = Modifier.weight(1f, fill = false))
     SaveBar(enabled = summary.isNotBlank(), isLoading = isLoading, onSave = save)
   }

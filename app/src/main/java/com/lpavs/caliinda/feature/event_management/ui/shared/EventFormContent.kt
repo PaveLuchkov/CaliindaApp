@@ -62,6 +62,7 @@ fun EventFormContent(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
     nameFocusRequester: FocusRequester? = null,
+    showRecurrence: Boolean = true,
 ) {
     var activePicker by remember { mutableStateOf<ActivePicker>(ActivePicker.None) }
     val context = LocalContext.current
@@ -103,6 +104,7 @@ fun EventFormContent(
                 onRequestShowEndDatePicker = { activePicker = ActivePicker.EndDate },
                 onRequestShowEndTimePicker = { activePicker = ActivePicker.EndTime },
                 onRequestShowRecurrenceEndDatePicker = { activePicker = ActivePicker.RecurrenceEnd },
+                showRecurrence = showRecurrence,
                 modifier = Modifier.fillMaxWidth()
             )
             DurationChips(
