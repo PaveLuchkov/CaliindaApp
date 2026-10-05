@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -72,15 +71,16 @@ constructor(
   // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
 
-  val timeZone: StateFlow<String> =
-      settingsRepository.timeZoneFlow.stateIn(
-          viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
+  // Eagerly: .value читается вне подписок (детали события), там нужен пояс из настроек.
+  val timeZone: StateFlow<ZoneId> =
+      settingsRepository.zoneFlow.stateIn(
+          viewModelScope, SharingStarted.Eagerly, ZoneId.systemDefault())
 
   /** Сегодняшняя дата в поясе из настроек; сменяется в полночь (с точностью до тика таймера). */
   val today: StateFlow<LocalDate> =
-      combine(currentTime, timeZone) { now, zone -> now.atZone(parseZone(zone)).toLocalDate() }
+      combine(currentTime, timeZone) { now, zone -> now.atZone(zone).toLocalDate() }
           .distinctUntilChanged()
-          .stateIn(viewModelScope, SharingStarted.Eagerly, LocalDate.now(parseZone(timeZone.value)))
+          .stateIn(viewModelScope, SharingStarted.Eagerly, LocalDate.now(timeZone.value))
 
   // Состояния Календаря
   val currentVisibleDate: StateFlow<LocalDate> = calendarStateHolder.currentVisibleDate
@@ -129,13 +129,11 @@ constructor(
   }
 
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
-    val timeZoneIdFlow: Flow<ZoneId> = timeZone.map { zoneIdString -> ZoneId.of(zoneIdString) }
-
     return combine(
             calendarRepository.getEventsFlowForDate(date).withoutPendingDeletions(),
             calendarRepository.getProjectsFlowForDate(date).withoutPendingDeletions(),
             currentTime,
-            timeZoneIdFlow) { events, projects, now, zoneId ->
+            timeZone) { events, projects, now, zoneId ->
           val ribbons =
               projects.map { project ->
                 val range = project.dateRange(zoneId)
@@ -145,7 +143,6 @@ constructor(
                     totalDays = ChronoUnit.DAYS.between(range.start, range.endInclusive).toInt() + 1)
               }
           val isToday = date == now.atZone(zoneId).toLocalDate()
-          val zoneId = zoneId.toString()
 
           val (allDayDtos, timedDtos) = events.partition { it.isAllDay }
 
@@ -165,7 +162,7 @@ constructor(
               eventUiModelMapper.mapToUiModels(
                   events = sortedTimedDtos,
                   currentTime = now,
-                  timeZoneId = zoneId.toString(),
+                  zone = zoneId,
                   date = date,
                   project = false)
 
@@ -192,8 +189,8 @@ constructor(
                     eventUiModelMapper.mapToUiModels(
                         events = projects,
                         currentTime = now,
-                        timeZoneId = zone,
-                        date = now.atZone(parseZone(zone)).toLocalDate(),
+                        zone = zone,
+                        date = now.atZone(zone).toLocalDate(),
                         project = true))
           }
           .flowOn(Dispatchers.Default)
@@ -233,9 +230,6 @@ constructor(
       combine(pendingDeletions.ids) { events, hidden ->
         if (hidden.isEmpty()) events else events.filterNot { it.id in hidden }
       }
-
-  private fun parseZone(zone: String): ZoneId =
-      runCatching { ZoneId.of(zone) }.getOrDefault(ZoneId.systemDefault())
 
   // --- COMPANION ---
   companion object {

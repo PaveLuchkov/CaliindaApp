@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
+import java.time.ZoneId
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.R
 import androidx.compose.ui.res.stringResource
@@ -57,7 +58,7 @@ import com.lpavs.caliinda.feature.settings.vm.ThemeMode
 @Composable
 fun CustomEventDetailsDialog(
     event: EventDetailsUiModel,
-    userTimeZone: String,
+    userTimeZone: ZoneId,
     onDismissRequest: () -> Unit,
     eventManagementViewModel: EventManagementViewModel,
     themeMode: ThemeMode = ThemeMode.SYSTEM
@@ -139,7 +140,7 @@ fun CustomEventDetailsDialog(
                         DetailRow(
                             Icons.Filled.Repeat,
                             formatRRule(
-                                event.originalEvent.recurrenceRule, zoneIdString = userTimeZone),
+                                event.originalEvent.recurrenceRule, zoneId = userTimeZone),
                             color = onCardText)
                       }
                       Spacer(modifier = Modifier.height(20.dp))

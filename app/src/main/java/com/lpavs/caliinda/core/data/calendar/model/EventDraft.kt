@@ -2,6 +2,7 @@ package com.lpavs.caliinda.core.data.calendar.model
 
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 
 /** Данные события из формы создания/редактирования. endDate — включительно. */
 data class EventDraft(
@@ -13,7 +14,7 @@ data class EventDraft(
     val startTime: LocalTime?,
     val endDate: LocalDate,
     val endTime: LocalTime?,
-    val timeZoneId: String,
+    val zone: ZoneId,
     /** RRULE без префикса "RRULE:", null — событие не повторяется. */
     val recurrenceRule: String?,
 )

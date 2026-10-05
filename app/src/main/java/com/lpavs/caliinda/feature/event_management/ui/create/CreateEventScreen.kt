@@ -47,7 +47,7 @@ import java.time.temporal.ChronoUnit
 fun CreateEventScreen(
     viewModel: EventManagementViewModel = hiltViewModel(),
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
-    userTimeZone: String,
+    userTimeZone: ZoneId,
     initialDate: LocalDate,
     initialProject: Boolean = false,
     /** Шторка встала на место — можно звать клавиатуру, не сбивая анимацию появления. */
@@ -62,7 +62,6 @@ fun CreateEventScreen(
   // Ошибки
   var summaryError by remember { mutableStateOf<String?>(null) }
 
-  val userTimeZoneId = remember { ZoneId.of(userTimeZone) }
   val uiState by viewModel.uiState.collectAsState()
 
   // Начальное состояние даты и времени
@@ -80,7 +79,7 @@ fun CreateEventScreen(
     }
     // Начало — следующий ровный час. Для сегодняшнего дня считаем с датой: в 23:30 это уже
     // 00:00 завтрашнего дня, а не прошедшая полночь сегодняшнего.
-    val now = LocalDateTime.now(userTimeZoneId)
+    val now = LocalDateTime.now(userTimeZone)
     val nextHour = now.plusHours(1).truncatedTo(ChronoUnit.HOURS)
     val defaultStart =
         if (initialDate == now.toLocalDate()) nextHour
