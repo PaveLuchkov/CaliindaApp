@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.lpavs.caliinda.feature.settings.vm.ThemeMode
+import com.lpavs.caliinda.core.data.model.ThemeMode
 import java.io.IOException
 import java.time.ZoneId
 import javax.inject.Inject

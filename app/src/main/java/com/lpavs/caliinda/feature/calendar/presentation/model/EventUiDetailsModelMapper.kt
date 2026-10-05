@@ -1,4 +1,4 @@
-package com.lpavs.caliinda.feature.calendar.data
+package com.lpavs.caliinda.feature.calendar.presentation.model
 
 import com.lpavs.caliinda.core.ui.util.displayTitle
 import android.content.Context

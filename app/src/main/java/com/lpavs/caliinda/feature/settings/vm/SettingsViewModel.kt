@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.settings.vm
 
+import com.lpavs.caliinda.core.data.model.ThemeMode
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

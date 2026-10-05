@@ -85,8 +85,8 @@ import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
 import com.lpavs.caliinda.core.ui.util.calculateShapeContainerSize
 import com.lpavs.caliinda.core.ui.util.lerpOkLab
-import com.lpavs.caliinda.feature.calendar.data.EventUiModel
-import com.lpavs.caliinda.feature.calendar.data.GeneratedShapeParams
+import com.lpavs.caliinda.feature.calendar.presentation.model.EventUiModel
+import com.lpavs.caliinda.feature.calendar.presentation.model.GeneratedShapeParams
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalTextApi::class)
 @Composable

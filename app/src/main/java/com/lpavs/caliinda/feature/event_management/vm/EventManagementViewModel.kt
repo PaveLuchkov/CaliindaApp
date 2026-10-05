@@ -18,7 +18,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.data.utils.UiText
-import com.lpavs.caliinda.feature.calendar.presentation.components.IFunMessages
+import com.lpavs.caliinda.feature.event_management.messages.IFunMessages
 import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.recurrenceRuleAfterEdit

@@ -63,7 +63,7 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.themeColorScheme
 import com.lpavs.caliinda.feature.settings.vm.SettingsViewModel
-import com.lpavs.caliinda.feature.settings.vm.ThemeMode
+import com.lpavs.caliinda.core.data.model.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable

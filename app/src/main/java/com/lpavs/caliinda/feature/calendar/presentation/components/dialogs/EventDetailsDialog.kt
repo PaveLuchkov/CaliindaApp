@@ -50,9 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.core.ui.util.formatRRule
-import com.lpavs.caliinda.feature.calendar.data.EventDetailsUiModel
+import com.lpavs.caliinda.feature.calendar.presentation.model.EventDetailsUiModel
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
-import com.lpavs.caliinda.feature.settings.vm.ThemeMode
+import com.lpavs.caliinda.core.data.model.ThemeMode
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
