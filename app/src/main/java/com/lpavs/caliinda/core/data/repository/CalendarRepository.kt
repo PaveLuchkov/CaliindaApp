@@ -173,39 +173,18 @@ constructor(
       write {
         val isException = event.originalEventId != null
         val isSeriesInstance = event.recurrenceRule != null
+        val inSeries = isSeriesInstance || isException
         val timing = timingOf(draft)
 
         when {
-          mode == EventUpdateMode.SINGLE_INSTANCE && isSeriesInstance -> {
-            // Строки-исключения (ORIGINAL_ID) провайдер плохо переваривает для ещё не
-            // синхронизированных серий, поэтому: исключаем дату из серии + отдельное событие.
-            excludeInstance(event.eventId, event.instanceBegin)
-            val values =
-                draft.contentValues().apply {
-                  put(Events.CALENDAR_ID, event.calendarId)
-                  putTiming(timing, rrule = null)
-                }
-            dataSource.insertEvent(values)
-          }
+          mode == EventUpdateMode.SINGLE_INSTANCE && isSeriesInstance ->
+              editSingleInstance(event, draft, timing)
           mode == EventUpdateMode.SINGLE_INSTANCE && isException -> {
             dataSource.updateEvent(
                 event.eventId, draft.contentValues().apply { putExceptionTiming(timing) })
           }
-          mode == EventUpdateMode.ALL_IN_SERIES && (isSeriesInstance || isException) -> {
-            val masterId = event.originalEventId ?: event.eventId
-            val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
-            // Исключение само не знает RRULE серии — берём его у мастер-события.
-            val seriesDraft =
-                if (isException) draft.copy(recurrenceRule = draft.recurrenceRule ?: master.rrule)
-                else draft
-            val values =
-                seriesDraft.contentValues().apply {
-                  putTiming(
-                      seriesTiming(event, master.dtStart, master.isAllDay, seriesDraft),
-                      seriesDraft.recurrenceRule)
-                }
-            dataSource.updateEvent(masterId, values)
-          }
+          mode == EventUpdateMode.THIS_AND_FOLLOWING && inSeries -> splitSeries(event, draft)
+          mode != EventUpdateMode.SINGLE_INSTANCE && inSeries -> updateWholeSeries(event, draft)
           else -> {
             dataSource.updateEvent(
                 event.eventId,
@@ -213,6 +192,117 @@ constructor(
           }
         }
       }
+
+  /**
+   * Один экземпляр серии. У синхронизированной — настоящее исключение: правка остаётся частью
+   * серии, и Google Calendar видит её как вхождение. У несинхронизированной провайдер связывает
+   * исключения с серией по _SYNC_ID и без него теряет все экземпляры — тогда по-старому:
+   * исключаем дату из серии + отдельное событие.
+   */
+  private fun editSingleInstance(event: EventDto, draft: EventDraft, timing: EventTiming) {
+    val master = dataSource.getEvent(event.eventId) ?: error("Series ${event.eventId} not found")
+    if (master.syncId != null) {
+      val values =
+          draft.contentValues().apply {
+            put(Events.ORIGINAL_INSTANCE_TIME, event.instanceBegin)
+            // DTEND провайдер у новых исключений не принимает — считает из DURATION.
+            put(Events.DTSTART, timing.dtStart)
+            put(Events.DURATION, timing.duration)
+            put(Events.EVENT_TIMEZONE, timing.timeZone)
+            put(Events.ALL_DAY, if (timing.isAllDay) 1 else 0)
+          }
+      dataSource.insertException(master.id, values)
+    } else {
+      excludeInstance(master.id, event.instanceBegin)
+      val values =
+          draft.contentValues().apply {
+            put(Events.CALENDAR_ID, event.calendarId)
+            putTiming(timing, rrule = null)
+          }
+      dataSource.insertEvent(values)
+    }
+  }
+
+  /** Правило серии, к которой относится экземпляр (у исключений своего RRULE нет). */
+  suspend fun seriesRule(event: EventDto): String? =
+      event.recurrenceRule
+          ?: withContext(ioDispatcher) {
+            event.originalEventId?.let { runCatching { dataSource.getEvent(it)?.rrule }.getOrNull() }
+          }
+
+  private fun updateWholeSeries(event: EventDto, draft: EventDraft) {
+    val masterId = event.originalEventId ?: event.eventId
+    val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
+    // Исключение само не знает RRULE серии — берём его у мастер-события.
+    val seriesDraft =
+        if (event.originalEventId != null) {
+          draft.copy(recurrenceRule = draft.recurrenceRule ?: master.rrule)
+        } else draft
+    val values =
+        seriesDraft.contentValues().apply {
+          putTiming(
+              seriesTiming(event, master.dtStart, master.isAllDay, seriesDraft),
+              seriesDraft.recurrenceRule)
+        }
+    dataSource.updateEvent(masterId, values)
+  }
+
+  /**
+   * «Это и следующие»: старая серия заканчивается до экземпляра, с него начинается новая — с
+   * правками из формы. С первого экземпляра это то же, что править всю серию.
+   */
+  private fun splitSeries(event: EventDto, draft: EventDraft) {
+    val masterId = event.originalEventId ?: event.eventId
+    val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
+    val rrule = master.rrule
+    val splitTime = event.originalInstanceTimeOrBegin()
+    if (rrule == null || splitTime <= master.dtStart) {
+      updateWholeSeries(event, draft)
+      return
+    }
+    val oldRule = Rrule.parse(rrule)
+    // COUNT считал экземпляры с начала серии — новой достаётся только остаток.
+    val newRule =
+        draft.recurrenceRule?.let(Rrule::parse)?.let { rule ->
+          val count = rule.count
+          if (count != null && count == oldRule.count) {
+            rule.copy(count = (count - occurrencesBefore(master, splitTime)).coerceAtLeast(1))
+          } else rule
+        }
+    truncateSeries(master, splitTime)
+    val values =
+        draft.contentValues().apply {
+          put(Events.CALENDAR_ID, event.calendarId)
+          putTiming(timingOf(draft), newRule?.format())
+        }
+    dataSource.insertEvent(values)
+  }
+
+  /** Серия заканчивается строго до [splitTime]; её исключения с этого момента удаляются. */
+  private fun truncateSeries(master: EventRow, splitTime: Long) {
+    val rrule = master.rrule ?: return
+    // Иначе перенесённые экземпляры остались бы висеть после конца серии.
+    dataSource.deleteExceptionsFrom(master.id, splitTime)
+    val values =
+        master.seriesValues().apply {
+          put(Events.RRULE, Rrule.parse(rrule).endingBefore(splitTime, master.isAllDay).format())
+        }
+    dataSource.updateEvent(master.id, values)
+  }
+
+  /**
+   * Сколько экземпляров серии (в смысле COUNT) было до [splitTime]: видимые, перенесённые и
+   * удалённые через EXDATE — COUNT считает и их.
+   */
+  private fun occurrencesBefore(master: EventRow, splitTime: Long): Int {
+    val shown =
+        dataSource.queryInstances(master.dtStart, splitTime).count { row ->
+          (row.eventId == master.id && row.begin < splitTime) ||
+              (row.originalId == master.id && (row.originalInstanceTime ?: Long.MAX_VALUE) < splitTime)
+        }
+    val excluded = master.exdate?.split(',')?.count { Rrule.exdateMillis(it) < splitTime } ?: 0
+    return shown + excluded
+  }
 
   suspend fun deleteEvent(event: EventDto, mode: EventDeleteMode): Result<Unit> = write {
     val masterId = event.originalEventId ?: event.eventId
@@ -238,13 +328,7 @@ constructor(
         if (rrule == null || instanceTime <= master.dtStart) {
           dataSource.deleteEvent(masterId)
         } else {
-          val values =
-              master.seriesValues().apply {
-                put(
-                    Events.RRULE,
-                    Rrule.parse(rrule).endingBefore(instanceTime, master.isAllDay).format())
-              }
-          dataSource.updateEvent(masterId, values)
+          truncateSeries(master, instanceTime)
         }
       }
     }

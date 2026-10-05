@@ -43,6 +43,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.bars.Calendar
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventFormSheet
+import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventManagementDialogs
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarPagerScreen
@@ -263,7 +264,8 @@ fun CalendarScreen(
                   onSave = { summary, description, location, dateTime ->
                     eventManagementViewModel.updateEvent(
                         summary, description, location, dateTime, dialog.mode)
-                  })
+                  },
+                  showRecurrence = dialog.mode != EventUpdateMode.SINGLE_INSTANCE)
           else -> {}
         }
       }

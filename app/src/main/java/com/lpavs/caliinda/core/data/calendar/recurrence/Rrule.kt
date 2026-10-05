@@ -87,6 +87,27 @@ data class Rrule(
         if (allDay) utcDate(instanceBegin).format(DateTimeFormatter.BASIC_ISO_DATE)
         else Instant.ofEpochMilli(instanceBegin).atZone(ZoneOffset.UTC).format(UTC_DATE_TIME)
 
+    /**
+     * Обратное к [exdateValue]: миллисекунды одного значения EXDATE. Префикс TZID=…: (бывает у
+     * синхронизированных серий) отбрасываем — для подсчёта до точки разреза хватает и UTC.
+     * Нераспознанное — Long.MAX_VALUE, то есть «после любого момента».
+     */
+    fun exdateMillis(value: String): Long {
+      val v = value.substringAfterLast(':').trim().removeSuffix("Z")
+      return runCatching {
+            if (v.length == 8) {
+              LocalDate.parse(v, DateTimeFormatter.BASIC_ISO_DATE)
+                  .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+            } else {
+              java.time.LocalDateTime.parse(v, LOCAL_DATE_TIME)
+                  .toInstant(ZoneOffset.UTC).toEpochMilli()
+            }
+          }
+          .getOrDefault(Long.MAX_VALUE)
+    }
+
+    private val LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
+
     /** Только простые дни (MO,WE). С номером недели (1MO, -1FR) форма не справится — в other. */
     private fun parseByDay(value: String): List<DayOfWeek>? =
         value.split(',').map { code -> DAY_CODES[code.uppercase()] ?: return null }

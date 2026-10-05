@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.core.data.repository
 
 import android.content.ContentUris
+import android.content.ContentValues
 import android.provider.CalendarContract
 import android.provider.CalendarContract.Calendars
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -82,6 +83,19 @@ class CalendarRepositoryProviderTest {
           zone = zone,
           recurrenceRule = rrule)
 
+  /** Как после синхронизации с Google: у серии появляется _SYNC_ID (пишет только sync adapter). */
+  private fun markSynced(eventId: Long) {
+    val uri =
+        ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+            .buildUpon()
+            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+            .appendQueryParameter(Calendars.ACCOUNT_NAME, CalendarProviderDataSource.LOCAL_ACCOUNT_NAME)
+            .appendQueryParameter(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
+            .build()
+    val values = ContentValues().apply { put(CalendarContract.Events._SYNC_ID, "synced-$eventId") }
+    assertEquals(1, context.contentResolver.update(uri, values, null, null))
+  }
+
   private fun java.time.Instant.local() = atZone(zone).toLocalDateTime()
 
   private suspend fun day(date: LocalDate): List<EventDto> =
@@ -148,15 +162,26 @@ class CalendarRepositoryProviderTest {
 
     // Переносим только экземпляр +2
     val d2 = day(today.plusDays(2)).single { it.summary == "Standup" }
+    markSynced(d2.eventId)
     val d2Draft =
         draft("Standup moved", today.plusDays(2), LocalTime.of(12, 0), endTime = LocalTime.of(12, 30))
     repository.updateEvent(d2, d2Draft, EventUpdateMode.SINGLE_INSTANCE).getOrThrow()
     val moved2 = day(today.plusDays(2)).single { it.summary.startsWith("Standup") }
     assertEquals("Standup moved", moved2.summary)
     assertEquals(today.plusDays(2).atTime(12, 0), moved2.startTime.local())
-    // Перенесённый экземпляр становится самостоятельным событием.
-    assertEquals(null, moved2.recurringEventId)
+    // Перенесённый экземпляр остаётся в серии — исключение, а не отдельное событие.
+    assertEquals(d2.eventId, moved2.originalEventId)
+    assertEquals(d2.eventId.toString(), moved2.recurringEventId)
+    assertEquals("FREQ=DAILY;COUNT=6", repository.seriesRule(moved2))
     assertTrue(day(today.plusDays(3)).single { it.summary.startsWith("Standup") }.summary == "Standup")
+
+    // Правка самого исключения ещё раз — только оно
+    val again = draft("Standup moved again", today.plusDays(2), LocalTime.of(13, 0),
+        endTime = LocalTime.of(13, 30))
+    repository.updateEvent(moved2, again, EventUpdateMode.SINGLE_INSTANCE).getOrThrow()
+    val moved2Again = day(today.plusDays(2)).single { it.summary.startsWith("Standup") }
+    assertEquals("Standup moved again", moved2Again.summary)
+    assertEquals(today.plusDays(2).atTime(13, 0), moved2Again.startTime.local())
 
     // Переименовываем всю серию из сегодняшнего экземпляра
     val d0 = day(today).single { it.summary == "Standup" }
@@ -166,6 +191,10 @@ class CalendarRepositoryProviderTest {
     repository.updateEvent(d0, renamed, EventUpdateMode.ALL_IN_SERIES).getOrThrow()
     assertTrue(day(today).any { it.summary == "Daily sync" })
     assertTrue(day(today.plusDays(4)).any { it.summary == "Daily sync" })
+    // Исключение живёт своей жизнью и не дублируется исходным экземпляром.
+    assertEquals(
+        listOf("Standup moved again"),
+        day(today.plusDays(2)).map { it.summary })
 
     // Удаляем "этот и следующие" начиная с +4
     val d4 = day(today.plusDays(4)).single { it.summary == "Daily sync" }
@@ -178,5 +207,71 @@ class CalendarRepositoryProviderTest {
     repository.deleteEvent(day(today).single { it.summary == "Daily sync" }, EventDeleteMode.ALL_IN_SERIES)
         .getOrThrow()
     assertTrue(day(today).none { it.summary == "Daily sync" })
+  }
+
+  @Test
+  fun recurringSeries_editThisAndFollowing() = runBlocking {
+    repository
+        .createEvent(
+            draft("Gym", today, LocalTime.of(18, 0), endTime = LocalTime.of(19, 0),
+                rrule = "FREQ=DAILY;COUNT=6"))
+        .getOrThrow()
+    markSynced(day(today).single { it.summary == "Gym" }.eventId)
+    // Перенесённый экземпляр после точки разреза — не должен остаться дублем.
+    val d4 = day(today.plusDays(4)).single { it.summary == "Gym" }
+    repository
+        .updateEvent(
+            d4, draft("Gym late", today.plusDays(4), LocalTime.of(21, 0), endTime = LocalTime.of(22, 0)),
+            EventUpdateMode.SINGLE_INSTANCE)
+        .getOrThrow()
+
+    val d3 = day(today.plusDays(3)).single { it.summary == "Gym" }
+    val evening =
+        draft("Gym evening", today.plusDays(3), LocalTime.of(20, 0), endTime = LocalTime.of(21, 0),
+            rrule = "FREQ=DAILY;COUNT=6")
+    repository.updateEvent(d3, evening, EventUpdateMode.THIS_AND_FOLLOWING).getOrThrow()
+
+    (0L..2L).forEach { assertEquals("day $it", listOf("Gym"), day(today.plusDays(it)).map { e -> e.summary }) }
+    (3L..5L).forEach {
+      val e = day(today.plusDays(it)).single()
+      assertEquals("day $it", "Gym evening", e.summary)
+      assertEquals(today.plusDays(it).atTime(20, 0), e.startTime.local())
+    }
+    // COUNT=6 делится: 3 у старой серии и 3 у новой — седьмого дня нет.
+    assertTrue(day(today.plusDays(6)).isEmpty())
+    val newSeries = day(today.plusDays(3)).single()
+    assertEquals("FREQ=DAILY;COUNT=3", newSeries.recurrenceRule)
+
+    // С первого экземпляра «это и следующие» = вся серия, без новой строки.
+    val first = day(today).single()
+    repository
+        .updateEvent(
+            first, draft("Gym morning", today, LocalTime.of(7, 0), endTime = LocalTime.of(8, 0),
+                rrule = first.recurrenceRule),
+            EventUpdateMode.THIS_AND_FOLLOWING)
+        .getOrThrow()
+    assertEquals(first.eventId, day(today).single().eventId)
+    assertEquals("Gym morning", day(today.plusDays(2)).single().summary)
+  }
+
+  @Test
+  fun unsyncedSeries_singleEditDetaches() = runBlocking {
+    // Без _SYNC_ID провайдер теряет серию с исключением — правка уходит в отдельное событие.
+    repository
+        .createEvent(
+            draft("Walk", today, LocalTime.of(9, 0), endTime = LocalTime.of(9, 30),
+                rrule = "FREQ=DAILY;COUNT=3"))
+        .getOrThrow()
+    val d1 = day(today.plusDays(1)).single()
+    repository
+        .updateEvent(
+            d1, draft("Walk later", today.plusDays(1), LocalTime.of(10, 0), endTime = LocalTime.of(10, 30)),
+            EventUpdateMode.SINGLE_INSTANCE)
+        .getOrThrow()
+    assertEquals(listOf("Walk"), day(today).map { it.summary })
+    val moved = day(today.plusDays(1)).single()
+    assertEquals("Walk later", moved.summary)
+    assertEquals(null, moved.recurringEventId)
+    assertEquals(listOf("Walk"), day(today.plusDays(2)).map { it.summary })
   }
 }

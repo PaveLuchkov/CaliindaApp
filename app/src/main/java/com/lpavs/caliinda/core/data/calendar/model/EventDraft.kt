@@ -21,6 +21,7 @@ data class EventDraft(
 
 enum class EventUpdateMode {
   SINGLE_INSTANCE,
+  THIS_AND_FOLLOWING,
   ALL_IN_SERIES
 }
 

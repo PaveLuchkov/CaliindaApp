@@ -225,6 +225,14 @@ fun RecurringEventEditOptionsDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 TextButton(
+                    onClick = { onOptionSelected(EventUpdateMode.THIS_AND_FOLLOWING) },
+                    modifier = Modifier.fillMaxWidth()) {
+                      Text(stringResource(R.string.edit_this_and_following))
+                    }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
                     onClick = { onOptionSelected(EventUpdateMode.ALL_IN_SERIES) },
                     modifier = Modifier.fillMaxWidth()) {
                       Text(stringResource(R.string.edit_all_in_series))

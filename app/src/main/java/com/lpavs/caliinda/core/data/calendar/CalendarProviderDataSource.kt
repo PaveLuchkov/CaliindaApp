@@ -50,6 +50,8 @@ data class EventRow(
     val exdate: String?,
     val duration: String?,
     val timeZone: String?,
+    /** _SYNC_ID: есть, когда серию уже синхронизировали с сервером (Google). */
+    val syncId: String? = null,
 )
 
 /**
@@ -123,7 +125,8 @@ constructor(@ApplicationContext context: Context) {
                   Events.RRULE,
                   Events.EXDATE,
                   Events.DURATION,
-                  Events.EVENT_TIMEZONE),
+                  Events.EVENT_TIMEZONE,
+                  Events._SYNC_ID),
               null,
               null,
               null)
@@ -137,13 +140,33 @@ constructor(@ApplicationContext context: Context) {
                     rrule = c.getStringOrNull(3)?.takeIf { it.isNotBlank() },
                     exdate = c.getStringOrNull(4)?.takeIf { it.isNotBlank() },
                     duration = c.getStringOrNull(5),
-                    timeZone = c.getStringOrNull(6))
+                    timeZone = c.getStringOrNull(6),
+                    syncId = c.getStringOrNull(7)?.takeIf { it.isNotBlank() })
           }
 
   fun insertEvent(values: ContentValues): Long {
     val uri = resolver.insert(Events.CONTENT_URI, values) ?: error("Calendar insert failed")
     return ContentUris.parseId(uri)
   }
+
+  /**
+   * Исключение из серии [masterId]: провайдер сам заполняет ORIGINAL_ID/ORIGINAL_SYNC_ID и
+   * недостающие поля из серии, так что правка остаётся вхождением серии и в Google Calendar.
+   * В [values] обязателен ORIGINAL_INSTANCE_TIME.
+   */
+  fun insertException(masterId: Long, values: ContentValues): Long {
+    val uri =
+        resolver.insert(ContentUris.withAppendedId(Events.CONTENT_EXCEPTION_URI, masterId), values)
+            ?: error("Calendar exception insert failed")
+    return ContentUris.parseId(uri)
+  }
+
+  /** Удаляет исключения серии с исходным временем от [fromInstanceTime] и позже. */
+  fun deleteExceptionsFrom(masterId: Long, fromInstanceTime: Long): Int =
+      resolver.delete(
+          Events.CONTENT_URI,
+          "${Events.ORIGINAL_ID} = ? AND ${Events.ORIGINAL_INSTANCE_TIME} >= ?",
+          arrayOf(masterId.toString(), fromInstanceTime.toString()))
 
   fun updateEvent(eventId: Long, values: ContentValues): Int =
       resolver.update(ContentUris.withAppendedId(Events.CONTENT_URI, eventId), values, null, null)

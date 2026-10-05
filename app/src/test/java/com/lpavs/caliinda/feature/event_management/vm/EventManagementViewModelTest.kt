@@ -84,6 +84,21 @@ class EventManagementViewModelTest {
   }
 
   @Test
+  fun `правка серии из перенесённого экземпляра берёт правило головного события`() = runTest(dispatcher) {
+    // У исключения своего RRULE нет — только ссылка на серию.
+    val exception = single.copy(recurringEventId = "1", originalEventId = 1L)
+    whenever(repository.seriesRule(exception)).thenReturn("FREQ=WEEKLY;BYDAY=MO")
+    viewModel.requestEditEvent(exception)
+
+    viewModel.onRecurringEditOptionSelected(EventUpdateMode.THIS_AND_FOLLOWING)
+    advanceUntilIdle()
+    assertEquals(
+        EventDialog.Editing(
+            exception.copy(recurrenceRule = "FREQ=WEEKLY;BYDAY=MO"), EventUpdateMode.THIS_AND_FOLLOWING),
+        viewModel.uiState.value.dialog)
+  }
+
+  @Test
   fun `удаление повторяющегося спрашивает режим`() {
     viewModel.requestDelete(recurring)
     assertEquals(EventDialog.ChooseDeleteMode(recurring), viewModel.uiState.value.dialog)

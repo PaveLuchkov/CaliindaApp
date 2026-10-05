@@ -87,4 +87,14 @@ class RruleTest {
     val allDayBegin = Instant.parse("2026-10-10T00:00:00Z").toEpochMilli()
     assertEquals("20261010", Rrule.exdateValue(allDayBegin, allDay = true))
   }
+
+  @Test
+  fun `EXDATE обратно в миллисекунды`() {
+    val begin = Instant.parse("2026-10-10T07:30:00Z").toEpochMilli()
+    assertEquals(begin, Rrule.exdateMillis(Rrule.exdateValue(begin, allDay = false)))
+    assertEquals(
+        Instant.parse("2026-10-10T00:00:00Z").toEpochMilli(), Rrule.exdateMillis("20261010"))
+    assertEquals(begin, Rrule.exdateMillis("TZID=Europe/Moscow:20261010T073000"))
+    assertEquals(Long.MAX_VALUE, Rrule.exdateMillis("мусор"))
+  }
 }
