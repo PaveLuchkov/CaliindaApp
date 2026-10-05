@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import java.time.ZoneId
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.width
 import com.lpavs.caliinda.core.ui.theme.cuid
@@ -55,6 +56,7 @@ fun EventFormContent(
     onLocationChange: (String) -> Unit,
     dateTimeState: EventDateTimeState,
     onDateTimeStateChange: (EventDateTimeState) -> Unit,
+    zone: ZoneId,
     isLoading: Boolean,
     suggestedChips: List<SugNameChips>,
     onSave: () -> Unit,
@@ -94,6 +96,7 @@ fun EventFormContent(
             EventDateTimePicker(
                 state = dateTimeState,
                 onStateChange = onDateTimeStateChange,
+                zone = zone,
                 isLoading = isLoading,
                 onRequestShowStartDatePicker = { activePicker = ActivePicker.StartDate },
                 onRequestShowStartTimePicker = { activePicker = ActivePicker.StartTime },

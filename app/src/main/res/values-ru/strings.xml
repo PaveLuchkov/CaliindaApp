@@ -179,6 +179,7 @@
     <string name="intro_finish">Готово</string>
     <string name="intro_next">Далее</string>
     <string name="calendars">Календари</string>
+    <string name="about">О приложении</string>
     <string name="new_events_saved_to">Новые события сохраняются в</string>
     <string name="syncing_calendars">Синхронизация календарей…</string>
     <string name="no_title">(Без названия)</string>
