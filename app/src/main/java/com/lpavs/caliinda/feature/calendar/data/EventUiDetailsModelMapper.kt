@@ -6,6 +6,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.util.IDateTimeFormatterUtil
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 
 class EventUiDetailsModelMapper
@@ -16,7 +17,7 @@ constructor(
 ) {
   fun mapToUiModels(
       event: EventDto,
-      timeZoneId: String,
+      zone: ZoneId,
       currentTime: Instant,
   ): EventDetailsUiModel {
     val startInstant = event.startTime
@@ -30,7 +31,7 @@ constructor(
                 dateTimeFormatterUtil.formatEventDetailsTime(
                     context,
                     event,
-                    timeZoneId,
+                    zone,
                     ConfigurationCompat.getLocales(context.resources.configuration).get(0)
                         ?: java.util.Locale.getDefault()),
             isCurrent = isCurrent,

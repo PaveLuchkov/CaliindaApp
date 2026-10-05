@@ -15,6 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -89,6 +90,9 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
             preferences[PreferencesKeys.TIME_ZONE] ?: ZoneId.systemDefault().id
           }
 
+  /** Пояс из настроек, уже разобранный: битое значение — системный пояс, а не падение. */
+  val zoneFlow: Flow<ZoneId> = timeZoneFlow.map(::parseZoneId).distinctUntilChanged()
+
   suspend fun saveTimeZone(timeZone: String) {
     try {
       dataStore.edit { preferences -> preferences[PreferencesKeys.TIME_ZONE] = timeZone }
@@ -119,5 +123,13 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
 
   companion object {
     private const val TAG = "SettingsRepository"
+
+    private fun parseZoneId(id: String): ZoneId =
+        try {
+          ZoneId.of(id.ifEmpty { ZoneId.systemDefault().id })
+        } catch (e: Exception) {
+          Log.w(TAG, "Invalid timezone: $id, using system default", e)
+          ZoneId.systemDefault()
+        }
   }
 }

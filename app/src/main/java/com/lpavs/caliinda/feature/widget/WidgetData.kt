@@ -37,11 +37,7 @@ interface WidgetEntryPoint {
 suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): WidgetData {
   // Виджет живёт и без открытого приложения — разрешение могли выдать или забрать с тех пор.
   permissionManager().refresh()
-  val zone =
-      settingsRepository().timeZoneFlow.first().let {
-        runCatching { ZoneId.of(it.ifEmpty { ZoneId.systemDefault().id }) }
-            .getOrDefault(ZoneId.systemDefault())
-      }
+  val zone = settingsRepository().zoneFlow.first()
   val today = now.atZone(zone).toLocalDate()
   val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
 

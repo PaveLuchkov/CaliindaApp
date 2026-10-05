@@ -68,7 +68,7 @@ fun CalendarScreen(
   val calendarState by calendarViewModel.state.collectAsStateWithLifecycle()
   val introductionState by calendarViewModel.introState.collectAsStateWithLifecycle()
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
-  val timeZone = settignsViewModel.timeZone.collectAsStateWithLifecycle()
+  val timeZone by calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by settignsViewModel.themeMode.collectAsStateWithLifecycle()
 
   val snackbarHostState = remember { SnackbarHostState() }
@@ -273,7 +273,7 @@ fun CalendarScreen(
       onDismiss = { showCreateEventSheet = false },
   ) {
     CreateEventScreen(
-        userTimeZone = timeZone.value,
+        userTimeZone = timeZone,
         initialDate = selectedDateForSheet,
         initialProject = createAsProject,
         sheetSettled = sheetState.currentValue != SheetValue.Hidden,
@@ -319,7 +319,7 @@ fun CalendarScreen(
     CustomEventDetailsDialog(
         event = calendarState.eventForDetailedView!!,
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
-        userTimeZone = timeZone.value,
+        userTimeZone = timeZone,
         eventManagementViewModel = eventManagementViewModel,
         themeMode = themeMode)
   }

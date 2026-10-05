@@ -18,12 +18,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface IDateTimeFormatterUtil {
-  fun formatEventListTime(context: Context, event: EventDto, zoneIdString: String, project: Boolean, locale: Locale): String
+  fun formatEventListTime(context: Context, event: EventDto, zoneId: ZoneId, project: Boolean, locale: Locale): String
 
   fun formatEventDetailsTime(
       context: Context,
       event: EventDto,
-      zoneIdString: String,
+      zoneId: ZoneId,
       locale: Locale,
   ): String
 }
@@ -34,18 +34,11 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
   override fun formatEventListTime(
       context: Context,
       event: EventDto,
-      zoneIdString: String,
+      zoneId: ZoneId,
       project: Boolean,
       locale: Locale
   ): String {
 //    if (event.isAllDay) return context.getString(R.string.all_day)
-
-    val zoneId =
-        try {
-          ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
-        } catch (_: Exception) {
-          ZoneId.systemDefault()
-        }
 
     val startInstant = event.startTime
     val endInstant = event.endTime
@@ -107,16 +100,9 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
   override fun formatEventDetailsTime(
       context: Context,
       event: EventDto,
-      zoneIdString: String,
+      zoneId: ZoneId,
       locale: Locale
   ): String {
-    val zoneId =
-        try {
-          ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
-        } catch (_: Exception) {
-          ZoneId.systemDefault()
-        }
-
     val startInstant = event.startTime
     val endInstant = event.endTime
 
@@ -177,13 +163,7 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
 }
 
 @Composable
-fun formatRRule(rrule: String, zoneIdString: String): String {
-  val zoneId =
-      try {
-        ZoneId.of(zoneIdString.ifEmpty { ZoneId.systemDefault().id })
-      } catch (_: Exception) {
-        ZoneId.systemDefault()
-      }
+fun formatRRule(rrule: String, zoneId: ZoneId): String {
   val currentLocale = LocalConfiguration.current.getLocales().get(0)
 
   val parts =

@@ -29,7 +29,7 @@ import java.time.ZoneId
 @RunWith(AndroidJUnit4::class)
 class CalendarRepositoryProviderTest {
   private val context = InstrumentationRegistry.getInstrumentation().targetContext
-  private val zone = ZoneId.systemDefault().id
+  private val zone = ZoneId.systemDefault()
   private val today = LocalDate.now()
 
   private lateinit var repository: CalendarRepository
@@ -46,7 +46,8 @@ class CalendarRepositoryProviderTest {
     calendarId = dataSource.createLocalCalendar()
     settings.saveDefaultCalendarId(calendarId)
     repository =
-        CalendarRepository(dataSource, CalendarPermissionManager(context), settings, Dispatchers.IO)
+        CalendarRepository(
+            dataSource, CalendarPermissionManager(context), settings, context, Dispatchers.IO)
   }
 
   @After
@@ -79,10 +80,10 @@ class CalendarRepositoryProviderTest {
           startTime = if (allDay) null else startTime,
           endDate = end,
           endTime = if (allDay) null else endTime,
-          timeZoneId = zone,
+          zone = zone,
           recurrenceRule = rrule)
 
-  private fun java.time.Instant.local() = atZone(ZoneId.of(zone)).toLocalDateTime()
+  private fun java.time.Instant.local() = atZone(zone).toLocalDateTime()
 
   private suspend fun day(date: LocalDate): List<EventDto> =
       repository.getEventsFlowForDate(date).first().filter { it.calendarId == calendarId }

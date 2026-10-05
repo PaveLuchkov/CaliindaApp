@@ -25,14 +25,14 @@ constructor(
 ) {
   fun mapToUiModels(
       events: List<EventDto>,
-      timeZoneId: String,
+      zone: ZoneId,
       currentTime: Instant,
       date: LocalDate,
       project: Boolean
   ): List<EventUiModel> {
     val sortedEvents =
         (if (project) events else events.filter { !it.isAllDay }).sortedBy { it.startTime }
-    val isToday = date == currentTime.atZone(ZoneId.of(timeZoneId)).toLocalDate()
+    val isToday = date == currentTime.atZone(zone).toLocalDate()
     val nextStartTime: Instant? =
         if (!isToday) {
           null
@@ -51,7 +51,6 @@ constructor(
       // Считаем календарные дни включая сегодняшний, поэтому в последний день будет 1, а не 0.
       val daysLeft =
           if (project && !currentTime.isBefore(startInstant) && currentTime.isBefore(endInstant)) {
-            val zone = ZoneId.of(timeZoneId)
             val lastDay = endInstant.minusNanos(1).atZone(zone).toLocalDate()
             (ChronoUnit.DAYS.between(currentTime.atZone(zone).toLocalDate(), lastDay) + 1)
                 .coerceAtLeast(1)
@@ -112,7 +111,7 @@ constructor(
                   dateTimeFormatterUtil.formatEventListTime(
                       context,
                       event,
-                      timeZoneId,
+                      zone,
                       project = project,
                       locale =
                           ConfigurationCompat.getLocales(context.resources.configuration).get(0)

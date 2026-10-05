@@ -59,9 +59,11 @@ constructor(
   private val _eventFlow = MutableSharedFlow<EventManagementUiEvent>()
   val eventFlow: SharedFlow<EventManagementUiEvent> = _eventFlow.asSharedFlow()
 
-  val timeZone: StateFlow<String> =
-      settingsRepository.timeZoneFlow.stateIn(
-          viewModelScope, SharingStarted.WhileSubscribed(5000), ZoneId.systemDefault().id)
+  // Eagerly: пояс читается через .value при сохранении, а подписчиков в UI у него нет — с
+  // WhileSubscribed здесь навсегда оставался бы системный пояс вместо выбранного в настройках.
+  val timeZone: StateFlow<ZoneId> =
+      settingsRepository.zoneFlow.stateIn(
+          viewModelScope, SharingStarted.Eagerly, ZoneId.systemDefault())
   private val untilFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 
   // --- Создание ---
@@ -257,7 +259,7 @@ constructor(
           startTime = if (state.isAllDay) null else state.startTime,
           endDate = state.endDate,
           endTime = if (state.isAllDay) null else state.endTime,
-          timeZoneId = timeZone.value,
+          zone = timeZone.value,
           recurrenceRule = recurrenceRule)
 
   private fun validateInput(summary: String, state: EventDateTimeState): Boolean {
@@ -301,7 +303,7 @@ constructor(
                 untilFormatter.format(
                     endDate
                         .atTime(23, 59, 59)
-                        .atZone(ZoneId.of(timeZone.value))
+                        .atZone(timeZone.value)
                         .withZoneSameInstant(ZoneOffset.UTC))
               }
           ruleParts.add("UNTIL=$until")
@@ -317,11 +319,9 @@ constructor(
   }
 
   fun parseEventToState(event: EventDto): EventDateTimeState {
-    val userTimeZoneId = timeZone.value
+    val zone = timeZone.value
     val isAllDay = event.isAllDay
 
-    val zone =
-        runCatching { ZoneId.of(userTimeZoneId) }.getOrElse { ZoneId.systemDefault() }
     val start = event.startTime.atZone(zone)
     val end = event.endTime.atZone(zone)
 
@@ -370,7 +370,7 @@ constructor(
                     }
                     .toSet()
         "UNTIL" -> {
-          recurrenceEndDate = parseUntil(value, userTimeZoneId)
+          recurrenceEndDate = parseUntil(value, zone)
           if (recurrenceEndDate != null) recurrenceEndType = RecurrenceEndType.DATE
         }
         "COUNT" -> {
@@ -394,13 +394,13 @@ constructor(
         recurrenceCount = recurrenceCount)
   }
 
-  private fun parseUntil(value: String, userTimeZoneId: String): LocalDate? =
+  private fun parseUntil(value: String, zone: ZoneId): LocalDate? =
       try {
         if (value.length == 8) {
           LocalDate.parse(value, DateTimeFormatter.BASIC_ISO_DATE)
         } else {
           ZonedDateTime.parse(value, untilFormatter.withZone(ZoneOffset.UTC))
-              .withZoneSameInstant(ZoneId.of(userTimeZoneId))
+              .withZoneSameInstant(zone)
               .toLocalDate()
         }
       } catch (e: Exception) {

@@ -65,8 +65,8 @@ constructor(
           .shareIn(scope, SharingStarted.WhileSubscribed(5000), replay = 1)
 
   private fun <T> observeCalendar(load: (ZoneId) -> T, empty: T): Flow<T> =
-      combine(dataChanges, settingsRepository.timeZoneFlow) { granted, tz -> granted to tz }
-          .mapLatest { (granted, tz) -> if (granted) load(parseTimeZone(tz)) else empty }
+      combine(dataChanges, settingsRepository.zoneFlow) { granted, zone -> granted to zone }
+          .mapLatest { (granted, zone) -> if (granted) load(zone) else empty }
           .catch { e ->
             Log.e(TAG, "Error reading calendar", e)
             emit(empty)
@@ -197,7 +197,7 @@ constructor(
           mode == EventUpdateMode.ALL_IN_SERIES && (isSeriesInstance || isException) -> {
             val masterId = event.originalEventId ?: event.eventId
             val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")
-            val zone = parseTimeZone(draft.timeZoneId)
+            val zone = draft.zone
             // Исключение само не знает RRULE серии — берём его у мастер-события.
             val seriesDraft =
                 if (isException) draft.copy(recurrenceRule = draft.recurrenceRule ?: master.rrule)
@@ -381,7 +381,7 @@ constructor(
           timeZone = "UTC",
           isAllDay = true)
     }
-    val zone = parseTimeZone(draft.timeZoneId)
+    val zone = draft.zone
     val startTime = requireNotNull(draft.startTime) { "Timed event without start time" }
     val endTime = requireNotNull(draft.endTime) { "Timed event without end time" }
     return EventTiming(
@@ -469,14 +469,6 @@ constructor(
 
   private fun utcDate(millis: Long): LocalDate =
       Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
-
-  private fun parseTimeZone(timeZoneIdString: String): ZoneId =
-      try {
-        ZoneId.of(timeZoneIdString.ifEmpty { ZoneId.systemDefault().id })
-      } catch (e: Exception) {
-        Log.w(TAG, "Invalid timezone: $timeZoneIdString, using system default", e)
-        ZoneId.systemDefault()
-      }
 
   companion object {
     private const val TAG = "CalendarRepository"
