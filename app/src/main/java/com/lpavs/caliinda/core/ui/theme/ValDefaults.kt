@@ -30,9 +30,12 @@ object CalendarUiDefaults {
   const val HeightSigmoidMidpointMinutes = 180.0
   const val HeightSigmoidScaleFactor = 100.0
   const val HeightSigmoidSteepness = 4.5
-  const val HeightSigmoidProjectMidpointMinutes = 18080.0
-  const val HeightSigmoidProjectScaleFactor = 500.0
-  const val HeightSigmoidProjectSteepness = 0.5
+  // Высота карточки проекта: плавная сигмоида по дням, растянутая на месяц (1 день — минимум,
+  // 31 — максимум), как высота событий дня по часам рабочего дня.
+  const val ProjectHeightMidpointDays = 10.0
+  const val ProjectHeightScaleDays = 4.0
+  const val ProjectHeightMinDays = 1.0
+  const val ProjectHeightMaxDays = 31.0
   const val EVENT_TRANSITION_WINDOW_MINUTES = 60L
 
   const val ShapeMinVertices = 3

@@ -33,6 +33,20 @@ fun calculateProjectShapeContainerSize(durationMinutes: Long): Dp {
         (cuid.MaxProjectStarContainerSize - cuid.MinStarContainerSize) * ratio
 }
 
+/**
+ * Доля высоты карточки проекта (0 — минимум, 1 — максимум) по его длительности. Сигмоида
+ * нормирована на [ProjectHeightMinDays..ProjectHeightMaxDays]: рост плавный на всём месяце —
+ * неделя ≈ четверть, две недели ≈ 70 %, без скачка в одной точке.
+ */
+fun projectHeightFraction(durationMinutes: Long): Float {
+  fun sigmoid(days: Double) =
+      1.0 / (1.0 + exp(-(days - cuid.ProjectHeightMidpointDays) / cuid.ProjectHeightScaleDays))
+  val days = durationMinutes / (24.0 * 60.0)
+  val low = sigmoid(cuid.ProjectHeightMinDays)
+  val high = sigmoid(cuid.ProjectHeightMaxDays)
+  return ((sigmoid(days) - low) / (high - low)).toFloat().coerceIn(0f, 1f)
+}
+
 fun lerpOkLab(start: Color, stop: Color, fraction: Float): Color {
     val startOklab = start.convert(ColorSpaces.Oklab)
     val stopOklab = stop.convert(ColorSpaces.Oklab)
