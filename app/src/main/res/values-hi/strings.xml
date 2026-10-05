@@ -184,7 +184,6 @@
     <string name="duration_minutes_short">%d मिनट</string>
     <string name="duration_hours_short">%d घंटे</string>
     <string name="undo">पूर्ववत करें</string>
-    <string name="event_deleted">“%1$s” हटाया गया</string>
     <string name="project_day_of">दिन %1$d / %2$d</string>
     <string name="widget_name">Caliinda · दिन</string>
     <string name="widget_description">मौजूदा इवेंट, आगे क्या है और चल रहे प्रोजेक्ट</string>

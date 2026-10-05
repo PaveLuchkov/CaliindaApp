@@ -186,7 +186,6 @@
     <string name="duration_minutes_short">%d min</string>
     <string name="duration_hours_short">%d h</string>
     <string name="undo">Deshacer</string>
-    <string name="event_deleted">«%1$s» eliminado</string>
     <string name="project_day_of">día %1$d de %2$d</string>
     <string name="widget_name">Caliinda · día</string>
     <string name="widget_description">Evento actual, lo siguiente y proyectos en curso</string>

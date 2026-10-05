@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
-import com.lpavs.caliinda.core.ui.util.titleText
 import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
@@ -155,7 +154,7 @@ constructor(
     viewModelScope.launch {
       _events.send(
           EventManagementUiEvent.ShowUndoDelete(
-              event.id, UiText.from(R.string.event_deleted, event.titleText)))
+              event.id, funMessages.getEventDeletedMessage(event.nameForMessage())))
     }
   }
 
