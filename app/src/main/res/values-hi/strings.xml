@@ -24,7 +24,6 @@
 
     <string name="recurrence_event">दोहराएँ</string>
     <string name="recurrence_settings_title">पुनरावृत्ति</string>
-    <string name="recurrence_rule_label">नियम</string>
     <string name="recurrence_none">दोहराएँ नहीं</string>
     <string name="recurrence_daily">दैनिक</string>
     <string name="recurrence_weekly">साप्ताहिक</string>
@@ -35,30 +34,9 @@
     <string name="recurrence_end_never">कभी नहीं</string>
     <string name="recurrence_end_date">दिनांक</string>
     <string name="recurrence_end_count">गिनती</string>
-    <string name="recurrence_occurrences">पुनरावृत्ति</string>
-    <string name="recurrence_end_date_field">समाप्ति तिथि</string>
-    <string name="recurrence_count_field">पुनरावृत्ति की गिनती</string>
 
-    <string name="recurrence_repeats">दोहराता है</string>
-    <string name="recurrence_daily_lower">दैनिक</string>
-    <string name="recurrence_weekly_lower">साप्ताहिक</string>
-    <string name="recurrence_monthly_lower">मासिक</string>
-    <string name="recurrence_yearly_lower">वार्षिक</string>
-    <string name="recurrence_on_days">%1$s पर</string>
     <string name="recurrence_until">%1$s तक</string>
-    <string name="recurrence_count">%1$d बार</string>
-    <string name="recurrence_interval">हर %1$d %2$s</string>
-    <string name="recurrence_on_day_of_month">%1$d तारीख को</string>
-    <string name="recurrence_in_months">%1$s में</string>
-    <string name="recurrence_unknown">दोहराता है</string>
 
-    <string name="day_monday">सोमवार</string>
-    <string name="day_tuesday">मंगलवार</string>
-    <string name="day_wednesday">बुधवार</string>
-    <string name="day_thursday">गुरुवार</string>
-    <string name="day_friday">शुक्रवार</string>
-    <string name="day_saturday">शनिवार</string>
-    <string name="day_sunday">रविवार</string>
 
     <string name="month_january">जनवरी</string>
     <string name="month_february">फरवरी</string>
@@ -192,4 +170,46 @@
     <string name="widget_no_access">कैलेंडर एक्सेस देने के लिए Caliinda खोलें</string>
     <string name="widget_preview_title">डिज़ाइन रिव्यू</string>
     <string name="widget_preview_time">2:00 PM – 3:00 PM</string>
+
+    <!-- Шторка повторения -->
+    <plurals name="recurrence_every_n_days">
+        <item quantity="one">हर %d दिन</item>
+        <item quantity="other">हर %d दिन</item>
+    </plurals>
+    <plurals name="recurrence_every_n_weeks">
+        <item quantity="one">हर %d सप्ताह</item>
+        <item quantity="other">हर %d सप्ताह</item>
+    </plurals>
+    <plurals name="recurrence_every_n_months">
+        <item quantity="one">हर %d महीने</item>
+        <item quantity="other">हर %d महीने</item>
+    </plurals>
+    <plurals name="recurrence_every_n_years">
+        <item quantity="one">हर %d साल</item>
+        <item quantity="other">हर %d साल</item>
+    </plurals>
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">दिन</item>
+        <item quantity="other">दिन</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">सप्ताह</item>
+        <item quantity="other">सप्ताह</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">महीना</item>
+        <item quantity="other">महीने</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">साल</item>
+        <item quantity="other">साल</item>
+    </plurals>
+    <plurals name="recurrence_times">
+        <item quantity="one">%d बार</item>
+        <item quantity="other">%d बार</item>
+    </plurals>
+    <string name="recurrence_done">हो गया</string>
+    <string name="recurrence_decrease">कम</string>
+    <string name="recurrence_increase">ज़्यादा</string>
+    <string name="recurrence_change_end_date">समाप्ति तिथि बदलें</string>
 </resources>

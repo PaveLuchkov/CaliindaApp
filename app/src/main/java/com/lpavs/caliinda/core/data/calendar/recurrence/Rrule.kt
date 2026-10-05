@@ -9,12 +9,14 @@ import java.time.format.DateTimeFormatter
 
 /**
  * Разобранное правило повторения (RFC 5545) — только то, что умеет форма. Остальные части
- * (INTERVAL, BYMONTHDAY, BYDAY с номером недели…) лежат в [other] как есть: правка формы не
+ * (BYMONTHDAY, BYDAY с номером недели…) лежат в [other] как есть: правка формы не
  * должна молча их терять.
  */
 data class Rrule(
     /** Значение FREQ: DAILY, WEEKLY, MONTHLY, YEARLY. */
     val freq: String?,
+    /** INTERVAL: каждые N единиц FREQ; null — каждую (1). */
+    val interval: Int? = null,
     val byDay: List<DayOfWeek> = emptyList(),
     val until: Until? = null,
     val count: Int? = null,
@@ -32,6 +34,7 @@ data class Rrule(
   fun format(): String =
       buildList {
             freq?.let { add("FREQ=$it") }
+            interval?.takeIf { it > 1 }?.let { add("INTERVAL=$it") }
             if (byDay.isNotEmpty()) add("BYDAY=" + byDay.sorted().joinToString(",") { it.code() })
             addAll(other)
             until?.let { add("UNTIL=" + formatUntil(it)) }
@@ -60,6 +63,7 @@ data class Rrule(
 
     fun parse(rule: String): Rrule {
       var freq: String? = null
+      var interval: Int? = null
       var byDay = emptyList<DayOfWeek>()
       var until: Until? = null
       var count: Int? = null
@@ -72,6 +76,7 @@ data class Rrule(
         val parsed =
             when (key) {
               "FREQ" -> value.uppercase().also { freq = it }
+              "INTERVAL" -> value.toIntOrNull()?.takeIf { it >= 1 }?.also { interval = it }
               "BYDAY" -> parseByDay(value)?.also { byDay = it }
               "UNTIL" -> parseUntil(value)?.also { until = it }
               "COUNT" -> value.toIntOrNull()?.also { count = it }
@@ -79,7 +84,7 @@ data class Rrule(
             }
         if (parsed == null) other += part
       }
-      return Rrule(freq, byDay, until, count, other)
+      return Rrule(freq, interval, byDay, until, count, other)
     }
 
     /** Значение EXDATE для экземпляра с сырым началом [instanceBegin] (у all-day — UTC-полночь). */

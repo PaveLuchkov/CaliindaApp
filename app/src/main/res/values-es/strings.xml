@@ -25,7 +25,6 @@
 
     <string name="recurrence_event">Repetir</string>
     <string name="recurrence_settings_title">Repetición</string>
-    <string name="recurrence_rule_label">Regla</string>
     <string name="recurrence_none">No repetir</string>
     <string name="recurrence_daily">Diariamente</string>
     <string name="recurrence_weekly">Semanalmente</string>
@@ -36,30 +35,9 @@
     <string name="recurrence_end_never">Nunca</string>
     <string name="recurrence_end_date">Fecha</string>
     <string name="recurrence_end_count">Cantidad</string>
-    <string name="recurrence_occurrences">repeticiones</string>
-    <string name="recurrence_end_date_field">Fecha de finalización</string>
-    <string name="recurrence_count_field">Contar repeticiones</string>
 
-    <string name="recurrence_repeats">Se repite</string>
-    <string name="recurrence_daily_lower">diariamente</string>
-    <string name="recurrence_weekly_lower">semanalmente</string>
-    <string name="recurrence_monthly_lower">mensualmente</string>
-    <string name="recurrence_yearly_lower">anualmente</string>
-    <string name="recurrence_on_days">el %1$s</string>
     <string name="recurrence_until">hasta el %1$s</string>
-    <string name="recurrence_count">%1$d vez(veces)</string>
-    <string name="recurrence_interval">cada %1$d %2$s</string>
-    <string name="recurrence_on_day_of_month">el día %1$d</string>
-    <string name="recurrence_in_months">en %1$s</string>
-    <string name="recurrence_unknown">Se repite</string>
 
-    <string name="day_monday">Lunes</string>
-    <string name="day_tuesday">Martes</string>
-    <string name="day_wednesday">Miércoles</string>
-    <string name="day_thursday">Jueves</string>
-    <string name="day_friday">Viernes</string>
-    <string name="day_saturday">Sábado</string>
-    <string name="day_sunday">Domingo</string>
 
     <string name="month_january">Enero</string>
     <string name="month_february">Febrero</string>
@@ -194,4 +172,55 @@
     <string name="widget_no_access">Abre Caliinda para permitir el acceso al calendario</string>
     <string name="widget_preview_title">Revisión de diseño</string>
     <string name="widget_preview_time">14:00 – 15:00</string>
+
+    <!-- Шторка повторения -->
+    <plurals name="recurrence_every_n_days">
+        <item quantity="one">Cada %d día</item>
+        <item quantity="many">Cada %d días</item>
+        <item quantity="other">Cada %d días</item>
+    </plurals>
+    <plurals name="recurrence_every_n_weeks">
+        <item quantity="one">Cada %d semana</item>
+        <item quantity="many">Cada %d semanas</item>
+        <item quantity="other">Cada %d semanas</item>
+    </plurals>
+    <plurals name="recurrence_every_n_months">
+        <item quantity="one">Cada %d mes</item>
+        <item quantity="many">Cada %d meses</item>
+        <item quantity="other">Cada %d meses</item>
+    </plurals>
+    <plurals name="recurrence_every_n_years">
+        <item quantity="one">Cada %d año</item>
+        <item quantity="many">Cada %d años</item>
+        <item quantity="other">Cada %d años</item>
+    </plurals>
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">Día</item>
+        <item quantity="many">Días</item>
+        <item quantity="other">Días</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">Semana</item>
+        <item quantity="many">Semanas</item>
+        <item quantity="other">Semanas</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">Mes</item>
+        <item quantity="many">Meses</item>
+        <item quantity="other">Meses</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">Año</item>
+        <item quantity="many">Años</item>
+        <item quantity="other">Años</item>
+    </plurals>
+    <plurals name="recurrence_times">
+        <item quantity="one">%d vez</item>
+        <item quantity="many">%d veces</item>
+        <item quantity="other">%d veces</item>
+    </plurals>
+    <string name="recurrence_done">Listo</string>
+    <string name="recurrence_decrease">Menos</string>
+    <string name="recurrence_increase">Más</string>
+    <string name="recurrence_change_end_date">Cambiar fecha de fin</string>
 </resources>
