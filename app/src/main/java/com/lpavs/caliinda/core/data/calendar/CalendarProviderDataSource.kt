@@ -14,6 +14,7 @@ import android.provider.CalendarContract
 import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
 import android.provider.CalendarContract.Instances
+import android.provider.CalendarContract.Reminders
 import android.util.Log
 import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -143,6 +144,33 @@ constructor(@ApplicationContext context: Context) {
                     timeZone = c.getStringOrNull(6),
                     syncId = c.getStringOrNull(7)?.takeIf { it.isNotBlank() })
           }
+
+  /** Напоминания события (минуты до начала), по возрастанию. */
+  fun queryReminders(eventId: Long): List<Int> =
+      resolver
+          .query(
+              Reminders.CONTENT_URI,
+              arrayOf(Reminders.MINUTES),
+              "${Reminders.EVENT_ID} = ?",
+              arrayOf(eventId.toString()),
+              null)
+          ?.use { c -> buildList { while (c.moveToNext()) add(c.getInt(0)) } }
+          ?.distinct()
+          ?.sorted() ?: emptyList()
+
+  /** Заменяет напоминания события; HAS_ALARM провайдер пересчитывает сам. */
+  fun replaceReminders(eventId: Long, minutes: List<Int>) {
+    resolver.delete(Reminders.CONTENT_URI, "${Reminders.EVENT_ID} = ?", arrayOf(eventId.toString()))
+    minutes.distinct().forEach { m ->
+      resolver.insert(
+          Reminders.CONTENT_URI,
+          ContentValues().apply {
+            put(Reminders.EVENT_ID, eventId)
+            put(Reminders.MINUTES, m)
+            put(Reminders.METHOD, Reminders.METHOD_ALERT)
+          })
+    }
+  }
 
   fun insertEvent(values: ContentValues): Long {
     val uri = resolver.insert(Events.CONTENT_URI, values) ?: error("Calendar insert failed")

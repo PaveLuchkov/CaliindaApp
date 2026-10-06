@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.lpavs.caliinda.core.data.model.ThemeMode
@@ -27,6 +28,8 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     val INTRO_COMPLETED = booleanPreferencesKey("introduction")
     val DEFAULT_CALENDAR_ID = longPreferencesKey("default_calendar_id")
     val LIVE_NOTIFICATION = booleanPreferencesKey("live_notification")
+    val REMINDER_TIMED = intPreferencesKey("reminder_timed")
+    val REMINDER_ALL_DAY = intPreferencesKey("reminder_all_day")
   }
   val introFlow: Flow<Boolean> =
       dataStore.data
@@ -126,12 +129,44 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
   val liveNotificationFlow: Flow<Boolean> =
       dataStore.data.map { prefs -> prefs[PreferencesKeys.LIVE_NOTIFICATION] ?: false }
 
+  /**
+   * Напоминание по умолчанию для событий со временем — за сколько минут; null — без него.
+   * 15 минут, а не 30, как у Google: полчаса для большинства событий слишком рано.
+   */
+  val defaultReminderFlow: Flow<Int?> =
+      dataStore.data.map { prefs -> decodeReminder(prefs[PreferencesKeys.REMINDER_TIMED], DEFAULT_REMINDER) }
+
+  /** То же для событий на весь день: по умолчанию накануне в 9:00 (15 ч до полуночи). */
+  val defaultAllDayReminderFlow: Flow<Int?> =
+      dataStore.data.map { prefs ->
+        decodeReminder(prefs[PreferencesKeys.REMINDER_ALL_DAY], DEFAULT_ALL_DAY_REMINDER)
+      }
+
+  suspend fun saveDefaultReminder(minutes: Int?) {
+    dataStore.edit { prefs -> prefs[PreferencesKeys.REMINDER_TIMED] = minutes ?: NO_REMINDER }
+  }
+
+  suspend fun saveDefaultAllDayReminder(minutes: Int?) {
+    dataStore.edit { prefs -> prefs[PreferencesKeys.REMINDER_ALL_DAY] = minutes ?: NO_REMINDER }
+  }
+
+  // В DataStore нет null — «без напоминания» храним как -1.
+  private fun decodeReminder(stored: Int?, default: Int): Int? =
+      when (stored) {
+        null -> default
+        NO_REMINDER -> null
+        else -> stored
+      }
+
   suspend fun saveLiveNotification(enabled: Boolean) {
     dataStore.edit { prefs -> prefs[PreferencesKeys.LIVE_NOTIFICATION] = enabled }
   }
 
   companion object {
     private const val TAG = "SettingsRepository"
+    const val DEFAULT_REMINDER = 15
+    const val DEFAULT_ALL_DAY_REMINDER = 15 * 60
+    private const val NO_REMINDER = -1
 
     private fun parseZoneId(id: String): ZoneId =
         try {

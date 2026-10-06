@@ -29,6 +29,24 @@ constructor(
       settingsRepository.liveNotificationFlow.stateIn(
           viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+  val defaultReminder: StateFlow<Int?> =
+      settingsRepository.defaultReminderFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsRepository.DEFAULT_REMINDER)
+
+  val defaultAllDayReminder: StateFlow<Int?> =
+      settingsRepository.defaultAllDayReminderFlow.stateIn(
+          viewModelScope,
+          SharingStarted.WhileSubscribed(5000),
+          SettingsRepository.DEFAULT_ALL_DAY_REMINDER)
+
+  fun setDefaultReminder(minutes: Int?) {
+    viewModelScope.launch { settingsRepository.saveDefaultReminder(minutes) }
+  }
+
+  fun setDefaultAllDayReminder(minutes: Int?) {
+    viewModelScope.launch { settingsRepository.saveDefaultAllDayReminder(minutes) }
+  }
+
   fun setLiveNotification(enabled: Boolean) {
     viewModelScope.launch {
       settingsRepository.saveLiveNotification(enabled)

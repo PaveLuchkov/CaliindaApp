@@ -17,6 +17,11 @@ data class EventDraft(
     val zone: ZoneId,
     /** RRULE без префикса "RRULE:", null — событие не повторяется. */
     val recurrenceRule: String?,
+    /**
+     * Напоминания — за сколько минут до начала. null — не трогать то, что уже есть у события
+     * (правка, где напоминание не меняли); пустой список — без напоминаний.
+     */
+    val reminders: List<Int>? = null,
 )
 
 enum class EventUpdateMode {

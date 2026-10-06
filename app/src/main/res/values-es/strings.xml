@@ -308,4 +308,28 @@
     <string name="chip_keywords_sleep">dormir,sueño,cama,noche,siesta</string>
     <string name="chip_keywords_breakfast">desayuno,desayunar,mañana,brunch</string>
     <string name="chip_keywords_pet">mascota,perro,gato,veterinario</string>
+
+    <!-- Напоминания -->
+    <string name="reminder_none">Sin recordatorio</string>
+    <string name="reminder_at_start">A la hora de inicio</string>
+    <string name="reminder_day_before_at">El día anterior a las %1$s</string>
+    <string name="reminder_days_before_at">%1$d días antes a las %2$s</string>
+    <string name="reminder_setting_title">Recordatorio</string>
+    <string name="reminder_setting_all_day_title">Recordatorio de eventos de todo el día</string>
+    <string name="reminder">Recordatorio</string>
+    <plurals name="reminder_minutes_before">
+        <item quantity="one">%d minuto antes</item>
+        <item quantity="many">%d minutos antes</item>
+        <item quantity="other">%d minutos antes</item>
+    </plurals>
+    <plurals name="reminder_hours_before">
+        <item quantity="one">%d hora antes</item>
+        <item quantity="many">%d horas antes</item>
+        <item quantity="other">%d horas antes</item>
+    </plurals>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%d día antes</item>
+        <item quantity="many">%d días antes</item>
+        <item quantity="other">%d días antes</item>
+    </plurals>
 </resources>

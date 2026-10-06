@@ -1,5 +1,10 @@
 package com.lpavs.caliinda.feature.event_management.vm
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.minutes
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderDefaults
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import com.lpavs.caliinda.feature.live.LiveEventNotifier
 import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import kotlinx.coroutines.delay
@@ -42,7 +47,7 @@ import javax.inject.Inject
 class EventManagementViewModel
 @Inject
 constructor(
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
     private val funMessages: IFunMessages,
     private val pendingDeletions: PendingDeletions,
@@ -63,13 +68,27 @@ constructor(
       settingsRepository.zoneFlow.stateIn(
           viewModelScope, SharingStarted.Eagerly, ZoneId.systemDefault())
 
+  /** Напоминания по умолчанию — форма показывает их, пока пользователь не выбрал своё. */
+  val reminderDefaults: StateFlow<ReminderDefaults> =
+      combine(settingsRepository.defaultReminderFlow, settingsRepository.defaultAllDayReminderFlow) {
+              timed,
+              allDay ->
+            ReminderDefaults(timed, allDay)
+          }
+          .stateIn(
+              viewModelScope,
+              SharingStarted.Eagerly,
+              ReminderDefaults(
+                  SettingsRepository.DEFAULT_REMINDER, SettingsRepository.DEFAULT_ALL_DAY_REMINDER))
+
   // --- Создание ---
 
   fun createEvent(
       summary: String,
       description: String,
       location: String,
-      dateTimeState: EventDateTimeState
+      dateTimeState: EventDateTimeState,
+      reminder: ReminderChoice = ReminderChoice.Default,
   ) {
     viewModelScope.launch {
       if (!validateInput(summary, dateTimeState)) {
@@ -78,9 +97,16 @@ constructor(
         return@launch
       }
       val zone = timeZone.value
+      val defaults =
+          ReminderDefaults(
+              settingsRepository.defaultReminderFlow.first(),
+              settingsRepository.defaultAllDayReminderFlow.first())
       val draft =
           buildDraft(
-              summary, description, location, dateTimeState, dateTimeState.toRrule(zone)?.format())
+                  summary, description, location, dateTimeState, dateTimeState.toRrule(zone)?.format())
+              .copy(
+                  reminders =
+                      listOfNotNull(reminder.minutes(defaults, dateTimeState.isAllDay)))
       runOperation(
           operation = { calendarRepository.createEvent(draft) },
           successMessage = { funMessages.getEventCreatedMessage(draft.summary) },

@@ -19,6 +19,11 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.times
+import com.lpavs.caliinda.core.data.calendar.model.EventDraft
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -55,7 +60,11 @@ class EventManagementViewModelTest {
   @Before
   fun setUp() {
     Dispatchers.setMain(dispatcher)
-    val settings: SettingsRepository = mock { on { zoneFlow } doReturn flowOf(zone) }
+    val settings: SettingsRepository = mock {
+      on { zoneFlow } doReturn flowOf(zone)
+      on { defaultReminderFlow } doReturn flowOf(15)
+      on { defaultAllDayReminderFlow } doReturn flowOf(900)
+    }
     viewModel =
         EventManagementViewModel(
             settings,
@@ -144,5 +153,22 @@ class EventManagementViewModelTest {
     val date = LocalDate.of(2026, 10, 7)
     viewModel.openCreate(date, asProject = true)
     assertEquals(EventDialog.Creating(date, asProject = true), viewModel.uiState.value.dialog)
+  }
+
+  @Test
+  fun `новое событие получает напоминание по умолчанию`() = runTest(dispatcher) {
+    whenever(repository.createEvent(any())).thenReturn(Result.success(Unit))
+    advanceUntilIdle()
+    val timed = single.toDateTimeState(zone)
+
+    viewModel.createEvent("Встреча", "", "", timed)
+    viewModel.createEvent("Отпуск", "", "", timed.toggledAllDay(java.time.LocalTime.NOON))
+    viewModel.createEvent(
+        "Без", "", "", timed, reminder = ReminderChoice.Custom(minutes = null))
+    advanceUntilIdle()
+
+    val drafts = argumentCaptor<EventDraft>()
+    verify(repository, times(3)).createEvent(drafts.capture())
+    assertEquals(listOf(listOf(15), listOf(900), emptyList<Int>()), drafts.allValues.map { it.reminders })
   }
 }

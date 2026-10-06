@@ -274,4 +274,38 @@ class CalendarRepositoryProviderTest {
     assertEquals(null, moved.recurringEventId)
     assertEquals(listOf("Walk"), day(today.plusDays(2)).map { it.summary })
   }
+
+  @Test
+  fun reminders_writtenKeptAndInherited() = runBlocking {
+    repository
+        .createEvent(draft("Call", today, rrule = "FREQ=DAILY;COUNT=4").copy(reminders = listOf(15)))
+        .getOrThrow()
+    val first = day(today).single()
+    assertEquals(listOf(15), repository.remindersOf(first))
+
+    // Напоминание не трогали — остаётся как было.
+    repository
+        .updateEvent(first, draft("Call!", today, rrule = first.recurrenceRule), EventUpdateMode.ALL_IN_SERIES)
+        .getOrThrow()
+    assertEquals(listOf(15), repository.remindersOf(day(today).single()))
+
+    // «Это и следующие» — новая серия наследует напоминание старой.
+    val d2 = day(today.plusDays(2)).single()
+    repository
+        .updateEvent(
+            d2, draft("Call later", today.plusDays(2), rrule = "FREQ=DAILY;COUNT=4"),
+            EventUpdateMode.THIS_AND_FOLLOWING)
+        .getOrThrow()
+    assertEquals(listOf(15), repository.remindersOf(day(today.plusDays(2)).single()))
+
+    // Пустой список — без напоминаний.
+    val d3 = day(today.plusDays(3)).single()
+    repository
+        .updateEvent(
+            d3,
+            draft("Call later", today.plusDays(3), rrule = d3.recurrenceRule).copy(reminders = emptyList()),
+            EventUpdateMode.ALL_IN_SERIES)
+        .getOrThrow()
+    assertTrue(repository.remindersOf(day(today.plusDays(3)).single()).isEmpty())
+  }
 }
