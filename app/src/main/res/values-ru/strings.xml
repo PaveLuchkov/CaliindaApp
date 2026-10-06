@@ -155,6 +155,17 @@
     <string name="allow_access">Разрешить доступ</string>
     <string name="intro_finish">Готово</string>
     <string name="intro_next">Далее</string>
+    <string name="intro_colors_title">Цвет — это время</string>
+    <string name="intro_colors_text">Идущее сейчас событие выделено и показывает прогресс, а следующее постепенно окрашивается по мере приближения.</string>
+    <string name="intro_height_title">Высота — это длительность</string>
+    <string name="intro_height_text">Длинное событие и выглядит длинным — день читается с одного взгляда.</string>
+    <string name="intro_projects_title">Проекты — по соседству</string>
+    <string name="intro_projects_text">Всё, что длится дольше дня, — на экране проектов, свайпом вправо. А в дне проект виден тонкой лентой.</string>
+    <string name="intro_start_title">Всё готово</string>
+    <string name="intro_start_text">Для события хватит названия и времени.</string>
+    <string name="intro_create_event">Создать событие</string>
+    <string name="intro_skip">Пропустить</string>
+    <string name="intro_projects_page">Здесь появятся события длиннее одного дня</string>
     <string name="calendars">Календари</string>
     <string name="about">О приложении</string>
     <string name="new_events_saved_to">Новые события сохраняются в</string>

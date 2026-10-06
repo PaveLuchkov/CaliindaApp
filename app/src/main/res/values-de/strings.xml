@@ -153,6 +153,17 @@
     <string name="allow_access">Zugriff erlauben</string>
     <string name="intro_finish">Fertig</string>
     <string name="intro_next">Weiter</string>
+    <string name="intro_colors_title">Farbe zeigt die Zeit</string>
+    <string name="intro_colors_text">Das laufende Ereignis ist hervorgehoben und zeigt seinen Fortschritt. Das nächste färbt sich nach und nach, je näher es rückt.</string>
+    <string name="intro_height_title">Höhe zeigt die Dauer</string>
+    <string name="intro_height_text">Ein langes Ereignis sieht auch lang aus – so erfasst du deinen Tag auf einen Blick.</string>
+    <string name="intro_projects_title">Projekte nebenan</string>
+    <string name="intro_projects_text">Alles, was länger als einen Tag dauert, findest du im Projekt-Bildschirm: wische nach rechts. Im Tag ist ein Projekt ein schmales Band.</string>
+    <string name="intro_start_title">Alles bereit</string>
+    <string name="intro_start_text">Für ein Ereignis reichen Titel und Uhrzeit.</string>
+    <string name="intro_create_event">Ereignis erstellen</string>
+    <string name="intro_skip">Überspringen</string>
+    <string name="intro_projects_page">Hier erscheinen Ereignisse, die länger als einen Tag dauern</string>
     <string name="calendars">Kalender</string>
     <string name="about">Über die App</string>
     <string name="new_events_saved_to">Neue Termine werden gespeichert in</string>

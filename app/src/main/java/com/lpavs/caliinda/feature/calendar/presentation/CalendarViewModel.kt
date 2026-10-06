@@ -15,6 +15,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.model.EventUiDetailsMode
 import com.lpavs.caliinda.feature.calendar.presentation.model.EventUiModelMapper
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroState
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.system.IntroStep
+import com.lpavs.caliinda.feature.calendar.presentation.intro.IntroSamplesFactory
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.DayPageUiState
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.MonthPageUiState
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.ProjectRibbon
@@ -56,6 +57,7 @@ constructor(
     private val eventUiModelMapper: EventUiModelMapper,
     private val eventUiDetailsModelMapper: EventUiDetailsModelMapper,
     private val pendingDeletions: PendingDeletions,
+    private val introSamplesFactory: IntroSamplesFactory,
 ) : ViewModel() {
 
   // --- ОСНОВНОЕ СОСТОЯНИЕ UI ---
@@ -64,7 +66,14 @@ constructor(
   val state: StateFlow<CalendarState> = _uiState.asStateFlow()
 
   private val _introState = MutableStateFlow(IntroState())
-  val introState: StateFlow<IntroState> = _introState.asStateFlow()
+
+  /** Знакомство с примерами событий, пересобранными на текущее время (тик раз в минуту). */
+  val introState: StateFlow<IntroState> =
+      combine(_introState, timeTicker.currentTime, settingsRepository.zoneFlow) { state, now, zone ->
+            if (state.isFinished) state else state.copy(samples = introSamplesFactory.build(now, zone))
+          }
+          .flowOn(Dispatchers.Default)
+          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IntroState())
 
   // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
@@ -95,27 +104,22 @@ constructor(
     observeIntroduction()
   }
 
-    private fun observeIntroduction() {
-        viewModelScope.launch {
-            val finished = settingsRepository.isIntroFinished()
-            if (finished) {
-                _introState.value = IntroState(isFinished = true)
-            }
-        }
+  private fun observeIntroduction() {
+    viewModelScope.launch {
+      if (settingsRepository.isIntroFinished()) _introState.update { it.copy(isFinished = true) }
     }
+  }
 
-    fun onIntroNext() {
-        val next = IntroStep.next(_introState.value.currentStep)
+  fun onIntroNext() {
+    val next = IntroStep.next(_introState.value.currentStep)
+    if (next == null) finishIntro() else _introState.update { it.copy(currentStep = next) }
+  }
 
-        if (next == null) {
-            _introState.value = _introState.value.copy(isFinished = true)
-            viewModelScope.launch {
-                settingsRepository.saveIntroComplete()
-            }
-        } else {
-            _introState.value = _introState.value.copy(currentStep = next)
-        }
-    }
+  /** Конец знакомства: последний шаг, «Пропустить» или «Создать событие». */
+  fun finishIntro() {
+    _introState.update { it.copy(isFinished = true) }
+    viewModelScope.launch { settingsRepository.saveIntroComplete() }
+  }
 
   private fun observeCalendarPermission() {
     viewModelScope.launch {

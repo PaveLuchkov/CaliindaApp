@@ -191,6 +191,7 @@ fun CalendarScreen(
           monthPageState = calendarViewModel::getMonthPageUiState,
           actions = eventActions,
           onIntroNext = calendarViewModel::onIntroNext,
+          onIntroFinish = calendarViewModel::finishIntro,
           calendarPagerState = horizontalPagerState,
           dailyViewPagerState = pagerState,
           monthPagerState = monthPagerState,
