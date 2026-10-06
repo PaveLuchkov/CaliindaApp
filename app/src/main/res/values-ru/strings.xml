@@ -318,4 +318,31 @@
     <string name="chip_keywords_sleep">сон,спать,кровать,ночь</string>
     <string name="chip_keywords_breakfast">завтрак,утро,бранч</string>
     <string name="chip_keywords_pet">питом,собак,кошк,кот,ветеринар,выгул,покормить</string>
+
+    <!-- Напоминания -->
+    <string name="reminder_none">Без напоминания</string>
+    <string name="reminder_at_start">В момент начала</string>
+    <string name="reminder_day_before_at">Накануне в %1$s</string>
+    <string name="reminder_days_before_at">За %1$d дн. в %2$s</string>
+    <string name="reminder_setting_title">Напоминание</string>
+    <string name="reminder_setting_all_day_title">Напоминание о событиях на весь день</string>
+    <string name="reminder">Напоминание</string>
+    <plurals name="reminder_minutes_before">
+        <item quantity="one">За %d минуту</item>
+        <item quantity="few">За %d минуты</item>
+        <item quantity="many">За %d минут</item>
+        <item quantity="other">За %d минуты</item>
+    </plurals>
+    <plurals name="reminder_hours_before">
+        <item quantity="one">За %d час</item>
+        <item quantity="few">За %d часа</item>
+        <item quantity="many">За %d часов</item>
+        <item quantity="other">За %d часа</item>
+    </plurals>
+    <plurals name="reminder_days_before">
+        <item quantity="one">За %d день</item>
+        <item quantity="few">За %d дня</item>
+        <item quantity="many">За %d дней</item>
+        <item quantity="other">За %d дня</item>
+    </plurals>
 </resources>

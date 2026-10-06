@@ -1,5 +1,12 @@
 package com.lpavs.caliinda.feature.settings.ui
 
+import com.lpavs.caliinda.core.ui.util.TIMED_REMINDER_OPTIONS
+import com.lpavs.caliinda.core.ui.util.ALL_DAY_REMINDER_OPTIONS
+import com.lpavs.caliinda.core.ui.util.reminderLabel
+import com.lpavs.caliinda.core.ui.components.ChoiceOption
+import com.lpavs.caliinda.core.ui.components.ChoiceDialog
+import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.Alarm
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -125,6 +132,10 @@ fun SettingsScreen(
   var showZonePicker by rememberSaveable { mutableStateOf(false) }
   var calendarsExpanded by rememberSaveable { mutableStateOf(false) }
   val context = LocalContext.current
+  val defaultReminder by settingsViewModel.defaultReminder.collectAsStateWithLifecycle()
+  val defaultAllDayReminder by settingsViewModel.defaultAllDayReminder.collectAsStateWithLifecycle()
+  // Какой выбор напоминания открыт: false — для событий со временем, true — на весь день.
+  var reminderPicker by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
   // Live-уведомление: включаем только с разрешением; отказали — дальше ведём в системные настройки.
   val liveEnabled by settingsViewModel.liveNotification.collectAsStateWithLifecycle()
@@ -151,6 +162,27 @@ fun SettingsScreen(
                   .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
       else -> permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
+  }
+
+  reminderPicker?.let { allDay ->
+    val options = if (allDay) ALL_DAY_REMINDER_OPTIONS else TIMED_REMINDER_OPTIONS
+    ChoiceDialog(
+        icon = Icons.Rounded.Alarm,
+        title =
+            stringResource(
+                if (allDay) R.string.reminder_setting_all_day_title else R.string.reminder_setting_title),
+        message = null,
+        options =
+            options.map { minutes ->
+              val current = if (allDay) defaultAllDayReminder else defaultReminder
+              ChoiceOption(reminderLabel(minutes, allDay), selected = minutes == current) {
+                if (allDay) settingsViewModel.setDefaultAllDayReminder(minutes)
+                else settingsViewModel.setDefaultReminder(minutes)
+                reminderPicker = null
+              }
+            },
+        cancelText = stringResource(R.string.cancel),
+        onDismiss = { reminderPicker = null })
   }
 
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -257,7 +289,7 @@ fun SettingsScreen(
                   SegmentedListItem(
                       checked = checked,
                       onCheckedChange = onLiveToggle,
-                      shapes = settingsShapes(index = 0, count = 1),
+                      shapes = settingsShapes(index = 0, count = 3),
                       colors = settingsItemColors(),
                       leadingContent = {
                         Icon(Icons.Rounded.NotificationsActive, contentDescription = null)
@@ -271,6 +303,28 @@ fun SettingsScreen(
                                 } else R.string.live_setting_summary))
                       }) {
                         Text(stringResource(R.string.live_setting_title))
+                      }
+                }
+                item {
+                  SegmentedListItem(
+                      onClick = { reminderPicker = false },
+                      shapes = settingsShapes(index = 1, count = 3),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.Alarm, contentDescription = null) },
+                      supportingContent = { Text(reminderLabel(defaultReminder, allDay = false)) }) {
+                        Text(stringResource(R.string.reminder_setting_title))
+                      }
+                }
+                item {
+                  SegmentedListItem(
+                      onClick = { reminderPicker = true },
+                      shapes = settingsShapes(index = 2, count = 3),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.EventAvailable, contentDescription = null) },
+                      supportingContent = {
+                        Text(reminderLabel(defaultAllDayReminder, allDay = true))
+                      }) {
+                        Text(stringResource(R.string.reminder_setting_all_day_title))
                       }
                 }
               }

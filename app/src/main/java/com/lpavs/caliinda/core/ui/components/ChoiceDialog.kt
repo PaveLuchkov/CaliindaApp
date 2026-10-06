@@ -1,8 +1,14 @@
-package com.lpavs.caliinda.feature.event_management.ui.shared
+package com.lpavs.caliinda.core.ui.components
 
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,8 +31,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
-/** Вариант в [ChoiceDialog]. [destructive] — красится в цвет ошибки (удаление серии). */
-class ChoiceOption(val text: String, val destructive: Boolean = false, val onClick: () -> Unit)
+/**
+ * Вариант в [ChoiceDialog]. [destructive] — красится в цвет ошибки (удаление серии);
+ * [selected] — текущее значение (выбор настройки), выделено и с галочкой.
+ */
+class ChoiceOption(
+    val text: String,
+    val destructive: Boolean = false,
+    val selected: Boolean = false,
+    val onClick: () -> Unit,
+)
 
 /**
  * Диалог выбора одним нажатием, как системный запрос разрешений в Android 16: иконка,
@@ -38,7 +52,7 @@ class ChoiceOption(val text: String, val destructive: Boolean = false, val onCli
 fun ChoiceDialog(
     icon: ImageVector,
     title: String,
-    message: String,
+    message: String?,
     options: List<ChoiceOption>,
     cancelText: String,
     onDismiss: () -> Unit,
@@ -60,13 +74,19 @@ fun ChoiceDialog(
                     style = typography.headlineSmall,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 16.dp))
-                Text(
-                    message,
-                    style = typography.bodyMedium,
-                    color = colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 24.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                if (message != null) {
+                  Text(
+                      message,
+                      style = typography.bodyMedium,
+                      color = colorScheme.onSurfaceVariant,
+                      textAlign = TextAlign.Center,
+                      modifier = Modifier.padding(top = 16.dp))
+                }
+                Spacer(Modifier.height(24.dp))
+                // Вариантов может быть много (напоминания) — на маленьком экране список листается.
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState())) {
                   all.forEachIndexed { index, option ->
                     val isCancel = index == all.lastIndex
                     Button(
@@ -74,6 +94,10 @@ fun ChoiceDialog(
                         shape = stackedShape(index, all.lastIndex),
                         colors =
                             when {
+                              option.selected ->
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = colorScheme.primary,
+                                      contentColor = colorScheme.onPrimary)
                               option.destructive ->
                                   ButtonDefaults.buttonColors(
                                       containerColor = colorScheme.errorContainer,
@@ -88,6 +112,10 @@ fun ChoiceDialog(
                                       contentColor = colorScheme.onSecondaryContainer)
                             },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                          if (option.selected) {
+                            Icon(Icons.Rounded.Check, contentDescription = null)
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                          }
                           Text(option.text, textAlign = TextAlign.Center)
                         }
                   }

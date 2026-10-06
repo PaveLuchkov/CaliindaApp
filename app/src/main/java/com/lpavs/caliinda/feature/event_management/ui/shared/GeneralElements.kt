@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import com.lpavs.caliinda.core.ui.components.ChoiceOption
+import com.lpavs.caliinda.core.ui.components.ChoiceDialog
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.Icons

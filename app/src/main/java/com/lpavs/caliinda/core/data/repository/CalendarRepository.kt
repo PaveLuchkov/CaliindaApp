@@ -166,8 +166,15 @@ constructor(
           put(Events.CALENDAR_ID, resolveTargetCalendarId())
           putTiming(timingOf(draft), draft.recurrenceRule)
         }
-    dataSource.insertEvent(values)
+    val id = dataSource.insertEvent(values)
+    draft.reminders?.let { dataSource.replaceReminders(id, it) }
   }
+
+  /** Напоминания события (минуты до начала) — для формы правки. */
+  suspend fun remindersOf(event: EventDto): List<Int> =
+      withContext(ioDispatcher) {
+        runCatching { dataSource.queryReminders(event.eventId) }.getOrDefault(emptyList())
+      }
 
   suspend fun updateEvent(event: EventDto, draft: EventDraft, mode: EventUpdateMode): Result<Unit> =
       write {
@@ -182,6 +189,7 @@ constructor(
           mode == EventUpdateMode.SINGLE_INSTANCE && isException -> {
             dataSource.updateEvent(
                 event.eventId, draft.contentValues().apply { putExceptionTiming(timing) })
+            draft.reminders?.let { dataSource.replaceReminders(event.eventId, it) }
           }
           mode == EventUpdateMode.THIS_AND_FOLLOWING && inSeries -> splitSeries(event, draft)
           mode != EventUpdateMode.SINGLE_INSTANCE && inSeries -> updateWholeSeries(event, draft)
@@ -189,6 +197,7 @@ constructor(
             dataSource.updateEvent(
                 event.eventId,
                 draft.contentValues().apply { putTiming(timing, draft.recurrenceRule) })
+            draft.reminders?.let { dataSource.replaceReminders(event.eventId, it) }
           }
         }
       }
@@ -211,7 +220,8 @@ constructor(
             put(Events.EVENT_TIMEZONE, timing.timeZone)
             put(Events.ALL_DAY, if (timing.isAllDay) 1 else 0)
           }
-      dataSource.insertException(master.id, values)
+      val id = dataSource.insertException(master.id, values)
+      dataSource.replaceReminders(id, draft.reminders ?: dataSource.queryReminders(master.id))
     } else {
       excludeInstance(master.id, event.instanceBegin)
       val values =
@@ -219,7 +229,9 @@ constructor(
             put(Events.CALENDAR_ID, event.calendarId)
             putTiming(timing, rrule = null)
           }
-      dataSource.insertEvent(values)
+      val id = dataSource.insertEvent(values)
+      // Отдельное событие вместо экземпляра — напоминания как у серии, если их не меняли.
+      dataSource.replaceReminders(id, draft.reminders ?: dataSource.queryReminders(master.id))
     }
   }
 
@@ -245,6 +257,7 @@ constructor(
               seriesDraft.recurrenceRule)
         }
     dataSource.updateEvent(masterId, values)
+    draft.reminders?.let { dataSource.replaceReminders(masterId, it) }
   }
 
   /**
@@ -275,7 +288,9 @@ constructor(
           put(Events.CALENDAR_ID, event.calendarId)
           putTiming(timingOf(draft), newRule?.format())
         }
-    dataSource.insertEvent(values)
+    val id = dataSource.insertEvent(values)
+    // Новая серия продолжает старую — и напоминания у неё те же, если их не меняли.
+    dataSource.replaceReminders(id, draft.reminders ?: dataSource.queryReminders(master.id))
   }
 
   /** Серия заканчивается строго до [splitTime]; её исключения с этого момента удаляются. */
@@ -336,7 +351,7 @@ constructor(
 
   // --- Внутреннее ---
 
-  private suspend fun write(block: suspend () -> Any): Result<Unit> =
+  private suspend fun write(block: suspend () -> Any?): Result<Unit> =
       withContext(ioDispatcher) {
         runCatching {
               block()
