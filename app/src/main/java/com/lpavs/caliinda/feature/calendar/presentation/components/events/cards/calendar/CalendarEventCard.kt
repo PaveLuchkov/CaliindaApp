@@ -14,9 +14,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -64,25 +62,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.star
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.theme.CalendarUiDefaults
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.Typography
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.core.ui.util.RoundedPolygonShape
 import com.lpavs.caliinda.core.ui.util.calculateShapeContainerSize
 import com.lpavs.caliinda.core.ui.util.lerpOkLab
 import com.lpavs.caliinda.feature.calendar.presentation.model.EventUiModel
@@ -114,16 +105,7 @@ fun CalendarEventItem(
           targetValue = targetElevatioion,
           animationSpec = AppMotion.defaultEffectsSpec(),
           label = "eventItemHeightAnimation")
-  val starShape =
-      remember(shapeParams.numVertices, shapeParams.radiusSeed) {
-        RoundedPolygon.star(
-            numVerticesPerRadius = shapeParams.numVertices,
-            radius = shapeParams.radiusSeed,
-            innerRadius = cuid.SHAPEINNERRADIUS,
-            rounding = CornerRounding(cuid.ShapeCornerRounding))
-      }
-
-  val clipStar = remember(starShape) { RoundedPolygonShape(polygon = starShape) }
+  val clipStar = remember(shapeParams) { eventStarShape(shapeParams) }
   val darkTheme = isSystemInDarkTheme()
   val shadowColor = if (!darkTheme) Color.Black else Color.White
   val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)

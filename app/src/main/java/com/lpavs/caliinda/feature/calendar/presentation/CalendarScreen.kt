@@ -264,8 +264,7 @@ fun CalendarScreen(
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone,
         onEdit = eventManagementViewModel::requestEditEvent,
-        onDelete = eventManagementViewModel::requestDelete,
-        themeMode = themeMode)
+        onDelete = eventManagementViewModel::requestDelete)
   }
   EventManagementDialogs(
       dialog = eventManagementState.dialog,

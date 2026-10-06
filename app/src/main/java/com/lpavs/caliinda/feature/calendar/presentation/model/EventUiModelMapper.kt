@@ -153,7 +153,15 @@ constructor(
         return (Duration.between(start, now).toMillis().toFloat() / total).coerceIn(0f, 1f)
     }
 
-    fun generateShapeParams(eventId: String): GeneratedShapeParams {
+    fun generateShapeParams(eventId: String): GeneratedShapeParams =
+        com.lpavs.caliinda.feature.calendar.presentation.model.generateShapeParams(eventId)
+}
+
+/**
+ * Параметры фигуры события — детерминированы его id: одно событие всегда одной формы, в
+ * ленте и в подробностях.
+ */
+fun generateShapeParams(eventId: String): GeneratedShapeParams {
     val hashCode = eventId.hashCode()
     val absHashCode = abs(hashCode)
 
@@ -182,7 +190,7 @@ constructor(
         shadowOffsetYSeed = shadowOffsetYSeed.dp,
         offestParam = offsetParam)
   }
-}
+
 
 data class GeneratedShapeParams(
     val numVertices: Int,
