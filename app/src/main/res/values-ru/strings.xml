@@ -276,4 +276,35 @@
     <string name="live_permission_denied">Разрешите уведомления в настройках системы</string>
     <string name="calendars_show_all">Все календари (%1$d)</string>
     <string name="calendars_collapse">Свернуть</string>
+
+    <!-- Ключевые слова встроенных чипов для поиска по набранному названию (через запятую). -->
+    <string name="chip_keywords_project">проект,задач,дедлайн,план,спринт,запуск</string>
+    <string name="chip_keywords_work">работ,офис,смен,задач,код,дела</string>
+    <string name="chip_keywords_dinner">ужин,ресторан,поесть,еда,вечер</string>
+    <string name="chip_keywords_meeting">встреч,совещ,созвон,митинг,команд,планерк,обсужд</string>
+    <string name="chip_keywords_coffee">кофе,кофейн,кафе,эспрессо,латте,чай,перерыв</string>
+    <string name="chip_keywords_lunch">обед,столов,поесть,еда,ланч</string>
+    <string name="chip_keywords_shopping">покупк,магазин,шопинг,продукт,рынок,торгов</string>
+    <string name="chip_keywords_road">дорог,путь,поездк,машин,автобус,метро,электричк,домой</string>
+    <string name="chip_keywords_appointment">прием,запис,визит,бронь,парикмах,стрижк,салон</string>
+    <string name="chip_keywords_travel">путешеств,поездк,отпуск,перелет,аэропорт,отель,самолет,поезд</string>
+    <string name="chip_keywords_party">вечеринк,праздник,тусовк,друз,клуб,бар</string>
+    <string name="chip_keywords_movie">фильм,кино,кинотеатр,сериал,мультфильм</string>
+    <string name="chip_keywords_study">учеб,урок,лекци,курс,домашк,экзамен,школ,универ,занят</string>
+    <string name="chip_keywords_gym">спортзал,зал,трениров,спорт,фитнес,бег,йог,бассейн,качалк</string>
+    <string name="chip_keywords_relax">отдых,расслаб,перерыв,спа,массаж</string>
+    <string name="chip_keywords_reading">чтени,читать,книг,библиотек</string>
+    <string name="chip_keywords_cleaning">уборк,убрать,стирк,пылесос,посуд,порядок</string>
+    <string name="chip_keywords_cooking">готовк,готовить,приготов,рецепт,кухн,выпечк</string>
+    <string name="chip_keywords_walking">прогулк,гулять,погулять,парк,поход</string>
+    <string name="chip_keywords_hobby">хобби,музык,гитар,рисова,игр,фото,творчеств</string>
+    <string name="chip_keywords_date">свидан,романт,девушк,парн,годовщин</string>
+    <string name="chip_keywords_doctor">врач,доктор,клиник,больниц,стоматолог,анализ,терапевт,поликлиник</string>
+    <string name="chip_keywords_birthday">день рождения,рожден,подарок,праздник</string>
+    <string name="chip_keywords_presentation">презентац,выступлен,доклад,демо,слайд,питч</string>
+    <string name="chip_keywords_call">звонок,позвонить,созвон,зум,видеозвонок,телефон</string>
+    <string name="chip_keywords_errand">поручени,дела,почт,банк,забрать,документ</string>
+    <string name="chip_keywords_sleep">сон,спать,кровать,ночь</string>
+    <string name="chip_keywords_breakfast">завтрак,утро,бранч</string>
+    <string name="chip_keywords_pet">питом,собак,кошк,кот,ветеринар,выгул,покормить</string>
 </resources>

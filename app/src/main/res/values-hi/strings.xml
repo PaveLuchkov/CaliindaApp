@@ -255,4 +255,35 @@
     <string name="live_permission_denied">सिस्टम सेटिंग में सूचनाओं की अनुमति दें</string>
     <string name="calendars_show_all">सभी कैलेंडर (%1$d)</string>
     <string name="calendars_collapse">छोटा करें</string>
+
+    <!-- Ключевые слова встроенных чипов для поиска по набранному названию (через запятую). -->
+    <string name="chip_keywords_project">प्रोजेक्ट,परियोजना,डेडलाइन,योजना</string>
+    <string name="chip_keywords_work">काम,ऑफिस,दफ्तर,नौकरी,शिफ्ट</string>
+    <string name="chip_keywords_dinner">रात का खाना,डिनर,खाना,रेस्टोरेंट</string>
+    <string name="chip_keywords_meeting">मीटिंग,बैठक,टीम,चर्चा,कॉन्फ्रेंस</string>
+    <string name="chip_keywords_coffee">कॉफी,कैफे,चाय,ब्रेक</string>
+    <string name="chip_keywords_lunch">दोपहर का खाना,लंच,खाना</string>
+    <string name="chip_keywords_shopping">खरीदारी,शॉपिंग,दुकान,बाजार,किराना</string>
+    <string name="chip_keywords_road">रास्ता,सफर,गाड़ी,बस,मेट्रो,ट्रेन,घर</string>
+    <string name="chip_keywords_appointment">अपॉइंटमेंट,मुलाकात,बुकिंग,सैलून</string>
+    <string name="chip_keywords_travel">यात्रा,सफर,छुट्टी,फ्लाइट,एयरपोर्ट,होटल</string>
+    <string name="chip_keywords_party">पार्टी,जश्न,दोस्त,क्लब</string>
+    <string name="chip_keywords_movie">फिल्म,मूवी,सिनेमा,सीरीज</string>
+    <string name="chip_keywords_study">पढ़ाई,क्लास,लेक्चर,कोर्स,होमवर्क,परीक्षा,स्कूल,कॉलेज</string>
+    <string name="chip_keywords_gym">जिम,कसरत,व्यायाम,वर्कआउट,खेल,दौड़,योग</string>
+    <string name="chip_keywords_relax">आराम,विश्राम,ब्रेक,स्पा,मालिश</string>
+    <string name="chip_keywords_reading">पढ़ना,किताब,पुस्तक,लाइब्रेरी</string>
+    <string name="chip_keywords_cleaning">सफाई,कपड़े,बर्तन,झाड़ू</string>
+    <string name="chip_keywords_cooking">खाना बनाना,पकाना,रेसिपी,रसोई</string>
+    <string name="chip_keywords_walking">सैर,टहलना,पार्क,घूमना</string>
+    <string name="chip_keywords_hobby">शौक,हॉबी,संगीत,गिटार,चित्रकारी,खेल,फोटो</string>
+    <string name="chip_keywords_date">डेट,रोमांटिक,पार्टनर,सालगिरह</string>
+    <string name="chip_keywords_doctor">डॉक्टर,क्लिनिक,अस्पताल,जांच</string>
+    <string name="chip_keywords_birthday">जन्मदिन,बर्थडे,तोहफा</string>
+    <string name="chip_keywords_presentation">प्रेजेंटेशन,प्रस्तुति,भाषण,डेमो,स्लाइड</string>
+    <string name="chip_keywords_call">कॉल,फोन,ज़ूम,वीडियो कॉल</string>
+    <string name="chip_keywords_errand">डाकघर,बैंक,दस्तावेज</string>
+    <string name="chip_keywords_sleep">नींद,सोना,बिस्तर,रात</string>
+    <string name="chip_keywords_breakfast">नाश्ता,सुबह,ब्रंच</string>
+    <string name="chip_keywords_pet">पालतू,कुत्ता,बिल्ली,पशु</string>
 </resources>

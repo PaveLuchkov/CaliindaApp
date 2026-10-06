@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import com.lpavs.caliinda.core.data.suggestions.ChipTerms
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,7 +20,12 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.ChipsRow
 import com.lpavs.caliinda.feature.event_management.ui.shared.CustomOutlinedTextField
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions.SuggestionsViewModel
 
-data class SugNameChips(val key: String, val name: String, val fullText: String)
+data class SugNameChips(
+    val key: String,
+    val name: String,
+    val fullText: String,
+    val terms: ChipTerms = ChipTerms(listOf(name, fullText), emptyList()),
+)
 
 @Composable
 fun EventNameSection(
@@ -51,6 +57,8 @@ fun EventNameSection(
       supportingText = { if (summaryError != null) Text(summaryError) },
       enabled = !isLoading,
   )
+  // Набранное название поднимает подходящие чипы вперёд.
+  LaunchedEffect(summary) { suggestionsViewModel.updateQuery(summary) }
   val lazyListState = rememberLazyListState()
   LaunchedEffect(suggestedChips) { lazyListState.animateScrollToItem(index = 0) }
   ChipsRow(
