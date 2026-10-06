@@ -22,3 +22,5 @@ Android-календарь на Jetpack Compose (Kotlin, Hilt). Данные —
 - M3 `DatePicker` работает в UTC — даты конвертировать через `ZoneOffset.UTC`,
   события — в поясе из настроек (`SettingsRepository.timeZoneFlow`).
 - Сборка: `./gradlew assembleDebug`, тесты: `./gradlew testDebugUnitTest`.
+- Скиллы Google в `.claude/skills` (edge-to-edge, agp-9-upgrade, testing-setup) — общие
+  советы; при расхождении с `docs/DESIGN.md` и этими соглашениями правила проекта главнее.
