@@ -7,30 +7,17 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggle
 import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggles
 import java.time.ZoneId
 import com.lpavs.caliinda.core.ui.theme.AppMotion
-import androidx.compose.animation.core.snap
 import android.text.format.DateFormat
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
@@ -40,17 +27,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.feature.event_management.ui.shared.DatePickerField
-import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerField
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.Locale
 
 @Composable
@@ -82,8 +65,10 @@ fun EventDateTimePicker(
   val recEvent = stringResource(R.string.recurrence_event)
 
 
+  // «вт, 6 окт.» — короче полной даты, но с днём недели; порядок частей — по локали.
   val deviceDateFormatter = remember {
-    DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.getDefault())
+    val locale = Locale.getDefault()
+    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "EEEdMMM"), locale)
   }
   val deviceTimeFormatter =
       remember(context) {
@@ -124,144 +109,38 @@ fun EventDateTimePicker(
           }
         }
 
-    Column(
-        modifier = Modifier.animateContentSize(animationSpec = AppMotion.defaultSpatialSpec()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          AnimatedContent(
-              targetState = Pair(isAllDay, isOneDay),
-              transitionSpec = {
-                if (targetState.first != initialState.first ||
-                        targetState.second != initialState.second) {
-                      (fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
-                          slideInVertically(
-                              initialOffsetY = { it / 4 },
-                              animationSpec = AppMotion.defaultSpatialSpec())) togetherWith
-                          (fadeOut(animationSpec = AppMotion.fastEffectsSpec()) +
-                              slideOutVertically(
-                                  targetOffsetY = { -it / 4 }, animationSpec = AppMotion.defaultSpatialSpec()))
-                    } else {
-                      fadeIn(animationSpec = snap()) togetherWith
-                          fadeOut(animationSpec = snap())
-                    }
-                    .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> AppMotion.defaultSpatialSpec() }))
-              },
-              label = "DateTimeFieldsAnimation") { targetLayoutState ->
-                val (showAllDay, showOneDay) = targetLayoutState
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                  when {
-                    showAllDay && showOneDay -> {
-                      DatePickerField(
-                          state.startDate,
-                          deviceDateFormatter,
-                          isLoading,
-                          onRequestShowStartDatePicker,
-                          Modifier.fillMaxWidth().padding(horizontal = 50.dp),
-                          today = today)
-                    }
+    val timeCells =
+        if (isAllDay) null
+        else
+            listOf(
+                DateTimeCell(
+                    text = state.startTime?.format(deviceTimeFormatter) ?: "--:--",
+                    onClick = onRequestShowStartTimePicker,
+                    // Долгое нажатие — начать прямо сейчас.
+                    onLongClick = { onStateChange(state.startingAt(LocalTime.now(zone))) }),
+                DateTimeCell(
+                    text = state.endTime?.format(deviceTimeFormatter) ?: "--:--",
+                    onClick = onRequestShowEndTimePicker))
+    val dateCells =
+        listOfNotNull(
+            DateTimeCell(
+                text = state.startDate.format(deviceDateFormatter),
+                onClick = onRequestShowStartDatePicker,
+                highlighted = state.startDate == today),
+            if (isOneDay) null
+            else
+                DateTimeCell(
+                    text = state.endDate.format(deviceDateFormatter),
+                    onClick = onRequestShowEndDatePicker,
+                    highlighted = state.endDate == today))
+    DateTimeBlock(times = timeCells, dates = dateCells, enabled = !isLoading)
 
-                    showAllDay -> {
-                      Row(
-                          Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                          Arrangement.spacedBy(8.dp),
-                          Alignment.Top) {
-                            DatePickerField(
-                                state.startDate,
-                                deviceDateFormatter,
-                                isLoading,
-                                onRequestShowStartDatePicker,
-                                Modifier.weight(1f),
-                                today = today)
-                            DatePickerField(
-                                state.endDate,
-                                deviceDateFormatter,
-                                isLoading,
-                                onRequestShowEndDatePicker,
-                                Modifier.weight(1f),
-                                today = today)
-                          }
-                    }
-
-                    showOneDay -> {
-                      Column(
-                          horizontalAlignment = Alignment.CenterHorizontally,
-                          verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                                Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                                Alignment.CenterVertically) {
-                                  TimePickerField(
-                                      state.startTime,
-                                      deviceTimeFormatter,
-                                      isLoading,
-                                      onRequestShowStartTimePicker,
-                                      Modifier.width(100.dp),
-                                      onLongClick = { onStateChange(state.startingAt(LocalTime.now(zone))) })
-                                  Box(
-                                      modifier =
-                                          Modifier.width(10.dp)
-                                              .height(1.dp)
-                                              .background(color = colorScheme.onBackground))
-                                  TimePickerField(
-                                      state.endTime,
-                                      deviceTimeFormatter,
-                                      isLoading,
-                                      onRequestShowEndTimePicker,
-                                      Modifier.width(100.dp),
-                                  )
-                                }
-                            DatePickerField(
-                                state.startDate,
-                                deviceDateFormatter,
-                                isLoading,
-                                onRequestShowStartDatePicker,
-                                Modifier.width(218.dp),
-                                today = today)
-                          }
-                    }
-
-                    else -> {
-                      Row(
-                          Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                          Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                          Alignment.Top) {
-                            TimePickerField(
-                                state.startTime,
-                                deviceTimeFormatter,
-                                isLoading,
-                                onRequestShowStartTimePicker,
-                                Modifier.weight(1f),
-                                onLongClick = { onStateChange(state.startingAt(LocalTime.now(zone))) })
-                            TimePickerField(
-                                state.endTime,
-                                deviceTimeFormatter,
-                                isLoading,
-                                onRequestShowEndTimePicker,
-                                Modifier.weight(1f))
-                          }
-                      Row(
-                          Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                          Arrangement.spacedBy(8.dp),
-                          Alignment.Top) {
-                            DatePickerField(
-                                state.startDate,
-                                deviceDateFormatter,
-                                isLoading,
-                                onRequestShowStartDatePicker,
-                                Modifier.weight(1f),
-                                today = today)
-                            DatePickerField(
-                                state.endDate,
-                                deviceDateFormatter,
-                                isLoading,
-                                onRequestShowEndDatePicker,
-                                Modifier.weight(1f),
-                                today = today)
-                          }
-                    }
-                  }
-                }
-              }
-        }
+    // Быстрая длительность — сразу под временем, к которому относится.
+    DurationChips(
+        state = state,
+        onStateChange = onStateChange,
+        enabled = !isLoading,
+        modifier = Modifier.padding(top = 8.dp))
 
     // Повтор одной строкой; все настройки — в отдельной шторке, форма остаётся короткой.
     var showRecurrenceSheet by rememberSaveable { mutableStateOf(false) }
@@ -275,8 +154,7 @@ fun EventDateTimePicker(
           RecurrenceSummaryField(
               state = state,
               isLoading = isLoading,
-              onClick = { showRecurrenceSheet = true },
-              modifier = Modifier.padding(horizontal = 8.dp))
+              onClick = { showRecurrenceSheet = true })
         }
     if (showRecurrenceSheet && showRecurrence && state.isRecurring) {
       RecurrenceSheet(
