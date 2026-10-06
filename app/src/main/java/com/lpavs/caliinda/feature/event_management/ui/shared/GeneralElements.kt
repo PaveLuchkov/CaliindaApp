@@ -1,48 +1,26 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.MaterialTheme.shapes
-import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.material3.NavigationBarDefaults.Elevation
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.ui.theme.cuid
@@ -89,161 +67,54 @@ enum class RecurringDeleteChoice {
   ALL_IN_SERIES
 }
 
+/** Что удалить у повторяющегося события — одним нажатием; вся серия — красная. */
 @Composable
 fun RecurringEventDeleteOptionsDialog(
     eventName: String,
     onDismiss: () -> Unit,
     onOptionSelected: (RecurringDeleteChoice) -> Unit
 ) {
-  var selectedOption by remember { mutableStateOf(RecurringDeleteChoice.SINGLE_INSTANCE) }
-  val radioOptions =
-      listOf(
-          RecurringDeleteChoice.SINGLE_INSTANCE to stringResource(R.string.delete_single_instance),
-          RecurringDeleteChoice.ALL_IN_SERIES to stringResource(R.string.delete_all_in_series),
-          RecurringDeleteChoice.THIS_AND_FOLLOWING to
-              stringResource(R.string.delete_this_and_following))
-
-  AlertDialog(
-      onDismissRequest = onDismiss,
-      title = { Text(text = stringResource(R.string.delete_recurring_event_title)) },
-      text = {
-        Column(modifier = Modifier.selectableGroup()) {
-          Text(
-              text = stringResource(R.string.delete_recurring_event_prompt, eventName),
-              style = typography.bodyMedium,
-              modifier = Modifier.padding(bottom = 16.dp))
-
-          radioOptions.forEach { (option, label) ->
-            Row(
-                Modifier.fillMaxWidth()
-                    .selectable(
-                        selected = (option == selectedOption),
-                        onClick = { selectedOption = option },
-                        role = Role.RadioButton)
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                  RadioButton(
-                      selected = (option == selectedOption),
-                      onClick = null,
-                      colors =
-                          RadioButtonDefaults.colors(
-                              selectedColor =
-                                  when (option) {
-                                    RecurringDeleteChoice.ALL_IN_SERIES -> {
-                                      if (selectedOption == option) colorScheme.error
-                                      else colorScheme.primary
-                                    }
-                                    RecurringDeleteChoice.THIS_AND_FOLLOWING -> {
-                                      if (selectedOption == option) colorScheme.tertiary
-                                      else colorScheme.primary
-                                    }
-                                    else -> colorScheme.primary
-                                  }))
-                  Spacer(Modifier.width(8.dp))
-                  Text(
-                      text = label,
-                      style = typography.bodyLarge,
-                      color =
-                          when (option) {
-                            RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
-                            else -> LocalContentColor.current
-                          })
-                }
-          }
-        }
-      },
-      confirmButton = {
-        Button(
-            onClick = {
-              onOptionSelected(selectedOption)
-              onDismiss()
-            },
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor =
-                        when (selectedOption) {
-                          RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.error
-                          RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.tertiary
-                          else -> colorScheme.primary
-                        },
-                    contentColor =
-                        when (selectedOption) {
-                          RecurringDeleteChoice.ALL_IN_SERIES -> colorScheme.onError
-                          RecurringDeleteChoice.THIS_AND_FOLLOWING -> colorScheme.onTertiary
-                          else -> colorScheme.onPrimary
-                        })) {
-              Text(
-                  text =
-                      when (selectedOption) {
-                        RecurringDeleteChoice.THIS_AND_FOLLOWING ->
-                            stringResource(R.string.stop_repeating)
-                        else -> stringResource(R.string.delete)
-                      })
-            }
-      },
-      dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
+  ChoiceDialog(
+      icon = Icons.Rounded.Delete,
+      title = stringResource(R.string.delete_recurring_event_title),
+      message = stringResource(R.string.delete_recurring_event_prompt, eventName),
+      options =
+          listOf(
+              ChoiceOption(stringResource(R.string.delete_single_instance)) {
+                onOptionSelected(RecurringDeleteChoice.SINGLE_INSTANCE)
+              },
+              ChoiceOption(stringResource(R.string.delete_this_and_following)) {
+                onOptionSelected(RecurringDeleteChoice.THIS_AND_FOLLOWING)
+              },
+              ChoiceOption(stringResource(R.string.delete_all_in_series), destructive = true) {
+                onOptionSelected(RecurringDeleteChoice.ALL_IN_SERIES)
+              }),
+      cancelText = stringResource(R.string.cancel),
+      onDismiss = onDismiss)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** Что править у повторяющегося события: этот экземпляр, этот и следующие или всю серию. */
 @Composable
 fun RecurringEventEditOptionsDialog(
     eventName: String,
     onDismiss: () -> Unit,
     onOptionSelected: (EventUpdateMode) -> Unit,
-    modifier: Modifier = Modifier,
-    properties: DialogProperties = DialogProperties()
 ) {
-  BasicAlertDialog(
-      onDismissRequest = onDismiss,
-      modifier = modifier.widthIn(min = 280.dp, max = 560.dp),
-      properties = properties,
-  ) {
-    Surface(
-        shape = shapes.extraLarge,
-        color = colorScheme.surface,
-        tonalElevation = Elevation,
-        modifier = Modifier.wrapContentSize()) {
-          Column(
-              modifier =
-                  Modifier.padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp)) {
-                Text(
-                    text = stringResource(R.string.edit_recurring_event_title),
-                    style = typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp))
-
-                Text(
-                    text = stringResource(R.string.edit_recurring_event_prompt, eventName),
-                    style = typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 24.dp))
-
-                TextButton(
-                    onClick = { onOptionSelected(EventUpdateMode.SINGLE_INSTANCE) },
-                    modifier = Modifier.fillMaxWidth()) {
-                      Text(stringResource(R.string.edit_single_instance))
-                    }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TextButton(
-                    onClick = { onOptionSelected(EventUpdateMode.THIS_AND_FOLLOWING) },
-                    modifier = Modifier.fillMaxWidth()) {
-                      Text(stringResource(R.string.edit_this_and_following))
-                    }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TextButton(
-                    onClick = { onOptionSelected(EventUpdateMode.ALL_IN_SERIES) },
-                    modifier = Modifier.fillMaxWidth()) {
-                      Text(stringResource(R.string.edit_all_in_series))
-                    }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                  TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-                }
-              }
-        }
-  }
+  ChoiceDialog(
+      icon = Icons.Rounded.Edit,
+      title = stringResource(R.string.edit_recurring_event_title),
+      message = stringResource(R.string.edit_recurring_event_prompt, eventName),
+      options =
+          listOf(
+              ChoiceOption(stringResource(R.string.edit_single_instance)) {
+                onOptionSelected(EventUpdateMode.SINGLE_INSTANCE)
+              },
+              ChoiceOption(stringResource(R.string.edit_this_and_following)) {
+                onOptionSelected(EventUpdateMode.THIS_AND_FOLLOWING)
+              },
+              ChoiceOption(stringResource(R.string.edit_all_in_series)) {
+                onOptionSelected(EventUpdateMode.ALL_IN_SERIES)
+              }),
+      cancelText = stringResource(R.string.cancel),
+      onDismiss = onDismiss)
 }
