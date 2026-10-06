@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedChoice
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
@@ -49,9 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -310,35 +307,6 @@ private fun EndSection(
             onValueChange = { onStateChange(state.copy(recurrenceCount = it)) },
             range = 1..MAX_COUNT,
             label = pluralStringResource(R.plurals.recurrence_times, count, count))
-      }
-}
-
-/** Связанная группа кнопок M3 Expressive с одним выбранным вариантом. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun <T> ConnectedChoice(
-    items: List<T>,
-    isSelected: (T) -> Boolean,
-    label: @Composable (T) -> String,
-    onSelect: (T) -> Unit,
-) {
-  Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
-        items.forEachIndexed { index, item ->
-          ToggleButton(
-              checked = isSelected(item),
-              onCheckedChange = { onSelect(item) },
-              shapes =
-                  when (index) {
-                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                  },
-              modifier = Modifier.weight(1f).semantics { role = Role.RadioButton }) {
-                Text(label(item), maxLines = 1, overflow = TextOverflow.Ellipsis)
-              }
-        }
       }
 }
 
