@@ -18,7 +18,6 @@ import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,11 +35,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.ui.util.BackgroundShapeContext
 import com.lpavs.caliinda.core.ui.util.BackgroundShapes
-import com.lpavs.caliinda.core.ui.util.fromPickerMillis
-import com.lpavs.caliinda.core.ui.util.toPickerMillis
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.BottomBar
 import com.lpavs.caliinda.feature.calendar.presentation.components.bars.CalendarAppBar
-import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CalendarDatePickerDialog
+import com.lpavs.caliinda.core.ui.components.AppDatePickerDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.CustomEventDetailsDialog
 import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.EventFormSheet
 import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
@@ -139,11 +136,6 @@ fun CalendarScreen(
       anchorDate = anchorDate)
 
   var showDatePicker by remember { mutableStateOf(false) }
-  val datePickerState =
-      rememberDatePickerState(
-          initialSelectedDateMillis =
-              currentVisibleDate.toPickerMillis(),
-      )
 
   val eventActions =
       remember(eventManagementViewModel, calendarViewModel) {
@@ -181,13 +173,7 @@ fun CalendarScreen(
                 }
               }
             },
-            onTitleClick = {
-              // Состояние пикера живёт дольше диалога — открываем его на текущей видимой дате.
-              val visibleMillis = currentVisibleDate.toPickerMillis()
-              datePickerState.selectedDateMillis = visibleMillis
-              datePickerState.displayedMonthMillis = visibleMillis
-              showDatePicker = true
-            },
+            onTitleClick = { showDatePicker = true },
             onTitleHold = {
               haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
               calendarViewModel.syncCalendars()
@@ -224,15 +210,11 @@ fun CalendarScreen(
     }
   }
 
-  CalendarDatePickerDialog(
-      show = showDatePicker,
-      state = datePickerState,
+  if (showDatePicker) {
+    AppDatePickerDialog(
+      initialDate = currentVisibleDate,
       onDismiss = { showDatePicker = false },
-      onConfirm = { millis ->
-        showDatePicker = false
-
-        val selectedDate = millis.fromPickerMillis()
-
+      onDateSelected = { selectedDate ->
         if (selectedDate != currentVisibleDate) {
           calendarViewModel.onVisibleDateChanged(selectedDate)
 
@@ -243,6 +225,7 @@ fun CalendarScreen(
           scope.launch { horizontalPagerState.animateScrollToPage(1) }
         }
       })
+  }
   EventFormSheet(
       dialog = eventManagementState.dialog, onDismiss = eventManagementViewModel::dismissDialog) {
           dialog,
