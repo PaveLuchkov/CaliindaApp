@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.event_management.ui.create
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderDefaults
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.OnSaveEvent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +32,7 @@ fun CreateEventScreen(
     userTimeZone: ZoneId,
     isLoading: Boolean,
     onSave: OnSaveEvent,
+    reminderDefaults: ReminderDefaults,
     initialDate: LocalDate,
     initialProject: Boolean = false,
     /** Шторка встала на место — можно звать клавиатуру, не сбивая анимацию появления. */
@@ -84,7 +87,9 @@ fun CreateEventScreen(
   }
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
-  val save = { onSave(summary, description, location, eventDateTimeState) }
+  // Пока не выбрали своё — напоминание из настроек (своё для «весь день» и со временем).
+  var reminder by remember { mutableStateOf<ReminderChoice>(ReminderChoice.Default) }
+  val save = { onSave(summary, description, location, eventDateTimeState, reminder) }
   // Сразу клавиатура в названии: типичное событие — это название и время.
   val nameFocusRequester = remember { FocusRequester() }
   LaunchedEffect(sheetSettled) {
@@ -106,6 +111,9 @@ fun CreateEventScreen(
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
         zone = userTimeZone,
+        reminder = reminder,
+        onReminderChange = { reminder = it },
+        reminderDefaults = reminderDefaults,
         isLoading = isLoading,
         suggestedChips = suggestedChips,
         onSave = save,

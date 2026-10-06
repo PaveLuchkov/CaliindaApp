@@ -302,10 +302,17 @@
     <string name="reminder_none">कोई रिमाइंडर नहीं</string>
     <string name="reminder_at_start">शुरू होने पर</string>
     <string name="reminder_day_before_at">एक दिन पहले %1$s बजे</string>
+    <string name="reminder_on_day_at">उसी दिन %1$s बजे</string>
     <string name="reminder_days_before_at">%1$d दिन पहले %2$s बजे</string>
     <string name="reminder_setting_title">रिमाइंडर</string>
     <string name="reminder_setting_all_day_title">पूरे दिन के इवेंट का रिमाइंडर</string>
     <string name="reminder">रिमाइंडर</string>
+    <string name="details_place">जगह</string>
+    <string name="details_notes">विवरण</string>
+    <string name="reminder_at_start_short">शुरू में</string>
+    <string name="reminder_days_short">%d दिन</string>
+    <string name="reminder_day_before_short">एक दिन पहले</string>
+    <string name="reminder_on_day_short">उसी दिन</string>
     <string name="reminders_channel_name">इवेंट रिमाइंडर</string>
     <string name="reminders_channel_desc">जब Google Calendar रिमाइंडर न दिखाए</string>
     <string name="reminder_notifications_title">Caliinda के रिमाइंडर</string>

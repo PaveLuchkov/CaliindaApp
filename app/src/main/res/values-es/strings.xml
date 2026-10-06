@@ -313,10 +313,17 @@
     <string name="reminder_none">Sin recordatorio</string>
     <string name="reminder_at_start">A la hora de inicio</string>
     <string name="reminder_day_before_at">El día anterior a las %1$s</string>
+    <string name="reminder_on_day_at">El mismo día a las %1$s</string>
     <string name="reminder_days_before_at">%1$d días antes a las %2$s</string>
     <string name="reminder_setting_title">Recordatorio</string>
     <string name="reminder_setting_all_day_title">Recordatorio de eventos de todo el día</string>
     <string name="reminder">Recordatorio</string>
+    <string name="details_place">Lugar</string>
+    <string name="details_notes">Notas</string>
+    <string name="reminder_at_start_short">Al inicio</string>
+    <string name="reminder_days_short">%d d</string>
+    <string name="reminder_day_before_short">Día antes</string>
+    <string name="reminder_on_day_short">Ese día</string>
     <string name="reminders_channel_name">Recordatorios de eventos</string>
     <string name="reminders_channel_desc">Recordatorios cuando Google Calendar no los muestra</string>
     <string name="reminder_notifications_title">Recordatorios de Caliinda</string>

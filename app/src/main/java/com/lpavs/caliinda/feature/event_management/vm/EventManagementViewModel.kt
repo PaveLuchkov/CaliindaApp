@@ -121,7 +121,8 @@ constructor(
       description: String,
       location: String,
       dateTimeState: EventDateTimeState,
-      updateMode: EventUpdateMode
+      updateMode: EventUpdateMode,
+      reminder: ReminderChoice = ReminderChoice.Default,
   ) {
     viewModelScope.launch {
       val originalEvent = (uiState.value.dialog as? EventDialog.Editing)?.event
@@ -139,7 +140,19 @@ constructor(
       val originalState = originalEvent.toDateTimeState(zone)
       val recurrenceRule = recurrenceRuleAfterEdit(originalEvent, dateTimeState, zone)
 
-      val draft = buildDraft(summary, description, location, dateTimeState, recurrenceRule)
+      // Напоминание трогаем, только если выбрали другое: у события их может быть несколько,
+      // а форма показывает первое — без изменений остальные не теряются.
+      val original = uiState.value.editingReminders
+      val reminders =
+          when (reminder) {
+            ReminderChoice.Default -> null
+            is ReminderChoice.Custom ->
+                if (original != null && reminder.minutes == original.firstOrNull()) null
+                else listOfNotNull(reminder.minutes)
+          }
+      val draft =
+          buildDraft(summary, description, location, dateTimeState, recurrenceRule)
+              .copy(reminders = reminders)
       val unchangedDraft =
           buildDraft(
               if (originalEvent.isUntitled) "" else originalEvent.summary,
@@ -301,7 +314,17 @@ constructor(
     val dialog =
         if (event.recurringEventId != null) EventDialog.ChooseEditMode(event)
         else EventDialog.Editing(event, EventUpdateMode.ALL_IN_SERIES)
-    _uiState.update { it.copy(dialog = dialog) }
+    if (dialog is EventDialog.Editing) startEditing(dialog)
+    else _uiState.update { it.copy(dialog = dialog) }
+  }
+
+  /** Открыть правку и подтянуть напоминания события — форма покажет текущее. */
+  private fun startEditing(editing: EventDialog.Editing) {
+    _uiState.update { it.copy(dialog = editing, editingReminders = null) }
+    viewModelScope.launch {
+      val reminders = runCatching { calendarRepository.remindersOf(editing.event) }.getOrNull()
+      _uiState.update { if (it.dialog == editing) it.copy(editingReminders = reminders) else it }
+    }
   }
 
   fun onRecurringEditOptionSelected(choice: EventUpdateMode) {
@@ -309,12 +332,12 @@ constructor(
     // Перенесённый экземпляр (исключение) своего RRULE не хранит — при правке серии форма
     // должна показать правило головного события, а не «не повторяется».
     if (choice == EventUpdateMode.SINGLE_INSTANCE || event.recurrenceRule != null) {
-      _uiState.update { it.copy(dialog = EventDialog.Editing(event, choice)) }
+      startEditing(EventDialog.Editing(event, choice))
       return
     }
     viewModelScope.launch {
       val withRule = event.copy(recurrenceRule = calendarRepository.seriesRule(event))
-      _uiState.update { it.copy(dialog = EventDialog.Editing(withRule, choice)) }
+      startEditing(EventDialog.Editing(withRule, choice))
     }
   }
 
@@ -342,6 +365,8 @@ constructor(
 data class EventManagementUiState(
     val isLoading: Boolean = false,
     val dialog: EventDialog = EventDialog.None,
+    /** Напоминания события в шторке правки; null — ещё не загружены. */
+    val editingReminders: List<Int>? = null,
 )
 
 /** Что сейчас открыто поверх календаря. Одно значение вместо набора флагов. */

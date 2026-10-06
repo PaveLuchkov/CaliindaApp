@@ -461,10 +461,17 @@
     <string name="reminder_none">No reminder</string>
     <string name="reminder_at_start">At start time</string>
     <string name="reminder_day_before_at">The day before at %1$s</string>
+    <string name="reminder_on_day_at">On the day at %1$s</string>
     <string name="reminder_days_before_at">%1$d days before at %2$s</string>
     <string name="reminder_setting_title">Reminder</string>
     <string name="reminder_setting_all_day_title">All-day events reminder</string>
     <string name="reminder">Reminder</string>
+    <string name="details_place">Place</string>
+    <string name="details_notes">Notes</string>
+    <string name="reminder_at_start_short">At start</string>
+    <string name="reminder_days_short">%d d</string>
+    <string name="reminder_day_before_short">Day before</string>
+    <string name="reminder_on_day_short">Same day</string>
     <string name="reminders_channel_name">Event reminders</string>
     <string name="reminders_channel_desc">Reminders when Google Calendar isn\'t there to show them</string>
     <string name="reminder_notifications_title">Caliinda reminders</string>

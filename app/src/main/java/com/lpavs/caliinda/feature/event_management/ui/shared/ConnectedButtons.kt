@@ -2,6 +2,11 @@
 
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -47,7 +52,13 @@ fun <T> ConnectedChoice(
 }
 
 /** Вариант для независимых переключателей: каждую кнопку можно включить отдельно. */
-class ConnectedToggle(val text: String, val checked: Boolean, val onToggle: () -> Unit)
+class ConnectedToggle(
+    val text: String,
+    val checked: Boolean,
+    /** Иконка перед подписью — когда одной подписи мало («15 мин» — это напоминание). */
+    val icon: ImageVector? = null,
+    val onToggle: () -> Unit,
+)
 
 /** Связанная группа независимых переключателей — как [ConnectedChoice], но без «одного из». */
 @Composable
@@ -62,6 +73,7 @@ fun ConnectedToggles(
           checked = toggle.checked,
           onCheckedChange = { toggle.onToggle() },
           text = toggle.text,
+          icon = toggle.icon,
           shapes = connectedShapes(index, toggles.lastIndex),
           role = Role.Checkbox,
           enabled = enabled,
@@ -87,6 +99,7 @@ private fun ConnectedButton(
     onCheckedChange: (Boolean) -> Unit,
     text: String,
     shapes: ToggleButtonShapes,
+    icon: ImageVector? = null,
     role: Role,
     enabled: Boolean,
     modifier: Modifier,
@@ -103,6 +116,10 @@ private fun ConnectedButton(
       // («Toute la journée») хватало места.
       contentPadding = PaddingValues(horizontal = 8.dp),
       modifier = modifier.semantics { this.role = role }) {
+        if (icon != null) {
+          Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+          Spacer(Modifier.width(6.dp))
+        }
         // Подпись ужимается под кнопку, а не обрезается многоточием.
         Text(
             text,

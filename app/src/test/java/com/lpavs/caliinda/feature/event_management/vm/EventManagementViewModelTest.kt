@@ -171,4 +171,28 @@ class EventManagementViewModelTest {
     verify(repository, times(3)).createEvent(drafts.capture())
     assertEquals(listOf(listOf(15), listOf(900), emptyList<Int>()), drafts.allValues.map { it.reminders })
   }
+
+  @Test
+  fun `правка трогает напоминания, только если выбрали другое`() = runTest(dispatcher) {
+    whenever(repository.updateEvent(any(), any(), any())).thenReturn(Result.success(Unit))
+    whenever(repository.remindersOf(any())).thenReturn(listOf(10, 1440))
+    advanceUntilIdle()
+    val state = single.toDateTimeState(zone)
+
+    viewModel.requestEditEvent(single)
+    advanceUntilIdle()
+    assertEquals(listOf(10, 1440), viewModel.uiState.value.editingReminders)
+    // Показали первое (10) и не меняли — остальные не теряем.
+    viewModel.updateEvent("Новое", "", "", state, EventUpdateMode.ALL_IN_SERIES, ReminderChoice.Custom(10))
+    advanceUntilIdle()
+
+    viewModel.requestEditEvent(single)
+    advanceUntilIdle()
+    viewModel.updateEvent("Новое", "", "", state, EventUpdateMode.ALL_IN_SERIES, ReminderChoice.Custom(30))
+    advanceUntilIdle()
+
+    val drafts = argumentCaptor<EventDraft>()
+    verify(repository, times(2)).updateEvent(any(), drafts.capture(), any())
+    assertEquals(listOf(null, listOf(30)), drafts.allValues.map { it.reminders })
+  }
 }
