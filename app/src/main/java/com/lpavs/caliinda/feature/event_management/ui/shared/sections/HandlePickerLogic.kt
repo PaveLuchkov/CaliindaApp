@@ -1,24 +1,19 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import com.lpavs.caliinda.core.ui.components.AppDatePickerDialog
 import android.content.Context
 import android.text.format.DateFormat
 import android.widget.Toast
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.feature.event_management.ui.shared.ActivePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.TimePickerDialog
-import com.lpavs.caliinda.core.ui.util.fromPickerMillis
-import com.lpavs.caliinda.core.ui.util.toPickerMillis
 import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,38 +26,14 @@ fun HandlePickerLogic(
     context: Context
 ) {
   when (activePicker) {
-    ActivePicker.StartDate -> {
-      val datePickerState =
-          rememberDatePickerState(
-              initialSelectedDateMillis =
-                  state.startDate.toPickerMillis())
-      DatePickerDialog(
-          onDismissRequest = onDismiss,
-          confirmButton = {
-            TextButton(
-                onClick = {
-                  datePickerState.selectedDateMillis?.let { millis ->
-                    val selectedDate =
-                        millis.fromPickerMillis()
-
-                    onStateChange(
-                        state.copy(
-                            startDate = selectedDate,
-                            endDate =
-                                if (selectedDate.isAfter(state.endDate)) selectedDate
-                                else state.endDate))
-                  }
-                  onDismiss()
-                }) {
-                  Text(stringResource(android.R.string.ok))
-                }
-          },
-          dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-          }) {
-            DatePicker(state = datePickerState)
-          }
-    }
+    ActivePicker.StartDate ->
+        AppDatePickerDialog(
+            initialDate = state.startDate,
+            onDateSelected = { date ->
+              // Начало позже конца — конец едет следом.
+              onStateChange(state.copy(startDate = date, endDate = maxOf(date, state.endDate)))
+            },
+            onDismiss = onDismiss)
 
     ActivePicker.StartTime -> {
       val initialTime = state.startTime ?: LocalTime.now()
@@ -98,38 +69,12 @@ fun HandlePickerLogic(
           }
     }
 
-    ActivePicker.EndDate -> {
-      val datePickerState =
-          rememberDatePickerState(
-              initialSelectedDateMillis =
-                  state.endDate.toPickerMillis(),
-              selectableDates =
-                  object : SelectableDates {
-                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                      val startMillis =
-                          state.startDate.toPickerMillis()
-                      return utcTimeMillis >= startMillis
-                    }
-                  })
-      DatePickerDialog(
-          onDismissRequest = onDismiss,
-          confirmButton = {
-            TextButton(
-                onClick = {
-                  datePickerState.selectedDateMillis?.let { millis ->
-                    onStateChange(
-                        state.copy(
-                            endDate =
-                                millis.fromPickerMillis()))
-                  }
-                  onDismiss()
-                }) {
-                  Text(stringResource(android.R.string.ok))
-                }
-          }) {
-            DatePicker(state = datePickerState)
-          }
-    }
+    ActivePicker.EndDate ->
+        AppDatePickerDialog(
+            initialDate = state.endDate,
+            minDate = state.startDate,
+            onDateSelected = { date -> onStateChange(state.copy(endDate = date)) },
+            onDismiss = onDismiss)
 
     ActivePicker.EndTime -> {
       val initialTime = state.endTime ?: state.startTime?.plusHours(1) ?: LocalTime.now()
@@ -165,32 +110,17 @@ fun HandlePickerLogic(
           }
     }
 
-    ActivePicker.RecurrenceEnd -> {
-      val datePickerState =
-          rememberDatePickerState(
-              initialSelectedDateMillis =
-                  (state.recurrenceEndDate ?: state.startDate.plusMonths(1)).toPickerMillis())
-      DatePickerDialog(
-          onDismissRequest = onDismiss,
-          confirmButton = {
-            TextButton(
-                onClick = {
-                  datePickerState.selectedDateMillis?.let { millis ->
-                    onStateChange(
-                        state.copy(
-                            recurrenceEndDate =
-                                millis.fromPickerMillis(),
-                            recurrenceEndType = RecurrenceEndType.DATE,
-                            recurrenceCount = null))
-                  }
-                  onDismiss()
-                }) {
-                  Text(stringResource(android.R.string.ok))
-                }
-          }) {
-            DatePicker(state = datePickerState)
-          }
-    }
+    ActivePicker.RecurrenceEnd ->
+        AppDatePickerDialog(
+            initialDate = state.recurrenceEndDate ?: state.startDate.plusMonths(1),
+            onDateSelected = { date ->
+              onStateChange(
+                  state.copy(
+                      recurrenceEndDate = date,
+                      recurrenceEndType = RecurrenceEndType.DATE,
+                      recurrenceCount = null))
+            },
+            onDismiss = onDismiss)
 
     ActivePicker.None -> {
     }

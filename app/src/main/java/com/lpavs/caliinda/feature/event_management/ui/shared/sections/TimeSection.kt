@@ -2,6 +2,7 @@
 
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import java.time.LocalDate
 import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggle
 import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggles
 import java.time.ZoneId
@@ -91,6 +92,7 @@ fun EventDateTimePicker(
       }
 
   val dateTimeError = state.validationError?.let { stringResource(it) }
+  val today = LocalDate.now(zone)
 
   Column(modifier = modifier) {
     ConnectedToggles(
@@ -153,7 +155,8 @@ fun EventDateTimePicker(
                           deviceDateFormatter,
                           isLoading,
                           onRequestShowStartDatePicker,
-                          Modifier.fillMaxWidth().padding(horizontal = 50.dp))
+                          Modifier.fillMaxWidth().padding(horizontal = 50.dp),
+                          today = today)
                     }
 
                     showAllDay -> {
@@ -166,13 +169,15 @@ fun EventDateTimePicker(
                                 deviceDateFormatter,
                                 isLoading,
                                 onRequestShowStartDatePicker,
-                                Modifier.weight(1f))
+                                Modifier.weight(1f),
+                                today = today)
                             DatePickerField(
                                 state.endDate,
                                 deviceDateFormatter,
                                 isLoading,
                                 onRequestShowEndDatePicker,
-                                Modifier.weight(1f))
+                                Modifier.weight(1f),
+                                today = today)
                           }
                     }
 
@@ -209,7 +214,8 @@ fun EventDateTimePicker(
                                 deviceDateFormatter,
                                 isLoading,
                                 onRequestShowStartDatePicker,
-                                Modifier.width(218.dp))
+                                Modifier.width(218.dp),
+                                today = today)
                           }
                     }
 
@@ -241,13 +247,15 @@ fun EventDateTimePicker(
                                 deviceDateFormatter,
                                 isLoading,
                                 onRequestShowStartDatePicker,
-                                Modifier.weight(1f))
+                                Modifier.weight(1f),
+                                today = today)
                             DatePickerField(
                                 state.endDate,
                                 deviceDateFormatter,
                                 isLoading,
                                 onRequestShowEndDatePicker,
-                                Modifier.weight(1f))
+                                Modifier.weight(1f),
+                                today = today)
                           }
                     }
                   }

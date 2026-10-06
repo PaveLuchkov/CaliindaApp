@@ -1,5 +1,9 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.lpavs.caliinda.core.ui.theme.AppMotion
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.text.KeyboardActions
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
@@ -34,18 +38,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
-import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.CalendarEventItem
-import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.normalEvent
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
 import java.time.LocalDate
 import java.time.LocalTime
@@ -119,11 +117,15 @@ internal fun DatePickerField(
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    today: LocalDate? = null,
 ) {
+  // Сегодняшняя дата выделена ролью tertiary («сегодня» по DESIGN.md) — сразу видно, что
+  // событие ставится на сегодня, а не на другой день.
   ModernClickableTextField(
       value = date?.format(dateFormatter) ?: "",
       isLoading = isLoading,
       onClick = onClick,
+      highlighted = date != null && date == today,
       modifier = modifier)
 }
 
@@ -144,6 +146,7 @@ internal fun TimePickerField(
       modifier = modifier)
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ModernClickableTextField(
     value: String,
@@ -151,14 +154,25 @@ private fun ModernClickableTextField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
+    highlighted: Boolean = false,
 ) {
   val haptics = LocalHapticFeedback.current
+  val container by
+      animateColorAsState(
+          if (highlighted) colorScheme.tertiaryContainer else colorScheme.secondaryContainer,
+          AppMotion.defaultEffectsSpec(),
+          label = "fieldContainer")
+  val content by
+      animateColorAsState(
+          if (highlighted) colorScheme.onTertiaryContainer else colorScheme.onSecondaryContainer,
+          AppMotion.defaultEffectsSpec(),
+          label = "fieldContent")
   Box(
       modifier =
           modifier
               .height(45.dp)
               .clip(shape = RoundedCornerShape(cuid.ContainerCornerRadius))
-              .background(colorScheme.secondaryContainer)) {
+              .background(container)) {
         Row(
             modifier =
                 Modifier.fillMaxSize()
@@ -173,7 +187,7 @@ private fun ModernClickableTextField(
                         interactionSource = remember { MutableInteractionSource() }),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically) {
-              Text(text = value, color = colorScheme.onSecondaryContainer)
+              Text(text = value, color = content)
             }
       }
 }
