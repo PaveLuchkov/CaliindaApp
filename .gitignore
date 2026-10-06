@@ -15,3 +15,6 @@
 local.properties
 /structure_exports
 /app/release
+
+# Личные настройки Claude Code
+/.claude/settings.local.json
