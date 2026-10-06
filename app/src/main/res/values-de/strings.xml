@@ -256,4 +256,35 @@
     <string name="live_permission_denied">Benachrichtigungen in den Systemeinstellungen erlauben</string>
     <string name="calendars_show_all">Alle Kalender (%1$d)</string>
     <string name="calendars_collapse">Einklappen</string>
+
+    <!-- Ключевые слова встроенных чипов для поиска по набранному названию (через запятую). -->
+    <string name="chip_keywords_project">projekt,aufgabe,deadline,plan,sprint</string>
+    <string name="chip_keywords_work">arbeit,büro,job,schicht,aufgabe</string>
+    <string name="chip_keywords_dinner">abendessen,essen,restaurant,dinner</string>
+    <string name="chip_keywords_meeting">meeting,treffen,besprechung,team,konferenz</string>
+    <string name="chip_keywords_coffee">kaffee,café,cafe,espresso,latte,tee,pause</string>
+    <string name="chip_keywords_lunch">mittagessen,mittag,essen,kantine,lunch</string>
+    <string name="chip_keywords_shopping">einkaufen,einkauf,laden,supermarkt,markt,shopping</string>
+    <string name="chip_keywords_road">weg,fahrt,pendeln,auto,bus,bahn,zug,heimweg</string>
+    <string name="chip_keywords_appointment">termin,besuch,friseur,reservierung,buchung</string>
+    <string name="chip_keywords_travel">reise,urlaub,flug,flughafen,hotel,ausflug</string>
+    <string name="chip_keywords_party">party,feier,fest,freunde,club,bar</string>
+    <string name="chip_keywords_movie">film,kino,serie</string>
+    <string name="chip_keywords_study">lernen,studium,unterricht,vorlesung,kurs,hausaufgaben,prüfung,schule,uni</string>
+    <string name="chip_keywords_gym">fitnessstudio,gym,training,sport,fitness,laufen,joggen,yoga,schwimmen</string>
+    <string name="chip_keywords_relax">entspannen,erholung,pause,ruhe,spa,massage</string>
+    <string name="chip_keywords_reading">lesen,buch,bibliothek</string>
+    <string name="chip_keywords_cleaning">putzen,aufräumen,wäsche,staubsaugen,abwasch,haushalt</string>
+    <string name="chip_keywords_cooking">kochen,backen,rezept,küche</string>
+    <string name="chip_keywords_walking">spaziergang,spazieren,park,wandern</string>
+    <string name="chip_keywords_hobby">hobby,musik,gitarre,malen,zeichnen,spielen,foto</string>
+    <string name="chip_keywords_date">date,verabredung,romantisch,freundin,freund,jahrestag</string>
+    <string name="chip_keywords_doctor">arzt,ärztin,praxis,klinik,krankenhaus,zahnarzt,untersuchung</string>
+    <string name="chip_keywords_birthday">geburtstag,feier,geschenk</string>
+    <string name="chip_keywords_presentation">präsentation,vortrag,demo,folien,pitch,rede</string>
+    <string name="chip_keywords_call">anruf,telefonat,anrufen,zoom,videoanruf</string>
+    <string name="chip_keywords_errand">erledigung,besorgung,post,bank,abholen,dokumente</string>
+    <string name="chip_keywords_sleep">schlafen,schlaf,bett,nacht,nickerchen</string>
+    <string name="chip_keywords_breakfast">frühstück,morgen,brunch</string>
+    <string name="chip_keywords_pet">haustier,hund,katze,tierarzt,gassi,füttern</string>
 </resources>

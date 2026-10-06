@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections.suggestions
 
+import com.lpavs.caliinda.core.data.suggestions.rankByQuery
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,20 +26,33 @@ constructor(
 ) : ViewModel() {
   private val timeContext = MutableStateFlow(LocalTime.now())
   private val clicks = MutableStateFlow<Map<String, Int>>(emptyMap())
+  private val query = MutableStateFlow("")
 
   init {
     viewModelScope.launch { clicks.value = suggestionsRepository.getWeights() }
   }
 
-  /** Чипы для времени начала: попавшие в свои часы — первыми (см. [orderChips]). */
+  /**
+   * Чипы для времени начала: попавшие в свои часы — первыми (см. [orderChips]); подходящие к
+   * набранному названию — ещё раньше (см. [rankByQuery]).
+   */
   val suggestionChips: StateFlow<List<SugNameChips>> =
-      combine(suggestionsRepository.chipsFlow, timeContext, clicks) { chips, time, weights ->
-            orderChips(chips, weights, time).map { it.toUi(application) }
+      combine(suggestionsRepository.chipsFlow, timeContext, clicks, query) {
+              chips,
+              time,
+              weights,
+              text ->
+            val ordered = orderChips(chips, weights, time).map { it.toUi(application) }
+            rankByQuery(ordered, text) { it.terms }
           }
           .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
   fun updateSortContext(startTime: LocalTime?, isAllDay: Boolean) {
     timeContext.value = if (isAllDay || startTime == null) LocalTime.now() else startTime
+  }
+
+  fun updateQuery(text: String) {
+    query.value = text
   }
 
   fun onChipClicked(chip: SugNameChips) {
