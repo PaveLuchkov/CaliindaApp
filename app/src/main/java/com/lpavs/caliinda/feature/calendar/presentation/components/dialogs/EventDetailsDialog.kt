@@ -2,7 +2,6 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.eventStarShape
 import com.lpavs.caliinda.core.ui.util.projectShape
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.graphics.shadow.Shadow
@@ -11,14 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.DialogWindowProvider
-import android.view.Gravity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
@@ -48,6 +40,7 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -79,11 +72,6 @@ fun CustomEventDetailsDialog(
   Dialog(
       onDismissRequest = onDismissRequest,
       properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        // Карточка прижата к низу: верх зависит от длины текста, а кнопки снизу всегда в одной
-        // точке экрана — и под большим пальцем.
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setGravity(Gravity.BOTTOM) }
-
         val container = if (event.isCurrent) colorScheme.tertiaryContainer else colorScheme.primaryContainer
         val onCard = if (event.isCurrent) colorScheme.onTertiaryContainer else colorScheme.onPrimaryContainer
         // Та же фигура, что у карточки в ленте: звезда события или фигура проекта.
@@ -95,14 +83,12 @@ fun CustomEventDetailsDialog(
         val params = event.shapeParams
 
         Surface(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             shape = RoundedCornerShape(cuid.ContainerCornerRadius),
             color = container,
             tonalElevation = 8.dp) {
-              // Высота постоянная: кнопки на одном месте, длинное содержимое листается внутри.
+              // Высота постоянная: по центру экрана кнопки всегда в одной точке, длинное
+              // содержимое листается внутри.
               Box(modifier = Modifier.height(CARD_HEIGHT)) {
                 Box(
                     modifier =
@@ -179,7 +165,8 @@ fun CustomEventDetailsDialog(
                                   Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                                   Text(stringResource(R.string.edit))
                                 }
-                            FilledTonalIconButton(
+                            // Того же цвета, что «Изменить»: два действия одной группы.
+                            FilledIconButton(
                                 onClick = {
                                   onDelete(event.originalEvent)
                                   // Карточка исчезнет сразу — подробности удалённого не нужны.
