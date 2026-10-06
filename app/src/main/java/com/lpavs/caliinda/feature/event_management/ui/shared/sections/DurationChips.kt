@@ -1,19 +1,13 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyRow
+import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedChoice
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.core.ui.theme.cuid
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -37,19 +31,17 @@ fun DurationChips(
   val current = state.endTime?.let { Duration.between(start, LocalDateTime.of(state.endDate, it)) }
   val haptic = LocalHapticFeedback.current
 
-  LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(cuid.padding, Alignment.CenterHorizontally)) {
-    items(QUICK_DURATIONS, key = { it.toMinutes() }) { duration ->
-      FilterChip(
-          selected = current == duration,
-          onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-            val end = start.plus(duration)
-            onStateChange(state.copy(endDate = end.toLocalDate(), endTime = end.toLocalTime()))
-          },
-          label = { Text(durationLabel(duration)) },
-          enabled = enabled)
-    }
-  }
+  ConnectedChoice(
+      items = QUICK_DURATIONS,
+      isSelected = { it == current },
+      label = { durationLabel(it) },
+      onSelect = { duration ->
+        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+        val end = start.plus(duration)
+        onStateChange(state.copy(endDate = end.toLocalDate(), endTime = end.toLocalTime()))
+      },
+      enabled = enabled,
+      modifier = modifier)
 }
 
 @Composable

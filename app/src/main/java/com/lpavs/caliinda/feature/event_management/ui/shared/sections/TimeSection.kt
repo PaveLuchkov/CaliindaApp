@@ -2,6 +2,8 @@
 
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggle
+import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggles
 import java.time.ZoneId
 import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.animation.core.snap
@@ -28,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
@@ -92,30 +93,20 @@ fun EventDateTimePicker(
   val dateTimeError = state.validationError?.let { stringResource(it) }
 
   Column(modifier = modifier) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-    ) {
-      FilterChip(
-          selected = isAllDay,
-          onClick = { onStateChange(state.toggledAllDay(LocalTime.now(zone))) },
-          label = { Text(allDay) },
-          enabled = !isLoading)
-
-      FilterChip(
-          selected = isOneDay,
-          onClick = { onStateChange(state.toggledOneDay()) },
-          label = { Text(oneDay) },
-          enabled = !isLoading)
-
-      if (showRecurrence) {
-        FilterChip(
-            selected = state.isRecurring,
-            onClick = { onStateChange(state.toggledRecurring()) },
-            label = { Text(recEvent) },
-            enabled = !isLoading)
-      }
-    }
+    ConnectedToggles(
+        toggles =
+            listOfNotNull(
+                ConnectedToggle(allDay, isAllDay) {
+                  onStateChange(state.toggledAllDay(LocalTime.now(zone)))
+                },
+                ConnectedToggle(oneDay, isOneDay) { onStateChange(state.toggledOneDay()) },
+                if (showRecurrence) {
+                  ConnectedToggle(recEvent, state.isRecurring) {
+                    onStateChange(state.toggledRecurring())
+                  }
+                } else null),
+        enabled = !isLoading,
+        modifier = Modifier.padding(bottom = 8.dp))
 
     AnimatedVisibility(
         visible = dateTimeError != null,
