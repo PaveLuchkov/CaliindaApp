@@ -65,6 +65,7 @@ fun CalendarScreen(
   val eventManagementState by eventManagementViewModel.uiState.collectAsStateWithLifecycle()
   val timeZone by calendarViewModel.timeZone.collectAsStateWithLifecycle()
   val themeMode by calendarViewModel.themeMode.collectAsStateWithLifecycle()
+  val reminderDefaults by eventManagementViewModel.reminderDefaults.collectAsStateWithLifecycle()
 
   val snackbarHostState = remember { SnackbarHostState() }
   val haptic = LocalHapticFeedback.current
@@ -237,6 +238,7 @@ fun CalendarScreen(
                   userTimeZone = timeZone,
                   isLoading = eventManagementState.isLoading,
                   onSave = eventManagementViewModel::createEvent,
+                  reminderDefaults = reminderDefaults,
                   initialDate = dialog.date,
                   initialProject = dialog.asProject,
                   sheetSettled = sheetSettled)
@@ -245,10 +247,12 @@ fun CalendarScreen(
                   eventToEdit = dialog.event,
                   userTimeZone = timeZone,
                   isLoading = eventManagementState.isLoading,
-                  onSave = { summary, description, location, dateTime ->
+                  onSave = { summary, description, location, dateTime, reminder ->
                     eventManagementViewModel.updateEvent(
-                        summary, description, location, dateTime, dialog.mode)
+                        summary, description, location, dateTime, dialog.mode, reminder)
                   },
+                  reminderDefaults = reminderDefaults,
+                  initialReminders = eventManagementState.editingReminders,
                   showRecurrence = dialog.mode != EventUpdateMode.SINGLE_INSTANCE)
           else -> {}
         }

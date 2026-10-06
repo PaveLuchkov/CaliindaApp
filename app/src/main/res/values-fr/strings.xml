@@ -313,10 +313,17 @@
     <string name="reminder_none">Aucun rappel</string>
     <string name="reminder_at_start">Au début</string>
     <string name="reminder_day_before_at">La veille à %1$s</string>
+    <string name="reminder_on_day_at">Le jour même à %1$s</string>
     <string name="reminder_days_before_at">%1$d jours avant à %2$s</string>
     <string name="reminder_setting_title">Rappel</string>
     <string name="reminder_setting_all_day_title">Rappel des événements sur la journée</string>
     <string name="reminder">Rappel</string>
+    <string name="details_place">Lieu</string>
+    <string name="details_notes">Notes</string>
+    <string name="reminder_at_start_short">Au début</string>
+    <string name="reminder_days_short">%d j</string>
+    <string name="reminder_day_before_short">Veille</string>
+    <string name="reminder_on_day_short">Le jour même</string>
     <string name="reminders_channel_name">Rappels d\'événements</string>
     <string name="reminders_channel_desc">Rappels quand Google Agenda ne les affiche pas</string>
     <string name="reminder_notifications_title">Rappels de Caliinda</string>

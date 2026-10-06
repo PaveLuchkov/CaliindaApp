@@ -113,9 +113,15 @@ data class EventDateTimeState(
   }
 }
 
-/** Сохранить форму: название, описание, место, дата и время. */
+/** Сохранить форму: название, описание, место, дата и время, напоминание. */
 typealias OnSaveEvent =
-    (summary: String, description: String, location: String, dateTime: EventDateTimeState) -> Unit
+    (
+        summary: String,
+        description: String,
+        location: String,
+        dateTime: EventDateTimeState,
+        reminder: ReminderChoice,
+    ) -> Unit
 
 /** Состояние формы для правки существующего события. */
 fun EventDto.toDateTimeState(zone: ZoneId): EventDateTimeState {

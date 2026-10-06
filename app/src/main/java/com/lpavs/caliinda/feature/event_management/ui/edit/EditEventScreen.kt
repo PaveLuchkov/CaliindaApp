@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.event_management.ui.edit
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderDefaults
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.toDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.OnSaveEvent
 import java.time.ZoneId
@@ -28,6 +30,9 @@ fun EditEventScreen(
     userTimeZone: ZoneId,
     isLoading: Boolean,
     onSave: OnSaveEvent,
+    reminderDefaults: ReminderDefaults,
+    /** Напоминания события; null — ещё загружаются. */
+    initialReminders: List<Int>?,
     /** Правка одного экземпляра серии — блок повторения прячем. */
     showRecurrence: Boolean = true,
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
@@ -58,7 +63,14 @@ fun EditEventScreen(
         eventDateTimeState.startTime, eventDateTimeState.isAllDay)
   }
 
-  val save = { onSave(summary, description, location, eventDateTimeState) }
+  var reminder by remember(eventToEdit.id) { mutableStateOf<ReminderChoice>(ReminderChoice.Default) }
+  // Напоминания приходят чуть позже формы — подставляем, если пользователь ещё не выбрал своё.
+  LaunchedEffect(initialReminders) {
+    if (initialReminders != null && reminder == ReminderChoice.Default) {
+      reminder = ReminderChoice.Custom(initialReminders.firstOrNull())
+    }
+  }
+  val save = { onSave(summary, description, location, eventDateTimeState, reminder) }
 
   // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
   // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.
@@ -75,6 +87,9 @@ fun EditEventScreen(
         dateTimeState = eventDateTimeState,
         onDateTimeStateChange = { eventDateTimeState = it },
         zone = userTimeZone,
+        reminder = reminder,
+        onReminderChange = { reminder = it },
+        reminderDefaults = reminderDefaults,
         isLoading = isLoading,
         suggestedChips = suggestedChips,
         onSave = save,

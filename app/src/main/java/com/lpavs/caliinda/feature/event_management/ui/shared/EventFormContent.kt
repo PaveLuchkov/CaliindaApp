@@ -1,29 +1,25 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
+import androidx.compose.material.icons.rounded.Alarm
+import com.lpavs.caliinda.core.ui.util.TIMED_REMINDER_OPTIONS
+import com.lpavs.caliinda.core.ui.util.ALL_DAY_REMINDER_OPTIONS
+import com.lpavs.caliinda.core.ui.util.reminderLabel
+import com.lpavs.caliinda.core.ui.components.ChoiceOption
+import com.lpavs.caliinda.core.ui.components.ChoiceDialog
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.minutes
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderDefaults
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.DetailsSection
 import java.time.ZoneId
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.width
-import com.lpavs.caliinda.core.ui.theme.cuid
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -56,6 +51,9 @@ fun EventFormContent(
     dateTimeState: EventDateTimeState,
     onDateTimeStateChange: (EventDateTimeState) -> Unit,
     zone: ZoneId,
+    reminder: ReminderChoice,
+    onReminderChange: (ReminderChoice) -> Unit,
+    reminderDefaults: ReminderDefaults,
     isLoading: Boolean,
     suggestedChips: List<SugNameChips>,
     onSave: () -> Unit,
@@ -65,10 +63,8 @@ fun EventFormContent(
 ) {
     var activePicker by remember { mutableStateOf<ActivePicker>(ActivePicker.None) }
     val context = LocalContext.current
-    // Описание и место нужны редко — прячем за кнопкой, но сразу показываем, если они уже есть.
-    var showDetails by rememberSaveable {
-        mutableStateOf(description.isNotEmpty() || location.isNotEmpty())
-    }
+    var showReminderPicker by rememberSaveable { mutableStateOf(false) }
+    val reminderMinutes = reminder.minutes(reminderDefaults, dateTimeState.isAllDay)
 
     Column(
         modifier = modifier
@@ -108,57 +104,36 @@ fun EventFormContent(
             )
         }
 
-        // Описание и Локация
-        AnimatedContent(
-            targetState = showDetails,
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter,
-            label = "details") { expanded ->
-            if (!expanded) {
-                TextButton(onClick = { showDetails = true }, enabled = !isLoading) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.add_details))
-                }
-            } else {
-                AdaptiveContainer {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = description,
-                            onValueChange = onDescriptionChange,
-                            label = { Text(stringResource(R.string.description)) },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
-                            enabled = !isLoading,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedContainerColor = colorScheme.surfaceContainerHighest,
-                                unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-                            ),
-                            shape = RoundedCornerShape(cuid.ContainerCornerRadius)
-                        )
-
-                        OutlinedTextField(
-                            value = location,
-                            onValueChange = onLocationChange,
-                            label = { Text(stringResource(R.string.location)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            enabled = !isLoading,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedContainerColor = colorScheme.surfaceContainerHighest,
-                                unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-                            ),
-                            shape = RoundedCornerShape(cuid.ContainerCornerRadius)
-                        )
-                    }
-                }
-            }
+        // Место, описание, напоминание — по запросу.
+        AdaptiveContainer {
+            DetailsSection(
+                location = location,
+                onLocationChange = onLocationChange,
+                description = description,
+                onDescriptionChange = onDescriptionChange,
+                reminderMinutes = reminderMinutes,
+                isAllDay = dateTimeState.isAllDay,
+                onReminderClick = { showReminderPicker = true },
+                enabled = !isLoading)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+    }
+    if (showReminderPicker) {
+        val allDay = dateTimeState.isAllDay
+        ChoiceDialog(
+            icon = Icons.Rounded.Alarm,
+            title = stringResource(R.string.reminder),
+            message = null,
+            options =
+                (if (allDay) ALL_DAY_REMINDER_OPTIONS else TIMED_REMINDER_OPTIONS).map { minutes ->
+                    ChoiceOption(reminderLabel(minutes, allDay), selected = minutes == reminderMinutes) {
+                        onReminderChange(ReminderChoice.Custom(minutes))
+                        showReminderPicker = false
+                    }
+                },
+            cancelText = stringResource(R.string.cancel),
+            onDismiss = { showReminderPicker = false })
     }
     HandlePickerLogic(
         activePicker = activePicker,

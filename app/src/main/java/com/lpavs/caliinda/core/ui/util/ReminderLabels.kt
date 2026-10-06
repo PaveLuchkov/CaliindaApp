@@ -15,9 +15,10 @@ val TIMED_REMINDER_OPTIONS: List<Int?> = listOf(null, 0, 5, 10, 15, 30, 60, 24 *
 
 /**
  * Для событий на весь день: начало — полночь, поэтому «накануне в 9:00» — это 15 ч до него,
- * «накануне в 18:00» — 6 ч, «за 2 дня в 9:00» — 39 ч.
+ * «накануне в 18:00» — 6 ч, «за 2 дня в 9:00» — 39 ч. «В тот же день в 9:00» — минус 9 ч:
+ * так его хранит и Google.
  */
-val ALL_DAY_REMINDER_OPTIONS: List<Int?> = listOf(null, 15 * 60, 6 * 60, 39 * 60)
+val ALL_DAY_REMINDER_OPTIONS: List<Int?> = listOf(null, -9 * 60, 15 * 60, 6 * 60, 39 * 60)
 
 /** Подпись напоминания: «За 15 минут», «Накануне в 9:00», «Без напоминания». */
 @Composable
@@ -25,14 +26,17 @@ fun reminderLabel(minutes: Int?, allDay: Boolean): String {
   if (minutes == null) return stringResource(R.string.reminder_none)
   if (minutes == 0) return stringResource(R.string.reminder_at_start)
   if (allDay) {
-    // Сколько полуночей назад и в какое время того дня.
-    val days = (minutes + MINUTES_IN_DAY - 1) / MINUTES_IN_DAY
+    // Сколько полуночей назад и в какое время того дня; отрицательные — в сам день события.
+    val days = Math.floorDiv(minutes + MINUTES_IN_DAY - 1, MINUTES_IN_DAY)
     val time = LocalTime.MIDNIGHT.plusMinutes((days * MINUTES_IN_DAY - minutes).toLong())
     val context = LocalContext.current
     val pattern = if (DateFormat.is24HourFormat(context)) "H:mm" else "h:mm a"
     val formatted = time.format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
-    return if (days == 1) stringResource(R.string.reminder_day_before_at, formatted)
-    else stringResource(R.string.reminder_days_before_at, days, formatted)
+    return when (days) {
+      0 -> stringResource(R.string.reminder_on_day_at, formatted)
+      1 -> stringResource(R.string.reminder_day_before_at, formatted)
+      else -> stringResource(R.string.reminder_days_before_at, days, formatted)
+    }
   }
   return when {
     minutes % MINUTES_IN_DAY == 0 ->

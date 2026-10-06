@@ -323,10 +323,17 @@
     <string name="reminder_none">Без напоминания</string>
     <string name="reminder_at_start">В момент начала</string>
     <string name="reminder_day_before_at">Накануне в %1$s</string>
+    <string name="reminder_on_day_at">В день события в %1$s</string>
     <string name="reminder_days_before_at">За %1$d дн. в %2$s</string>
     <string name="reminder_setting_title">Напоминание</string>
     <string name="reminder_setting_all_day_title">Напоминание о событиях на весь день</string>
     <string name="reminder">Напоминание</string>
+    <string name="details_place">Место</string>
+    <string name="details_notes">Описание</string>
+    <string name="reminder_at_start_short">В начале</string>
+    <string name="reminder_days_short">%d дн.</string>
+    <string name="reminder_day_before_short">Накануне</string>
+    <string name="reminder_on_day_short">В тот день</string>
     <string name="reminders_channel_name">Напоминания о событиях</string>
     <string name="reminders_channel_desc">Напоминания, когда их не показывает Google Календарь</string>
     <string name="reminder_notifications_title">Напоминания от Caliinda</string>

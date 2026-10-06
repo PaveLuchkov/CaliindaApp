@@ -303,10 +303,17 @@
     <string name="reminder_none">Keine Erinnerung</string>
     <string name="reminder_at_start">Zum Beginn</string>
     <string name="reminder_day_before_at">Am Vortag um %1$s</string>
+    <string name="reminder_on_day_at">Am Tag um %1$s</string>
     <string name="reminder_days_before_at">%1$d Tage vorher um %2$s</string>
     <string name="reminder_setting_title">Erinnerung</string>
     <string name="reminder_setting_all_day_title">Erinnerung für ganztägige Ereignisse</string>
     <string name="reminder">Erinnerung</string>
+    <string name="details_place">Ort</string>
+    <string name="details_notes">Notizen</string>
+    <string name="reminder_at_start_short">Zu Beginn</string>
+    <string name="reminder_days_short">%d T.</string>
+    <string name="reminder_day_before_short">Vortag</string>
+    <string name="reminder_on_day_short">Am Tag</string>
     <string name="reminders_channel_name">Ereigniserinnerungen</string>
     <string name="reminders_channel_desc">Erinnerungen, wenn Google Kalender sie nicht anzeigt</string>
     <string name="reminder_notifications_title">Erinnerungen von Caliinda</string>
