@@ -28,5 +28,9 @@ data class EventDetailsUiModel(
     val summary: String,
     val formattedTimeString: String,
     val isCurrent: Boolean,
-    val originalEvent: EventDto
+    val originalEvent: EventDto,
+    /** Фигура как у карточки в ленте. */
+    val shapeParams: GeneratedShapeParams = generateShapeParams(originalEvent.id),
+    /** Многодневное — у проектов своя фигура (см. ProjectShapes.kt). */
+    val isProject: Boolean = false,
 )
