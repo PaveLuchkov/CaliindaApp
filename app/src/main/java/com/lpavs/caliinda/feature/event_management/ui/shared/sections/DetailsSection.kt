@@ -58,16 +58,13 @@ fun DetailsSection(
     isAllDay: Boolean,
     onReminderClick: () -> Unit,
     enabled: Boolean,
-    /** Подсказки адресов под полем места (см. LocationField). */
+    /** Поле места — по умолчанию с подсказками адресов ([LocationField]). */
     locationField: @Composable (FocusRequester) -> Unit = { focus ->
-      DetailField(
-          value = location,
-          onValueChange = onLocationChange,
-          label = stringResource(R.string.location),
-          icon = Icons.Rounded.Place,
+      LocationField(
+          location = location,
+          onLocationChange = onLocationChange,
           enabled = enabled,
-          focusRequester = focus,
-          singleLine = true)
+          focusRequester = focus)
     },
 ) {
   // Открытое кнопкой поле; заполненное видно всегда — скрыть его, не стерев текст, нельзя.
