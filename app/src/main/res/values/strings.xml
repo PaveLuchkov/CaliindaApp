@@ -465,6 +465,12 @@
     <string name="reminder_setting_title">Reminder</string>
     <string name="reminder_setting_all_day_title">All-day events reminder</string>
     <string name="reminder">Reminder</string>
+    <string name="reminders_channel_name">Event reminders</string>
+    <string name="reminders_channel_desc">Reminders when Google Calendar isn\'t there to show them</string>
+    <string name="reminder_notifications_title">Caliinda reminders</string>
+    <string name="reminder_notifications_summary">Notify when an event reminder is due</string>
+    <string name="reminder_notifications_google">Google Calendar shows them already — turning this on would duplicate them</string>
+    <string name="reminder_notifications_duplicates">Google Calendar shows reminders too — they may appear twice</string>
     <plurals name="reminder_minutes_before">
         <item quantity="one">%d minute before</item>
         <item quantity="other">%d minutes before</item>

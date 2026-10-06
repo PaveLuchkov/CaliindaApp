@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.settings.vm
 
+import kotlinx.coroutines.flow.map
+import com.lpavs.caliinda.feature.reminders.GoogleCalendarApp
 import com.lpavs.caliinda.core.data.model.ThemeMode
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -23,6 +25,7 @@ constructor(
     private val settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
     private val liveEventNotifier: LiveEventNotifier,
+    private val googleCalendar: GoogleCalendarApp,
 ) : ViewModel() {
 
   val liveNotification: StateFlow<Boolean> =
@@ -45,6 +48,19 @@ constructor(
 
   fun setDefaultAllDayReminder(minutes: Int?) {
     viewModelScope.launch { settingsRepository.saveDefaultAllDayReminder(minutes) }
+  }
+
+  /** Google Календарь сам показывает напоминания — наши по умолчанию выключены. */
+  val googleCalendarActive: Boolean = googleCalendar.isActive()
+
+  /** Свои напоминания: явная настройка или по умолчанию «да, если нет Google Календаря». */
+  val reminderNotifications: StateFlow<Boolean> =
+      settingsRepository.reminderNotificationsFlow
+          .map { it ?: !googleCalendarActive }
+          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), !googleCalendarActive)
+
+  fun setReminderNotifications(enabled: Boolean) {
+    viewModelScope.launch { settingsRepository.saveReminderNotifications(enabled) }
   }
 
   fun setLiveNotification(enabled: Boolean) {

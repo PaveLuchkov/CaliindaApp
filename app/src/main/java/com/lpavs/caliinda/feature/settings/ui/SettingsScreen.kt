@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.settings.ui
 
+import androidx.compose.material.icons.rounded.Notifications
 import com.lpavs.caliinda.core.ui.util.TIMED_REMINDER_OPTIONS
 import com.lpavs.caliinda.core.ui.util.ALL_DAY_REMINDER_OPTIONS
 import com.lpavs.caliinda.core.ui.util.reminderLabel
@@ -152,6 +153,24 @@ fun SettingsScreen(
         permissionDenied = !granted
         if (granted) settingsViewModel.setLiveNotification(true)
       }
+  val remindersEnabled by settingsViewModel.reminderNotifications.collectAsStateWithLifecycle()
+  val reminderPermissionLauncher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        notificationsAllowed = granted
+        permissionDenied = !granted
+        if (granted) settingsViewModel.setReminderNotifications(true)
+      }
+  val onRemindersToggle: (Boolean) -> Unit = { checked ->
+    when {
+      !checked -> settingsViewModel.setReminderNotifications(false)
+      notificationsAllowed -> settingsViewModel.setReminderNotifications(true)
+      permissionDenied || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ->
+          context.startActivitySafely(
+              Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                  .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+      else -> reminderPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+  }
   val onLiveToggle: (Boolean) -> Unit = { checked ->
     when {
       !checked -> settingsViewModel.setLiveNotification(false)
@@ -289,7 +308,7 @@ fun SettingsScreen(
                   SegmentedListItem(
                       checked = checked,
                       onCheckedChange = onLiveToggle,
-                      shapes = settingsShapes(index = 0, count = 3),
+                      shapes = settingsShapes(index = 0, count = 4),
                       colors = settingsItemColors(),
                       leadingContent = {
                         Icon(Icons.Rounded.NotificationsActive, contentDescription = null)
@@ -306,9 +325,31 @@ fun SettingsScreen(
                       }
                 }
                 item {
+                  val checked = remindersEnabled && notificationsAllowed
+                  SegmentedListItem(
+                      checked = checked,
+                      onCheckedChange = onRemindersToggle,
+                      shapes = settingsShapes(index = 1, count = 4),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.Notifications, contentDescription = null) },
+                      trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+                      supportingContent = {
+                        Text(
+                            stringResource(
+                                when {
+                                  !settingsViewModel.googleCalendarActive ->
+                                      R.string.reminder_notifications_summary
+                                  checked -> R.string.reminder_notifications_duplicates
+                                  else -> R.string.reminder_notifications_google
+                                }))
+                      }) {
+                        Text(stringResource(R.string.reminder_notifications_title))
+                      }
+                }
+                item {
                   SegmentedListItem(
                       onClick = { reminderPicker = false },
-                      shapes = settingsShapes(index = 1, count = 3),
+                      shapes = settingsShapes(index = 2, count = 4),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.Alarm, contentDescription = null) },
                       supportingContent = { Text(reminderLabel(defaultReminder, allDay = false)) }) {
@@ -318,7 +359,7 @@ fun SettingsScreen(
                 item {
                   SegmentedListItem(
                       onClick = { reminderPicker = true },
-                      shapes = settingsShapes(index = 2, count = 3),
+                      shapes = settingsShapes(index = 3, count = 4),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.EventAvailable, contentDescription = null) },
                       supportingContent = {

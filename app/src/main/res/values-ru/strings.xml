@@ -327,6 +327,12 @@
     <string name="reminder_setting_title">Напоминание</string>
     <string name="reminder_setting_all_day_title">Напоминание о событиях на весь день</string>
     <string name="reminder">Напоминание</string>
+    <string name="reminders_channel_name">Напоминания о событиях</string>
+    <string name="reminders_channel_desc">Напоминания, когда их не показывает Google Календарь</string>
+    <string name="reminder_notifications_title">Напоминания от Caliinda</string>
+    <string name="reminder_notifications_summary">Уведомлять, когда подходит время напоминания</string>
+    <string name="reminder_notifications_google">Их уже показывает Google Календарь — включение приведёт к дублям</string>
+    <string name="reminder_notifications_duplicates">Google Календарь тоже показывает напоминания — возможны дубли</string>
     <plurals name="reminder_minutes_before">
         <item quantity="one">За %d минуту</item>
         <item quantity="few">За %d минуты</item>
