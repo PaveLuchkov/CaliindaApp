@@ -34,6 +34,7 @@ fun DayEventsPage(
     createEventClick: () -> Unit,
     introductionState: IntroState,
     onIntroNext: () -> Unit,
+    onIntroFinish: () -> Unit,
 ) {
   val listState = rememberLazyListState()
   val isBusy = pageState.isLoading
@@ -65,9 +66,11 @@ fun DayEventsPage(
     if (showIntro || showAccess) {
       SystemEventsList(
           hasCalendarAccess = hasCalendarAccess,
-          introStep = introductionState.currentStep,
+          introState = introductionState,
           onGrantAccessClick = onGrantAccessClick,
           onIntroNext = onIntroNext,
+          onIntroFinish = onIntroFinish,
+          onCreateEvent = createEventClick,
           projectView = false)
       return
     }

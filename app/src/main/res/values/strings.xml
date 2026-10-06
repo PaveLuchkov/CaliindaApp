@@ -314,6 +314,17 @@
     <string name="allow_access">Allow access</string>
     <string name="intro_finish">Finish</string>
     <string name="intro_next">Next</string>
+    <string name="intro_colors_title">Color shows time</string>
+    <string name="intro_colors_text">The event happening now is highlighted and shows its progress. The next one gradually takes on the same color as it gets closer.</string>
+    <string name="intro_height_title">Height shows duration</string>
+    <string name="intro_height_text">A long event looks long, so you can read your day at a glance.</string>
+    <string name="intro_projects_title">Projects live next door</string>
+    <string name="intro_projects_text">Anything longer than a day is on the projects screen: swipe right. On a day page, a project is a thin ribbon.</string>
+    <string name="intro_start_title">You\'re all set</string>
+    <string name="intro_start_text">A title and a time are all an event needs.</string>
+    <string name="intro_create_event">Create event</string>
+    <string name="intro_skip">Skip</string>
+    <string name="intro_projects_page">Events longer than a day will appear here</string>
     <string name="calendars">Calendars</string>
     <string name="about">About</string>
     <string name="new_events_saved_to">New events are saved to</string>

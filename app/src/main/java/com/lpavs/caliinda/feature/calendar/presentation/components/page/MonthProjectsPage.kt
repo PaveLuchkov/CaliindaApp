@@ -36,10 +36,9 @@ fun MonthProjectsPage(
       !hasCalendarAccess || (!introductionState.isFinished && !pageState.isLoading) ->
           SystemEventsList(
               hasCalendarAccess = hasCalendarAccess,
-              introStep = introductionState.currentStep,
+              introState = introductionState,
               onGrantAccessClick = onGrantAccessClick,
-              projectView = true,
-              onIntroNext = {})
+              projectView = true)
       pageState.events.isNotEmpty() ->
           ProjectsCardsList(events = pageState.events, listState = listState, actions = actions)
       pageState.isLoading ->

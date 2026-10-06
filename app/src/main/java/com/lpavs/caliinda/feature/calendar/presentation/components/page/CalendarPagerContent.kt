@@ -25,6 +25,7 @@ fun CalendarPagerScreen(
     monthPageState: (YearMonth) -> Flow<MonthPageUiState>,
     actions: EventActions,
     onIntroNext: () -> Unit,
+    onIntroFinish: () -> Unit,
     calendarPagerState: PagerState,
     dailyViewPagerState: PagerState,
     monthPagerState: PagerState,
@@ -109,7 +110,8 @@ fun CalendarPagerScreen(
                         onGrantAccessClick = onGrantAccessClick,
                         createEventClick = createEventAction,
                         introductionState = introductionState,
-                        onIntroNext = onIntroNext)
+                        onIntroNext = onIntroNext,
+                        onIntroFinish = onIntroFinish)
                   }
         }
       }

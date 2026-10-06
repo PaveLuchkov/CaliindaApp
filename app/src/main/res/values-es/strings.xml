@@ -154,6 +154,17 @@
     <string name="allow_access">Permitir acceso</string>
     <string name="intro_finish">Listo</string>
     <string name="intro_next">Siguiente</string>
+    <string name="intro_colors_title">El color es el tiempo</string>
+    <string name="intro_colors_text">El evento en curso se destaca y muestra su progreso. El siguiente se va coloreando a medida que se acerca.</string>
+    <string name="intro_height_title">La altura es la duración</string>
+    <string name="intro_height_text">Un evento largo también se ve largo: entiendes tu día de un vistazo.</string>
+    <string name="intro_projects_title">Los proyectos, al lado</string>
+    <string name="intro_projects_text">Todo lo que dura más de un día está en la pantalla de proyectos: desliza a la derecha. En el día, un proyecto es una cinta fina.</string>
+    <string name="intro_start_title">Todo listo</string>
+    <string name="intro_start_text">A un evento le basta con un título y una hora.</string>
+    <string name="intro_create_event">Crear evento</string>
+    <string name="intro_skip">Omitir</string>
+    <string name="intro_projects_page">Aquí aparecerán los eventos de más de un día</string>
     <string name="calendars">Calendarios</string>
     <string name="about">Acerca de</string>
     <string name="new_events_saved_to">Los eventos nuevos se guardan en</string>

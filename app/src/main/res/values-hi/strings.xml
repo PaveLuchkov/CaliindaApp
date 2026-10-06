@@ -152,6 +152,17 @@
     <string name="allow_access">एक्सेस दें</string>
     <string name="intro_finish">समाप्त</string>
     <string name="intro_next">आगे</string>
+    <string name="intro_colors_title">रंग ही समय है</string>
+    <string name="intro_colors_text">अभी चल रहा इवेंट हाइलाइट होता है और उसकी प्रगति दिखती है। अगला इवेंट पास आते-आते धीरे-धीरे उसी रंग में बदलता है।</string>
+    <string name="intro_height_title">ऊँचाई ही अवधि है</string>
+    <string name="intro_height_text">लंबा इवेंट लंबा ही दिखता है — पूरा दिन एक नज़र में समझ आता है।</string>
+    <string name="intro_projects_title">प्रोजेक्ट बगल में</string>
+    <string name="intro_projects_text">एक दिन से लंबा सब कुछ प्रोजेक्ट स्क्रीन पर है: दाईं ओर स्वाइप करें। दिन में प्रोजेक्ट एक पतली पट्टी की तरह दिखता है।</string>
+    <string name="intro_start_title">सब तैयार है</string>
+    <string name="intro_start_text">इवेंट के लिए बस नाम और समय काफ़ी है।</string>
+    <string name="intro_create_event">इवेंट बनाएँ</string>
+    <string name="intro_skip">छोड़ें</string>
+    <string name="intro_projects_page">एक दिन से लंबे इवेंट यहाँ दिखेंगे</string>
     <string name="calendars">कैलेंडर</string>
     <string name="about">ऐप के बारे में</string>
     <string name="new_events_saved_to">नए इवेंट यहाँ सहेजे जाते हैं</string>

@@ -154,6 +154,17 @@
     <string name="allow_access">Autoriser l’accès</string>
     <string name="intro_finish">Terminer</string>
     <string name="intro_next">Suivant</string>
+    <string name="intro_colors_title">La couleur, c\'est le temps</string>
+    <string name="intro_colors_text">L\'événement en cours est mis en avant et montre sa progression. Le suivant se colore peu à peu à mesure qu\'il approche.</string>
+    <string name="intro_height_title">La hauteur, c\'est la durée</string>
+    <string name="intro_height_text">Un long événement paraît long : votre journée se lit d\'un coup d\'œil.</string>
+    <string name="intro_projects_title">Les projets, juste à côté</string>
+    <string name="intro_projects_text">Tout ce qui dure plus d\'un jour se trouve sur l\'écran des projets : balayez vers la droite. Dans la journée, un projet est un fin ruban.</string>
+    <string name="intro_start_title">Tout est prêt</string>
+    <string name="intro_start_text">Un titre et une heure suffisent pour un événement.</string>
+    <string name="intro_create_event">Créer un événement</string>
+    <string name="intro_skip">Passer</string>
+    <string name="intro_projects_page">Les événements de plus d\'un jour apparaîtront ici</string>
     <string name="calendars">Calendriers</string>
     <string name="about">À propos</string>
     <string name="new_events_saved_to">Les nouveaux événements sont enregistrés dans</string>
