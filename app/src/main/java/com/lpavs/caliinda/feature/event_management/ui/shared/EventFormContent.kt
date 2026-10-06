@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.R
-import com.lpavs.caliinda.feature.event_management.ui.shared.sections.DurationChips
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimePicker
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventDateTimeState
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.EventNameSection
@@ -106,12 +105,6 @@ fun EventFormContent(
                 onRequestShowRecurrenceEndDatePicker = { activePicker = ActivePicker.RecurrenceEnd },
                 showRecurrence = showRecurrence,
                 modifier = Modifier.fillMaxWidth()
-            )
-            DurationChips(
-                state = dateTimeState,
-                onStateChange = onDateTimeStateChange,
-                enabled = !isLoading,
-                modifier = Modifier.padding(top = cuid.padding)
             )
         }
 

@@ -1,20 +1,11 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared
 
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.runtime.getValue
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.text.KeyboardActions
 import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,13 +21,8 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,9 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
@@ -110,88 +93,6 @@ fun ChipsRow(
       }
 }
 
-@Composable
-internal fun DatePickerField(
-    date: LocalDate?,
-    dateFormatter: DateTimeFormatter,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    today: LocalDate? = null,
-) {
-  // Сегодняшняя дата выделена ролью tertiary («сегодня» по DESIGN.md) — сразу видно, что
-  // событие ставится на сегодня, а не на другой день.
-  ModernClickableTextField(
-      value = date?.format(dateFormatter) ?: "",
-      isLoading = isLoading,
-      onClick = onClick,
-      highlighted = date != null && date == today,
-      modifier = modifier)
-}
-
-@Composable
-internal fun TimePickerField(
-    time: LocalTime?,
-    timeFormatter: DateTimeFormatter,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    onLongClick: (() -> Unit)? = null,
-) {
-  ModernClickableTextField(
-      value = time?.format(timeFormatter) ?: "--:--",
-      isLoading = isLoading,
-      onClick = onClick,
-      onLongClick = onLongClick,
-      modifier = modifier)
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun ModernClickableTextField(
-    value: String,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    onLongClick: (() -> Unit)? = null,
-    highlighted: Boolean = false,
-) {
-  val haptics = LocalHapticFeedback.current
-  val container by
-      animateColorAsState(
-          if (highlighted) colorScheme.tertiaryContainer else colorScheme.secondaryContainer,
-          AppMotion.defaultEffectsSpec(),
-          label = "fieldContainer")
-  val content by
-      animateColorAsState(
-          if (highlighted) colorScheme.onTertiaryContainer else colorScheme.onSecondaryContainer,
-          AppMotion.defaultEffectsSpec(),
-          label = "fieldContent")
-  Box(
-      modifier =
-          modifier
-              .height(45.dp)
-              .clip(shape = RoundedCornerShape(cuid.ContainerCornerRadius))
-              .background(container)) {
-        Row(
-            modifier =
-                Modifier.fillMaxSize()
-                    .combinedClickable(
-                        enabled = !isLoading,
-                        onClick = onClick,
-                        onLongClick = {
-                          haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                          onLongClick?.invoke()
-                        },
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically) {
-              Text(text = value, color = content)
-            }
-      }
-}
-
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
 fun CustomOutlinedTextFieldPreview() {
@@ -204,14 +105,3 @@ fun CustomOutlinedTextFieldPreview() {
     }
 }
 
-@Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
-@Composable
-fun ModernClickableTextFieldPreview() {
-    CaliindaTheme {
-        ModernClickableTextField(
-            value = "Name",
-            isLoading = false,
-            onClick = {}
-        )
-    }
-}

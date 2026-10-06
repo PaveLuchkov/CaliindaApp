@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
+import androidx.compose.material3.MaterialTheme.shapes
 import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedChoice
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
@@ -101,9 +101,9 @@ internal fun RecurrenceSummaryField(
       modifier =
           modifier
               .fillMaxWidth()
-              // Как поля даты, но длинное правило переносится, а не обрезается.
-              .heightIn(min = 45.dp)
-              .clip(RoundedCornerShape(cuid.ContainerCornerRadius))
+              // Как строка дат в блоке времени, но длинное правило переносится, а не обрезается.
+              .heightIn(min = 40.dp)
+              .clip(shapes.extraLarge)
               .background(colorScheme.secondaryContainer)
               .clickable(enabled = !isLoading, onClick = onClick)
               .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -116,7 +116,7 @@ internal fun RecurrenceSummaryField(
         Spacer(Modifier.width(12.dp))
         Text(
             text = recurrenceSummary(state),
-            style = typography.bodyLarge,
+            style = typography.labelLarge,
             color = colorScheme.onSecondaryContainer,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
