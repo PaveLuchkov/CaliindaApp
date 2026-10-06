@@ -1,5 +1,10 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.ui.platform.LocalContext
+import com.lpavs.caliinda.core.ui.util.openInMaps
 import java.time.ZoneId
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.R
@@ -130,10 +135,15 @@ fun CustomEventDetailsDialog(
                       }
 
                       if (!event.originalEvent.location.isNullOrBlank()) {
+                        val context = LocalContext.current
+                        val place = event.originalEvent.location
+                        // Место — кнопка: открывает карты на этом адресе.
                         DetailRow(
                             Icons.Filled.LocationOn,
-                            event.originalEvent.location,
-                            color = onCardText)
+                            place,
+                            color = onCardText,
+                            onClick = { context.openInMaps(place) },
+                            trailing = Icons.AutoMirrored.Rounded.OpenInNew)
                         Spacer(modifier = Modifier.height(16.dp))
                       }
 
@@ -184,11 +194,26 @@ fun CustomEventDetailsDialog(
 }
 
 @Composable
-private fun DetailRow(icon: ImageVector, value: String, color: Color) {
-  Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-    Icon(imageVector = icon, contentDescription = null)
-    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-    Text(text = value, style = typography.bodyLarge, color = color)
-    Spacer(modifier = Modifier.height(8.dp))
-  }
+private fun DetailRow(
+    icon: ImageVector,
+    value: String,
+    color: Color,
+    onClick: (() -> Unit)? = null,
+    trailing: ImageVector? = null,
+) {
+  Row(
+      modifier =
+          Modifier.fillMaxWidth()
+              .then(
+                  if (onClick != null) {
+                    Modifier.clip(MaterialTheme.shapes.small).clickable(onClick = onClick)
+                  } else Modifier),
+      verticalAlignment = Alignment.CenterVertically) {
+        Icon(imageVector = icon, contentDescription = null)
+        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+        Text(text = value, style = typography.bodyLarge, color = color, modifier = Modifier.weight(1f))
+        if (trailing != null) {
+          Icon(trailing, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+        }
+      }
 }
