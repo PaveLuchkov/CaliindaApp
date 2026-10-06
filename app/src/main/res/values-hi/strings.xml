@@ -306,6 +306,12 @@
     <string name="reminder_setting_title">रिमाइंडर</string>
     <string name="reminder_setting_all_day_title">पूरे दिन के इवेंट का रिमाइंडर</string>
     <string name="reminder">रिमाइंडर</string>
+    <string name="reminders_channel_name">इवेंट रिमाइंडर</string>
+    <string name="reminders_channel_desc">जब Google Calendar रिमाइंडर न दिखाए</string>
+    <string name="reminder_notifications_title">Caliinda के रिमाइंडर</string>
+    <string name="reminder_notifications_summary">रिमाइंडर का समय होने पर सूचना दें</string>
+    <string name="reminder_notifications_google">Google Calendar इन्हें पहले से दिखाता है — चालू करने पर दोहराव होगा</string>
+    <string name="reminder_notifications_duplicates">Google Calendar भी रिमाइंडर दिखाता है — ये दो बार आ सकते हैं</string>
     <plurals name="reminder_minutes_before">
         <item quantity="one">%d मिनट पहले</item>
         <item quantity="other">%d मिनट पहले</item>

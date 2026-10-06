@@ -307,6 +307,12 @@
     <string name="reminder_setting_title">Erinnerung</string>
     <string name="reminder_setting_all_day_title">Erinnerung für ganztägige Ereignisse</string>
     <string name="reminder">Erinnerung</string>
+    <string name="reminders_channel_name">Ereigniserinnerungen</string>
+    <string name="reminders_channel_desc">Erinnerungen, wenn Google Kalender sie nicht anzeigt</string>
+    <string name="reminder_notifications_title">Erinnerungen von Caliinda</string>
+    <string name="reminder_notifications_summary">Benachrichtigen, wenn eine Erinnerung fällig ist</string>
+    <string name="reminder_notifications_google">Google Kalender zeigt sie bereits – Einschalten würde sie doppelt anzeigen</string>
+    <string name="reminder_notifications_duplicates">Google Kalender zeigt Erinnerungen ebenfalls – sie können doppelt erscheinen</string>
     <plurals name="reminder_minutes_before">
         <item quantity="one">%d Minute vorher</item>
         <item quantity="other">%d Minuten vorher</item>

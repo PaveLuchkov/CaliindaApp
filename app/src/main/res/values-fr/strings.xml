@@ -317,6 +317,12 @@
     <string name="reminder_setting_title">Rappel</string>
     <string name="reminder_setting_all_day_title">Rappel des événements sur la journée</string>
     <string name="reminder">Rappel</string>
+    <string name="reminders_channel_name">Rappels d\'événements</string>
+    <string name="reminders_channel_desc">Rappels quand Google Agenda ne les affiche pas</string>
+    <string name="reminder_notifications_title">Rappels de Caliinda</string>
+    <string name="reminder_notifications_summary">Notifier quand un rappel arrive</string>
+    <string name="reminder_notifications_google">Google Agenda les affiche déjà : les activer créerait des doublons</string>
+    <string name="reminder_notifications_duplicates">Google Agenda affiche aussi les rappels : ils peuvent apparaître en double</string>
     <plurals name="reminder_minutes_before">
         <item quantity="one">%d minute avant</item>
         <item quantity="many">%d minutes avant</item>

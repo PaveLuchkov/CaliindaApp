@@ -317,6 +317,12 @@
     <string name="reminder_setting_title">Recordatorio</string>
     <string name="reminder_setting_all_day_title">Recordatorio de eventos de todo el día</string>
     <string name="reminder">Recordatorio</string>
+    <string name="reminders_channel_name">Recordatorios de eventos</string>
+    <string name="reminders_channel_desc">Recordatorios cuando Google Calendar no los muestra</string>
+    <string name="reminder_notifications_title">Recordatorios de Caliinda</string>
+    <string name="reminder_notifications_summary">Avisar cuando llega un recordatorio</string>
+    <string name="reminder_notifications_google">Google Calendar ya los muestra: activarlos los duplicaría</string>
+    <string name="reminder_notifications_duplicates">Google Calendar también muestra recordatorios: pueden aparecer dos veces</string>
     <plurals name="reminder_minutes_before">
         <item quantity="one">%d minuto antes</item>
         <item quantity="many">%d minutos antes</item>

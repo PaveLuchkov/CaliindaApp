@@ -30,6 +30,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     val LIVE_NOTIFICATION = booleanPreferencesKey("live_notification")
     val REMINDER_TIMED = intPreferencesKey("reminder_timed")
     val REMINDER_ALL_DAY = intPreferencesKey("reminder_all_day")
+    val REMINDER_NOTIFICATIONS = booleanPreferencesKey("reminder_notifications")
   }
   val introFlow: Flow<Boolean> =
       dataStore.data
@@ -157,6 +158,14 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
         NO_REMINDER -> null
         else -> stored
       }
+
+  /** Свои уведомления-напоминания: null — сами решаем (только если нет Google Календаря). */
+  val reminderNotificationsFlow: Flow<Boolean?> =
+      dataStore.data.map { prefs -> prefs[PreferencesKeys.REMINDER_NOTIFICATIONS] }
+
+  suspend fun saveReminderNotifications(enabled: Boolean) {
+    dataStore.edit { prefs -> prefs[PreferencesKeys.REMINDER_NOTIFICATIONS] = enabled }
+  }
 
   suspend fun saveLiveNotification(enabled: Boolean) {
     dataStore.edit { prefs -> prefs[PreferencesKeys.LIVE_NOTIFICATION] = enabled }

@@ -14,6 +14,11 @@
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         android:maxSdkVersion="32" />
 
+    <!-- Есть ли Google Календарь: тогда напоминания показывает он, а не мы. -->
+    <queries>
+        <package android:name="com.google.android.calendar" />
+    </queries>
+
     <application
         android:name="com.lpavs.caliinda.app.CaliindaApplication"
         android:allowBackup="true"
@@ -64,6 +69,17 @@
                 <data
                     android:host="com.android.calendar"
                     android:scheme="content" />
+            </intent-filter>
+        </receiver>
+
+        <!-- exported: EVENT_REMINDER шлёт процесс календаря. Чужой вызов ничего не покажет —
+             уведомления берутся из запланированных напоминаний самого календаря. -->
+        <receiver
+            android:name="com.lpavs.caliinda.feature.reminders.ReminderReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.EVENT_REMINDER" />
+                <data android:scheme="content" />
             </intent-filter>
         </receiver>
     </application>
