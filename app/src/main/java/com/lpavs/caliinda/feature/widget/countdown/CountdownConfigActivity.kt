@@ -117,7 +117,10 @@ class CountdownConfigActivity : ComponentActivity() {
   }
 
   private suspend fun pick(appWidgetId: Int, event: EventDto) {
-    val glanceId = GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId)
+    // Виджет могли убрать с рабочего стола, пока открыт выбор, — тогда просто закрываемся.
+    val glanceId =
+        runCatching { GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId) }.getOrNull()
+            ?: return finish()
     updateAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId) { prefs ->
       prefs.toMutablePreferences().apply {
         // У экземпляра серии храним мастер-событие: следующий год найдётся по нему.

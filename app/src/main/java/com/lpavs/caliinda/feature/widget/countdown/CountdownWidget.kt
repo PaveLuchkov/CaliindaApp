@@ -70,6 +70,9 @@ import kotlinx.coroutines.flow.first
 internal val COUNTDOWN_EVENT_ID = longPreferencesKey("countdown_event_id")
 internal val COUNTDOWN_TITLE = stringPreferencesKey("countdown_title")
 
+// Строка подписи над названием («дней до») — с запасом на крупный системный шрифт.
+private const val CAPTION_DP = 18f
+
 /** Сколько вперёд ищем выбранное событие: ежегодное найдётся всегда. */
 internal const val COUNTDOWN_LOOKAHEAD_DAYS = 400L
 
@@ -210,7 +213,7 @@ private fun CountdownBody(data: CountdownData) {
   val showText = wide || side >= 100f
   val shapeDp =
       when {
-        wide -> height * 0.7f
+        wide -> height * 0.62f
         showText -> side * 0.56f
         else -> side * 0.75f
       }
@@ -218,7 +221,9 @@ private fun CountdownBody(data: CountdownData) {
 
   val (event, center, caption) = describe(context, data)
   val title = event.displayTitle(context)
-  val textWidth = if (wide) width - shapeDp - 36f else width - 24f
+  val textWidth = if (wide) width - shapeDp - 30f else width - 24f
+  // «дней до» — строка, «Сегодня в 23:20» в узком виджете — две.
+  val captionLines = if (wide && caption.length > 14) 2 else 1
   val titleImage =
       if (!showText) null
       else
@@ -226,9 +231,11 @@ private fun CountdownBody(data: CountdownData) {
               context = context,
               text = title,
               maxWidthDp = textWidth,
-              maxHeightDp = if (wide) height * 0.5f else side * 0.24f,
+              // В низком виджете название занимает всю высоту под подписью — до трёх строк.
+              maxHeightDp = if (wide) height - 24f - CAPTION_DP * captionLines else side * 0.24f,
               textSizeSp = if (wide) (height * 0.2f).coerceIn(14f, 22f) else 18f,
-              minTextSizeSp = 12f)
+              minTextSizeSp = 11f,
+              maxLines = if (wide) 3 else 2)
   val number = center.toIntOrNull()
 
   val figure =
@@ -261,7 +268,7 @@ private fun CountdownBody(data: CountdownData) {
             modifier = GlanceModifier.width(textWidth.dp), horizontalAlignment = alignment) {
           Text(
               text = caption,
-              maxLines = 2,
+              maxLines = captionLines,
               style = TextStyle(color = GlanceTheme.colors.onTertiaryContainer, fontSize = 13.sp))
           titleImage?.let { TitleImage(it, GlanceTheme.colors.onTertiaryContainer, null) }
         }
