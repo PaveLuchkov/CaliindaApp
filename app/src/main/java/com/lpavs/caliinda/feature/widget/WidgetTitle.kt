@@ -29,6 +29,9 @@ class WidgetTitle(
     val emoji: Bitmap?,
     val widthDp: Float,
     val heightDp: Float,
+    /** Каким размером в итоге нарисовано: по нему можно решить, не взять ли текст короче. */
+    val textSizeSp: Float,
+    val ellipsized: Boolean,
 )
 
 /**
@@ -85,7 +88,13 @@ fun widgetTitle(
   val glyphs = drawLayer(layout, text, width, height, hide = ranges, invert = false)
   val emoji =
       if (ranges.isEmpty()) null else drawLayer(layout, text, width, height, ranges, invert = true)
-  return WidgetTitle(glyphs, emoji, width / metrics.density, height / metrics.density)
+  return WidgetTitle(
+      glyphs,
+      emoji,
+      width / metrics.density,
+      height / metrics.density,
+      layout.paint.textSize / metrics.scaledDensity,
+      layout.isEllipsized())
 }
 
 private fun titleLayout(text: CharSequence, paint: TextPaint, widthPx: Int, maxLines: Int) =

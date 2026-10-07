@@ -6,7 +6,9 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.BroadcastReceiver
 import androidx.glance.appwidget.updateAll
+import com.lpavs.caliinda.feature.widget.date.DateWidget
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +30,7 @@ class WidgetRefresher @Inject constructor(@ApplicationContext private val contex
   /** Для ресивера: дождаться обновления, пока процесс жив. */
   suspend fun update() {
     runCatching { CaliindaWidget().updateAll(context) }
+    runCatching { DateWidget().updateAll(context) }
   }
 }
 
@@ -36,13 +39,16 @@ class WidgetRefresher @Inject constructor(@ApplicationContext private val contex
  * должно переключиться. Будильник неточный — точный требует отдельного разрешения, а сдвиг
  * на пару минут для виджета не страшен.
  */
-internal fun scheduleWidgetUpdate(context: Context, at: Instant) {
-  val ids =
-      AppWidgetManager.getInstance(context)
-          .getAppWidgetIds(ComponentName(context, CaliindaWidgetReceiver::class.java))
+internal fun scheduleWidgetUpdate(
+    context: Context,
+    at: Instant,
+    receiver: Class<out BroadcastReceiver> = CaliindaWidgetReceiver::class.java,
+) {
+  val ids = AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, receiver))
   if (ids.isEmpty()) return
+  // У каждого виджета свой ресивер, а значит, и свой будильник: интенты различаются компонентом.
   val intent =
-      Intent(context, CaliindaWidgetReceiver::class.java)
+      Intent(context, receiver)
           .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
           .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
   val pending =

@@ -180,6 +180,9 @@
     <string name="widget_no_access">कैलेंडर एक्सेस देने के लिए Caliinda खोलें</string>
     <string name="widget_preview_title">डिज़ाइन रिव्यू</string>
     <string name="widget_preview_time">2:00 PM – 3:00 PM</string>
+    <string name="widget_date_name">Caliinda · तारीख</string>
+    <string name="widget_date_description">आज की तारीख — बड़ी और मौसम के रंग में</string>
+    <string name="widget_date_month_preview">अक्टूबर</string>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">
