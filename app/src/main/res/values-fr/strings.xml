@@ -176,7 +176,7 @@
     <string name="undo">Annuler</string>
     <string name="project_day_of">jour %1$d sur %2$d</string>
     <string name="widget_name">Caliinda · jour</string>
-    <string name="widget_description">Événement en cours, la suite et projets en cours</string>
+    <string name="widget_description">L\'événement en cours ou le prochain de la journée</string>
     <string name="widget_now">maintenant</string>
     <string name="widget_no_more_events">Plus d’événements aujourd’hui</string>
     <string name="widget_no_access">Ouvrez Caliinda pour autoriser l’accès au calendrier</string>
@@ -185,6 +185,10 @@
     <string name="widget_date_name">Caliinda · date</string>
     <string name="widget_date_description">La date du jour, en grand et de saison</string>
     <string name="widget_date_month_preview">Octobre</string>
+    <string name="widget_combo_name">Caliinda · aperçu</string>
+    <string name="widget_combo_description">Date, projet en cours et la suite</string>
+    <string name="widget_combo_preview_project">✈️ Voyage à Lisbonne</string>
+    <string name="widget_combo_preview_progress">jour 3 sur 7</string>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

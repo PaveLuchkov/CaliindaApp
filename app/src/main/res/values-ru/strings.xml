@@ -177,7 +177,7 @@
     <string name="undo">Отменить</string>
     <string name="project_day_of">день %1$d из %2$d</string>
     <string name="widget_name">Caliinda · день</string>
-    <string name="widget_description">Текущее событие, что дальше и идущие проекты</string>
+    <string name="widget_description">Текущее или следующее событие дня</string>
     <string name="widget_now">сейчас</string>
     <string name="widget_no_more_events">Сегодня больше событий нет</string>
     <string name="widget_no_access">Откройте Caliinda и разрешите доступ к календарю</string>
@@ -186,6 +186,10 @@
     <string name="widget_date_name">Caliinda · дата</string>
     <string name="widget_date_description">Сегодняшняя дата — крупно и по сезону</string>
     <string name="widget_date_month_preview">Октябрь</string>
+    <string name="widget_combo_name">Caliinda · обзор</string>
+    <string name="widget_combo_description">Дата, текущий проект и что дальше</string>
+    <string name="widget_combo_preview_project">✈️ Поездка в Лиссабон</string>
+    <string name="widget_combo_preview_progress">день 3 из 7</string>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

@@ -21,19 +21,27 @@ private const val SHAPE_HEIGHT_PX = 192
  * приложении: крупная, у правого края, выше карточки и обрезана ею, видна только «тень» по
  * кромке — фигура минус её же копия со сдвигом. Цвет темы накладывается через tint.
  */
-fun widgetShapeBitmap(eventId: String, aspect: Float, rotation: Float = -18f): Bitmap {
+fun widgetShapeBitmap(
+    eventId: String,
+    aspect: Float,
+    rotation: Float = -18f,
+    /** Размер фигуры относительно высоты карточки: в высокой карточке её стоит уменьшить. */
+    size: Float = 1.7f,
+    /** Центр фигуры от правого края, в высотах карточки. */
+    inset: Float = 0.55f,
+): Bitmap {
   val height = SHAPE_HEIGHT_PX
   val width = (height * aspect.coerceIn(1f, 8f)).toInt()
   val polygon: RoundedPolygon = projectFamilyPolygon(eventId)
   val path = polygon.toPath()
   val bounds = RectF().also { path.computeBounds(it, true) }
-  val scale = height * 1.7f / max(bounds.width(), bounds.height())
+  val scale = height * size / max(bounds.width(), bounds.height())
   path.transform(
       Matrix().apply {
         postTranslate(-bounds.centerX(), -bounds.centerY())
         postScale(scale, scale)
         postRotate(rotation)
-        postTranslate(width - height * 0.55f, height * 0.65f)
+        postTranslate(width - height * inset, height * 0.65f)
       })
   return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
     val canvas = Canvas(bitmap)

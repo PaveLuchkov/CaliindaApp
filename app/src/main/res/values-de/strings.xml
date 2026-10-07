@@ -175,7 +175,7 @@
     <string name="undo">Rückgängig</string>
     <string name="project_day_of">Tag %1$d von %2$d</string>
     <string name="widget_name">Caliinda · Tag</string>
-    <string name="widget_description">Aktueller Termin, was als Nächstes kommt und laufende Projekte</string>
+    <string name="widget_description">Aktueller oder nächster Termin des Tages</string>
     <string name="widget_now">jetzt</string>
     <string name="widget_no_more_events">Heute keine weiteren Termine</string>
     <string name="widget_no_access">Öffne Caliinda, um Kalenderzugriff zu erlauben</string>
@@ -184,6 +184,10 @@
     <string name="widget_date_name">Caliinda · Datum</string>
     <string name="widget_date_description">Das heutige Datum – groß und passend zur Jahreszeit</string>
     <string name="widget_date_month_preview">Oktober</string>
+    <string name="widget_combo_name">Caliinda · Überblick</string>
+    <string name="widget_combo_description">Datum, aktuelles Projekt und was als Nächstes kommt</string>
+    <string name="widget_combo_preview_project">✈️ Reise nach Lissabon</string>
+    <string name="widget_combo_preview_progress">Tag 3 von 7</string>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">
