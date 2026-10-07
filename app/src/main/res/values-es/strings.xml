@@ -176,7 +176,7 @@
     <string name="undo">Deshacer</string>
     <string name="project_day_of">día %1$d de %2$d</string>
     <string name="widget_name">Caliinda · día</string>
-    <string name="widget_description">Evento actual, lo siguiente y proyectos en curso</string>
+    <string name="widget_description">El evento actual o el siguiente del día</string>
     <string name="widget_now">ahora</string>
     <string name="widget_no_more_events">No hay más eventos hoy</string>
     <string name="widget_no_access">Abre Caliinda para permitir el acceso al calendario</string>
@@ -185,6 +185,10 @@
     <string name="widget_date_name">Caliinda · fecha</string>
     <string name="widget_date_description">La fecha de hoy, en grande y de temporada</string>
     <string name="widget_date_month_preview">Octubre</string>
+    <string name="widget_combo_name">Caliinda · resumen</string>
+    <string name="widget_combo_description">Fecha, proyecto actual y lo que sigue</string>
+    <string name="widget_combo_preview_project">✈️ Viaje a Lisboa</string>
+    <string name="widget_combo_preview_progress">día 3 de 7</string>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

@@ -2,7 +2,6 @@ package com.lpavs.caliinda.feature.widget
 
 import com.lpavs.caliinda.core.ui.util.displayTitle
 import android.content.Context
-import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,7 +36,6 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.app.MainActivity
 import dagger.hilt.android.EntryPointAccessors
 import kotlin.math.min
-import java.time.format.DateTimeFormatter
 
 /**
  * Виджет в одну строку: карточка того, что идёт сейчас или будет следующим, на всю площадь —
@@ -102,13 +100,7 @@ private fun WidgetCard(data: WidgetData) {
               !data.hasAccess -> Line(context.getString(R.string.widget_no_access), content, 14)
               focus == null -> Line(context.getString(R.string.widget_no_more_events), content, 15)
               else -> {
-                val locale = context.resources.configuration.locales[0]
-                val formatter =
-                    DateTimeFormatter.ofPattern(
-                        if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a", locale)
-                val time =
-                    "${focus.startTime.atZone(data.zone).format(formatter)} – " +
-                        focus.endTime.atZone(data.zone).format(formatter)
+                val time = focus.timeRange(context, data.zone)
                 // Название — картинкой нашим RobotoFlex: жирно и шире обычного, как в приложении.
                 val title =
                     widgetTitle(
@@ -117,20 +109,7 @@ private fun WidgetCard(data: WidgetData) {
                         maxWidthDp = size.width.value - 32f,
                         maxHeightDp = cardHeight - 12f - TIME_LINE_DP,
                         textSizeSp = 24f)
-                Box {
-                  Image(
-                      provider = ImageProvider(title.glyphs),
-                      contentDescription = focus.displayTitle(context),
-                      colorFilter = ColorFilter.tint(content),
-                      modifier = GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
-                  title.emoji?.let {
-                    Image(
-                        provider = ImageProvider(it),
-                        contentDescription = null,
-                        modifier =
-                            GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
-                  }
-                }
+                TitleImage(title, content, focus.displayTitle(context))
                 Text(
                     text = if (isNow) "${context.getString(R.string.widget_now)} · $time" else time,
                     maxLines = 1,
