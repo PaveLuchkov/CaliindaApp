@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Превью в списке виджетов (Android 12+): число дней в фигуре и подпись. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_countdown_preview_background"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:background="@drawable/widget_countdown_preview_shape"
+        android:fontFamily="sans-serif-black"
+        android:gravity="center"
+        android:text="@string/widget_countdown_preview_number"
+        android:textColor="@android:color/system_accent3_0"
+        android:textSize="36sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/widget_countdown_preview_label"
+        android:textColor="@android:color/system_accent3_900"
+        android:textSize="14sp" />
+</LinearLayout>

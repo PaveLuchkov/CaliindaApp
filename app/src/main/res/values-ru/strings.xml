@@ -190,6 +190,31 @@
     <string name="widget_combo_description">Дата, текущий проект и что дальше</string>
     <string name="widget_combo_preview_project">✈️ Поездка в Лиссабон</string>
     <string name="widget_combo_preview_progress">день 3 из 7</string>
+    <string name="widget_countdown_name">Caliinda · отсчёт</string>
+    <string name="widget_countdown_description">Сколько дней осталось до выбранного события</string>
+    <string name="widget_countdown_preview_label">дней до отпуска</string>
+    <string name="countdown_pick">Нажмите, чтобы выбрать событие</string>
+    <string name="countdown_passed">«%1$s» уже прошло. Нажмите, чтобы выбрать другое</string>
+    <string name="countdown_today">Сегодня</string>
+    <string name="countdown_today_at">Сегодня в %1$s</string>
+    <string name="countdown_ongoing">Уже идёт</string>
+    <string name="countdown_ongoing_day">День %1$d из %2$d</string>
+    <string name="countdown_config_title">Отсчёт до…</string>
+    <string name="countdown_config_subtitle">Виджет покажет, сколько дней осталось</string>
+    <string name="countdown_search">Поиск событий</string>
+    <string name="countdown_config_empty">В ближайший год событий нет</string>
+    <plurals name="countdown_days_until">
+        <item quantity="one">день до</item>
+        <item quantity="few">дня до</item>
+        <item quantity="many">дней до</item>
+        <item quantity="other">дня до</item>
+    </plurals>
+    <plurals name="countdown_in_days">
+        <item quantity="one">через %d день</item>
+        <item quantity="few">через %d дня</item>
+        <item quantity="many">через %d дней</item>
+        <item quantity="other">через %d дня</item>
+    </plurals>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

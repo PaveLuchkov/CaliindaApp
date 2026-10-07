@@ -189,6 +189,27 @@
     <string name="widget_combo_description">Date, projet en cours et la suite</string>
     <string name="widget_combo_preview_project">✈️ Voyage à Lisbonne</string>
     <string name="widget_combo_preview_progress">jour 3 sur 7</string>
+    <string name="widget_countdown_name">Caliinda · compte à rebours</string>
+    <string name="widget_countdown_description">Les jours restants avant l\'événement choisi</string>
+    <string name="widget_countdown_preview_label">jours avant les vacances</string>
+    <string name="countdown_pick">Touchez pour choisir un événement</string>
+    <string name="countdown_passed">« %1$s » est passé. Touchez pour en choisir un autre</string>
+    <string name="countdown_today">Aujourd\'hui</string>
+    <string name="countdown_today_at">Aujourd\'hui à %1$s</string>
+    <string name="countdown_ongoing">En cours</string>
+    <string name="countdown_ongoing_day">Jour %1$d sur %2$d</string>
+    <string name="countdown_config_title">Compte à rebours jusqu\'à…</string>
+    <string name="countdown_config_subtitle">Le widget affichera les jours restants</string>
+    <string name="countdown_search">Rechercher</string>
+    <string name="countdown_config_empty">Aucun événement dans l\'année à venir</string>
+    <plurals name="countdown_days_until">
+        <item quantity="one">jour avant</item>
+        <item quantity="other">jours avant</item>
+    </plurals>
+    <plurals name="countdown_in_days">
+        <item quantity="one">dans %d jour</item>
+        <item quantity="other">dans %d jours</item>
+    </plurals>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.BroadcastReceiver
 import androidx.glance.appwidget.updateAll
 import com.lpavs.caliinda.feature.widget.combo.ComboWidget
+import com.lpavs.caliinda.feature.widget.countdown.CountdownWidget
 import com.lpavs.caliinda.feature.widget.date.DateWidget
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,7 @@ class WidgetRefresher @Inject constructor(@ApplicationContext private val contex
     runCatching { CaliindaWidget().updateAll(context) }
     runCatching { DateWidget().updateAll(context) }
     runCatching { ComboWidget().updateAll(context) }
+    runCatching { CountdownWidget().updateAll(context) }
   }
 }
 

@@ -132,6 +132,23 @@ constructor(
           },
           empty = emptyList())
 
+  /**
+   * Идущие и предстоящие события на [days] дней вперёд, по одному — ближайшему — экземпляру на
+   * событие: у ежегодного дня рождения важен только следующий. Для обратного отсчёта.
+   */
+  fun getUpcomingFlow(from: LocalDate, days: Long): Flow<List<EventDto>> =
+      observeCalendar(
+          load = { zone ->
+            val start = from.atStartOfDay(zone).toInstant().toEpochMilli()
+            val end = from.plusDays(days).atStartOfDay(zone).toInstant().toEpochMilli()
+            loadInstances(start, end, zone)
+                .filter { it.overlaps(start, end) }
+                .sortedBy { it.startMillis }
+                .distinctBy { it.row.eventId }
+                .map { it.toDto(zone) }
+          },
+          empty = emptyList())
+
   /** Календари, в которые можно записывать события. */
   fun getWritableCalendars(): Flow<List<DeviceCalendar>> =
       dataChanges

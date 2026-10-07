@@ -189,6 +189,27 @@
     <string name="widget_combo_description">Fecha, proyecto actual y lo que sigue</string>
     <string name="widget_combo_preview_project">✈️ Viaje a Lisboa</string>
     <string name="widget_combo_preview_progress">día 3 de 7</string>
+    <string name="widget_countdown_name">Caliinda · cuenta atrás</string>
+    <string name="widget_countdown_description">Días que faltan para el evento que elijas</string>
+    <string name="widget_countdown_preview_label">días para las vacaciones</string>
+    <string name="countdown_pick">Toca para elegir un evento</string>
+    <string name="countdown_passed">«%1$s» ya pasó. Toca para elegir otro</string>
+    <string name="countdown_today">Hoy</string>
+    <string name="countdown_today_at">Hoy a las %1$s</string>
+    <string name="countdown_ongoing">En curso</string>
+    <string name="countdown_ongoing_day">Día %1$d de %2$d</string>
+    <string name="countdown_config_title">Cuenta atrás hasta…</string>
+    <string name="countdown_config_subtitle">El widget mostrará cuántos días faltan</string>
+    <string name="countdown_search">Buscar eventos</string>
+    <string name="countdown_config_empty">No hay eventos en el próximo año</string>
+    <plurals name="countdown_days_until">
+        <item quantity="one">día para</item>
+        <item quantity="other">días para</item>
+    </plurals>
+    <plurals name="countdown_in_days">
+        <item quantity="one">en %d día</item>
+        <item quantity="other">en %d días</item>
+    </plurals>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

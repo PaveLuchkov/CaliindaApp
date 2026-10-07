@@ -11,6 +11,7 @@ import android.graphics.RectF
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.core.content.res.ResourcesCompat
+import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
 import com.lpavs.caliinda.R
 import java.time.LocalDate
@@ -35,17 +36,24 @@ private val dayShapes by lazy {
 }
 
 /** Фигура дня: своя на каждый день, по кругу. Квадрат [sidePx]. */
-internal fun dayShapeBitmap(date: LocalDate, sidePx: Int): Bitmap {
-  val polygon = dayShapes[Math.floorMod(date.toEpochDay(), dayShapes.size.toLong()).toInt()]
+internal fun dayShapeBitmap(date: LocalDate, sidePx: Int): Bitmap =
+    polygonBitmap(
+        dayShapes[Math.floorMod(date.toEpochDay(), dayShapes.size.toLong()).toInt()],
+        sidePx,
+        // Лёгкий поворот от дня к дню — фигура «живая», даже если повторилась.
+        rotation = (date.dayOfYear * 37 % 60 - 30).toFloat())
+
+/** Фигура [polygon] на весь квадрат [sidePx], белым — под tint. */
+internal fun polygonBitmap(polygon: RoundedPolygon, sidePx: Int, rotation: Float = 0f): Bitmap {
   val path = polygon.toPath()
+  // Сначала поворачиваем, потом вписываем: иначе углы повёрнутой фигуры вылезут за квадрат.
+  path.transform(Matrix().apply { postRotate(rotation) })
   val bounds = RectF().also { path.computeBounds(it, true) }
   val scale = sidePx / max(bounds.width(), bounds.height())
   path.transform(
       Matrix().apply {
         postTranslate(-bounds.centerX(), -bounds.centerY())
         postScale(scale, scale)
-        // Лёгкий поворот от дня к дню — фигура «живая», даже если повторилась.
-        postRotate((date.dayOfYear * 37 % 60 - 30).toFloat())
         postTranslate(sidePx / 2f, sidePx / 2f)
       })
   return Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888).also {
@@ -53,24 +61,46 @@ internal fun dayShapeBitmap(date: LocalDate, sidePx: Int): Bitmap {
   }
 }
 
+/** Эмодзи по центру квадрата [sidePx] — вместо числа, когда считать уже нечего. */
+internal fun emojiInShapeBitmap(emoji: String, sidePx: Int): Bitmap {
+  val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = sidePx * 0.45f }
+  val bounds = Rect().also { paint.getTextBounds(emoji, 0, emoji.length, it) }
+  return Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888).also {
+    Canvas(it)
+        .drawText(
+            emoji, sidePx / 2f - bounds.exactCenterX(), sidePx / 2f - bounds.exactCenterY(), paint)
+  }
+}
+
 /**
  * Число месяца, по центру квадрата [sidePx] того же размера, что и фигура. Центруем по
  * настоящим границам цифр, а не по строке: иначе цифра съезжает вверх.
  */
-internal fun dayNumberBitmap(context: Context, day: Int, sidePx: Int): Bitmap {
+internal fun dayNumberBitmap(
+    context: Context,
+    day: Int,
+    sidePx: Int,
+    /** Доля фигуры под цифры: у «листовых» фигур середина уже, число должно быть мельче. */
+    fill: Float = 1f,
+): Bitmap {
   val text = day.toString()
+  // Три цифры (отсчёт на сотни дней) — узко, иначе выйдут мелкими.
   val paint =
       Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         typeface = ResourcesCompat.getFont(context, R.font.robotoflex_variable)
         // Одна цифра — широкая и тяжёлая, две — поуже, чтобы влезли в фигуру крупно.
         fontVariationSettings =
-            if (text.length == 1) "'wght' 1000, 'wdth' 151" else "'wght' 1000, 'wdth' 100"
+            when (text.length) {
+              1 -> "'wght' 1000, 'wdth' 151"
+              2 -> "'wght' 1000, 'wdth' 100"
+              else -> "'wght' 1000, 'wdth' 75"
+            }
         textSize = 100f
       }
   val bounds = Rect().also { paint.getTextBounds(text, 0, text.length, it) }
   // Цифра занимает ~половину фигуры по высоте и не шире 64% — фигура вокруг читается как рамка.
-  val scale = minOf(sidePx * 0.48f / bounds.height(), sidePx * 0.64f / bounds.width())
+  val scale = minOf(sidePx * 0.48f * fill / bounds.height(), sidePx * 0.64f * fill / bounds.width())
   paint.textSize *= scale
   paint.getTextBounds(text, 0, text.length, bounds)
   return Bitmap.createBitmap(sidePx, sidePx, Bitmap.Config.ARGB_8888).also {
