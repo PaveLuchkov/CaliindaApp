@@ -16,6 +16,7 @@ package com.lpavs.caliinda.app
 // Other Libraries
 
 // Project-Specific Imports
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -37,6 +38,8 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+    // После пересоздания интент тот же — не открываем форму второй раз.
+    if (savedInstanceState == null) LaunchRequests.handle(intent)
 
     setContent {
       val themeMode by settingsViewModel.themeMode.collectAsStateWithLifecycle()
@@ -48,5 +51,11 @@ class MainActivity : ComponentActivity() {
         )
       }
     }
+  }
+
+  // singleTop: нажатие на виджет при открытом приложении приходит сюда, а не новой копией.
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    LaunchRequests.handle(intent)
   }
 }

@@ -34,6 +34,7 @@
         <activity
             android:name="com.lpavs.caliinda.app.MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.Caliindar">  <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -121,6 +122,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/week_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.lpavs.caliinda.feature.widget.add.AddEventWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_add_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/add_widget_info" />
         </receiver>
 
         <!-- exported: PROVIDER_CHANGED шлёт процесс календаря, а не система. Чужой вызов
