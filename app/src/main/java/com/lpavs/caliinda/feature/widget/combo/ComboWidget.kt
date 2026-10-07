@@ -85,6 +85,9 @@ private const val PADDING_DP = 12f
 private const val GAP_DP = 8f
 private const val SECOND_CARD_DP = 52f
 
+// Место под «Окт» и «Ср» рядом с фигурой в низком виджете.
+private const val COMPACT_LABEL_DP = 50f
+
 /** Цвета карточки: проект, идёт сейчас, будет потом, пусто — как в ленте приложения. */
 private class CardColors(val container: ColorProvider, val content: ColorProvider)
 
@@ -94,7 +97,9 @@ private fun ComboContent(data: WidgetData) {
   val size = LocalSize.current
   val innerW = size.width.value - PADDING_DP * 2
   val innerH = size.height.value - PADDING_DP * 2
-  val dateW = min(innerH, innerW * 0.36f)
+  // В один ряд (4×1) дата встаёт в строку: фигура и рядом коротко месяц с днём недели.
+  val compact = innerH < 100f
+  val dateW = if (compact) innerH + COMPACT_LABEL_DP else min(innerH, innerW * 0.36f)
   val cardsW = innerW - dateW - GAP_DP
 
   Row(
@@ -106,7 +111,7 @@ private fun ComboContent(data: WidgetData) {
               .padding(PADDING_DP.dp)
               .clickable(actionStartActivity<MainActivity>()),
       verticalAlignment = Alignment.CenterVertically) {
-        DateColumn(data, dateW, innerH)
+        if (compact) CompactDate(data, innerH) else DateColumn(data, dateW, innerH)
         Spacer(GlanceModifier.width(GAP_DP.dp))
         Column(modifier = GlanceModifier.width(cardsW.dp).fillMaxHeight()) {
           val project = data.project
@@ -174,6 +179,55 @@ private fun ComboContent(data: WidgetData) {
             else ->
                 MessageCard(context.getString(R.string.widget_no_more_events), cardsW, innerH)
           }
+        }
+      }
+}
+
+/** Дата в строку для низкого виджета: фигура с числом, рядом «Окт» и «Ср». */
+@Composable
+private fun CompactDate(data: WidgetData, heightDp: Float) {
+  val context = LocalContext.current
+  val locale = context.resources.configuration.locales[0]
+  val density = context.resources.displayMetrics.density
+  val today = data.today
+  val shapePx = (heightDp * density).toInt().coerceAtLeast(1)
+  fun short(pattern: String) =
+      DateTimeFormatter.ofPattern(pattern, locale)
+          .format(today)
+          .removeSuffix(".")
+          .replaceFirstChar { it.titlecase(locale) }
+  val month =
+      widgetTitle(
+          context = context,
+          text = short("LLL"),
+          maxWidthDp = COMPACT_LABEL_DP - 6f,
+          maxHeightDp = heightDp * 0.6f,
+          textSizeSp = 18f,
+          minTextSizeSp = 12f)
+
+  Row(
+      modifier = GlanceModifier.width((heightDp + COMPACT_LABEL_DP).dp),
+      verticalAlignment = Alignment.CenterVertically) {
+        Box(contentAlignment = Alignment.Center) {
+          Image(
+              provider = ImageProvider(dayShapeBitmap(today, shapePx)),
+              contentDescription = null,
+              colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+              modifier = GlanceModifier.size(heightDp.dp))
+          Image(
+              provider = ImageProvider(dayNumberBitmap(context, today.dayOfMonth, shapePx)),
+              contentDescription =
+                  DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale).format(today),
+              colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimary),
+              modifier = GlanceModifier.size(heightDp.dp))
+        }
+        Spacer(GlanceModifier.width(6.dp))
+        Column {
+          TitleImage(month, GlanceTheme.colors.onSurface, null)
+          Text(
+              text = short("EEE"),
+              maxLines = 1,
+              style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp))
         }
       }
 }
