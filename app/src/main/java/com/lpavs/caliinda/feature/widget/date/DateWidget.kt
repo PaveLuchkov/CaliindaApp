@@ -23,6 +23,8 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
@@ -72,22 +74,47 @@ private fun DateContent(today: LocalDate, zone: ZoneId) {
   val size = LocalSize.current
   val density = context.resources.displayMetrics.density
   val locale = context.resources.configuration.locales[0]
-  val side = minOf(size.width.value, size.height.value)
-  // Фигура с числом — главное, месяц — подпись под ней.
-  val shapeDp = side * 0.62f
-  val shapePx = (shapeDp * density).toInt().coerceAtLeast(1)
-  val monthName =
-      DateTimeFormatter.ofPattern("LLLL", locale).format(today).replaceFirstChar {
-        it.titlecase(locale)
+  val width = size.width.value
+  val height = size.height.value
+  val side = minOf(width, height)
+  // Низкий и широкий (2×1) — фигура слева, месяц справа; иначе месяц под фигурой.
+  val wide = width >= height * 1.6f
+  // В 1×1 месяц не влезет читаемым — остаётся одно число.
+  val showMonth = wide || side >= 100f
+  val shapeDp =
+      when {
+        wide -> height * 0.7f
+        showMonth -> side * 0.62f
+        else -> side * 0.75f
       }
+  val shapePx = (shapeDp * density).toInt().coerceAtLeast(1)
+  fun monthName(pattern: String) =
+      DateTimeFormatter.ofPattern(pattern, locale)
+          .format(today)
+          .removeSuffix(".")
+          .replaceFirstChar { it.titlecase(locale) }
   val month =
-      widgetTitle(
-          context = context,
-          text = monthName,
-          maxWidthDp = size.width.value - 24f,
-          maxHeightDp = side * 0.2f,
-          textSizeSp = (side * 0.13f).coerceIn(14f, 30f),
-          minTextSizeSp = 12f)
+      if (!showMonth) null
+      else if (wide) {
+        fun title(text: String) =
+            widgetTitle(
+                context = context,
+                text = text,
+                maxWidthDp = width - shapeDp - 28f,
+                maxHeightDp = height * 0.8f,
+                textSizeSp = (height * 0.26f).coerceIn(14f, 32f),
+                minTextSizeSp = 12f)
+        // В 2×1 «Сентябрь» выходит мелким — лучше крупное «Сен».
+        val full = title(monthName("LLLL"))
+        if (full.ellipsized || full.textSizeSp < 20f) title(monthName("LLL")) else full
+      } else
+          widgetTitle(
+              context = context,
+              text = monthName("LLLL"),
+              maxWidthDp = width - 24f,
+              maxHeightDp = side * 0.2f,
+              textSizeSp = (side * 0.13f).coerceIn(14f, 30f),
+              minTextSizeSp = 12f)
   val fullDate = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale).format(today)
 
   Box(
@@ -108,24 +135,42 @@ private fun DateContent(today: LocalDate, zone: ZoneId) {
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
             modifier = GlanceModifier.fillMaxSize())
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Box(contentAlignment = Alignment.Center) {
-            Image(
-                provider = ImageProvider(dayShapeBitmap(today, shapePx)),
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
-                modifier = GlanceModifier.size(shapeDp.dp))
-            Image(
-                provider = ImageProvider(dayNumberBitmap(context, today.dayOfMonth, shapePx)),
-                contentDescription = fullDate,
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimary),
-                modifier = GlanceModifier.size(shapeDp.dp))
+        val day =
+            @Composable {
+              Box(contentAlignment = Alignment.Center) {
+                Image(
+                    provider = ImageProvider(dayShapeBitmap(today, shapePx)),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+                    modifier = GlanceModifier.size(shapeDp.dp))
+                Image(
+                    provider = ImageProvider(dayNumberBitmap(context, today.dayOfMonth, shapePx)),
+                    contentDescription = fullDate,
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimary),
+                    modifier = GlanceModifier.size(shapeDp.dp))
+              }
+            }
+        val monthImage =
+            @Composable {
+              month?.let {
+                Image(
+                    provider = ImageProvider(it.glyphs),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer),
+                    modifier = GlanceModifier.width(it.widthDp.dp).height(it.heightDp.dp))
+              }
+            }
+        if (wide) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            day()
+            Spacer(GlanceModifier.width(8.dp))
+            monthImage()
           }
-          Image(
-              provider = ImageProvider(month.glyphs),
-              contentDescription = null,
-              colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer),
-              modifier = GlanceModifier.width(month.widthDp.dp).height(month.heightDp.dp))
+        } else {
+          Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            day()
+            monthImage()
+          }
         }
       }
 }
