@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Превью в списке виджетов (Android 12+): круглая кнопка «+». -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="center"
+        android:background="@drawable/widget_date_preview_shape"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:text="+"
+        android:textColor="@android:color/system_accent1_0"
+        android:textSize="36sp"
+        tools:ignore="HardcodedText" />
+</FrameLayout>

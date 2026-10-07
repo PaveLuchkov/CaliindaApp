@@ -45,6 +45,7 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.dialogs.Event
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarEffectHandler
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.CalendarPagerScreen
 import com.lpavs.caliinda.feature.event_management.ui.create.CreateEventScreen
+import com.lpavs.caliinda.app.LaunchRequests
 import com.lpavs.caliinda.feature.event_management.ui.edit.EditEventScreen
 import com.lpavs.caliinda.feature.event_management.vm.EventDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
@@ -155,6 +156,15 @@ fun CalendarScreen(
           else -> visibleMonth.atDay(1)
         }
     eventManagementViewModel.openCreate(date, asProject)
+  }
+  // Нажали «+» на рабочем столе: форма нового события на сегодня. Без доступа к календарю
+  // (или пока он ещё не проверен на холодном старте) просьба ждёт — откроем, как только дадут.
+  val createRequested by LaunchRequests.createEvent.collectAsStateWithLifecycle()
+  LaunchedEffect(createRequested, calendarState.hasCalendarPermission) {
+    if (createRequested && calendarState.hasCalendarPermission) {
+      LaunchRequests.consumeCreateEvent()
+      eventManagementViewModel.openCreate(today, false)
+    }
   }
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },

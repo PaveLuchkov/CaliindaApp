@@ -8,6 +8,10 @@ import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.app.LaunchRequests
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -27,6 +31,11 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+  // Виджет «+» просит новое событие — форма живёт на главном экране, уходим на него.
+  val createRequested by LaunchRequests.createEvent.collectAsStateWithLifecycle()
+  LaunchedEffect(createRequested) {
+    if (createRequested) navController.popBackStack(NavRoutes.Main.route, inclusive = false)
+  }
   NavHost(
       navController = navController,
       startDestination = NavRoutes.Main.route,
