@@ -26,6 +26,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.width
 import androidx.glance.layout.padding
@@ -35,6 +36,7 @@ import androidx.glance.text.TextStyle
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.app.MainActivity
 import dagger.hilt.android.EntryPointAccessors
+import kotlin.math.min
 import java.time.format.DateTimeFormatter
 
 /**
@@ -75,56 +77,77 @@ private fun WidgetCard(data: WidgetData) {
         else -> GlanceTheme.colors.onPrimaryContainer
       }
 
-  Box(
-      modifier =
-          GlanceModifier.fillMaxSize()
-              .background(container)
-              .cornerRadius(20.dp)
-              .clickable(actionStartActivity<MainActivity>()),
-      contentAlignment = Alignment.CenterStart) {
-        if (focus != null) {
-          Image(
-              provider = ImageProvider(widgetShapeBitmap(focus.id, size.width / size.height)),
-              contentDescription = null,
-              colorFilter = ColorFilter.tint(content),
-              contentScale = ContentScale.FillBounds,
-              modifier = GlanceModifier.fillMaxSize())
-        }
-        Column(modifier = GlanceModifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-          when {
-            !data.hasAccess -> Line(context.getString(R.string.widget_no_access), content, 14)
-            focus == null -> Line(context.getString(R.string.widget_no_more_events), content, 15)
-            else -> {
-              val locale = context.resources.configuration.locales[0]
-              val formatter =
-                  DateTimeFormatter.ofPattern(
-                      if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a", locale)
-              val time =
-                  "${focus.startTime.atZone(data.zone).format(formatter)} – " +
-                      focus.endTime.atZone(data.zone).format(formatter)
-              // Название — картинкой нашим RobotoFlex: жирно и шире обычного, как в приложении.
-              val title =
-                  widgetTitle(
-                      context = context,
-                      text = focus.displayTitle(context),
-                      maxWidthDp = size.width.value - 32f,
-                      textSizeSp = 24f)
-              Image(
-                  provider = ImageProvider(title.bitmap),
-                  contentDescription = focus.displayTitle(context),
-                  colorFilter = ColorFilter.tint(content),
-                  modifier = GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
-              Text(
-                  text = if (isNow) "${context.getString(R.string.widget_now)} · $time" else time,
-                  maxLines = 1,
-                  style = TextStyle(color = content, fontSize = 13.sp))
+  // Карточка одной высоты при любой ячейке лаунчера: выше она пустеет, ниже — не влезает текст.
+  val cardHeight = min(size.height.value, CARD_HEIGHT_DP)
+
+  Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier =
+            GlanceModifier.fillMaxWidth()
+                .height(cardHeight.dp)
+                .background(container)
+                .cornerRadius(20.dp)
+                .clickable(actionStartActivity<MainActivity>()),
+        contentAlignment = Alignment.CenterStart) {
+          if (focus != null) {
+            Image(
+                provider = ImageProvider(widgetShapeBitmap(focus.id, size.width.value / cardHeight)),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(content),
+                contentScale = ContentScale.FillBounds,
+                modifier = GlanceModifier.fillMaxSize())
+          }
+          Column(modifier = GlanceModifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+            when {
+              !data.hasAccess -> Line(context.getString(R.string.widget_no_access), content, 14)
+              focus == null -> Line(context.getString(R.string.widget_no_more_events), content, 15)
+              else -> {
+                val locale = context.resources.configuration.locales[0]
+                val formatter =
+                    DateTimeFormatter.ofPattern(
+                        if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a", locale)
+                val time =
+                    "${focus.startTime.atZone(data.zone).format(formatter)} – " +
+                        focus.endTime.atZone(data.zone).format(formatter)
+                // Название — картинкой нашим RobotoFlex: жирно и шире обычного, как в приложении.
+                val title =
+                    widgetTitle(
+                        context = context,
+                        text = focus.displayTitle(context),
+                        maxWidthDp = size.width.value - 32f,
+                        maxHeightDp = cardHeight - 12f - TIME_LINE_DP,
+                        textSizeSp = 24f)
+                Box {
+                  Image(
+                      provider = ImageProvider(title.glyphs),
+                      contentDescription = focus.displayTitle(context),
+                      colorFilter = ColorFilter.tint(content),
+                      modifier = GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
+                  title.emoji?.let {
+                    Image(
+                        provider = ImageProvider(it),
+                        contentDescription = null,
+                        modifier =
+                            GlanceModifier.width(title.widthDp.dp).height(title.heightDp.dp))
+                  }
+                }
+                Text(
+                    text = if (isNow) "${context.getString(R.string.widget_now)} · $time" else time,
+                    maxLines = 1,
+                    style = TextStyle(color = content, fontSize = 13.sp))
+              }
             }
           }
         }
-      }
+  }
 }
 
 @Composable
 private fun Line(text: String, color: androidx.glance.unit.ColorProvider, sizeSp: Int) {
   Text(text = text, maxLines = 2, style = TextStyle(color = color, fontSize = sizeSp.sp))
 }
+
+private const val CARD_HEIGHT_DP = 76f
+
+// Строка времени 13sp — с запасом на крупный системный шрифт.
+private const val TIME_LINE_DP = 20f
