@@ -110,10 +110,8 @@ private fun WidgetCard(data: WidgetData) {
                         maxHeightDp = cardHeight - 12f - TIME_LINE_DP,
                         textSizeSp = 24f)
                 TitleImage(title, content, focus.displayTitle(context))
-                Text(
-                    text = if (isNow) "${context.getString(R.string.widget_now)} · $time" else time,
-                    maxLines = 1,
-                    style = TextStyle(color = content, fontSize = 13.sp))
+                if (isNow) NowLine(focus, data.now, data.zone, content, 13.sp)
+                else Text(text = time, maxLines = 1, style = TextStyle(color = content, fontSize = 13.sp))
               }
             }
           }

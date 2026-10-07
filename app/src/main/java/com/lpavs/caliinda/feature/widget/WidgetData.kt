@@ -17,6 +17,8 @@ import java.time.temporal.ChronoUnit
 /** Что показывает виджет в данный момент. */
 data class WidgetData(
     val hasAccess: Boolean,
+    /** Момент загрузки — от него считаем прогресс текущего события. */
+    val now: Instant,
     val today: LocalDate,
     val zone: ZoneId,
     /** Идущее сейчас событие, а если его нет — ближайшее следующее. */
@@ -54,7 +56,7 @@ suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): Widge
   val midnight = today.plusDays(1).atStartOfDay(zone).toInstant()
 
   if (!permissionManager().isGranted.value) {
-    return WidgetData(false, today, zone, null, false, midnight)
+    return WidgetData(false, now, today, zone, null, false, midnight)
   }
 
   val dayEvents = calendarRepository().getDayFlow(today).first()
@@ -70,13 +72,18 @@ suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): Widge
           .minOrNull()
           ?.coerceAtMost(midnight) ?: midnight
 
+  val focusIsNow = focus != null && !focus.startTime.isAfter(now)
   return WidgetData(
       hasAccess = true,
+      now = now,
       today = today,
       zone = zone,
       focus = focus,
-      focusIsNow = focus != null && !focus.startTime.isAfter(now),
-      nextChange = nextChange,
+      focusIsNow = focusIsNow,
+      // Пока событие идёт, волна и «ещё N мин» должны двигаться — просыпаемся раз в 5 минут.
+      nextChange =
+          if (focusIsNow) minOf(nextChange, now.plus(NOW_REFRESH_MINUTES, ChronoUnit.MINUTES))
+          else nextChange,
       afterFocus = timed.getOrNull(1),
       project =
           dayEvents.projects
@@ -89,3 +96,5 @@ suspend fun WidgetEntryPoint.loadWidgetData(now: Instant = Instant.now()): Widge
                     totalDays = ChronoUnit.DAYS.between(range.start, range.endInclusive).toInt() + 1)
               })
 }
+
+private const val NOW_REFRESH_MINUTES = 5L

@@ -41,6 +41,7 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.app.MainActivity
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.util.displayTitle
+import com.lpavs.caliinda.feature.widget.NowLine
 import com.lpavs.caliinda.feature.widget.TitleImage
 import com.lpavs.caliinda.feature.widget.WidgetData
 import com.lpavs.caliinda.feature.widget.WidgetEntryPoint
@@ -84,6 +85,9 @@ class ComboWidgetReceiver : GlanceAppWidgetReceiver() {
 private const val PADDING_DP = 12f
 private const val GAP_DP = 8f
 private const val SECOND_CARD_DP = 52f
+
+// С какой ширины карточки рядом с «ещё 25 мин» помещается и «21:00 – 22:00».
+private const val WIDE_CARD_DP = 240f
 
 // Место под «Окт» и «Ср» рядом с фигурой в низком виджете.
 private const val COMPACT_LABEL_DP = 50f
@@ -166,10 +170,14 @@ private fun ComboContent(data: WidgetData) {
                   widthDp = cardsW,
                   heightDp = if (after != null) innerH - GAP_DP - SECOND_CARD_DP else innerH) {
                       color ->
-                    Text(
-                        text = timeLine(context, focus, data),
-                        maxLines = 1,
-                        style = TextStyle(color = color, fontSize = 12.sp))
+                    if (data.focusIsNow)
+                        NowLine(
+                            focus, data.now, data.zone, color, 12.sp, showRange = cardsW >= WIDE_CARD_DP)
+                    else
+                        Text(
+                            text = timeLine(context, focus, data),
+                            maxLines = 1,
+                            style = TextStyle(color = color, fontSize = 12.sp))
                   }
               if (after != null) {
                 Spacer(GlanceModifier.height(GAP_DP.dp))
@@ -346,10 +354,20 @@ private fun SecondCard(event: EventDto, isNow: Boolean, data: WidgetData, widthD
               .padding(horizontal = 14.dp),
       verticalAlignment = Alignment.CenterVertically) {
         TitleImage(title, colors.content, event.displayTitle(context))
-        Text(
-            text = timeLine(context, event, data),
-            maxLines = 1,
-            style = TextStyle(color = colors.content, fontSize = 11.sp))
+        if (isNow)
+            NowLine(
+                event,
+                data.now,
+                data.zone,
+                colors.content,
+                11.sp,
+                waveWidthDp = 40f,
+                showRange = widthDp >= WIDE_CARD_DP)
+        else
+            Text(
+                text = timeLine(context, event, data),
+                maxLines = 1,
+                style = TextStyle(color = colors.content, fontSize = 11.sp))
       }
 }
 

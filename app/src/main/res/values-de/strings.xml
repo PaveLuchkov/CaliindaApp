@@ -177,6 +177,9 @@
     <string name="widget_name">Caliinda · Tag</string>
     <string name="widget_description">Aktueller oder nächster Termin des Tages</string>
     <string name="widget_now">jetzt</string>
+    <string name="widget_left_minutes">noch %d Min.</string>
+    <string name="widget_left_hours">noch %d Std.</string>
+    <string name="widget_left_hours_minutes">noch %1$d Std. %2$d Min.</string>
     <string name="widget_no_more_events">Heute keine weiteren Termine</string>
     <string name="widget_no_access">Öffne Caliinda, um Kalenderzugriff zu erlauben</string>
     <string name="widget_preview_title">Design-Review</string>
