@@ -51,7 +51,6 @@ import com.lpavs.caliinda.R
 import com.lpavs.caliinda.app.MainActivity
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.util.displayTitle
-import com.lpavs.caliinda.core.ui.util.projectFamilyPolygon
 import com.lpavs.caliinda.feature.widget.TitleImage
 import com.lpavs.caliinda.feature.widget.WidgetEntryPoint
 import com.lpavs.caliinda.feature.widget.date.dayNumberBitmap
@@ -238,17 +237,13 @@ private fun CountdownBody(data: CountdownData) {
           Image(
               provider =
                   ImageProvider(
-                      // По событию, а не экземпляру: фигура не меняется, если событие перенесли.
-                      polygonBitmap(
-                          projectFamilyPolygon((event.originalEventId ?: event.eventId).toString()),
-                          shapePx,
-                          -12f)),
+                      polygonBitmap(countdownPolygon(event.countdownKey), shapePx)),
               contentDescription = null,
               colorFilter = ColorFilter.tint(GlanceTheme.colors.tertiary),
               modifier = GlanceModifier.size(shapeDp.dp))
           if (number != null) {
             Image(
-                provider = ImageProvider(dayNumberBitmap(context, number, shapePx, fill = 0.8f)),
+                provider = ImageProvider(dayNumberBitmap(context, number, shapePx, fill = 0.9f)),
                 contentDescription = "$caption $title",
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onTertiary),
                 modifier = GlanceModifier.size(shapeDp.dp))
@@ -319,5 +314,5 @@ private fun describe(context: Context, data: CountdownData): Triple<EventDto, St
     }
 
 /** Эмодзи в начале названия («✈️ Отпуск») — им и заменяем число, когда день настал. */
-private fun leadingEmoji(title: String): String? =
+internal fun leadingEmoji(title: String): String? =
     emojiRanges(title).firstOrNull()?.takeIf { it.first == 0 }?.let { title.substring(it) }

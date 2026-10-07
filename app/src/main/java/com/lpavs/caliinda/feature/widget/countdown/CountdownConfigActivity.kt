@@ -7,6 +7,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.rememberSearchBarState
+import androidx.compose.material3.toShape
+import androidx.compose.ui.platform.LocalConfiguration
+import com.lpavs.caliinda.core.ui.theme.CaliindaFonts
+import com.lpavs.caliinda.core.ui.theme.cuid
+import com.lpavs.caliinda.feature.calendar.presentation.model.dateRange
+import java.time.YearMonth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -25,15 +36,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,14 +66,12 @@ import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import com.lpavs.caliinda.core.data.model.ThemeMode
 import com.lpavs.caliinda.core.ui.util.displayTitle
-import com.lpavs.caliinda.core.ui.util.projectShape
 import com.lpavs.caliinda.feature.settings.ui.settingsShapes
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
@@ -115,7 +121,7 @@ class CountdownConfigActivity : ComponentActivity() {
     updateAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId) { prefs ->
       prefs.toMutablePreferences().apply {
         // У экземпляра серии храним мастер-событие: следующий год найдётся по нему.
-        this[COUNTDOWN_EVENT_ID] = event.originalEventId ?: event.eventId
+        this[COUNTDOWN_EVENT_ID] = event.countdownKey
         this[COUNTDOWN_TITLE] = event.displayTitle(this@CountdownConfigActivity)
       } as Preferences
     }
@@ -139,24 +145,33 @@ private fun CountdownPicker(
 ) {
   val context = LocalContext.current
   val query = rememberTextFieldState()
+  val searchState = rememberSearchBarState()
+  val scrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
   val now = remember { Instant.now() }
-  val visible =
-      events
-          ?.filter { it.endTime.isAfter(now) }
-          ?.filter {
-            val q = query.text.trim()
-            q.isEmpty() || it.displayTitle(context).contains(q, ignoreCase = true)
-          }
-  val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
-  val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+  val q = query.text.trim()
+  // По месяцам: так проще найти «тот самый» отпуск или день рождения. Уже идущие — в текущем.
+  val groups =
+      remember(events, q) {
+        events
+            ?.filter { it.endTime.isAfter(now) }
+            ?.filter { q.isEmpty() || it.displayTitle(context).contains(q, ignoreCase = true) }
+            ?.groupBy { YearMonth.from(maxOf(it.startTime.atZone(zone).toLocalDate(), today)) }
+      }
 
   Scaffold(
       modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
       containerColor = colorScheme.surface,
       topBar = {
-        LargeFlexibleTopAppBar(
-            title = { Text(stringResource(R.string.countdown_config_title)) },
-            subtitle = { Text(stringResource(R.string.countdown_config_subtitle)) },
+        AppBarWithSearch(
+            state = searchState,
+            inputField = {
+              SearchBarDefaults.InputField(
+                  textFieldState = query,
+                  searchBarState = searchState,
+                  onSearch = {},
+                  placeholder = { Text(stringResource(R.string.countdown_search)) },
+                  leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) })
+            },
             navigationIcon = {
               IconButton(onClick = onClose) {
                 Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.back))
@@ -164,69 +179,117 @@ private fun CountdownPicker(
             },
             scrollBehavior = scrollBehavior)
       }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-          OutlinedTextField(
-              state = query,
-              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-              placeholder = { Text(stringResource(R.string.countdown_search)) },
-              leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-              lineLimits = TextFieldLineLimits.SingleLine,
-              shape = ListItemDefaults.shapes().shape)
-          when {
-            visible == null -> Unit
-            visible.isEmpty() ->
-                Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                  Text(
-                      stringResource(R.string.countdown_config_empty),
-                      style = typography.bodyLarge,
-                      color = colorScheme.onSurfaceVariant,
-                      textAlign = TextAlign.Center)
-                }
-            else ->
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
-                      itemsIndexed(visible, key = { _, it -> it.id }) { index, event ->
-                        val start = event.startTime.atZone(zone).toLocalDate()
-                        val days = ChronoUnit.DAYS.between(today, start).toInt()
-                        SegmentedListItem(
-                            onClick = { onPick(event) },
-                            shapes = settingsShapes(index = index, count = visible.size),
-                            colors =
-                                ListItemDefaults.segmentedColors(
-                                    containerColor = colorScheme.surfaceContainer),
-                            leadingContent = {
-                              // Фигура события, как она будет в виджете.
-                              Box(
-                                  modifier =
-                                      Modifier.size(40.dp)
-                                          .background(colorScheme.tertiary, projectShape(event.id)),
-                                  contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = if (days > 0) days.toString() else "•",
-                                        style = typography.labelLarge,
-                                        color = colorScheme.onTertiary)
-                                  }
-                            },
-                            supportingContent = {
-                              Text(
-                                  listOf(
-                                          dateFormat.format(start),
-                                          when {
-                                            days <= 0 ->
-                                                stringResource(R.string.countdown_today)
-                                            else ->
-                                                pluralStringResource(
-                                                    R.plurals.countdown_in_days, days, days)
-                                          })
-                                      .joinToString(" · "),
-                                  maxLines = 1)
-                            }) {
-                              Text(event.displayTitle(), maxLines = 2)
-                            }
+        when {
+          groups == null ->
+              Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                LoadingIndicator()
+              }
+          else ->
+              LazyColumn(
+                  contentPadding = padding,
+                  modifier = Modifier.fillMaxSize().padding(horizontal = cuid.ItemHorizontalPadding)) {
+                    item {
+                      Column(Modifier.padding(top = 8.dp, bottom = 16.dp)) {
+                        Text(
+                            stringResource(R.string.countdown_config_title),
+                            style = typography.headlineMediumEmphasized,
+                            fontFamily = CaliindaFonts.Heavy)
+                        Text(
+                            stringResource(R.string.countdown_config_subtitle),
+                            style = typography.bodyMedium,
+                            color = colorScheme.onSurfaceVariant)
                       }
                     }
-          }
+                    if (groups.isEmpty()) {
+                      item {
+                        Text(
+                            stringResource(R.string.countdown_config_empty),
+                            style = typography.bodyLarge,
+                            color = colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(32.dp))
+                      }
+                    }
+                    groups.forEach { (month, monthEvents) ->
+                      item(key = month.toString()) { MonthHeader(month, today) }
+                      itemsIndexed(monthEvents, key = { _, it -> it.id }) { index, event ->
+                        EventRow(
+                            event = event,
+                            today = today,
+                            zone = zone,
+                            index = index,
+                            count = monthEvents.size,
+                            onClick = { onPick(event) })
+                        Spacer(Modifier.height(ListItemDefaults.SegmentedGap))
+                      }
+                    }
+                    item { Spacer(Modifier.height(24.dp)) }
+                  }
         }
+      }
+}
+
+@Composable
+private fun MonthHeader(month: YearMonth, today: LocalDate) {
+  val locale = LocalConfiguration.current.locales[0]
+  // Год — только если не текущий: «Октябрь», но «Январь 2027».
+  val pattern = if (month.year == today.year) "LLLL" else "LLLL yyyy"
+  Text(
+      text = DateTimeFormatter.ofPattern(pattern, locale).format(month).replaceFirstChar {
+        it.titlecase(locale)
+      },
+      style = typography.titleSmall,
+      color = colorScheme.secondary,
+      modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp))
+}
+
+/** Событие в пикере: фигура с числом дней — та же, что будет в виджете. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun EventRow(
+    event: EventDto,
+    today: LocalDate,
+    zone: ZoneId,
+    index: Int,
+    count: Int,
+    onClick: () -> Unit,
+) {
+  val locale = LocalConfiguration.current.locales[0]
+  val title = event.displayTitle()
+  val range = event.dateRange(zone)
+  val days = ChronoUnit.DAYS.between(today, range.start).toInt()
+  val dateFormat = remember(locale) { DateTimeFormatter.ofPattern("d MMM", locale) }
+  val dates =
+      if (range.start == range.endInclusive) dateFormat.format(range.start)
+      else "${dateFormat.format(range.start)} – ${dateFormat.format(range.endInclusive)}"
+  val shape = countdownPolygon(event.countdownKey).toShape()
+
+  SegmentedListItem(
+      onClick = onClick,
+      shapes = settingsShapes(index = index, count = count),
+      colors = ListItemDefaults.segmentedColors(containerColor = colorScheme.surfaceContainer),
+      leadingContent = {
+        Box(
+            modifier = Modifier.size(52.dp).background(colorScheme.tertiary, shape),
+            contentAlignment = Alignment.Center) {
+              Text(
+                  // Сегодня и уже идущие: считать нечего, ставим эмодзи из названия.
+                  text = if (days > 0) days.toString() else leadingEmoji(title) ?: "⏳",
+                  // Три цифры в 52dp мелким кеглем, иначе упираются в зубцы.
+                  style = if (days > 99) typography.labelLarge else typography.titleMedium,
+                  fontFamily = CaliindaFonts.Heavy,
+                  color = colorScheme.onTertiary)
+            }
+      },
+      supportingContent = {
+        Text(
+            listOf(
+                    dates,
+                    if (days > 0) pluralStringResource(R.plurals.countdown_in_days, days, days)
+                    else stringResource(R.string.countdown_today))
+                .joinToString(" · "),
+            maxLines = 1)
+      }) {
+        Text(title, fontFamily = CaliindaFonts.Card, style = typography.titleMedium, maxLines = 2)
       }
 }
