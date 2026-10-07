@@ -38,7 +38,8 @@ class WidgetTitle(
  * В RemoteViews нельзя подключить свой шрифт, а системные варианты Roboto либо обычные, либо
  * сплющенные. Поэтому название рисуем картинкой нашим RobotoFlex с осями, как у заголовков в
  * приложении: жирно и шире обычного. Если не влезает — сначала сужаем, потом уменьшаем, потом
- * переносим на вторую строку (если хватает [maxHeightDp]), и только в конце многоточие.
+ * переносим на следующие строки (до [maxLines], если хватает [maxHeightDp]), и только в конце
+ * многоточие.
  */
 fun widgetTitle(
     context: Context,
@@ -47,6 +48,7 @@ fun widgetTitle(
     maxHeightDp: Float,
     textSizeSp: Float,
     minTextSizeSp: Float = 16f,
+    maxLines: Int = 2,
 ): WidgetTitle {
   val metrics = context.resources.displayMetrics
   val typeface = ResourcesCompat.getFont(context, R.font.robotoflex_variable)
@@ -71,15 +73,21 @@ fun widgetTitle(
     }
   }
   val layout =
-      // Сначала пробуем уместить в одну строку, потом в две.
-      (1..2).firstNotNullOfOrNull { lines ->
+      // Сначала пробуем уместить в одну строку, потом в две и дальше.
+      (1..maxLines).firstNotNullOfOrNull { lines ->
         variants.firstNotNullOfOrNull { (size, width) ->
           titleLayout(text, paint(size, width), maxWidthPx, lines).takeIf {
             !it.isEllipsized() && it.height <= maxHeightPx
           }
         }
       }
-          ?: titleLayout(text, paint(minTextSizeSp, 100), maxWidthPx, maxLines = 1)
+          // Не влезло никак — мелко и с многоточием, но во все строки, что помещаются по высоте.
+          ?: run {
+            val smallest = paint(minTextSizeSp, 100)
+            val lineHeight = smallest.fontMetrics.let { it.descent - it.ascent }
+            val lines = (maxHeightPx / lineHeight).toInt().coerceIn(1, maxLines)
+            titleLayout(text, smallest, maxWidthPx, lines)
+          }
 
   val ranges = emojiRanges(text)
   val width =

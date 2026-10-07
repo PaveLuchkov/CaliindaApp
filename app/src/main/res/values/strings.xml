@@ -349,6 +349,28 @@
     <string name="widget_combo_description">Date, current project and what\'s next</string>
     <string name="widget_combo_preview_project">✈️ Trip to Lisbon</string>
     <string name="widget_combo_preview_progress">day 3 of 7</string>
+    <string name="widget_countdown_name">Caliinda · countdown</string>
+    <string name="widget_countdown_description">Days left until an event you pick</string>
+    <string name="widget_countdown_preview_label">days until vacation</string>
+    <string name="countdown_pick">Tap to pick an event</string>
+    <string name="countdown_passed">“%1$s” is over. Tap to pick another</string>
+    <string name="countdown_today">Today</string>
+    <string name="countdown_today_at">Today at %1$s</string>
+    <string name="countdown_ongoing">Happening now</string>
+    <string name="countdown_ongoing_day">Day %1$d of %2$d</string>
+    <string name="countdown_config_title">Count down to…</string>
+    <string name="countdown_config_subtitle">The widget will show how many days are left</string>
+    <string name="countdown_search">Search events</string>
+    <string name="countdown_config_empty">No upcoming events in the next year</string>
+    <plurals name="countdown_days_until">
+        <item quantity="one">day until</item>
+        <item quantity="other">days until</item>
+    </plurals>
+    <plurals name="countdown_in_days">
+        <item quantity="one">in %d day</item>
+        <item quantity="other">in %d days</item>
+    </plurals>
+    <string name="widget_countdown_preview_number" translatable="false">12</string>
     <string name="widget_date_preview_day" translatable="false">7</string>
 
     <!-- Шторка повторения -->

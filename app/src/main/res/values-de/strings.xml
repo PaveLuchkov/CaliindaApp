@@ -188,6 +188,27 @@
     <string name="widget_combo_description">Datum, aktuelles Projekt und was als Nächstes kommt</string>
     <string name="widget_combo_preview_project">✈️ Reise nach Lissabon</string>
     <string name="widget_combo_preview_progress">Tag 3 von 7</string>
+    <string name="widget_countdown_name">Caliinda · Countdown</string>
+    <string name="widget_countdown_description">Wie viele Tage bis zu einem Termin deiner Wahl</string>
+    <string name="widget_countdown_preview_label">Tage bis zum Urlaub</string>
+    <string name="countdown_pick">Tippen, um einen Termin zu wählen</string>
+    <string name="countdown_passed">„%1$s“ ist vorbei. Tippen, um einen anderen zu wählen</string>
+    <string name="countdown_today">Heute</string>
+    <string name="countdown_today_at">Heute um %1$s</string>
+    <string name="countdown_ongoing">Läuft gerade</string>
+    <string name="countdown_ongoing_day">Tag %1$d von %2$d</string>
+    <string name="countdown_config_title">Countdown bis…</string>
+    <string name="countdown_config_subtitle">Das Widget zeigt, wie viele Tage noch bleiben</string>
+    <string name="countdown_search">Termine suchen</string>
+    <string name="countdown_config_empty">Keine Termine im nächsten Jahr</string>
+    <plurals name="countdown_days_until">
+        <item quantity="one">Tag bis</item>
+        <item quantity="other">Tage bis</item>
+    </plurals>
+    <plurals name="countdown_in_days">
+        <item quantity="one">in %d Tag</item>
+        <item quantity="other">in %d Tagen</item>
+    </plurals>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">

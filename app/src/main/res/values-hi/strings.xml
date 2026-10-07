@@ -187,6 +187,27 @@
     <string name="widget_combo_description">तारीख, मौजूदा प्रोजेक्ट और आगे क्या है</string>
     <string name="widget_combo_preview_project">✈️ लिस्बन की यात्रा</string>
     <string name="widget_combo_preview_progress">दिन 3 / 7</string>
+    <string name="widget_countdown_name">Caliinda · उलटी गिनती</string>
+    <string name="widget_countdown_description">चुने गए इवेंट तक कितने दिन बाकी हैं</string>
+    <string name="widget_countdown_preview_label">दिन छुट्टी तक</string>
+    <string name="countdown_pick">इवेंट चुनने के लिए टैप करें</string>
+    <string name="countdown_passed">“%1$s” बीत गया। दूसरा चुनने के लिए टैप करें</string>
+    <string name="countdown_today">आज</string>
+    <string name="countdown_today_at">आज %1$s बजे</string>
+    <string name="countdown_ongoing">अभी चल रहा है</string>
+    <string name="countdown_ongoing_day">दिन %1$d / %2$d</string>
+    <string name="countdown_config_title">उलटी गिनती…</string>
+    <string name="countdown_config_subtitle">विजेट दिखाएगा कि कितने दिन बाकी हैं</string>
+    <string name="countdown_search">इवेंट खोजें</string>
+    <string name="countdown_config_empty">अगले साल में कोई इवेंट नहीं</string>
+    <plurals name="countdown_days_until">
+        <item quantity="one">दिन बाकी</item>
+        <item quantity="other">दिन बाकी</item>
+    </plurals>
+    <plurals name="countdown_in_days">
+        <item quantity="one">%d दिन में</item>
+        <item quantity="other">%d दिन में</item>
+    </plurals>
 
     <!-- Шторка повторения -->
     <plurals name="recurrence_every_n_days">
