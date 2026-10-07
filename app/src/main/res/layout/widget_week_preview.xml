@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Превью в списке виджетов (Android 12+): строка недели, сегодня в фигуре. Цифры в превью —
+     просто картинка-пример, не переводимый текст. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_combo_preview_background"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="M"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="5"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_neutral1_900"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="6"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_neutral1_900"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="W"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="7"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_accent1_0"
+            android:textSize="15sp"
+            android:background="@drawable/widget_date_preview_shape" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="8"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_neutral1_900"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="F"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="9"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_neutral1_900"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="S"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="10"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_neutral1_900"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="S"
+            android:textColor="@android:color/system_neutral2_600"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:fontFamily="sans-serif-black"
+            android:text="11"
+            tools:ignore="HardcodedText"
+            android:textColor="@android:color/system_neutral1_900"
+            android:textSize="15sp" />
+    </LinearLayout>
+</LinearLayout>
