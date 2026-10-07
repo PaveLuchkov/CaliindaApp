@@ -193,6 +193,11 @@
     <string name="widget_countdown_name">Caliinda · отсчёт</string>
     <string name="widget_countdown_description">Сколько дней осталось до выбранного события</string>
     <string name="widget_countdown_preview_label">дней до отпуска</string>
+    <string name="widget_stack_name">Caliinda · стопка</string>
+    <string name="widget_stack_description">События дня стопкой — листайте свайпом</string>
+    <string name="stack_now">Сейчас</string>
+    <string name="stack_next">Далее</string>
+    <string name="stack_label">%1$s · %2$d из %3$d</string>
     <string name="countdown_pick">Нажмите, чтобы выбрать событие</string>
     <string name="countdown_passed">«%1$s» уже прошло. Нажмите, чтобы выбрать другое</string>
     <string name="countdown_today">Сегодня</string>

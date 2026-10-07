@@ -192,6 +192,11 @@
     <string name="widget_countdown_name">Caliinda · compte à rebours</string>
     <string name="widget_countdown_description">Les jours restants avant l\'événement choisi</string>
     <string name="widget_countdown_preview_label">jours avant les vacances</string>
+    <string name="widget_stack_name">Caliinda · pile</string>
+    <string name="widget_stack_description">Les événements du jour en pile : balayez pour les parcourir</string>
+    <string name="stack_now">Maintenant</string>
+    <string name="stack_next">Ensuite</string>
+    <string name="stack_label">%1$s · %2$d sur %3$d</string>
     <string name="countdown_pick">Touchez pour choisir un événement</string>
     <string name="countdown_passed">« %1$s » est passé. Touchez pour en choisir un autre</string>
     <string name="countdown_today">Aujourd\'hui</string>

@@ -352,6 +352,11 @@
     <string name="widget_countdown_name">Caliinda · countdown</string>
     <string name="widget_countdown_description">Days left until an event you pick</string>
     <string name="widget_countdown_preview_label">days until vacation</string>
+    <string name="widget_stack_name">Caliinda · stack</string>
+    <string name="widget_stack_description">Today\'s events as a stack — swipe through them</string>
+    <string name="stack_now">Now</string>
+    <string name="stack_next">Next</string>
+    <string name="stack_label">%1$s · %2$d of %3$d</string>
     <string name="countdown_pick">Tap to pick an event</string>
     <string name="countdown_passed">“%1$s” is over. Tap to pick another</string>
     <string name="countdown_today">Today</string>

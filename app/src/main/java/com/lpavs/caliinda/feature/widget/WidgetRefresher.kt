@@ -11,6 +11,7 @@ import androidx.glance.appwidget.updateAll
 import com.lpavs.caliinda.feature.widget.combo.ComboWidget
 import com.lpavs.caliinda.feature.widget.countdown.CountdownWidget
 import com.lpavs.caliinda.feature.widget.date.DateWidget
+import com.lpavs.caliinda.feature.widget.stack.StackWidgetProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ class WidgetRefresher @Inject constructor(@ApplicationContext private val contex
     runCatching { DateWidget().updateAll(context) }
     runCatching { ComboWidget().updateAll(context) }
     runCatching { CountdownWidget().updateAll(context) }
+    runCatching { StackWidgetProvider.updateAll(context) }
   }
 }
 

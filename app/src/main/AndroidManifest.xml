@@ -99,6 +99,18 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name="com.lpavs.caliinda.feature.widget.stack.StackWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_stack_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stack_widget_info" />
+        </receiver>
+
         <!-- exported: PROVIDER_CHANGED шлёт процесс календаря, а не система. Чужой вызов
              лишь пересчитает уведомление — вреда нет. -->
         <receiver
