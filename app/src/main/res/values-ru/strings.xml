@@ -179,6 +179,9 @@
     <string name="widget_name">Caliinda · день</string>
     <string name="widget_description">Текущее или следующее событие дня</string>
     <string name="widget_now">сейчас</string>
+    <string name="widget_left_minutes">ещё %d мин</string>
+    <string name="widget_left_hours">ещё %d ч</string>
+    <string name="widget_left_hours_minutes">ещё %1$d ч %2$d мин</string>
     <string name="widget_no_more_events">Сегодня больше событий нет</string>
     <string name="widget_no_access">Откройте Caliinda и разрешите доступ к календарю</string>
     <string name="widget_preview_title">Дизайн-ревью</string>

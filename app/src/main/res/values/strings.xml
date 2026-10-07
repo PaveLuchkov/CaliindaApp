@@ -338,6 +338,9 @@
     <string name="widget_name">Caliinda · day</string>
     <string name="widget_description">Current or next event of the day</string>
     <string name="widget_now">now</string>
+    <string name="widget_left_minutes">%d min left</string>
+    <string name="widget_left_hours">%d h left</string>
+    <string name="widget_left_hours_minutes">%1$d h %2$d min left</string>
     <string name="widget_no_more_events">No more events today</string>
     <string name="widget_no_access">Open Caliinda to allow calendar access</string>
     <string name="widget_preview_title">Design review</string>

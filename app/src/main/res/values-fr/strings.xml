@@ -178,6 +178,9 @@
     <string name="widget_name">Caliinda · jour</string>
     <string name="widget_description">L\'événement en cours ou le prochain de la journée</string>
     <string name="widget_now">maintenant</string>
+    <string name="widget_left_minutes">encore %d min</string>
+    <string name="widget_left_hours">encore %d h</string>
+    <string name="widget_left_hours_minutes">encore %1$d h %2$d min</string>
     <string name="widget_no_more_events">Plus d’événements aujourd’hui</string>
     <string name="widget_no_access">Ouvrez Caliinda pour autoriser l’accès au calendrier</string>
     <string name="widget_preview_title">Revue design</string>
