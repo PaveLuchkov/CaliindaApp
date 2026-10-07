@@ -16,13 +16,18 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Обновляет виджет, когда приложение само поменяло календарь. */
+/** Обновляет виджет, когда календарь поменялся — в приложении или снаружи. */
 @Singleton
 class WidgetRefresher @Inject constructor(@ApplicationContext private val context: Context) {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
   fun refresh() {
-    scope.launch { runCatching { CaliindaWidget().updateAll(context) } }
+    scope.launch { update() }
+  }
+
+  /** Для ресивера: дождаться обновления, пока процесс жив. */
+  suspend fun update() {
+    runCatching { CaliindaWidget().updateAll(context) }
   }
 }
 
