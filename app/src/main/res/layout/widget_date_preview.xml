@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Превью в списке виджетов (Android 12+): крупное число и месяц, как на рабочем столе. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_preview_background"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:background="@drawable/widget_date_preview_shape"
+        android:fontFamily="sans-serif-black"
+        android:gravity="center"
+        android:text="@string/widget_date_preview_day"
+        android:textColor="@android:color/system_accent1_0"
+        android:textSize="48sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
+        android:text="@string/widget_date_month_preview"
+        android:textColor="@android:color/system_accent1_900"
+        android:textSize="20sp" />
+</LinearLayout>
