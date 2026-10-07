@@ -190,6 +190,11 @@
     <string name="widget_countdown_name">Caliinda · उलटी गिनती</string>
     <string name="widget_countdown_description">चुने गए इवेंट तक कितने दिन बाकी हैं</string>
     <string name="widget_countdown_preview_label">दिन छुट्टी तक</string>
+    <string name="widget_stack_name">Caliinda · स्टैक</string>
+    <string name="widget_stack_description">आज के इवेंट एक स्टैक में — स्वाइप करके देखें</string>
+    <string name="stack_now">अभी</string>
+    <string name="stack_next">आगे</string>
+    <string name="stack_label">%1$s · %2$d / %3$d</string>
     <string name="countdown_pick">इवेंट चुनने के लिए टैप करें</string>
     <string name="countdown_passed">“%1$s” बीत गया। दूसरा चुनने के लिए टैप करें</string>
     <string name="countdown_today">आज</string>
