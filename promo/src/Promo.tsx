@@ -1,6 +1,7 @@
 import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame } from "remotion";
 import { EventCard, MorphShape, NumberInShape, Shape, ShapeName, Wave, easeInOut, useSpring } from "./parts";
 import { DAY_FRAMES, DayScene } from "./DayScene";
+import { Intro } from "./Intros";
 import { Logo } from "./Logo";
 import { C, CARD_COLORS, flex, fontFace, mix } from "./theme";
 
@@ -61,7 +62,7 @@ export const Promo = ({ lang }: { lang: Lang }) => {
       </Sequence>
       {/* Начало поверх дня: фигура «пролетает» в камеру и открывает ленту. */}
       <Sequence durationInFrames={INTRO_FRAMES}>
-        <Intro />
+        <IntroLayer />
       </Sequence>
       <Sequence from={WIDGETS_AT} durationInFrames={WIDGETS_FRAMES}>
         <Widgets t={t} />
@@ -106,41 +107,6 @@ const FloatingShapes = () => {
   );
 };
 
-/** Огромная фигура перетекает из одной в другую, из неё «вырастает» имя. */
-const Intro = () => {
-  const f = useCurrentFrame();
-  const pop = useSpring(0, { damping: 11, stiffness: 90, mass: 1 });
-  const word = useSpring(36);
-  // Фигура разгоняется и «пролетает» в камеру — склейка в ленту дня без затемнения.
-  const through = interpolate(f, [80, 100], [1 + 80 / 400, 9], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) });
-  const out = interpolate(f, [92, 100], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const wordOut = interpolate(f, [74, 84], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: out, background: f < 92 ? C.bg : "transparent" }}>
-      <MorphShape
-        names={["cookie9", "sunny", "flower", "softBurst"]}
-        t={f / 22}
-        size={620}
-        color={C.primary}
-        rotate={f * 1.2}
-        style={{ transform: `scale(${pop * (f < 80 ? 1 + f / 400 : through)})` }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: 1380,
-          ...flex(interpolate(word, [0, 1], [200, 1000]), interpolate(word, [0, 1], [25, 151])),
-          fontSize: 170,
-          color: C.onPrimaryContainer,
-          opacity: word * wordOut,
-          letterSpacing: -2,
-        }}
-      >
-        Caliinda
-      </div>
-    </AbsoluteFill>
-  );
-};
 
 /** Лента дня: карточки прилетают, камера наезжает на текущее событие, отъезжает, цвета перетекают. */
 const Day = ({ t }: { t: (typeof T)["en"] }) => {
@@ -325,6 +291,17 @@ const Outro = ({ tagline }: { tagline: string }) => {
       <div style={{ ...flex(500), fontSize: 46, color: "#5F5E6E", marginTop: 20, opacity: text, textAlign: "center", width: 900 }}>
         {tagline}
       </div>
+    </AbsoluteFill>
+  );
+};
+
+/** Вступление поверх ленты дня: свой фон, пока иконка не «пролетела» в камеру. */
+const IntroLayer = () => {
+  const f = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{ background: f < 92 ? C.bg : "transparent" }}>
+      {f < 92 && <FloatingShapes />}
+      <Intro />
     </AbsoluteFill>
   );
 };
