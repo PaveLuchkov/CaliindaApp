@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
@@ -68,6 +69,7 @@ fun CustomEventDetailsDialog(
     onDismissRequest: () -> Unit,
     onEdit: (EventDto) -> Unit,
     onDelete: (EventDto) -> Unit,
+    onRepeat: (EventDto) -> Unit,
 ) {
   Dialog(
       onDismissRequest = onDismissRequest,
@@ -165,7 +167,14 @@ fun CustomEventDetailsDialog(
                                   Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                                   Text(stringResource(R.string.edit))
                                 }
-                            // Того же цвета, что «Изменить»: два действия одной группы.
+                            // Того же цвета, что «Изменить»: действия одной группы.
+                            FilledIconButton(
+                                onClick = { onRepeat(event.originalEvent) },
+                                modifier = Modifier.size(48.dp)) {
+                                  Icon(
+                                      imageVector = Icons.Filled.Replay,
+                                      contentDescription = stringResource(R.string.repeat_event))
+                                }
                             FilledIconButton(
                                 onClick = {
                                   onDelete(event.originalEvent)

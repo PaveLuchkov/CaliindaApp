@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.repeatDate
 import java.time.YearMonth
 import android.app.Activity
 import android.content.Intent
@@ -251,6 +252,8 @@ fun CalendarScreen(
                   reminderDefaults = reminderDefaults,
                   initialDate = dialog.date,
                   initialProject = dialog.asProject,
+                  template = dialog.template,
+                  templateReminders = eventManagementState.editingReminders,
                   sheetSettled = sheetSettled)
           is EventDialog.Editing ->
               EditEventScreen(
@@ -274,7 +277,11 @@ fun CalendarScreen(
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone,
         onEdit = eventManagementViewModel::requestEditEvent,
-        onDelete = eventManagementViewModel::requestDelete)
+        onDelete = eventManagementViewModel::requestDelete,
+        onRepeat = { event ->
+          calendarViewModel.cancelEventDetails()
+          eventManagementViewModel.openRepeat(event, event.repeatDate(today, timeZone))
+        })
   }
   EventManagementDialogs(
       dialog = eventManagementState.dialog,

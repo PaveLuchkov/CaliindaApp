@@ -146,6 +146,7 @@
     <string name="create_event">इवेंट बनाएं</string>
     <string name="go_to_today">आज पर जाएं</string>
     <string name="edit">संपादित करें</string>
+    <string name="repeat_event">फिर से</string>
     <string name="details">विवरण</string>
     <string name="calendar_access_title">कैलेंडर एक्सेस</string>
     <string name="calendar_access_body">Caliinda आपके फ़ोन के कैलेंडर के साथ काम करता है। Google Calendar यहाँ अपने आप सिंक होता है।</string>

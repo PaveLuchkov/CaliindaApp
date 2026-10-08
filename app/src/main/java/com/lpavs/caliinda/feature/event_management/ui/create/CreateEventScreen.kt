@@ -1,5 +1,7 @@
 package com.lpavs.caliinda.feature.event_management.ui.create
 
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.repeatOn
+import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderDefaults
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.OnSaveEvent
@@ -35,14 +37,19 @@ fun CreateEventScreen(
     reminderDefaults: ReminderDefaults,
     initialDate: LocalDate,
     initialProject: Boolean = false,
+    /** «Ещё раз»: заполнить форму как у этого события, сдвинув его на [initialDate]. */
+    template: EventDto? = null,
+    /** Напоминания [template]; null — нет шаблона или ещё загружаются. */
+    templateReminders: List<Int>? = null,
     /** Шторка встала на место — можно звать клавиатуру, не сбивая анимацию появления. */
     sheetSettled: Boolean = true,
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
 ) {
   // Состояние полей
-  var summary by remember { mutableStateOf("") }
-  var description by remember { mutableStateOf("") }
-  var location by remember { mutableStateOf("") }
+  // «(Без названия)» шаблона в поле не подставляем — сохранилось бы как настоящее название.
+  var summary by remember { mutableStateOf(template?.takeUnless { it.isUntitled }?.summary ?: "") }
+  var description by remember { mutableStateOf(template?.description ?: "") }
+  var location by remember { mutableStateOf(template?.location ?: "") }
 
   // Ошибки
   var summaryError by remember { mutableStateOf<String?>(null) }
@@ -50,6 +57,7 @@ fun CreateEventScreen(
 
   // Начальное состояние даты и времени
   var eventDateTimeState by remember {
+    if (template != null) return@remember mutableStateOf(template.repeatOn(initialDate, userTimeZone))
     if (initialProject) {
       // Проект: весь день, сразу промежуток из нескольких дней.
       return@remember mutableStateOf(
@@ -89,11 +97,17 @@ fun CreateEventScreen(
 
   // Пока не выбрали своё — напоминание из настроек (своё для «весь день» и со временем).
   var reminder by remember { mutableStateOf<ReminderChoice>(ReminderChoice.Default) }
+  LaunchedEffect(templateReminders) {
+    if (templateReminders != null && reminder == ReminderChoice.Default) {
+      reminder = ReminderChoice.Custom(templateReminders.firstOrNull())
+    }
+  }
   val save = { onSave(summary, description, location, eventDateTimeState, reminder) }
-  // Сразу клавиатура в названии: типичное событие — это название и время.
+  // Сразу клавиатура в названии: типичное событие — это название и время. У копии название уже
+  // есть, менять скорее будут день и время — клавиатура закрыла бы их.
   val nameFocusRequester = remember { FocusRequester() }
   LaunchedEffect(sheetSettled) {
-    if (sheetSettled) runCatching { nameFocusRequester.requestFocus() }
+    if (sheetSettled && template == null) runCatching { nameFocusRequester.requestFocus() }
   }
 
   // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
