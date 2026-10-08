@@ -10,7 +10,7 @@ export const Root = () => (
       fps={30}
       width={1080}
       height={1920}
-      defaultProps={{ lang: "en" as const }}
+      defaultProps={{ lang: "en" as const, wide: false }}
     />
     <Composition
       id="PromoRu"
@@ -19,7 +19,26 @@ export const Root = () => (
       fps={30}
       width={1080}
       height={1920}
-      defaultProps={{ lang: "ru" as const }}
+      defaultProps={{ lang: "ru" as const, wide: false }}
+    />
+    {/* Горизонтальная — для YouTube и промо-видео в Google Play. */}
+    <Composition
+      id="PromoWide"
+      component={Promo}
+      durationInFrames={PROMO_FRAMES}
+      fps={30}
+      width={1920}
+      height={1080}
+      defaultProps={{ lang: "en" as const, wide: true }}
+    />
+    <Composition
+      id="PromoWideRu"
+      component={Promo}
+      durationInFrames={PROMO_FRAMES}
+      fps={30}
+      width={1920}
+      height={1080}
+      defaultProps={{ lang: "ru" as const, wide: true }}
     />
   </>
 );

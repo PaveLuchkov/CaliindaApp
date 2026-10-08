@@ -1,4 +1,4 @@
-import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { EventCard, MorphShape, NumberInShape, Shape, ShapeName, Wave, easeInOut, useSpring } from "./parts";
 import { DAY_FRAMES, DayScene } from "./DayScene";
 import { Intro } from "./Intros";
@@ -51,21 +51,27 @@ const T = {
   },
 };
 
-export const Promo = ({ lang }: { lang: Lang }) => {
+export const Promo = ({ lang, wide = false }: { lang: Lang; wide?: boolean }) => {
   const t = T[lang];
   return (
     <AbsoluteFill style={{ background: C.bg }}>
       <style>{fontFace}</style>
       <FloatingShapes />
       <Sequence from={DAY_AT} durationInFrames={DAY_FRAMES}>
-        <DayScene lang={lang} />
+        {wide ? <WideDay lang={lang} /> : <DayScene lang={lang} />}
       </Sequence>
       {/* Начало поверх дня: фигура «пролетает» в камеру и открывает ленту. */}
       <Sequence durationInFrames={INTRO_FRAMES}>
         <IntroLayer />
       </Sequence>
       <Sequence from={WIDGETS_AT} durationInFrames={WIDGETS_FRAMES}>
-        <Widgets t={t} />
+        {/* В горизонтальном кадре виджеты по высоте не влезают — чуть уменьшаем. */}
+        {/* Фон — снаружи уменьшения, иначе виден край прямоугольника. */}
+        <AbsoluteFill style={{ background: C.bg }}>
+          <AbsoluteFill style={{ transform: wide ? "scale(0.78)" : undefined }}>
+            <Widgets t={t} />
+          </AbsoluteFill>
+        </AbsoluteFill>
       </Sequence>
       <Sequence from={BEATS_AT} durationInFrames={75}>
         <Beats words={t.beats} />
@@ -80,6 +86,10 @@ export const Promo = ({ lang }: { lang: Lang }) => {
 /** Фон: крупные полупрозрачные фигуры медленно плывут и вращаются — «абстракция» на заднем плане. */
 const FloatingShapes = () => {
   const f = useCurrentFrame();
+  // Позиции заданы для вертикального кадра — растягиваем на любой.
+  const { width, height } = useVideoConfig();
+  const sx = width / 1080;
+  const sy = height / 1920;
   const items: [ShapeName, number, number, number, string][] = [
     ["flower", 120, 260, 520, C.primaryContainer],
     ["sunny", 860, 640, 460, C.tertiaryContainer],
@@ -97,8 +107,8 @@ const FloatingShapes = () => {
           rotate={f * (i % 2 ? -0.25 : 0.3)}
           style={{
             position: "absolute",
-            left: x - size / 2 + Math.sin(f / 70 + i) * 40,
-            top: y - size / 2 + Math.cos(f / 90 + i * 2) * 50,
+            left: x * sx - size / 2 + Math.sin(f / 70 + i) * 40,
+            top: y * sy - size / 2 + Math.cos(f / 90 + i * 2) * 50,
             opacity: 0.55,
           }}
         />
@@ -302,6 +312,80 @@ const IntroLayer = () => {
     <AbsoluteFill style={{ background: f < 92 ? C.bg : "transparent" }}>
       {f < 92 && <FloatingShapes />}
       <Intro />
+    </AbsoluteFill>
+  );
+};
+
+// Подписи сбоку от «телефона» в горизонтальной версии — по ходу сцены дня.
+const CAPTIONS: Record<Lang, [number, number, string][]> = {
+  en: [
+    [0, 44, "Your whole day\nat a glance"],
+    [44, 92, "Longer events\ntake more space"],
+    [92, 160, "What\u2019s now\nstands out"],
+    [160, 290, "Your colors,\nlight and dark"],
+    [290, 420, "Projects that\nspan days"],
+  ],
+  ru: [
+    [0, 44, "Весь день\nодним взглядом"],
+    [44, 92, "Длинное —\nдлиннее"],
+    [92, 160, "Сейчас —\nв фокусе"],
+    [160, 290, "Ваши цвета,\nсветлая и тёмная"],
+    [290, 420, "Проекты\nна много дней"],
+  ],
+};
+
+/** Горизонтальная версия: сцена дня в «телефоне» по центру, по бокам — подписи. */
+const WideDay = ({ lang }: { lang: Lang }) => {
+  const f = useCurrentFrame();
+  const enter = useSpring(0, { damping: 15, stiffness: 120, mass: 0.9 });
+  const exit = interpolate(f, [DAY_FRAMES - 12, DAY_FRAMES], [1, 0], { extrapolateLeft: "clamp" });
+  const scale = 1000 / 1920;
+  return (
+    <AbsoluteFill style={{ background: C.bg, opacity: exit }}>
+      <div
+        style={{
+          position: "absolute",
+          left: 960 - (1080 * scale) / 2,
+          top: 40,
+          width: 1080,
+          height: 1920,
+          transformOrigin: "0 0",
+          transform: `scale(${scale * (0.9 + 0.1 * enter)}) translateY(${(1 - enter) * 300}px)`,
+          borderRadius: 90,
+          overflow: "hidden",
+          boxShadow: "0 40px 120px rgba(40,30,80,0.25)",
+        }}
+      >
+        <DayScene lang={lang} />
+      </div>
+      {CAPTIONS[lang].map(([from, to, text], i) => {
+        const local = f - from;
+        if (local < 0 || f > to + 10) return null;
+        const inS = interpolate(local, [0, 14], [0, 1], { extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
+        const outS = interpolate(f, [to - 4, to + 8], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const left = i % 2 === 0;
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              top: 540,
+              [left ? "right" : "left"]: 960 + (1080 * scale) / 2 + 70,
+              transform: `translateY(-50%) translateX(${(1 - inS) * (left ? -60 : 60)}px)`,
+              opacity: inS * outS,
+              ...flex(950, 110),
+              fontSize: 84,
+              lineHeight: 1.05,
+              color: C.onPrimaryContainer,
+              textAlign: left ? "right" : "left",
+              whiteSpace: "pre-line",
+              width: 560,
+            }}
+          >
+            {text}
+          </div>
+        );
+      })}
     </AbsoluteFill>
   );
 };
