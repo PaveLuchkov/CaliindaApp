@@ -1,6 +1,7 @@
 import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame } from "remotion";
 import { EventCard, MorphShape, NumberInShape, Shape, ShapeName, Wave, easeInOut, useSpring } from "./parts";
 import { DAY_FRAMES, DayScene } from "./DayScene";
+import { Logo } from "./Logo";
 import { C, CARD_COLORS, flex, fontFace, mix } from "./theme";
 
 export const PROMO_FRAMES = 806;
@@ -213,9 +214,8 @@ const Widgets = ({ t }: { t: (typeof T)["en"] }) => {
   const title = useSpring(0, { damping: 15, stiffness: 120, mass: 0.9 });
   const delays = [8, 18, 28, 38];
   const pops = delays.map((d) => useSpring(d, { damping: 12, stiffness: 140, mass: 0.85 }));
-  // Камера медленно наезжает, а на каждом виджете — короткий «удар».
-  const punch = delays.reduce((acc, d) => acc + (f >= d ? 0.02 * Math.exp(-(f - d) / 7) : 0), 0);
-  const breathe = interpolate(f, [0, 140], [0.97, 1.05]) + punch;
+  // Камера медленно и ровно наезжает — без «ударов»: они дёргали кадр не в такт виджетам.
+  const breathe = interpolate(f, [0, 140], [0.97, 1.04], { easing: Easing.inOut(Easing.sin) });
   const out = interpolate(f, [126, 140], [1, 0], { extrapolateLeft: "clamp" });
   const outScale = interpolate(f, [124, 140], [1, 1.15], { extrapolateLeft: "clamp", easing: Easing.in(Easing.cubic) });
   const card = (p: number, extra: React.CSSProperties = {}) => ({
@@ -311,11 +311,13 @@ const Beats = ({ words }: { words: string[] }) => {
 const Outro = ({ tagline }: { tagline: string }) => {
   const f = useCurrentFrame();
   const logo = useSpring(0, { damping: 12, stiffness: 100, mass: 1 });
-  const text = useSpring(10, { damping: 14, stiffness: 160, mass: 0.7 });
+  const glyph = useSpring(12, { damping: 14, stiffness: 140, mass: 0.8 });
+  const text = useSpring(14, { damping: 14, stiffness: 140, mass: 0.8 });
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", background: C.bg }}>
-      <div style={{ transform: `scale(${logo})`, position: "relative", width: 360, height: 360 }}>
-        <MorphShape names={["cookie9", "flower", "sunny"]} t={f / 25} size={360} color={C.primary} rotate={f * 0.8} />
+      {/* Иконка приложения: выпрыгивает, раскрывается зелёный круг, проявляется календарь. */}
+      <div style={{ transform: `scale(${logo}) rotate(${(1 - logo) * -30}deg)`, position: "relative", width: 380, height: 380 }}>
+        <Logo size={380} bg={logo} glyph={glyph} rotate={f * 0.4} />
       </div>
       <div style={{ ...flex(1000, interpolate(text, [0, 1], [40, 125])), fontSize: 130, color: C.onPrimaryContainer, marginTop: 60, opacity: text }}>
         Caliinda
