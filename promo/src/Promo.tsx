@@ -1,8 +1,9 @@
 import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame } from "remotion";
 import { EventCard, MorphShape, NumberInShape, Shape, ShapeName, Wave, easeInOut, useSpring } from "./parts";
+import { DAY_FRAMES, DayScene } from "./DayScene";
 import { C, CARD_COLORS, flex, fontFace, mix } from "./theme";
 
-export const PROMO_FRAMES = 750;
+export const PROMO_FRAMES = 840;
 
 type Lang = "en" | "ru";
 
@@ -50,16 +51,16 @@ export const Promo = ({ lang }: { lang: Lang }) => {
       <Sequence durationInFrames={100}>
         <Intro />
       </Sequence>
-      <Sequence from={90} durationInFrames={300}>
-        <Day t={t} />
+      <Sequence from={90} durationInFrames={DAY_FRAMES}>
+        <DayScene lang={lang} />
       </Sequence>
-      <Sequence from={380} durationInFrames={200}>
+      <Sequence from={470} durationInFrames={200}>
         <Widgets t={t} />
       </Sequence>
-      <Sequence from={570} durationInFrames={95}>
+      <Sequence from={660} durationInFrames={95}>
         <Beats words={t.beats} />
       </Sequence>
-      <Sequence from={660}>
+      <Sequence from={750}>
         <Outro tagline={t.tagline} />
       </Sequence>
     </AbsoluteFill>
