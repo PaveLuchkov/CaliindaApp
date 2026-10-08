@@ -115,7 +115,7 @@ const MAX_RIBBONS = 2;
 const MAX_ALLDAY = 2;
 const ALLDAY_H = 42 * DP;
 
-export const DAY_FRAMES = 390;
+export const DAY_FRAMES = 270;
 
 const HEADER_H = 48 * DP;
 const RIBBON_H = 40 * DP;
@@ -128,8 +128,8 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
     spring({ frame: f - from, fps, config: cfg });
 
   // --- Тема: с кадра 200 перебираем «обои», светлые и тёмные, монтажными склейками.
-  const SWITCH_FROM = 200;
-  const STEP = 20;
+  const SWITCH_FROM = 130;
+  const STEP = 16;
   const LAST = SCHEMES.length - 1;
   // После последней темы счётчик стоит — иначе названия дёргались бы каждые 20 кадров.
   const k = Math.min(LAST, Math.max(0, (f - SWITCH_FROM) / STEP));
@@ -158,15 +158,15 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
   };
 
   // --- Раскладка: высоты на пружинах, позиции считаем сами, чтобы камера знала, куда смотреть.
-  const appear = SLOTS.map((_, i) => sp(i * 4));
-  const deepGrow = sp(52, { damping: 11, stiffness: 90, mass: 1 });
-  const nowOn = sp(104, { damping: 10, stiffness: 120, mass: 0.9 });
+  const appear = SLOTS.map((_, i) => sp(i * 3, { damping: 14, stiffness: 170, mass: 0.7 }));
+  const deepGrow = sp(32, { damping: 11, stiffness: 130, mass: 0.9 });
+  const nowOn = sp(66, { damping: 10, stiffness: 150, mass: 0.8 });
   const heights = SLOTS.map((_, i) => {
     const hOf = (p: DayPlan) => heightFor(p.minutes[i]);
     // Длинное событие сначала обычное, потом на пружине вырастает до своей высоты.
     const base = i === DEEP ? MIN_H + (hOf(planAt(0)) - MIN_H) * deepGrow : undefined;
-    // Текущее раскрывается — как карточка, на которую нажали.
-    return springy(hOf, base) + (i === NOW ? 105 * DP * nowOn : 0);
+    // Текущее чуть раскрывается — заметно, но в пределах приложения (не выше 200 dp + ряд).
+    return springy(hOf, base) + (i === NOW ? 40 * DP * nowOn : 0);
   });
   // Ленты проектов и события на весь день появляются и исчезают, раздвигая ленту.
   const ribbonOpen = Array.from({ length: MAX_RIBBONS }, (_, r) => springy((p) => (p.ribbons.length > r ? 1 : 0)));
@@ -207,29 +207,30 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
   const centerOf = (i: number) => ys[i] + heights[i] / 2;
   const keys: [number, number, number, number][] = [
     [0, 540, total / 2, 0.6],
-    [36, 540, total / 2, 0.62],
-    [62, 430, centerOf(DEEP), 1.25],
-    [92, 430, centerOf(DEEP) + 60, 1.22],
-    [118, 430, centerOf(NOW), 1.32],
-    [172, 430, centerOf(NOW), 1.38],
-    [205, 540, total / 2, 0.66],
-    [330, 540, total / 2, 0.7],
-    [355, 540, ribbonsTop + RIBBON_H, 1.08],
-    [390, 540, ribbonsTop + RIBBON_H, 1.12],
+    [18, 540, total / 2, 0.62],
+    [34, 430, centerOf(DEEP), 1.25],
+    [56, 430, centerOf(DEEP) + 40, 1.22],
+    [70, 430, centerOf(NOW), 1.32],
+    [108, 430, centerOf(NOW), 1.38],
+    [124, 540, total / 2, 0.66],
+    [228, 540, total / 2, 0.7],
+    [242, 540, ribbonsTop + RIBBON_H, 1.08],
+    [270, 540, ribbonsTop + RIBBON_H, 1.12],
   ];
   let ki = 0;
   while (ki < keys.length - 2 && f > keys[ki + 1][0]) ki++;
   const [f0, x0, y0, z0] = keys[ki];
   const [f1, x1, y1, z1] = keys[ki + 1];
-  const p = easeInOut(Math.max(0, Math.min(1, (f - f0) / (f1 - f0))));
+  // Резкий разгон и мягкая посадка — камера «прыгает» к цели, а не плывёт.
+  const p = snap(Math.max(0, Math.min(1, (f - f0) / (f1 - f0))));
   const camX = x0 + (x1 - x0) * p;
   const camY = y0 + (y1 - y0) * p;
   let zoom = z0 + (z1 - z0) * p;
   // На каждой смене темы — короткий «удар» камеры, держит ритм.
   if (f >= SWITCH_FROM && idx < LAST) zoom *= 1 + 0.05 * Math.exp(-local * 6);
 
-  const fade = interpolate(f, [370, 390], [1, 0], { extrapolateLeft: "clamp" });
-  const progressDay = Math.round(interpolate(f, [340, 385], [3, 7], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const fade = interpolate(f, [262, 270], [1, 0], { extrapolateLeft: "clamp" });
+  const progressDay = Math.round(interpolate(f, [240, 262], [3, 7], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
 
   return (
     <AbsoluteFill style={{ background: s.background, opacity: fade }}>
@@ -376,7 +377,7 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
                 <div style={{ ...flex(450), fontSize: (micro ? 13 : 14) * DP, display: "flex", alignItems: "center", gap: 8 * DP, opacity: 0.9 }}>
                   {isNow && n > 0.05 && (
                     <div style={{ opacity: n }}>
-                      <Wave width={52 * DP} height={9 * DP} progress={0.3 + Math.max(0, f - 110) / 500} phase={f / 4} color={fg} />
+                      <Wave width={52 * DP} height={9 * DP} progress={0.3 + Math.max(0, f - 70) / 400} phase={f / 4} color={fg} />
                     </div>
                   )}
                   {isNow && n > 0.5 ? `${LEFT[lang]} · ${time}` : time}
@@ -444,6 +445,9 @@ const Star = ({ e, minutes, bg }: { e: Ev; minutes: number; bg: string }) => {
     </svg>
   );
 };
+
+/** Кривая камеры: быстрый старт, долгая мягкая посадка (expo out с коротким разгоном). */
+const snap = (x: number) => (x < 0.15 ? (x / 0.15) ** 2 * 0.15 : 0.15 + 0.85 * (1 - Math.pow(2, -10 * ((x - 0.15) / 0.85))));
 
 const mixHex = (a: string, b: string, t: number) => {
   const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
