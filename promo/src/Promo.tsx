@@ -3,9 +3,16 @@ import { EventCard, MorphShape, NumberInShape, Shape, ShapeName, Wave, easeInOut
 import { DAY_FRAMES, DayScene } from "./DayScene";
 import { C, CARD_COLORS, flex, fontFace, mix } from "./theme";
 
-export const PROMO_FRAMES = 600;
+export const PROMO_FRAMES = 806;
 
 type Lang = "en" | "ru";
+
+// Монтаж: начало спокойное (3,3 с), день с проектами, виджеты, три слова, финал.
+const INTRO_FRAMES = 100;
+const DAY_AT = 92;
+const WIDGETS_FRAMES = 140;
+const WIDGETS_AT = DAY_AT + DAY_FRAMES - 6;
+const BEATS_AT = WIDGETS_AT + WIDGETS_FRAMES - 4;
 
 const T = {
   en: {
@@ -48,20 +55,20 @@ export const Promo = ({ lang }: { lang: Lang }) => {
     <AbsoluteFill style={{ background: C.bg }}>
       <style>{fontFace}</style>
       <FloatingShapes />
-      <Sequence from={62} durationInFrames={DAY_FRAMES}>
+      <Sequence from={DAY_AT} durationInFrames={DAY_FRAMES}>
         <DayScene lang={lang} />
       </Sequence>
       {/* Начало поверх дня: фигура «пролетает» в камеру и открывает ленту. */}
-      <Sequence durationInFrames={72}>
+      <Sequence durationInFrames={INTRO_FRAMES}>
         <Intro />
       </Sequence>
-      <Sequence from={326} durationInFrames={130}>
+      <Sequence from={WIDGETS_AT} durationInFrames={WIDGETS_FRAMES}>
         <Widgets t={t} />
       </Sequence>
-      <Sequence from={450} durationInFrames={66}>
+      <Sequence from={BEATS_AT} durationInFrames={75}>
         <Beats words={t.beats} />
       </Sequence>
-      <Sequence from={512}>
+      <Sequence from={BEATS_AT + 72}>
         <Outro tagline={t.tagline} />
       </Sequence>
     </AbsoluteFill>
@@ -101,21 +108,21 @@ const FloatingShapes = () => {
 /** Огромная фигура перетекает из одной в другую, из неё «вырастает» имя. */
 const Intro = () => {
   const f = useCurrentFrame();
-  const pop = useSpring(0, { damping: 10, stiffness: 150, mass: 0.8 });
-  const word = useSpring(18, { damping: 14, stiffness: 160, mass: 0.7 });
+  const pop = useSpring(0, { damping: 11, stiffness: 90, mass: 1 });
+  const word = useSpring(36);
   // Фигура разгоняется и «пролетает» в камеру — склейка в ленту дня без затемнения.
-  const through = interpolate(f, [50, 70], [1, 9], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) });
-  const out = interpolate(f, [62, 72], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const wordOut = interpolate(f, [46, 56], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const through = interpolate(f, [80, 100], [1 + 80 / 400, 9], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) });
+  const out = interpolate(f, [92, 100], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const wordOut = interpolate(f, [74, 84], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: out, background: f < 62 ? C.bg : "transparent" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: out, background: f < 92 ? C.bg : "transparent" }}>
       <MorphShape
         names={["cookie9", "sunny", "flower", "softBurst"]}
-        t={f / 12}
+        t={f / 22}
         size={620}
         color={C.primary}
-        rotate={f * 2}
-        style={{ transform: `scale(${pop * through})` }}
+        rotate={f * 1.2}
+        style={{ transform: `scale(${pop * (f < 80 ? 1 + f / 400 : through)})` }}
       />
       <div
         style={{
@@ -203,14 +210,14 @@ const Day = ({ t }: { t: (typeof T)["en"] }) => {
 /** Виджеты выпрыгивают по очереди, камера медленно дышит. */
 const Widgets = ({ t }: { t: (typeof T)["en"] }) => {
   const f = useCurrentFrame();
-  const title = useSpring(0, { damping: 14, stiffness: 180, mass: 0.7 });
-  const delays = [4, 10, 16, 22];
-  const pops = delays.map((d) => useSpring(d, { damping: 10, stiffness: 220, mass: 0.7 }));
+  const title = useSpring(0, { damping: 15, stiffness: 120, mass: 0.9 });
+  const delays = [8, 18, 28, 38];
+  const pops = delays.map((d) => useSpring(d, { damping: 12, stiffness: 140, mass: 0.85 }));
   // Камера медленно наезжает, а на каждом виджете — короткий «удар».
-  const punch = delays.reduce((acc, d) => acc + (f >= d ? 0.035 * Math.exp(-(f - d) / 4) : 0), 0);
-  const breathe = interpolate(f, [0, 130], [0.96, 1.06]) + punch;
-  const out = interpolate(f, [118, 130], [1, 0], { extrapolateLeft: "clamp" });
-  const outScale = interpolate(f, [116, 130], [1, 1.25], { extrapolateLeft: "clamp", easing: Easing.in(Easing.cubic) });
+  const punch = delays.reduce((acc, d) => acc + (f >= d ? 0.02 * Math.exp(-(f - d) / 7) : 0), 0);
+  const breathe = interpolate(f, [0, 140], [0.97, 1.05]) + punch;
+  const out = interpolate(f, [126, 140], [1, 0], { extrapolateLeft: "clamp" });
+  const outScale = interpolate(f, [124, 140], [1, 1.15], { extrapolateLeft: "clamp", easing: Easing.in(Easing.cubic) });
   const card = (p: number, extra: React.CSSProperties = {}) => ({
     transform: `scale(${p})`,
     opacity: Math.min(1, p * 1.5),
@@ -273,21 +280,21 @@ const Widgets = ({ t }: { t: (typeof T)["en"] }) => {
 /** Три слова — каждое на своей фигуре и своём цвете, монтажными склейками. */
 const Beats = ({ words }: { words: string[] }) => {
   const f = useCurrentFrame();
-  const i = Math.min(2, Math.floor(f / 22));
-  const local = f - i * 22;
+  const i = Math.min(2, Math.floor(f / 25));
+  const local = f - i * 25;
   const looks: [ShapeName[], string, string][] = [
     [["pill", "cookie12"], C.primary, C.onPrimary],
     [["flower", "sunny"], C.tertiary, C.onPrimary],
     [["heart", "clover4"], "#3F6B4A", C.onPrimary],
   ];
   const [names, bg, fg] = looks[i];
-  const pop = useSpring(i * 22, { damping: 12, stiffness: 220, mass: 0.6 });
+  const pop = useSpring(i * 25, { damping: 13, stiffness: 170, mass: 0.7 });
   return (
     <AbsoluteFill style={{ background: bg, alignItems: "center", justifyContent: "center" }}>
       <MorphShape names={names} t={local / 12} size={1300} color="rgba(255,255,255,0.12)" rotate={local * 2} style={{ position: "absolute" }} />
       <div
         style={{
-          ...flex(1000, interpolate(local, [0, 22], [151, 60], { extrapolateRight: "clamp" })),
+          ...flex(1000, interpolate(local, [0, 25], [151, 60], { extrapolateRight: "clamp" })),
           // Длинное слово («По-доброму.») мельче, чтобы при самой широкой оси влезло в строку.
           fontSize: Math.min(150, 1350 / words[i].length),
           whiteSpace: "nowrap",

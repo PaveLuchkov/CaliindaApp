@@ -5,8 +5,9 @@ import { Scheme, SCHEMES, mixScheme } from "./schemes";
 import { Wave, easeInOut } from "./parts";
 import { flex } from "./theme";
 
-// Масштаб: 1 dp приложения = 3 px ролика (экран 360 dp → 1080 px).
-const DP = 3;
+// Масштаб как у телефона: экран Pixel — 411 dp на 1080 px. С 360 dp карточки выходили крупнее,
+// чем в приложении.
+const DP = 1080 / 411;
 const CARD_W = 1080 - 2 * 16 * DP;
 const GAP = 3 * DP * 2;
 const MIN_H = 65 * DP;
@@ -115,7 +116,7 @@ const MAX_RIBBONS = 2;
 const MAX_ALLDAY = 2;
 const ALLDAY_H = 42 * DP;
 
-export const DAY_FRAMES = 270;
+export const DAY_FRAMES = 420;
 
 const HEADER_H = 48 * DP;
 const RIBBON_H = 40 * DP;
@@ -128,8 +129,8 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
     spring({ frame: f - from, fps, config: cfg });
 
   // --- Тема: с кадра 200 перебираем «обои», светлые и тёмные, монтажными склейками.
-  const SWITCH_FROM = 130;
-  const STEP = 16;
+  const SWITCH_FROM = 150;
+  const STEP = 18;
   const LAST = SCHEMES.length - 1;
   // После последней темы счётчик стоит — иначе названия дёргались бы каждые 20 кадров.
   const k = Math.min(LAST, Math.max(0, (f - SWITCH_FROM) / STEP));
@@ -152,15 +153,15 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
     let v = base ?? value(planAt(0));
     switches.forEach((t, j) => {
       const d = value(planAt(j + 1)) - value(planAt(j));
-      if (d !== 0) v += d * sp(t, { damping: 12, stiffness: 140, mass: 0.8 });
+      if (d !== 0) v += d * sp(t, { damping: 13, stiffness: 120, mass: 0.9 });
     });
     return v;
   };
 
   // --- Раскладка: высоты на пружинах, позиции считаем сами, чтобы камера знала, куда смотреть.
-  const appear = SLOTS.map((_, i) => sp(i * 3, { damping: 14, stiffness: 170, mass: 0.7 }));
-  const deepGrow = sp(32, { damping: 11, stiffness: 130, mass: 0.9 });
-  const nowOn = sp(66, { damping: 10, stiffness: 150, mass: 0.8 });
+  const appear = SLOTS.map((_, i) => sp(i * 4, { damping: 15, stiffness: 120, mass: 0.9 }));
+  const deepGrow = sp(48, { damping: 13, stiffness: 100, mass: 1 });
+  const nowOn = sp(96, { damping: 13, stiffness: 110, mass: 0.9 });
   const heights = SLOTS.map((_, i) => {
     const hOf = (p: DayPlan) => heightFor(p.minutes[i]);
     // Длинное событие сначала обычное, потом на пружине вырастает до своей высоты.
@@ -180,11 +181,14 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
     return undefined;
   };
 
+  // Лента «Поездки» растягивается в карточку проекта и на пружине раздвигает всё, что ниже.
+  const expand = sp(300, { damping: 16, stiffness: 90, mass: 1 });
+  const push = (projectHeight(PROJECTS[lang][0].days) - RIBBON_H) * expand;
   const ribbonsTop = TOP + HEADER_H + 12 * DP;
   let y = ribbonsTop;
-  const ribbonYs = ribbonOpen.map((o) => {
+  const ribbonYs = ribbonOpen.map((o, r) => {
     const top = y;
-    y += (RIBBON_H + 4 * DP) * Math.max(0, o);
+    y += (RIBBON_H + 4 * DP) * Math.max(0, o) + (r === 0 ? push : 0);
     return top;
   });
   y += 4 * DP;
@@ -205,32 +209,44 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
   // --- Камера: [кадр, центр x, центр y, зум]. Наезд на длинное, переход к текущему, общий план,
   // проекты. При наезде центр сдвинут влево: в кадре остаётся текст, а не край со звездой.
   const centerOf = (i: number) => ys[i] + heights[i] / 2;
+  // В конце камера возвращается к экрану 1:1 — на нём лента проекта превращается в карточку.
+  const screen = 960;
   const keys: [number, number, number, number][] = [
-    [0, 540, total / 2, 0.6],
-    [18, 540, total / 2, 0.62],
-    [34, 430, centerOf(DEEP), 1.25],
-    [56, 430, centerOf(DEEP) + 40, 1.22],
-    [70, 430, centerOf(NOW), 1.32],
-    [108, 430, centerOf(NOW), 1.38],
-    [124, 540, total / 2, 0.66],
-    [228, 540, total / 2, 0.7],
-    [242, 540, ribbonsTop + RIBBON_H, 1.08],
-    [270, 540, ribbonsTop + RIBBON_H, 1.12],
+    [0, 540, total / 2, 0.62],
+    [26, 540, total / 2, 0.64],
+    [52, 440, centerOf(DEEP), 1.2],
+    [80, 440, centerOf(DEEP) + 30, 1.18],
+    [100, 440, centerOf(NOW), 1.28],
+    [140, 440, centerOf(NOW), 1.32],
+    [164, 540, total / 2, 0.68],
+    [262, 540, total / 2, 0.7],
+    [296, 540, screen, 1],
+    [420, 540, screen, 1],
   ];
   let ki = 0;
   while (ki < keys.length - 2 && f > keys[ki + 1][0]) ki++;
   const [f0, x0, y0, z0] = keys[ki];
   const [f1, x1, y1, z1] = keys[ki + 1];
-  // Резкий разгон и мягкая посадка — камера «прыгает» к цели, а не плывёт.
-  const p = snap(Math.max(0, Math.min(1, (f - f0) / (f1 - f0))));
+  // Баланс резкости и плавности: быстрый, но не рваный разгон и мягкая посадка.
+  const p = easeInOut(Math.max(0, Math.min(1, (f - f0) / (f1 - f0))));
   const camX = x0 + (x1 - x0) * p;
   const camY = y0 + (y1 - y0) * p;
   let zoom = z0 + (z1 - z0) * p;
-  // На каждой смене темы — короткий «удар» камеры, держит ритм.
-  if (f >= SWITCH_FROM && idx < LAST) zoom *= 1 + 0.05 * Math.exp(-local * 6);
+  // На каждой смене темы — лёгкий «удар» камеры, держит ритм.
+  if (f >= SWITCH_FROM && idx < LAST) zoom *= 1 + 0.03 * Math.exp(-local * 5);
 
-  const fade = interpolate(f, [262, 270], [1, 0], { extrapolateLeft: "clamp" });
-  const progressDay = Math.round(interpolate(f, [240, 262], [3, 7], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  // --- Проекты: лента «Поездки» растягивается в карточку проекта, потом свайп на страницу
+  // проектов — как горизонтальный пейджер в приложении (проекты слева от дней).
+  const slide = easeInOut(interpolate(f, [330, 362], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const project = PROJECTS[lang];
+  const projHeights = project.map((pr, i) => (i === 0 ? 1 : sp(352 + i * 7, { damping: 13, stiffness: 110, mass: 0.9 })) * projectHeight(pr.days));
+  const projYs: number[] = [];
+  let py = ribbonsTop;
+  projHeights.forEach((h) => {
+    projYs.push(py);
+    py += h + GAP;
+  });
+  const fade = interpolate(f, [408, 420], [1, 0], { extrapolateLeft: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: s.background, opacity: fade }}>
@@ -249,6 +265,7 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
         <BigShape d={shapes.flower} size={1100} x={-420} y={ys[3] - 200} color={s.surfaceContainerHigh} rot={f * 0.15} />
         <BigShape d={shapes.clover4} size={900} x={560} y={ys[5]} color={s.surfaceContainerHigh} rot={-f * 0.12} />
 
+        <div style={{ position: "absolute", inset: 0, transform: `translateX(${slide * 1080}px)`, opacity: 1 - slide * 0.3 }}>
         {/* Шапка: кнопки и дата в «таблетке». */}
         <div style={{ position: "absolute", top: TOP, left: 12 * DP, right: 12 * DP, height: HEADER_H, display: "flex", alignItems: "center", gap: 10 * DP }}>
           <Circle color={s.primary} />
@@ -263,7 +280,9 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
           const rib = lastWith((p) => p.ribbons[r]);
           if (!rib || o <= 0.01) return null;
           // В конце камера смотрит на поездку — счётчик дней бежит.
-          const day = r === 0 && shown === LAST ? progressDay : rib.day;
+          const day = rib.day;
+          // Первая лента в конце становится карточкой проекта — рисуется отдельно, поверх.
+          if (r === 0 && f >= 296) return null;
           return (
             <div
               key={`r${r}`}
@@ -386,8 +405,143 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
             </div>
           );
         })}
+        </div>
+
+        {/* Страница проектов заезжает слева, как свайп пейджера. */}
+        {slide > 0 && (
+          <div style={{ position: "absolute", inset: 0, transform: `translateX(${(slide - 1) * 1080}px)` }}>
+            <div style={{ position: "absolute", top: TOP, left: 12 * DP, right: 12 * DP, height: HEADER_H, display: "flex", alignItems: "center", gap: 10 * DP }}>
+              <Circle color={s.primary} />
+              <div style={{ flex: 1, height: 40 * DP, borderRadius: 20 * DP, background: s.inverseSurface, color: s.inverseOnSurface, display: "flex", alignItems: "center", justifyContent: "center", ...flex(700), fontSize: 16 * DP }}>
+                {MONTH[lang]}
+              </div>
+              <Circle color={s.primary} />
+            </div>
+            {project.slice(1).map((pr, j) => {
+              const i = j + 1;
+              return <ProjectCard key={i} pr={pr} s={s} top={projYs[i]} height={projHeights[i]} grow={Math.min(1, projHeights[i] / projectHeight(pr.days))} lang={lang} />;
+            })}
+          </div>
+        )}
+
+        {/* «Поездка»: лента растягивается в карточку проекта и остаётся на месте при свайпе. */}
+        {f >= 296 && (
+          <ProjectCard
+            pr={project[0]}
+            s={s}
+            top={ribbonYs[0]}
+            height={RIBBON_H + (projectHeight(project[0].days) - RIBBON_H) * expand}
+            grow={expand}
+            ribbon={1 - expand}
+            lang={lang}
+          />
+        )}
       </div>
     </AbsoluteFill>
+  );
+};
+
+/** Высота карточки проекта — projectHeightFraction: сигмоида по дням, от 1 до 31. */
+const projectHeight = (days: number) => {
+  const sig = (d: number) => 1 / (1 + Math.exp(-(d - 10) / 4));
+  const t = (sig(days) - sig(1)) / (sig(31) - sig(1));
+  return MIN_H + (MAX_H - MIN_H) * Math.max(0, Math.min(1, t));
+};
+
+type Project = { title: string; days: number; dates: string; left?: string; shape: keyof typeof shapes; ongoing: boolean; day?: number };
+
+const PROJECTS: Record<"en" | "ru", Project[]> = {
+  en: [
+    { title: "✈️ Trip to Lisbon", days: 7, day: 3, dates: "6 – 12 October", left: "4 days left", shape: "clover4", ongoing: true },
+    { title: "📖 Reading challenge", days: 30, dates: "1 – 30 October", left: "22 days left", shape: "flower", ongoing: true },
+    { title: "🏠 Moving house", days: 5, dates: "14 – 18 October", shape: "gem", ongoing: false },
+    { title: "🎤 Design conference", days: 2, dates: "24 – 25 October", shape: "puffy", ongoing: false },
+  ],
+  ru: [
+    { title: "✈️ Поездка в Лиссабон", days: 7, day: 3, dates: "6 – 12 октября", left: "осталось 4 дня", shape: "clover4", ongoing: true },
+    { title: "📖 Книжный марафон", days: 30, dates: "1 – 30 октября", left: "осталось 22 дня", shape: "flower", ongoing: true },
+    { title: "🏠 Переезд", days: 5, dates: "14 – 18 октября", shape: "gem", ongoing: false },
+    { title: "🎤 Конференция", days: 2, dates: "24 – 25 октября", shape: "puffy", ongoing: false },
+  ],
+};
+const MONTH = { en: "October", ru: "Октябрь" };
+
+/**
+ * Карточка проекта как на странице проектов: идущий — третичным цветом, будущий — основным,
+ * фигура проекта выглядывает справа. [ribbon] > 0 — ещё наполовину лента дня (для перехода).
+ */
+const ProjectCard = ({
+  pr,
+  s,
+  top,
+  height,
+  grow,
+  ribbon = 0,
+  lang,
+}: {
+  pr: Project;
+  s: Scheme;
+  top: number;
+  height: number;
+  grow: number;
+  ribbon?: number;
+  lang: "en" | "ru";
+}) => {
+  const cardBg = pr.ongoing ? s.tertiaryContainer : s.primaryContainer;
+  const cardFg = pr.ongoing ? s.onTertiaryContainer : s.onPrimaryContainer;
+  const bg = mixHex(cardBg, s.secondaryContainer, ribbon);
+  const fg = mixHex(cardFg, s.onSecondaryContainer, ribbon);
+  const radius = RIBBON_H / 2 + (20 * DP - RIBBON_H / 2) * (1 - ribbon);
+  const shapeSize = Math.max(height * 1.15, 110 * DP);
+  const id = `pclip-${pr.shape}`;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: 16 * DP,
+        width: CARD_W,
+        top,
+        height,
+        borderRadius: radius,
+        background: bg,
+        color: fg,
+        overflow: "hidden",
+        opacity: Math.min(1, grow * 2 + ribbon),
+      }}
+    >
+      <svg
+        width={shapeSize}
+        height={shapeSize}
+        viewBox="0 0 100 100"
+        style={{ position: "absolute", right: -shapeSize * 0.18, top: -shapeSize * 0.12, opacity: 1 - ribbon, overflow: "visible" }}
+      >
+        <defs>
+          <clipPath id={id}>
+            <path d={shapes[pr.shape]} transform="rotate(-15 50 50)" />
+          </clipPath>
+        </defs>
+        <g clipPath={`url(#${id})`}>
+          <path d={shapes[pr.shape]} fill="rgba(0,0,0,0.22)" transform="rotate(-15 50 50)" />
+          <path d={shapes[pr.shape]} fill={bg} transform="translate(-2.6 -3.6) rotate(-15 50 50)" />
+        </g>
+      </svg>
+      {/* Лента: название, волна, «день 3 из 7». */}
+      {ribbon > 0.01 && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: `0 ${16 * DP}px`, gap: 12 * DP, opacity: ribbon }}>
+          <div style={{ flex: 1, ...flex(600), fontSize: 14 * DP, whiteSpace: "nowrap" }}>{pr.title}</div>
+          <Wave width={56 * DP} height={10 * DP} progress={(pr.day ?? 1) / pr.days} phase={0} color={s.secondary} />
+          <div style={{ ...flex(500), fontSize: 12 * DP }}>{DAY_OF[lang](pr.day ?? 1, pr.days)}</div>
+        </div>
+      )}
+      {/* Карточка: крупное название, даты и сколько осталось. */}
+      <div style={{ position: "absolute", left: 16 * DP, top: 8 * DP, opacity: 1 - ribbon }}>
+        <div style={{ ...flex(600), fontSize: 24 * DP, whiteSpace: "nowrap" }}>{pr.title}</div>
+        <div style={{ ...flex(450), fontSize: 11 * DP, marginTop: 2 * DP, display: "flex", gap: 10 * DP }}>
+          <span>{pr.dates}</span>
+          {pr.left && <span>{pr.left}</span>}
+        </div>
+      </div>
+    </div>
   );
 };
 
