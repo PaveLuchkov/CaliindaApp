@@ -148,6 +148,7 @@
     <string name="create_event">Crear evento</string>
     <string name="go_to_today">Ir a hoy</string>
     <string name="edit">Editar</string>
+    <string name="repeat_event">Otra vez</string>
     <string name="details">Detalles</string>
     <string name="calendar_access_title">Acceso al calendario</string>
     <string name="calendar_access_body">Caliinda funciona con los calendarios de tu teléfono. Google Calendar se sincroniza aquí automáticamente.</string>

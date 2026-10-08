@@ -301,6 +301,19 @@ constructor(
     _uiState.update { it.copy(dialog = EventDialog.Creating(date, asProject)) }
   }
 
+  /**
+   * «Ещё раз»: новое событие как [event], но на [date]. Напоминания подтягиваем так же, как при
+   * правке, — в той же [EventUiState.editingReminders].
+   */
+  fun openRepeat(event: EventDto, date: LocalDate) {
+    val creating = EventDialog.Creating(date, asProject = false, template = event)
+    _uiState.update { it.copy(dialog = creating, editingReminders = null) }
+    viewModelScope.launch {
+      val reminders = runCatching { calendarRepository.remindersOf(event) }.getOrNull()
+      _uiState.update { if (it.dialog == creating) it.copy(editingReminders = reminders) else it }
+    }
+  }
+
   fun requestDelete(event: EventDto) {
     if (event.recurringEventId == null) {
       deleteWithUndo(event)
@@ -373,8 +386,12 @@ data class EventManagementUiState(
 sealed interface EventDialog {
   data object None : EventDialog
 
-  /** Шторка создания. */
-  data class Creating(val date: LocalDate, val asProject: Boolean) : EventDialog
+  /** Шторка создания; [template] — «Ещё раз»: форма заполнена как у этого события. */
+  data class Creating(
+      val date: LocalDate,
+      val asProject: Boolean,
+      val template: EventDto? = null,
+  ) : EventDialog
 
   /** Повторяющееся событие: выбор — один экземпляр, этот и следующие или вся серия. */
   data class ChooseEditMode(val event: EventDto) : EventDialog

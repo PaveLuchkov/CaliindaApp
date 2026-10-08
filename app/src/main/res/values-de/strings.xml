@@ -147,6 +147,7 @@
     <string name="create_event">Termin erstellen</string>
     <string name="go_to_today">Zu heute</string>
     <string name="edit">Bearbeiten</string>
+    <string name="repeat_event">Noch einmal</string>
     <string name="details">Details</string>
     <string name="calendar_access_title">Kalenderzugriff</string>
     <string name="calendar_access_body">Caliinda nutzt die Kalender auf deinem Telefon. Google Kalender wird automatisch hierher synchronisiert.</string>

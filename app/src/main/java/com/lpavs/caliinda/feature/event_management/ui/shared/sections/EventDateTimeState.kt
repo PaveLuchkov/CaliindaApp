@@ -171,3 +171,29 @@ fun recurrenceRuleAfterEdit(original: EventDto, form: EventDateTimeState, zone: 
       else formRule)
       .format()
 }
+
+/**
+ * «Ещё раз»: время и длительность как у [this], но с [date]; многодневное событие сдвигается
+ * целиком. Повторение не переносим — копия всегда отдельное событие, серии из неё не вырастет.
+ */
+fun EventDto.repeatOn(date: LocalDate, zone: ZoneId): EventDateTimeState {
+  val original = toDateTimeState(zone)
+  val shift = ChronoUnit.DAYS.between(original.startDate, date)
+  return EventDateTimeState(
+      startDate = original.startDate.plusDays(shift),
+      startTime = original.startTime,
+      endDate = original.endDate.plusDays(shift),
+      endTime = original.endTime,
+      isAllDay = original.isAllDay,
+      isRecurring = false)
+}
+
+/**
+ * День для «Ещё раз». Подробности открываются из ленты того же дня, что и событие, поэтому «день
+ * в ленте» ничего не даёт — копия легла бы поверх. Прошедшее повторяем сегодня, сегодняшнее и
+ * будущее — на следующий день после него.
+ */
+fun EventDto.repeatDate(today: LocalDate, zone: ZoneId): LocalDate {
+  val start = toDateTimeState(zone).startDate
+  return if (start.isBefore(today)) today else start.plusDays(1)
+}
