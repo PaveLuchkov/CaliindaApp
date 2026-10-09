@@ -210,7 +210,7 @@ export const Chips = ({ lang }: { lang: Lang }) => {
                 opacity: fresh ? Math.min(1, o * 2) : 1,
                 transform: fresh
                   ? `translateY(${(1 - o) * 220}px) scale(${0.7 + 0.3 * o}) rotate(${(1 - o) * -4}deg)`
-                  : `translateY(${-isNow * 8}px) scale(${1 + isNow * 0.02})`,
+                  : undefined,
                 transformOrigin: "50% 0%",
               }}
             />

@@ -1,8 +1,8 @@
 import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame } from "remotion";
-import { CARD_W, DAY_OF, DP, GAP, HEADER_H, Project, ProjectCard, RIBBON_H, TOP, mixHex, projectHeight } from "./DayScene";
+import { CARD_W, DAY_OF, DP, GAP, HEADER_H, Project, heightFor, ProjectCard, RIBBON_H, TOP, mixHex, projectHeight } from "./DayScene";
 import { End, TAGLINE } from "./End";
 import { MorphShape, Wave, easeInOut } from "./parts";
-import { Scheme, WARM } from "./schemes";
+import { JUICY, Scheme } from "./schemes";
 import { flex, fontFace } from "./theme";
 import { Caption, Card, E, Header, Lang, MONTH_NAME, Touch, dayTitle, lagOffset, lagSeries, layout } from "./kit";
 
@@ -13,8 +13,8 @@ import { Caption, Card, E, Header, Lang, MONTH_NAME, Touch, dayTitle, lagOffset,
  */
 export const LONG_FRAMES = 600;
 const END_AT = 486;
-// Светлая и тёплая: порядок и чистота — это белый, акценты — жёлтый и оранжевый.
-const s = WARM;
+// Светлая и сочная: порядок и чистота — это белый, акцент — «ядовито»-жёлтый как есть.
+const s = JUICY;
 
 const POP = 150; // пузырь лопается
 
@@ -548,24 +548,55 @@ const Pop = ({ lang, f }: { lang: Lang; f: number }) => {
   );
 };
 
+// --- Посадка долгих событий: пружина ловит полоску, карточка приземляется на «полку».
+const CATCH = (i: number) => POP + 16 + i * 8;
+const CATCH_CFG = { damping: 17, stiffness: 75, mass: 1.1 };
+/** Кадр приземления — когда пружина почти довела карточку до места. */
+const LAND = [0, 1, 2, 3].map((i) => {
+  for (let t = 0; t < 200; t++) if (spring({ frame: t, fps: 30, config: CATCH_CFG }) >= 0.97) return CATCH(i) + t;
+  return CATCH(i) + 60;
+});
+/** Удар при посадке: затухающие колебания. */
+const impact = (t: number) => (t < 0 ? 0 : Math.exp(-t / 6) * Math.sin(t * 0.85));
+/**
+ * Карточка на полке: при своей посадке сплющивается и отпружинивает, а от посадок соседей
+ * вздрагивает — тем слабее, чем дальше сосед.
+ */
+const shelf = (i: number, f: number) => {
+  const own = impact(f - LAND[i]);
+  let nudge = 0;
+  LAND.forEach((l, j) => {
+    if (j !== i && f >= LAND[i]) nudge += impact(f - l) / (1 + Math.abs(i - j));
+  });
+  return { squash: own, nudge: nudge * 9 * DP };
+};
+
 /**
  * Многодневное событие октября: после хлопка его полоска летит вместе с осколками, потом
- * пружина ловит её и ведёт на своё место — по пути она раскрывается в карточку.
+ * пружина ловит её и ведёт на своё место. В полёте она ближе к зрителю — крупнее, с большой
+ * мягкой тенью; по пути раскрывается в карточку и приземляется с отскоком.
  */
 const Flying = ({ p, i, s, top, f, lang }: { p: Long; i: number; s: Scheme; top: number; f: number; lang: Lang }) => {
   const pc = pieces(lang).find((x) => x.kind === "long" && x.li === i && x.first)!;
   const fl = flight(pc, f);
   const toRect = { x: 16 * DP, y: top, w: CARD_W, h: projectHeight(p.days) };
-  // Мягкая, «спокойная» пружина: никуда не торопится.
-  const k = spring({ frame: f - POP - 16 - i * 7, fps: 30, config: { damping: 15, stiffness: 70, mass: 1.1 } });
+  const k = spring({ frame: f - CATCH(i), fps: 30, config: CATCH_CFG });
   const lerp = (a: number, b: number) => a + (b - a) * k;
   const card = p.ongoing ? s.tertiaryContainer : s.primaryContainer;
-  if (k > 0.985) return <ProjectCard pr={p} s={s} top={top} height={toRect.h} grow={1} lang={lang} />;
+  if (f >= LAND[i]) {
+    const { squash, nudge } = shelf(i, f);
+    return (
+      <div style={{ position: "absolute", inset: 0, transform: `translateY(${nudge}px) scale(${1 + 0.05 * squash}, ${1 - 0.14 * squash})`, transformOrigin: `540px ${top + toRect.h}px` }}>
+        <ProjectCard pr={p} s={s} top={top} height={toRect.h} grow={1} lang={lang} />
+      </div>
+    );
+  }
   const w = lerp(pc.w * fl.k, toRect.w);
   const h = lerp(pc.h * fl.k, toRect.h);
-  const reveal = interpolate(k, [0.6, 0.985], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const air = 1 - k;
+  const reveal = interpolate(k, [0.84, 0.97], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
-    <>
+    <div style={{ position: "absolute", inset: 0, transform: `scale(${1 + 0.12 * air * k * 4})`, transformOrigin: `540px ${top + toRect.h / 2}px` }}>
       <div
         style={{
           position: "absolute",
@@ -575,7 +606,7 @@ const Flying = ({ p, i, s, top, f, lang }: { p: Long; i: number; s: Scheme; top:
           height: h,
           borderRadius: lerp(6, 20 * DP),
           background: mixHex(p.tint, card, Math.min(1, k * 1.3)),
-          transform: `rotate(${fl.rot * (1 - k)}deg)`,
+          transform: `rotate(${fl.rot * air}deg)`,
           opacity: 1 - reveal,
           ...flex(500),
           color: mixHex("#FFFFFF", p.ongoing ? s.onTertiaryContainer : s.onPrimaryContainer, k),
@@ -585,17 +616,17 @@ const Flying = ({ p, i, s, top, f, lang }: { p: Long; i: number; s: Scheme; top:
           paddingLeft: lerp(8, 16 * DP),
           paddingTop: lerp(4, 8 * DP),
           boxSizing: "border-box",
-          boxShadow: `0 ${20 * (1 - k)}px ${50 * (1 - k)}px rgba(0,0,0,0.3)`,
+          boxShadow: `0 ${50 * air}px ${90 * air}px rgba(0,0,0,${0.35 * air})`,
         }}
       >
         {p.title}
       </div>
       {reveal > 0 && (
-        <div style={{ opacity: reveal }}>
-          <ProjectCard pr={p} s={s} top={top} height={toRect.h} grow={1} lang={lang} />
+        <div style={{ opacity: reveal, filter: `drop-shadow(0 ${50 * air}px ${45 * air}px rgba(0,0,0,${0.35 * air}))` }}>
+          <ProjectCard pr={p} s={s} top={lerp(fl.y - h / 2, toRect.y)} height={toRect.h} grow={1} lang={lang} />
         </div>
       )}
-    </>
+    </div>
   );
 };
 
@@ -606,9 +637,13 @@ const DayPage = ({ lang, f, longs }: { lang: Lang; f: number; longs: Long[] }) =
   const listTop = ribbonTop + ongoing.length * (RIBBON_H + 4 * DP) + 8 * DP;
   const events = DAY_EVENTS[lang];
   const { ys } = layout(events, listTop);
-  const now = spring({ frame: f - 300, fps: 30, config: { damping: 13, stiffness: 110, mass: 0.9 } });
+  // Камера подъезжает к текущему событию: оно поднимается к зрителю, ползёт червячок.
+  const now = spring({ frame: f - 302, fps: 30, config: { damping: 11, stiffness: 120, mass: 0.9 } });
+  const push = easeInOut(interpolate(f, [292, 312, 334, 350], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const focus = ys[2] + heightFor(events[2].min) / 2;
   return (
-    <div style={{ position: "absolute", left: 1080, top: 0, width: 1080, height: H, background: s.background }}>
+    <div style={{ position: "absolute", left: 1080, top: 0, width: 1080, height: H, background: s.background, overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, transform: `scale(${1 + 0.24 * push})`, transformOrigin: `${16 * DP}px ${focus}px` }}>
       <Header s={s} text={dayTitle(lang, 0)} />
       {ongoing.map((l, r) => (
         <div
@@ -636,8 +671,9 @@ const DayPage = ({ lang, f, longs }: { lang: Lang; f: number; longs: Long[] }) =
       ))}
       {events.map((e, i) => {
         const isNow = i === 2 ? now : 0;
-        return <Card key={i} e={e} i={i + 2} s={s} top={ys[i]} now={isNow} lang={lang} f={f} style={{ transform: `translateY(${-isNow * 8}px) scale(${1 + isNow * 0.02})` }} />;
+        return <Card key={i} e={e} i={i + 2} s={s} top={ys[i]} now={isNow} lang={lang} f={f} />;
       })}
+      </div>
     </div>
   );
 };

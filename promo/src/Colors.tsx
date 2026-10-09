@@ -169,7 +169,7 @@ const AppDay = ({ s, lang, day, f, still = false }: { s: Scheme; lang: Lang; day
             now={now}
             lang={lang}
             f={f}
-            style={{ transform: `translateY(${(1 - a) * 500 - now * 8}px) scale(${1 + now * 0.02})`, opacity: Math.min(1, a * 2) }}
+            style={{ transform: `translateY(${(1 - a) * 500}px)`, opacity: Math.min(1, a * 2) }}
           />
         );
       })}

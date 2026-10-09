@@ -87,7 +87,14 @@ export const Card = ({
         borderRadius: 20 * DP,
         background: bg,
         overflow: "hidden",
-        boxShadow: now ? `0 ${now * 10 * DP}px ${now * 24 * DP}px rgba(${shadow},${0.28 * now})` : undefined,
+        // Текущее — как в CalendarEventCard: плотная тень 4/5/2 dp на 50 % и подъём 12 dp. Для
+        // ролика оно ещё и подаётся к зрителю — выше и чуть крупнее остальных.
+        boxShadow: now
+          ? `0 ${4 * DP * now}px ${5 * DP * now}px ${2 * DP * now}px rgba(${shadow},${0.5 * now}), 0 ${12 * DP * now}px ${28 * DP * now}px rgba(${shadow},${0.3 * now})`
+          : undefined,
+        translate: now ? `0 ${-10 * DP * now}px` : undefined,
+        scale: now ? `${1 + 0.035 * now}` : undefined,
+        zIndex: now ? 5 : undefined,
         ...style,
       }}
     >

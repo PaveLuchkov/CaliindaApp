@@ -150,7 +150,7 @@ export const Swipe = ({ lang }: { lang: Lang }) => {
                     now={now}
                     lang={lang}
                     f={f}
-                    style={{ transform: `translateY(${off + (1 - a) * 700 - now * 8}px) scale(${1 + now * 0.02})`, opacity: a }}
+                    style={{ transform: `translateY(${off + (1 - a) * 700}px)`, opacity: a }}
                   />
                 );
               })}
