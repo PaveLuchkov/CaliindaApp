@@ -1,17 +1,21 @@
-import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame } from "remotion";
-import { CARD_W, DP, heightFor } from "./DayScene";
+import { AbsoluteFill, Sequence, spring, useCurrentFrame } from "remotion";
+import { DP, HEADER_H, TOP, heightFor } from "./DayScene";
 import { End, TAGLINE } from "./End";
+import { ShapeName } from "./parts";
 import { APRICOT, JUICY, SCHEMES, Scheme, scheme } from "./schemes";
+import shapes from "./shapes.json";
 import { fontFace } from "./theme";
-import { Caption, Card, E, Header, Lang, dayTitle, layout } from "./kit";
+import { Caption, Card, E, Header, Lang, Touch, dayTitle, layout } from "./kit";
 
 /**
- * Вариант «Цвета» — монтаж в ритм, в духе Apple. Стержень — один и тот же день: те же события,
- * то же «сейчас»; меняются только ракурс и цвета. Открытие: камера под углом, карточки падают
- * на день с весом. Цвет тоже падает — капля краски заливает день новой темой. Дальше нарезка:
- * макро на червячка, бок, взгляд сверху, звезда, дата, подъём «сейчас» — на каждой склейке
- * новая тема, светлые и тёмные. Реприза — «дождь» карточек в тёмной. Финал: камера ровно,
- * по карточкам волнами пробегают цвета.
+ * Вариант «Цвета». Всё плоское и чёткое, один и тот же день; переходов мало, но каждый — со
+ * смыслом и живой: цвет приходит фронтом, и каждая карточка, до которой он докатился,
+ * пружинисто откликается.
+ *  1. Ваш день: карточки въезжают, «сейчас» поднимается, фоновые фигуры вращаются.
+ *  2. Светлая → тёмная: касание кнопки настроек — тёмная тема расходится от неё кругом.
+ *  3. Фоновый цветок распускается на весь экран — сочная жёлтая тема со своей фигурой.
+ *  4. Так же сердечко — розовая. У каждой темы в приложении своя фоновая фигура.
+ *  5. Финал: волны цвета сверху вниз, всё чаще.
  */
 export const COLORS_FRAMES = 600;
 const END_AT = 486;
@@ -23,6 +27,15 @@ const SEA = SCHEMES[3];
 const BERRY = SCHEMES[5];
 const PINK = scheme(0xffff6f91, false, "content");
 const SKY = scheme(0xff4fc3f7, false, "content");
+
+// Фоновая фигура темы — как BackgroundShapes: динамическая — цветок, «Солнечная» — солнышко,
+// «Розовая» — сердечко.
+const BG = new Map<Scheme, ShapeName>([
+  [JUICY, "sunny"],
+  [PINK, "heart"],
+  [SKY, "softBurst"],
+]);
+const bgShape = (s: Scheme): ShapeName => BG.get(s) ?? "flower";
 
 // Один день на весь ролик. «Сейчас» — урок гитары.
 const DAY: Record<Lang, E[]> = {
@@ -46,175 +59,81 @@ const DAY: Record<Lang, E[]> = {
 const NOW = 4;
 const { ys } = layout(DAY.en);
 const hs = DAY.en.map((e) => heightFor(e.min));
-const nowCenter = { x: 540, y: ys[NOW] + hs[NOW] / 2 };
-const worm = { x: 16 * DP + 16 * DP + 30 * DP, y: ys[NOW] + 10 * DP + 34 * DP };
-const star = { x: 1080 - 60 * DP, y: ys[1] + hs[1] / 2 };
-const pill = { x: 540, y: 70 * DP + 24 * DP };
+const centers = ys.map((y, i) => ({ x: 540, y: y + hs[i] / 2 }));
+
+// Фоновые фигуры: левая (большая) и правая — как в приложении, за карточками.
+const BG_LEFT = { x: -420 + 550, y: ys[2] - 120 + 550, size: 1100 };
+const BG_RIGHT = { x: 560 + 450, y: ys[5] - 60 + 450, size: 900 };
+const SETTINGS = { x: 1080 - 12 * DP - 20 * DP, y: TOP + HEADER_H / 2 };
+
+/** Переход темы: фронт фигуры [shape] растёт из точки [at]. «circle» — ровный круг. */
+type Wave = { at: number; from: Scheme; to: Scheme; shape: ShapeName | "circle"; origin: { x: number; y: number }; dur: number; max: number; base: number; side?: "left" | "right" };
+const WAVES: Wave[] = [
+  { at: 84, from: LAV, to: SEA, shape: "circle", origin: SETTINGS, dur: 30, max: 2300, base: 0 },
+  { at: 156, from: SEA, to: JUICY, shape: "flower", origin: BG_LEFT, dur: 40, max: 6400, base: BG_LEFT.size, side: "left" },
+  { at: 234, from: JUICY, to: PINK, shape: "heart", origin: BG_RIGHT, dur: 40, max: 7200, base: BG_RIGHT.size, side: "right" },
+];
+const TAP_SETTINGS = 80;
+// Финал: волны цвета по карточкам сверху вниз — всё чаще.
+const PASSES: [number, Scheme][] = [
+  [318, FOREST],
+  [346, SKY],
+  [370, BERRY],
+  [390, CORAL],
+  [406, APRICOT],
+  [419, SEA],
+  [430, JUICY],
+];
 
 const CAPTIONS: Record<Lang, [string, number, number][]> = {
   en: [
-    ["Your day.", 22, 82],
-    ["Your colors.", 104, 164],
-    ["Light.", 172, 220],
-    ["Dark.", 228, 278],
-    ["New every time.", 396, 476],
+    ["Your day.", 12, 66],
+    ["Light and dark.", 90, 146],
+    ["Your colors.", 164, 222],
+    ["Every theme\nhas its own shape.", 242, 304],
+    ["New every time.", 326, 476],
   ],
   ru: [
-    ["Ваш день.", 22, 82],
-    ["Ваши цвета.", 104, 164],
-    ["Светлые.", 172, 220],
-    ["Тёмные.", 228, 278],
-    ["Каждый раз — новые.", 396, 476],
+    ["Ваш день.", 12, 66],
+    ["Светлая и тёмная.", 90, 146],
+    ["Ваши цвета.", 164, 222],
+    ["У каждой темы\nсвоя фигура.", 242, 304],
+    ["Каждый раз — новые.", 326, 476],
   ],
 };
 
-// --- Камера: точка страницы в центре кадра, масштаб, повороты.
-type Cam = { cx: number; cy: number; s: number; rx: number; ry: number; rz: number };
-const TILT: Cam = { cx: 540, cy: 980, s: 0.78, rx: 50, ry: 0, rz: -16 };
-
-type Shot = {
-  from: number;
-  to: number;
-  s: Scheme;
-  cam: [Cam, Cam];
-  /** Как входим: склейка, проезд с размытием (направление) или капля краски. */
-  enter: "cut" | "whip" | "drop";
-  dir?: 1 | -1;
-  /** Карточки падают: кадр первой и шаг между ними. */
-  rain?: [number, number];
-  /** «Сейчас» поднимается с этого кадра (иначе уже поднято). */
-  lift?: number;
-  /** Кадр, когда дата в шапке «перещёлкивается». */
-  date?: number;
-};
-
-const SHOTS: Shot[] = [
-  // Открытие: под углом, карточки падают на день.
-  { from: 0, to: 96, s: LAV, enter: "cut", rain: [10, 9], lift: 72, cam: [{ ...TILT, cx: 470 }, { ...TILT, cx: 600, rz: -12 }] },
-  // Капля — и тот же день в сочном жёлтом; камера наезжает на «сейчас».
-  { from: 96, to: 142, s: JUICY, enter: "drop", cam: [{ ...TILT, cx: 600, rz: -12 }, { cx: nowCenter.x, cy: nowCenter.y, s: 1.5, rx: 18, ry: 0, rz: -4 }] },
-  // Макро: червячок ползёт.
-  { from: 142, to: 168, s: SEA, enter: "cut", cam: [{ cx: worm.x - 30, cy: worm.y, s: 4.4, rx: 0, ry: 10, rz: 0 }, { cx: worm.x + 70, cy: worm.y, s: 4.0, rx: 0, ry: -4, rz: 0 }] },
-  // Сбоку: лента повёрнута, камера едет слева направо.
-  { from: 168, to: 198, s: APRICOT, enter: "whip", dir: 1, cam: [{ cx: 380, cy: 900, s: 0.95, rx: 6, ry: -42, rz: 0 }, { cx: 700, cy: 1000, s: 1.0, rx: 6, ry: -34, rz: 0 }] },
-  // Сверху: проезд вниз по карточкам.
-  { from: 198, to: 224, s: CORAL, enter: "whip", dir: 1, cam: [{ cx: 540, cy: 500, s: 1.35, rx: 0, ry: 0, rz: 6 }, { cx: 540, cy: 1250, s: 1.35, rx: 0, ry: 0, rz: 2 }] },
-  // Макро: звезда в карточке с внутренней тенью.
-  { from: 224, to: 252, s: BERRY, enter: "cut", cam: [{ cx: star.x, cy: star.y, s: 3.0, rx: 0, ry: 0, rz: -10 }, { cx: star.x - 60, cy: star.y + 30, s: 3.4, rx: 0, ry: 0, rz: 4 }] },
-  // Таблетка даты перещёлкивается.
-  { from: 252, to: 282, s: FOREST, enter: "whip", dir: -1, date: 258, cam: [{ cx: pill.x - 120, cy: pill.y + 40, s: 2.4, rx: 20, ry: 14, rz: 0 }, { cx: pill.x + 60, cy: pill.y + 40, s: 2.2, rx: 10, ry: -6, rz: 0 }] },
-  // Капля — «сейчас» поднимается к зрителю.
-  { from: 282, to: 332, s: PINK, enter: "drop", lift: 292, cam: [{ cx: nowCenter.x, cy: nowCenter.y, s: 1.25, rx: 34, ry: 0, rz: 8 }, { cx: nowCenter.x, cy: nowCenter.y, s: 1.6, rx: 22, ry: 10, rz: 2 }] },
-  // Реприза: в тёмной теме карточки падают дождём; потом камера выравнивается в обычный экран.
-  { from: 332, to: 600, s: SEA, enter: "whip", dir: 1, rain: [336, 4], lift: 366, cam: [{ ...TILT, cx: 540, rz: 14 }, { cx: 540, cy: 960, s: 1, rx: 0, ry: 0, rz: 0 }] },
-];
-const FLAT_AT = 360;
-// Финал: волны цвета по карточкам — всё чаще.
-const PASSES: [number, Scheme][] = [
-  [394, CORAL],
-  [412, BERRY],
-  [427, SKY],
-  [440, FOREST],
-  [451, PINK],
-  [460, APRICOT],
-];
-
-const lerpCam = (a: Cam, b: Cam, t: number): Cam => ({
-  cx: a.cx + (b.cx - a.cx) * t,
-  cy: a.cy + (b.cy - a.cy) * t,
-  s: a.s + (b.s - a.s) * t,
-  rx: a.rx + (b.rx - a.rx) * t,
-  ry: a.ry + (b.ry - a.ry) * t,
-  rz: a.rz + (b.rz - a.rz) * t,
-});
-/** Резкий старт, долгая мягкая посадка — камера «прилетает». */
-const expoOut = (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -8 * x));
-/** Удар при посадке: затухающие колебания. */
+/** Удар/толчок: затухающие колебания. */
 const impact = (t: number) => (t < 0 ? 0 : Math.exp(-t / 6) * Math.sin(t * 0.85));
-
-const FALL = 11; // кадров на падение
-const Z0 = 1100;
-
-export const Colors = ({ lang }: { lang: Lang }) => {
-  const f = useCurrentFrame();
-  const idx = SHOTS.findIndex((sh) => f >= sh.from && f < sh.to);
-  const shot = SHOTS[idx];
-  const prev = SHOTS[idx - 1];
-  const next = SHOTS[idx + 1];
-  // Капля: пока новая тема растекается, под ней ещё виден прошлый план.
-  const reveal = shot.enter === "drop" ? interpolate(f - shot.from, [0, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: (x) => 1 - Math.pow(1 - x, 3) }) : 1;
-  const capScheme = (from: number) => SHOTS.find((sh) => from >= sh.from && from < sh.to)!.s;
-
-  return (
-    <AbsoluteFill style={{ background: "#000" }}>
-      <style>{fontFace}</style>
-      {prev && reveal < 1 && <ShotView shot={prev} f={f} lang={lang} />}
-      <AbsoluteFill style={{ clipPath: reveal < 1 ? `circle(${reveal * 2300}px at 540px 900px)` : undefined }}>
-        <ShotView shot={shot} f={f} lang={lang} exitWhip={next?.enter === "whip" ? next.dir : undefined} />
-      </AbsoluteFill>
-      {/* Капля падает перед своим планом, на всплеске — кольцо и брызги. */}
-      {next?.enter === "drop" && f >= next.from - 8 && <Drop s={next.s} t={f - (next.from - 8)} />}
-      {shot.enter === "drop" && f - shot.from < 16 && <Splash s={shot.s} t={f - shot.from} />}
-      {CAPTIONS[lang].map(([text, from, to]) => (
-        <Caption key={text} text={text} from={from} to={to} s={capScheme(from)} y={1660} size={72} />
-      ))}
-      <Sequence from={END_AT}>
-        <End s={APRICOT} tagline={TAGLINE[lang]} />
-      </Sequence>
-    </AbsoluteFill>
-  );
-};
-
-/** Один план: день в теме плана, камера, проезды с размытием на входе и выходе. */
-const ShotView = ({ shot, f, lang, exitWhip }: { shot: Shot; f: number; lang: Lang; exitWhip?: 1 | -1 }) => {
-  const len = shot.to - shot.from;
-  const t = f - shot.from;
-  const last = shot === SHOTS[SHOTS.length - 1];
-  // Последний план: сначала держим угол (дождь), потом камера на пружине выравнивается.
-  const p = last ? spring({ frame: f - FLAT_AT, fps: 30, config: { damping: 16, stiffness: 90, mass: 1 } }) : expoOut(Math.max(0, t) / len);
-  const cam = lerpCam(shot.cam[0], shot.cam[1], p);
-  let whipX = 0;
-  let blur = 0;
-  if (shot.enter === "whip" && t < 5) {
-    const k = 1 - t / 5;
-    whipX = -(shot.dir ?? 1) * k * k * 900;
-    blur = k * 26;
-  }
-  if (exitWhip && t > len - 5) {
-    const k = (t - (len - 5)) / 5;
-    whipX = exitWhip * k * k * 900;
-    blur = k * 26;
-  }
-  const s = last ? finalScheme(f, -1) : shot.s;
-  // День вздрагивает от каждой посадки.
-  const dip = shot.rain ? DAY[lang].reduce((a, _, i) => a + impact(f - (shot.rain![0] + i * shot.rain![1] + FALL)), 0) : 0;
-  return (
-    <AbsoluteFill style={{ background: s.dark ? "#0c0d10" : "#ece9f0", perspective: 2200, overflow: "hidden" }}>
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: 1080,
-          height: 1920,
-          transformOrigin: "0 0",
-          transformStyle: "preserve-3d",
-          transform: `translate(${540 + whipX}px, 960px) rotateX(${cam.rx}deg) rotateY(${cam.ry}deg) rotateZ(${cam.rz}deg) scale(${cam.s}) translate(${-cam.cx}px, ${-cam.cy}px) translateZ(${-dip * 14}px)`,
-          filter: blur > 0.5 ? `blur(${blur}px)` : undefined,
-        }}
-      >
-        <Page shot={shot} f={f} lang={lang} s={s} last={last} />
-      </div>
-    </AbsoluteFill>
-  );
-};
+/** Резкий старт, мягкий хвост — фронт «выплёскивается». */
+const expoOut = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(2, -7 * x));
 
 /**
- * Тема в финале: волна сверху вниз пробегает за пару кадров (фон — посередине), чтобы каждая
- * тема успела постоять целиком, а не рябила вперемешку.
+ * Размер фронта на кадре [f]: для круга — радиус (выплёскивается сразу), для фигуры — сторона
+ * квадрата: фигура вырастает из фоновой, сначала неспешно — чтобы узнать цветок или сердечко, —
+ * потом разгоняется на весь экран.
  */
-const finalScheme = (f: number, i: number) => {
-  let s = SEA;
+const frontSize = (w: Wave, f: number) => {
+  const t = Math.max(0, Math.min(1, (f - w.at) / w.dur));
+  return w.shape === "circle" ? w.max * expoOut(t) : w.base + (w.max - w.base) * Math.pow(t, 2.6);
+};
+/** Перед ростом фоновая фигура чуть сжимается — «набирает воздух». */
+const anticipation = (side: "left" | "right", f: number) => {
+  const w = WAVES.find((x) => x.side === side && f >= x.at - 10 && f < x.at);
+  return w ? 1 - 0.12 * Math.sin((Math.PI * (f - (w.at - 10))) / 10) : 1;
+};
+/** Докуда фронт уже «достал»: у фигуры вписанный радиус меньше половины стороны. */
+const reach = (w: Wave, f: number) => (w.shape === "circle" ? frontSize(w, f) : frontSize(w, f) * 0.33);
+/** Кадр, когда фронт докатился до точки [p]. */
+const reachedAt = (w: Wave, p: { x: number; y: number }) => {
+  const d = Math.hypot(p.x - w.origin.x, p.y - w.origin.y);
+  for (let t = 0; t < 120; t++) if (reach(w, w.at + t) >= d) return w.at + t;
+  return w.at + 120;
+};
+const REACH = WAVES.map((w) => centers.map((c) => reachedAt(w, c)));
+
+/** Тема в финале: волна сверху вниз за пару кадров, фон — посередине, чтобы не рябило. */
+const passScheme = (f: number, i: number) => {
+  let s = PINK;
   const delay = i < 0 ? 3 : i;
   PASSES.forEach(([at, sc]) => {
     if (f >= at + delay) s = sc;
@@ -222,129 +141,107 @@ const finalScheme = (f: number, i: number) => {
   return s;
 };
 
-/** Страница дня: шапка, карточки — падают, приземляются, «сейчас» поднимается. */
-const Page = ({ shot, f, lang, s, last }: { shot: Shot; f: number; lang: Lang; s: Scheme; last: boolean }) => {
+export const Colors = ({ lang }: { lang: Lang }) => {
+  const f = useCurrentFrame();
+  // Толчки карточек: от каждого прохода фронта и от каждой волны финала.
+  const pops = centers.map((_, i) => {
+    let p = 0;
+    REACH.forEach((r) => (p += impact(f - r[i])));
+    PASSES.forEach(([at]) => (p += impact(f - at - i)));
+    return p;
+  });
+  // Какая волна идёт сейчас: старая тема — снизу, новая — поверх, под маской фронта.
+  const active = WAVES.find((w) => f >= w.at && f < w.at + w.dur + 4);
+  const settled = [...WAVES].reverse().find((w) => f >= w.at + w.dur + 4);
+  const base = f >= PASSES[0][0] ? null : settled ? settled.to : LAV;
+
+  return (
+    <AbsoluteFill style={{ background: "#000" }}>
+      <style>{fontFace}</style>
+      {base && !active && <Page s={base} f={f} lang={lang} pops={pops} />}
+      {active && (
+        <>
+          <Page s={active.from} f={f} lang={lang} pops={pops} />
+          <AbsoluteFill style={frontMask(active, f)}>
+            <Page s={active.to} f={f} lang={lang} pops={pops} />
+          </AbsoluteFill>
+        </>
+      )}
+      {!base && !active && <Page s={passScheme(f, -1)} f={f} lang={lang} pops={pops} cardScheme={(i) => passScheme(f, i)} />}
+      {/* Касание кнопки настроек перед тёмной темой. */}
+      {f >= TAP_SETTINGS - 10 && f < TAP_SETTINGS + 14 && (
+        <Touch x={SETTINGS.x} y={SETTINGS.y + 10} down={Math.abs(f - TAP_SETTINGS) <= 2 ? 1 : 0} show={Math.min(1, (f - TAP_SETTINGS + 10) / 6, (TAP_SETTINGS + 14 - f) / 6)} tap={f >= TAP_SETTINGS ? f - TAP_SETTINGS : -1} />
+      )}
+      {CAPTIONS[lang].map(([text, from, to]) => (
+        <Caption key={text} text={text} from={from} to={to} s={captionScheme(from)} y={1640} size={66} />
+      ))}
+      <Sequence from={END_AT}>
+        <End s={JUICY} tagline={TAGLINE[lang]} />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
+
+const captionScheme = (f: number) => {
+  if (f >= PASSES[0][0]) return LAV;
+  const w = [...WAVES].reverse().find((x) => f >= x.at);
+  return w ? w.to : LAV;
+};
+
+/** Маска фронта: круг — clip-path, фигура — векторная маска (чёткая на любом размере). */
+const frontMask = (w: Wave, f: number): React.CSSProperties => {
+  const size = frontSize(w, f);
+  if (w.shape === "circle") return { clipPath: `circle(${size}px at ${w.origin.x}px ${w.origin.y}px)` };
+  const rot = (f - w.at) * 1.6 + (w.side === "left" ? f * 0.25 : -f * 0.2) - (f - w.at) * (w.side === "left" ? 0.25 : -0.2);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='${shapes[w.shape]}' transform='rotate(${rot.toFixed(1)} 50 50)' fill='black'/></svg>`;
+  const url = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+  return {
+    WebkitMaskImage: url,
+    maskImage: url,
+    WebkitMaskSize: `${size}px ${size}px`,
+    maskSize: `${size}px ${size}px`,
+    WebkitMaskPosition: `${w.origin.x - size / 2}px ${w.origin.y - size / 2}px`,
+    maskPosition: `${w.origin.x - size / 2}px ${w.origin.y - size / 2}px`,
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+  };
+};
+
+/** Страница дня в теме [s]: фоновые фигуры темы, шапка, карточки на пружинах. */
+const Page = ({ s, f, lang, pops, cardScheme }: { s: Scheme; f: number; lang: Lang; pops: number[]; cardScheme?: (i: number) => Scheme }) => {
   const events = DAY[lang];
-  const nowP = shot.lift === undefined ? 1 : spring({ frame: f - shot.lift, fps: 30, config: { damping: 11, stiffness: 120, mass: 0.9 } });
-  // Дата перещёлкивается: вчерашняя уезжает вверх, сегодняшняя въезжает на пружине.
-  const roll = shot.date !== undefined ? spring({ frame: f - shot.date, fps: 30, config: { damping: 12, stiffness: 170, mass: 0.7 } }) : 1;
+  const nowP = spring({ frame: f - 40, fps: 30, config: { damping: 11, stiffness: 120, mass: 0.9 } });
+  const press = Math.max(0, 1 - Math.abs(f - TAP_SETTINGS) / 5);
+  const shape = bgShape(s);
   return (
-    <div style={{ position: "absolute", inset: 0, background: s.background, borderRadius: 60, transformStyle: "preserve-3d", boxShadow: "0 60px 160px rgba(0,0,0,0.35)" }}>
-      <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 60 }}>
-        {roll < 1 && <Header s={s} text={dayTitle(lang, 1)} style={{ transform: `translateY(${-roll * 80}px)`, opacity: 1 - roll }} />}
-        <Header s={s} text={dayTitle(lang, 2)} style={{ transform: `translateY(${(1 - roll) * 80}px)`, opacity: roll }} />
-      </div>
+    <AbsoluteFill style={{ background: s.background, overflow: "hidden" }}>
+      {/* Фоновые фигуры темы медленно вращаются, как BackgroundShapes. */}
+      <svg width={BG_LEFT.size} height={BG_LEFT.size} viewBox="0 0 100 100" style={{ position: "absolute", left: BG_LEFT.x - BG_LEFT.size / 2, top: BG_LEFT.y - BG_LEFT.size / 2, transform: `scale(${anticipation("left", f)})` }}>
+        <path d={shapes[shape]} fill={s.surfaceContainerHigh} transform={`rotate(${f * 0.25} 50 50)`} />
+      </svg>
+      <svg width={BG_RIGHT.size} height={BG_RIGHT.size} viewBox="0 0 100 100" style={{ position: "absolute", left: BG_RIGHT.x - BG_RIGHT.size / 2, top: BG_RIGHT.y - BG_RIGHT.size / 2, transform: `scale(${anticipation("right", f)})` }}>
+        <path d={shapes[shape === "flower" ? "clover4" : shape]} fill={s.surfaceContainerHigh} transform={`rotate(${-f * 0.2} 50 50)`} />
+      </svg>
+      <Header s={s} text={dayTitle(lang, 2)} />
+      {/* Нажатая кнопка настроек — круг справа в шапке — чуть проседает. */}
+      {press > 0 && <div style={{ position: "absolute", left: SETTINGS.x - 20 * DP, top: SETTINGS.y - 20 * DP, width: 40 * DP, height: 40 * DP, borderRadius: 20 * DP, background: "rgba(255,255,255,0.35)", transform: `scale(${1 + 0.15 * press})` }} />}
       {events.map((e, i) => {
-        let z = 0;
-        let near = 1; // 0 — высоко, 1 — на земле
-        let sq = 0;
-        if (shot.rain) {
-          const t0 = shot.rain[0] + i * shot.rain[1];
-          const u = (f - t0) / FALL;
-          if (u < 0) return null;
-          if (u < 1) {
-            z = Z0 * (1 - u * u); // ускоряется к земле
-            near = u;
-          }
-          sq = impact(f - t0 - FALL);
-        }
-        // В финале карточка «вспыхивает» новой темой — короткий пружинный толчок.
-        const pop = last ? PASSES.reduce((a, [at]) => a + impact(f - at - i), 0) : 0;
-        const now = i === NOW ? nowP : 0;
+        // Въезд в начале — как анимация появления в списке приложения.
+        const a = spring({ frame: f - 2 - i * 4, fps: 30, config: { damping: 14, stiffness: 120, mass: 0.9 } });
+        const p = pops[i];
         return (
-          <div key={i} style={{ transformStyle: "preserve-3d" }}>
-            {/* Тень на «полу» дня: сжимается и темнеет, пока карточка подлетает. */}
-            {z > 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 16 * DP,
-                  top: ys[i],
-                  width: CARD_W,
-                  height: hs[i],
-                  borderRadius: 20 * DP,
-                  background: "rgba(0,0,0,0.5)",
-                  filter: `blur(${10 + (1 - near) * 40}px)`,
-                  opacity: 0.15 + 0.5 * near,
-                  transform: `scale(${0.85 + 0.15 * near})`,
-                }}
-              />
-            )}
-            <Card
-              e={e}
-              i={i}
-              s={last ? finalScheme(f, i) : s}
-              top={ys[i]}
-              now={now}
-              lang={lang}
-              f={f}
-              style={{
-                transform: `translateZ(${z + now * 24}px) scale(${1 + 0.04 * sq + 0.03 * pop}, ${1 - 0.12 * sq + 0.03 * pop})`,
-                transformOrigin: "50% 100%",
-              }}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-/** Капля краски цвета следующей темы падает сверху в точку всплеска. */
-const Drop = ({ s, t }: { s: Scheme; t: number }) => {
-  if (t > 8) return null;
-  const u = t / 8;
-  const y = -120 + (900 + 120) * u * u;
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: 540 - 50,
-        top: y - 70,
-        width: 100,
-        height: 140,
-        borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
-        background: s.primary,
-        boxShadow: "0 20px 40px rgba(0,0,0,0.3), inset -10px -14px 0 rgba(0,0,0,0.12), inset 10px 10px 0 rgba(255,255,255,0.25)",
-        transform: `scaleY(${1 + u * 0.4})`,
-      }}
-    />
-  );
-};
-
-/** Всплеск: кольцо и брызги цвета новой темы. */
-const Splash = ({ s, t }: { s: Scheme; t: number }) => {
-  const k = t / 16;
-  return (
-    <AbsoluteFill style={{ pointerEvents: "none" }}>
-      <div
-        style={{
-          position: "absolute",
-          left: 540 - k * 700,
-          top: 900 - k * 700,
-          width: k * 1400,
-          height: k * 1400,
-          borderRadius: "50%",
-          border: `${30 * (1 - k) + 2}px solid ${s.primary}`,
-          opacity: 1 - k,
-          boxSizing: "border-box",
-        }}
-      />
-      {Array.from({ length: 10 }, (_, i) => {
-        const a = (i / 10) * Math.PI * 2 + 0.3;
-        const r = 120 + k * 620;
-        return (
-          <div
+          <Card
             key={i}
+            e={e}
+            i={i}
+            s={cardScheme ? cardScheme(i) : s}
+            top={ys[i]}
+            now={i === NOW ? nowP : 0}
+            lang={lang}
+            f={f}
             style={{
-              position: "absolute",
-              left: 540 + Math.cos(a) * r - 18,
-              top: 900 + Math.sin(a) * r * 0.8 + k * k * 500 - 18,
-              width: 36 * (1 - k * 0.6),
-              height: 36 * (1 - k * 0.6),
-              borderRadius: "50%",
-              background: s.primary,
-              opacity: 1 - k,
+              opacity: Math.min(1, a * 2),
+              transform: `translateY(${(1 - a) * 600}px) scale(${1 + 0.05 * p}, ${1 + 0.05 * p})`,
             }}
           />
         );
