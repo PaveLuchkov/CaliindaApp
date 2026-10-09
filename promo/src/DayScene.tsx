@@ -7,27 +7,27 @@ import { flex } from "./theme";
 
 // Масштаб как у телефона: экран Pixel — 411 dp на 1080 px. С 360 dp карточки выходили крупнее,
 // чем в приложении.
-const DP = 1080 / 411;
-const CARD_W = 1080 - 2 * 16 * DP;
-const GAP = 3 * DP * 2;
-const MIN_H = 65 * DP;
-const MAX_H = 200 * DP;
-const MICRO_H = 30 * DP;
+export const DP = 1080 / 411;
+export const CARD_W = 1080 - 2 * 16 * DP;
+export const GAP = 3 * DP * 2;
+export const MIN_H = 65 * DP;
+export const MAX_H = 200 * DP;
+export const MICRO_H = 30 * DP;
 
 /** Высота карточки — та же сигмоида по длительности, что в EventUiModelMapper. */
-const heightFor = (minutes: number) => {
+export const heightFor = (minutes: number) => {
   if (minutes <= 25) return MICRO_H;
   const x = (minutes - 180) / 100;
   return MIN_H + (MAX_H - MIN_H) / (1 + Math.exp(-4.5 * x));
 };
 
 /** Размер звезды — calculateShapeContainerSize. */
-const starFor = (minutes: number) => {
+export const starFor = (minutes: number) => {
   const x = (minutes - 180) / 100;
   return (120 + 240 / (1 + Math.exp(-4.5 * x))) * DP;
 };
 
-type Ev = { star: keyof typeof stars; rot: number; off: number };
+export type Ev = { star: keyof typeof stars; rot: number; off: number };
 
 // Звёзды привязаны к месту в ленте — как форма к id события, они не прыгают при смене дня.
 const SLOTS: Ev[] = [
@@ -54,7 +54,7 @@ type DayPlan = {
   titles: string[];
 };
 
-const fmt = (start: string, minutes: number) => {
+export const fmt = (start: string, minutes: number) => {
   const [h, m] = start.split(":").map(Number);
   const end = h * 60 + m + minutes;
   return `${start} – ${Math.floor(end / 60)}:${String(end % 60).padStart(2, "0")}`;
@@ -109,18 +109,18 @@ const PLANS: Record<"en" | "ru", DayPlan[]> = {
   ],
 };
 
-const DAY_OF = { en: (d: number, n: number) => `day ${d} of ${n}`, ru: (d: number, n: number) => `день ${d} из ${n}` };
-const LEFT = { en: "25 min left", ru: "ещё 25 мин" };
+export const DAY_OF = { en: (d: number, n: number) => `day ${d} of ${n}`, ru: (d: number, n: number) => `день ${d} из ${n}` };
+export const LEFT = { en: "25 min left", ru: "ещё 25 мин" };
 const HEADER = { en: "Thu, 8 October", ru: "Чт, 8 октября" };
 const MAX_RIBBONS = 2;
 const MAX_ALLDAY = 2;
-const ALLDAY_H = 42 * DP;
+export const ALLDAY_H = 42 * DP;
 
 export const DAY_FRAMES = 420;
 
-const HEADER_H = 48 * DP;
-const RIBBON_H = 40 * DP;
-const TOP = 70 * DP;
+export const HEADER_H = 48 * DP;
+export const RIBBON_H = 40 * DP;
+export const TOP = 70 * DP;
 
 export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
   const f = useCurrentFrame();
@@ -442,13 +442,13 @@ export const DayScene = ({ lang }: { lang: "en" | "ru" }) => {
 };
 
 /** Высота карточки проекта — projectHeightFraction: сигмоида по дням, от 1 до 31. */
-const projectHeight = (days: number) => {
+export const projectHeight = (days: number) => {
   const sig = (d: number) => 1 / (1 + Math.exp(-(d - 10) / 4));
   const t = (sig(days) - sig(1)) / (sig(31) - sig(1));
   return MIN_H + (MAX_H - MIN_H) * Math.max(0, Math.min(1, t));
 };
 
-type Project = { title: string; days: number; dates: string; left?: string; shape: keyof typeof shapes; ongoing: boolean; day?: number };
+export type Project = { title: string; days: number; dates: string; left?: string; shape: keyof typeof shapes; ongoing: boolean; day?: number };
 
 const PROJECTS: Record<"en" | "ru", Project[]> = {
   en: [
@@ -464,13 +464,13 @@ const PROJECTS: Record<"en" | "ru", Project[]> = {
     { title: "🎤 Конференция", days: 2, dates: "24 – 25 октября", shape: "puffy", ongoing: false },
   ],
 };
-const MONTH = { en: "October", ru: "Октябрь" };
+export const MONTH = { en: "October", ru: "Октябрь" };
 
 /**
  * Карточка проекта как на странице проектов: идущий — третичным цветом, будущий — основным,
  * фигура проекта выглядывает справа. [ribbon] > 0 — ещё наполовину лента дня (для перехода).
  */
-const ProjectCard = ({
+export const ProjectCard = ({
   pr,
   s,
   top,
@@ -545,11 +545,11 @@ const ProjectCard = ({
   );
 };
 
-const Circle = ({ color }: { color: string }) => (
+export const Circle = ({ color }: { color: string }) => (
   <div style={{ width: 40 * DP, height: 40 * DP, borderRadius: 20 * DP, background: color }} />
 );
 
-const BigShape = ({ d, size, x, y, color, rot }: { d: string; size: number; x: number; y: number; color: string; rot: number }) => (
+export const BigShape = ({ d, size, x, y, color, rot }: { d: string; size: number; x: number; y: number; color: string; rot: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" style={{ position: "absolute", left: x, top: y }}>
     <path d={d} fill={color} transform={`rotate(${rot} 50 50)`} />
   </svg>
@@ -569,7 +569,7 @@ const bbox = (d: string) => {
  * Звезда события: цвета карточки, видна только внутренняя тень по кромке — как innerShadow в
  * CalendarEventCard. Справа, со сдвигом и поворотом от параметров события.
  */
-const Star = ({ e, minutes, bg }: { e: Ev; minutes: number; bg: string }) => {
+export const Star = ({ e, minutes, bg }: { e: Ev; minutes: number; bg: string }) => {
   const size = starFor(minutes);
   const d = stars[e.star];
   const id = `clip-${e.star}-${e.rot}`;
@@ -603,7 +603,7 @@ const Star = ({ e, minutes, bg }: { e: Ev; minutes: number; bg: string }) => {
 /** Кривая камеры: быстрый старт, долгая мягкая посадка (expo out с коротким разгоном). */
 const snap = (x: number) => (x < 0.15 ? (x / 0.15) ** 2 * 0.15 : 0.15 + 0.85 * (1 - Math.pow(2, -10 * ((x - 0.15) / 0.85))));
 
-const mixHex = (a: string, b: string, t: number) => {
+export const mixHex = (a: string, b: string, t: number) => {
   const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
   const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
   return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * Math.max(0, Math.min(1, t)))).join(",")})`;

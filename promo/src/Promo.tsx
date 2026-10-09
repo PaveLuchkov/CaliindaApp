@@ -84,7 +84,7 @@ export const Promo = ({ lang, wide = false }: { lang: Lang; wide?: boolean }) =>
 };
 
 /** Фон: крупные полупрозрачные фигуры медленно плывут и вращаются — «абстракция» на заднем плане. */
-const FloatingShapes = () => {
+export const FloatingShapes = () => {
   const f = useCurrentFrame();
   // Позиции заданы для вертикального кадра — растягиваем на любой.
   const { width, height } = useVideoConfig();
@@ -284,7 +284,7 @@ const Beats = ({ words }: { words: string[] }) => {
   );
 };
 
-const Outro = ({ tagline }: { tagline: string }) => {
+export const Outro = ({ tagline }: { tagline: string }) => {
   const f = useCurrentFrame();
   const logo = useSpring(0, { damping: 12, stiffness: 100, mass: 1 });
   const glyph = useSpring(12, { damping: 14, stiffness: 140, mass: 0.8 });
