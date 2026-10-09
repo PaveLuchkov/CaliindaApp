@@ -75,8 +75,8 @@ export const SCHEMES: Scheme[] = [
 /** Тёплая светлая: оранжевые обои, стиль «Яркий» — персик, янтарь, тёплый белый. */
 export const WARM = scheme(0xffe8792b, false, "vibrant");
 
-/** Сочная светлая: «ядовито»-жёлтый как есть — карточки #FFD600, текущие лаймовые. */
-export const JUICY = scheme(0xffffd600, false, "content");
+/** Сочная светлая: тёплый подсолнечный жёлтый как есть — сочно, но не кислотно. */
+export const JUICY = scheme(0xffffc94d, false, "content");
 
 const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
 

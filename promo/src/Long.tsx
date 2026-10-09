@@ -13,7 +13,7 @@ import { Caption, Card, E, Header, Lang, MONTH_NAME, Touch, dayTitle, lagOffset,
  */
 export const LONG_FRAMES = 600;
 const END_AT = 486;
-// Светлая и сочная: порядок и чистота — это белый, акцент — «ядовито»-жёлтый как есть.
+// Светлая и сочная: порядок и чистота — это белый, акцент — тёплый сочный жёлтый.
 const s = JUICY;
 
 const POP = 150; // пузырь лопается
