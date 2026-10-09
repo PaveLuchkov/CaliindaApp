@@ -87,12 +87,10 @@ export const Card = ({
         borderRadius: 20 * DP,
         background: bg,
         overflow: "hidden",
-        // Текущее — как в CalendarEventCard: плотная тень 4/5/2 dp на 50 % и подъём 12 dp. Для
-        // ролика оно ещё чуть крупнее — растёт на месте: сдвиг вверх залезал бы на соседа выше
-        // (зазор между карточками всего 6 dp).
-        boxShadow: now
-          ? `0 ${4 * DP * now}px ${5 * DP * now}px ${2 * DP * now}px rgba(${shadow},${0.5 * now}), 0 ${12 * DP * now}px ${28 * DP * now}px rgba(${shadow},${0.3 * now})`
-          : undefined,
+        // Текущее — как в CalendarEventCard: одна плотная тень 4/5/2 dp на 50 % (подъём 12 dp —
+        // это раскрытая нажатием, не текущая). Для ролика оно ещё чуть крупнее — растёт на месте:
+        // сдвиг вверх или большая размытая тень залезали бы на соседа выше (зазор всего 6 dp).
+        boxShadow: now ? `0 ${4 * DP * now}px ${5 * DP * now}px ${2 * DP * now}px rgba(${shadow},${0.5 * now})` : undefined,
         scale: now ? `${1 + 0.03 * now}` : undefined,
         zIndex: now ? 5 : undefined,
         ...style,

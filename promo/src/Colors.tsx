@@ -37,14 +37,14 @@ const BG = new Map<Scheme, ShapeName>([
 ]);
 const bgShape = (s: Scheme): ShapeName => BG.get(s) ?? "flower";
 
-// Один день на весь ролик. «Сейчас» — урок гитары.
+// Один день на весь ролик. «Сейчас» — вечерняя пробежка.
 const DAY: Record<Lang, E[]> = {
   en: [
     { t: "🧘 Morning yoga", at: "7:30", min: 45 },
     { t: "💻 Working on a Project", at: "9:30", min: 180 },
     { t: "🥗 Lunch", at: "13:30", min: 45 },
     { t: "📞 Call", at: "15:00", min: 15 },
-    { t: "🎸 Guitar lesson", at: "17:00", min: 60 },
+    { t: "🏃 Evening run", at: "17:00", min: 60 },
     { t: "🍝 Dinner with friends", at: "19:30", min: 120 },
   ],
   ru: [
@@ -52,7 +52,7 @@ const DAY: Record<Lang, E[]> = {
     { t: "💻 Работа над проектом", at: "9:30", min: 180 },
     { t: "🥗 Обед", at: "13:30", min: 45 },
     { t: "📞 Созвон", at: "15:00", min: 15 },
-    { t: "🎸 Урок гитары", at: "17:00", min: 60 },
+    { t: "🏃 Вечерняя пробежка", at: "17:00", min: 60 },
     { t: "🍝 Ужин с друзьями", at: "19:30", min: 120 },
   ],
 };

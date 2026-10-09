@@ -74,7 +74,7 @@ const PLANS: Record<"en" | "ru", DayPlan[]> = {
       starts: ["7:30", "8:30", "10:00", "13:00", "15:30", "17:00", "19:00"],
       ribbons: [{ title: "🏠 Moving house", day: 2, days: 5 }],
       allDay: ["🎂 Mom's birthday"],
-      titles: ["🥐 Croissant run", "🐕 Walk the dog", "📚 Study session", "🧪 Lab meeting", "💊 Vitamins", "🎸 Guitar lesson", "🎬 Movie night"],
+      titles: ["🥐 Croissant run", "🐕 Walk the dog", "📚 Study session", "🧪 Lab meeting", "💊 Vitamins", "🏊 Swimming", "🎬 Movie night"],
     },
     {
       minutes: [60, 20, 30, 240, 15, 60, 90],
@@ -97,7 +97,7 @@ const PLANS: Record<"en" | "ru", DayPlan[]> = {
       starts: ["7:30", "8:30", "10:00", "13:00", "15:30", "17:00", "19:00"],
       ribbons: [{ title: "🏠 Переезд", day: 2, days: 5 }],
       allDay: ["🎂 День рождения мамы"],
-      titles: ["🥐 За круассаном", "🐕 Выгул собаки", "📚 Учёба", "🧪 Встреча в лабе", "💊 Витамины", "🎸 Урок гитары", "🎬 Кино вечером"],
+      titles: ["🥐 За круассаном", "🐕 Выгул собаки", "📚 Учёба", "🧪 Встреча в лабе", "💊 Витамины", "🏊 Бассейн", "🎬 Кино вечером"],
     },
     {
       minutes: [60, 20, 30, 240, 15, 60, 90],
