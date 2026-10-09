@@ -2,7 +2,7 @@ import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame } from "re
 import { CARD_W, DAY_OF, DP, GAP, HEADER_H, Project, ProjectCard, RIBBON_H, TOP, mixHex, projectHeight } from "./DayScene";
 import { End, TAGLINE } from "./End";
 import { MorphShape, Wave, easeInOut } from "./parts";
-import { SCHEMES, Scheme } from "./schemes";
+import { Scheme, WARM } from "./schemes";
 import { flex, fontFace } from "./theme";
 import { Caption, Card, E, Header, Lang, MONTH_NAME, Touch, dayTitle, lagOffset, lagSeries, layout } from "./kit";
 
@@ -13,7 +13,8 @@ import { Caption, Card, E, Header, Lang, MONTH_NAME, Touch, dayTitle, lagOffset,
  */
 export const LONG_FRAMES = 600;
 const END_AT = 486;
-const s = SCHEMES[1]; // лес, тёмная
+// Светлая и тёплая: порядок и чистота — это белый, акценты — жёлтый и оранжевый.
+const s = WARM;
 
 const POP = 150; // пузырь лопается
 
@@ -225,7 +226,7 @@ export const LongEvents = ({ lang }: { lang: Lang }) => {
 
       <Fingers f={f} />
       {CAPTIONS[lang].map(([text, from, to]) => (
-        <Caption key={text} text={text} from={from} to={to} s={from < POP ? SCHEMES[0] : s} y={1600} size={58} />
+        <Caption key={text} text={text} from={from} to={to} s={s} y={1600} size={58} />
       ))}
       <Sequence from={END_AT}>
         <End s={s} tagline={TAGLINE[lang]} />
@@ -518,7 +519,8 @@ const Pop = ({ lang, f }: { lang: Lang; f: number }) => {
             width: ring * 2600,
             height: ring * 2600,
             borderRadius: "50%",
-            border: `${40 * (1 - ring) + 2}px solid rgba(255,255,255,${0.9 * (1 - ring)})`,
+            border: `${40 * (1 - ring) + 2}px solid ${s.primary}`,
+            opacity: 0.85 * (1 - ring),
             boxSizing: "border-box",
           }}
         />
@@ -530,12 +532,12 @@ const Pop = ({ lang, f }: { lang: Lang; f: number }) => {
             style={{
               ...flex(1000, 151),
               fontSize: 260,
-              color: s.onTertiaryContainer,
-              WebkitTextStroke: `10px ${s.tertiaryContainer}`,
+              color: s.primary,
+              WebkitTextStroke: `14px #FFFFFF`,
               paintOrder: "stroke fill",
               transform: `scale(${0.3 + 0.8 * word}) rotate(${-10 + 4 * word}deg)`,
               opacity: wordOut,
-              textShadow: "0 20px 60px rgba(0,0,0,0.35)",
+              textShadow: "0 20px 60px rgba(120,60,0,0.3)",
             }}
           >
             {lang === "en" ? "POP!" : "БАХ!"}
