@@ -138,8 +138,8 @@ export const Swipe = ({ lang }: { lang: Lang }) => {
               {days[d].map((e, i) => {
                 const off = lagOffset(lag, ys[i] + hs[i] / 2);
                 const a = d === 0 ? appear(i) : 1;
-                // «Сейчас» — на сегодняшнем дне, дизайн-ревью: поднимается и меняет цвет.
-                const now = d === 0 && i === 2 ? spring({ frame: f - 26, fps: 30, config: { damping: 13, stiffness: 110, mass: 0.9 } }) : 0;
+                // «Сейчас» — на сегодняшнем дне, завтрак: поднимается и меняет цвет.
+                const now = d === 0 && i === 0 ? spring({ frame: f - 26, fps: 30, config: { damping: 13, stiffness: 110, mass: 0.9 } }) : 0;
                 return (
                   <Card
                     key={i}

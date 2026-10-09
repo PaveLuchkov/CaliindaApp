@@ -95,13 +95,13 @@ const BASE: Record<Lang, E[]> = {
     { t: "🚇 Commute", at: "8:40", min: 20 },
     { t: "💻 Deep work", at: "9:00", min: 180 },
     { t: "📞 Call Mom", at: "15:30", min: 15 },
-    { t: "🎨 Design review", at: "16:00", min: 60 },
+    { t: "📲 Install Caliinda", at: "16:00", min: 30 },
   ],
   ru: [
     { t: "🚇 Дорога", at: "8:40", min: 20 },
     { t: "💻 Глубокая работа", at: "9:00", min: 180 },
     { t: "📞 Позвонить маме", at: "15:30", min: 15 },
-    { t: "🎨 Дизайн-ревью", at: "16:00", min: 60 },
+    { t: "📲 Установить Caliinda", at: "16:00", min: 30 },
   ],
 };
 
@@ -231,7 +231,7 @@ export const Chips = ({ lang }: { lang: Lang }) => {
   const sheetY = SHEET_TOP + (1 - sheetP) * (SHEET_H + 80);
   const kb = f < KB_OUT ? sp(PLUS1 + 6, { damping: 18, stiffness: 160, mass: 0.8 }) : 1 - easeInOut(Math.min(1, (f - KB_OUT) / 10));
 
-  // --- Финал: камера отъезжает, чтобы видно весь день; дизайн-ревью становится «сейчас».
+  // --- Финал: камера отъезжает, чтобы видно весь день; «Установить Caliinda» становится «сейчас».
   const zoom = 1 - 0.25 * easeInOut(interpolate(f, [ZOOM_AT, ZOOM_AT + 26], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   const nowP = sp(NOW_AT, { damping: 11, stiffness: 120, mass: 0.9 });
   // После лотка «+» не возвращается: в финале весь экран — день.
