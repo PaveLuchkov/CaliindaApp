@@ -1,22 +1,21 @@
 import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame } from "remotion";
 import { CARD_W, DAY_OF, DP, GAP, HEADER_H, Project, ProjectCard, RIBBON_H, TOP, mixHex, projectHeight } from "./DayScene";
 import { End, TAGLINE } from "./End";
-import { Wave, easeInOut } from "./parts";
+import { MorphShape, Wave, easeInOut } from "./parts";
 import { SCHEMES, Scheme } from "./schemes";
 import { flex, fontFace } from "./theme";
 import { Caption, Card, E, Header, Lang, MONTH_NAME, Touch, dayTitle, lagOffset, lagSeries, layout } from "./kit";
 
 /**
- * Вариант «Всё, что дольше дня»: привычный месячный вид забит до отказа — короткие и длинные
- * вперемешку. Сетка рассыпается: долгие события собираются на своей странице, короткие уходят
- * в дни. Свайп вбок — чистый день, свайпы вниз — следующие месяцы.
+ * Вариант «Всё, что дольше дня»: привычный месячный вид наполняется, как пузырь, — короткие и
+ * длинные вперемешку, — раздувается и лопается. После хлопка — тишина: долгие события спокойно
+ * собираются на своей странице, осколки тают. Свайп вбок — чистый день, свайпы — месяцы.
  */
 export const LONG_FRAMES = 600;
 const END_AT = 486;
 const s = SCHEMES[1]; // лес, тёмная
 
-const BREAK = 112; // сетка рассыпается
-const SETTLE = 150;
+const POP = 150; // пузырь лопается
 
 type Long = Project & { from: number; to: number; tint: string };
 
@@ -89,14 +88,16 @@ const DAY_EVENTS: Record<Lang, E[]> = {
 
 const CAPTIONS: Record<Lang, [string, number, number][]> = {
   en: [
-    ["A month view\nusually looks like this", 14, 104],
-    ["Anything longer than a day\ngets its own page", 160, 250],
+    ["A month view\nusually looks like this", 12, 66],
+    ["One more…\nand one more…", 76, 140],
+    ["Anything longer than a day\ngets its own page", 204, 262],
     ["And a day is just a day", 286, 350],
     ["Flip through\nthe months", 382, 474],
   ],
   ru: [
-    ["Обычно месяц\nвыглядит так", 14, 104],
-    ["Всё, что дольше дня, —\nна своей странице", 160, 250],
+    ["Обычно месяц\nвыглядит так", 12, 66],
+    ["Ещё одно…\nи ещё…", 76, 140],
+    ["Всё, что дольше дня, —\nна своей странице", 204, 262],
     ["А день — это просто день", 286, 350],
     ["Листайте\nмесяцы", 382, 474],
   ],
@@ -179,27 +180,27 @@ export const LongEvents = ({ lang }: { lang: Lang }) => {
   const longs = LONGS[lang];
   const sp = (from: number, cfg = { damping: 14, stiffness: 120, mass: 0.9 }) => spring({ frame: f - from, fps: 30, config: cfg });
 
-  // Сцена 1 → 2: [brk] 0..1 — сетка рассыпается, фон темнеет до темы приложения.
-  const brk = interpolate(f, [BREAK, BREAK + 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const bg = mixHex("#FFFFFF", s.background, easeInOut(brk));
   const sideP = side(f);
   const m = month(f);
   const lag = lagSeries("months", LONG_FRAMES, (q) => -month(q) * H)[f] ?? 0;
   const pages: Project[][] = [longs, ...LATER[lang]];
+  // После хлопка камера ещё трясётся, затухая.
+  const shakeAmp = f >= POP ? 34 * Math.exp(-(f - POP) / 5) : 0;
+  const shake = `translate(${Math.sin(f * 2.9) * shakeAmp}px, ${Math.cos(f * 3.7) * shakeAmp}px)`;
 
   return (
-    <AbsoluteFill style={{ background: bg }}>
+    <AbsoluteFill style={{ background: f < POP ? "#ECEEF1" : s.background }}>
       <style>{fontFace}</style>
-      {f < BREAK + 40 && <MonthGrid lang={lang} f={f} brk={brk} />}
+      {f < POP && <Bubble lang={lang} f={f} />}
 
-      {/* Страница долгих событий: в октябре карточки «прилетают» из полосок сетки. */}
-      {f >= BREAK && (
-        <AbsoluteFill style={{ transform: `translateX(${-sideP * 1080}px)` }}>
+      {/* Страница долгих событий: после хлопка полоски ловятся и встают карточками. */}
+      {f >= POP && (
+        <AbsoluteFill style={{ transform: `${shake} translateX(${-sideP * 1080}px)` }}>
           {pages.map((list, pi) => {
             const top = (pi - m) * H;
             if (Math.abs(top) >= H) return null;
             const ys = projYs(list);
-            const head = sp(BREAK + 14, { damping: 15, stiffness: 120, mass: 0.9 });
+            const head = sp(POP + 30, { damping: 15, stiffness: 100, mass: 0.9 });
             return (
               <div key={pi} style={{ position: "absolute", left: 0, top, width: 1080, height: H, background: s.background }}>
                 <Header s={s} text={MONTH_NAME[lang][9 + pi]} style={{ opacity: head, transform: `translateY(${(1 - head) * -60}px)` }} />
@@ -216,10 +217,15 @@ export const LongEvents = ({ lang }: { lang: Lang }) => {
           {f >= SIDE_TO_DAY && <DayPage lang={lang} f={f} longs={longs} />}
         </AbsoluteFill>
       )}
+      {f >= POP && f < POP + 70 && (
+        <AbsoluteFill style={{ transform: shake }}>
+          <Pop lang={lang} f={f} />
+        </AbsoluteFill>
+      )}
 
       <Fingers f={f} />
       {CAPTIONS[lang].map(([text, from, to]) => (
-        <Caption key={text} text={text} from={from} to={to} s={from < BREAK ? SCHEMES[0] : s} y={1600} size={58} />
+        <Caption key={text} text={text} from={from} to={to} s={from < POP ? SCHEMES[0] : s} y={1600} size={58} />
       ))}
       <Sequence from={END_AT}>
         <End s={s} tagline={TAGLINE[lang]} />
@@ -245,152 +251,339 @@ const Fingers = ({ f }: { f: number }) => {
   return null;
 };
 
-/** Сетка месяца: события сыплются всё гуще, сетка подрагивает, потом рассыпается. */
-const MonthGrid = ({ lang, f, brk }: { lang: Lang; f: number; brk: number }) => {
+// --- Пузырь: сетка месяца наполняется, раздувается и лопается.
+
+/** Кусочек сетки: число дня, короткое событие, отрезок многодневного или счётчик «+N». */
+type Piece = {
+  id: number;
+  kind: "num" | "short" | "long" | "more";
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  at: number; // кадр появления
+  label: string;
+  tint: string;
+  li?: number; // индекс многодневного
+  first?: boolean; // первый отрезок — из него вырастет карточка
+  hidden?: number[]; // для «+N»: кадры появления не влезших событий
+};
+
+const GRID_TOP = 130;
+const BUBBLE = { x: GRID_X - 12, y: GRID_TOP, w: 1080 - 2 * GRID_X + 24, h: GRID_Y + 6 * CELL_H - GRID_TOP + 12 };
+const CX = BUBBLE.x + BUBBLE.w / 2;
+const CY = BUBBLE.y + BUBBLE.h / 2;
+
+/** Всё содержимое сетки с координатами на экране и моментом появления. Детерминированно. */
+const piecesCache = new Map<Lang, Piece[]>();
+const pieces = (lang: Lang): Piece[] => {
+  const hit = piecesCache.get(lang);
+  if (hit) return hit;
   const longs = LONGS[lang];
-  const shake = f > 70 && f < BREAK ? Math.sin(f * 2.3) * Math.min(1, (f - 70) / 30) * 4 : 0;
-  const head = spring({ frame: f, fps: 30, config: { damping: 15, stiffness: 120, mass: 0.9 } });
-  const short: { day: number; slot: number; label: string; tint: string; at: number }[] = [];
+  const out: Piece[] = [];
+  let id = 0;
   for (let d = 1; d <= 31; d++) {
-    const n = 1 + Math.floor(rnd(d) * 4);
+    const { col, row } = cellOf(d);
+    out.push({ id: id++, kind: "num", x: GRID_X + col * CELL_W, y: GRID_Y + row * CELL_H + 6, w: CELL_W, h: 32, at: 0, label: String(d), tint: "" });
+  }
+  // Многодневные появляются по ходу наполнения — каждая полоса добавляет «давления».
+  const { lanes, segs } = longLayout(longs);
+  const longAt = [24, 52, 84, 112];
+  segs.forEach((list, li) =>
+    list.forEach((sg, k) =>
+      out.push({
+        id: id++,
+        kind: "long",
+        x: GRID_X + sg.c0 * CELL_W + 3,
+        y: GRID_Y + sg.row * CELL_H + 44 + sg.lane * (BAR_H + 4),
+        w: (sg.c1 - sg.c0 + 1) * CELL_W - 6,
+        h: BAR_H,
+        at: longAt[li] + k * 3,
+        label: longs[li].title,
+        tint: longs[li].tint,
+        li,
+        first: k === 0,
+      }),
+    ),
+  );
+  // Короткие: сыплются всё чаще. Что не влезло в клетку — уходит в счётчик «+N».
+  for (let d = 1; d <= 31; d++) {
+    const { col, row } = cellOf(d);
+    const top = GRID_Y + row * CELL_H + 44 + lanes[row] * (BAR_H + 4);
+    const fit = Math.max(1, Math.floor((GRID_Y + (row + 1) * CELL_H - 34 - top) / 30));
+    const n = 3 + Math.floor(rnd(d) * 6);
+    const hidden: number[] = [];
     for (let k = 0; k < n; k++) {
       const seed = d * 7 + k;
-      // Появляются всё чаще: первые — медленно, последние — лавиной.
-      short.push({ day: d, slot: k, label: SHORT[lang][Math.floor(rnd(seed + 3) * SHORT[lang].length)], tint: SHORT_TINTS[Math.floor(rnd(seed + 9) * SHORT_TINTS.length)], at: 6 + Math.pow(rnd(seed + 1), 0.7) * 90 });
+      const at = 8 + Math.pow(rnd(seed + 1), 0.55) * 128;
+      if (k < fit) {
+        out.push({
+          id: id++,
+          kind: "short",
+          x: GRID_X + col * CELL_W + 6,
+          y: top + k * 30,
+          w: CELL_W - 12,
+          h: 26,
+          at,
+          label: SHORT[lang][Math.floor(rnd(seed + 3) * SHORT[lang].length)],
+          tint: SHORT_TINTS[Math.floor(rnd(seed + 9) * SHORT_TINTS.length)],
+        });
+      } else hidden.push(at);
     }
+    if (hidden.length) out.push({ id: id++, kind: "more", x: GRID_X + col * CELL_W + 8, y: top + fit * 30 - 2, w: 60, h: 28, at: Math.min(...hidden), label: "", tint: "", hidden });
   }
-  const { lanes, segs: longSegs } = longLayout(longs);
+  piecesCache.set(lang, out);
+  return out;
+};
+
+/** Давление 0..1 к моменту хлопка — от него зависит всё: размер, дрожь, румянец. */
+const pressure = (f: number) => Math.min(1, Math.max(0, f / POP));
+const bubbleScale = (f: number) => {
+  const p = pressure(f);
+  // Перед самым хлопком — короткий «вдох»: чуть сжимается и сразу раздувается сильнее.
+  const breath = f > POP - 10 ? Math.sin(((f - (POP - 10)) / 10) * Math.PI) * -0.03 : 0;
+  return 0.8 + 0.24 * Math.pow(p, 2.2) + breath;
+};
+const wobble = (f: number) => {
+  const p = pressure(f);
+  return Math.sin(f * 0.8) * 0.012 * p + Math.sin(f * 2.9) * 0.01 * Math.pow(p, 4);
+};
+
+/** Положение кусочка на экране в момент хлопка — с учётом раздутого пузыря. */
+const atPop = (pc: Piece) => {
+  const k = bubbleScale(POP);
+  return { x: CX + (pc.x + pc.w / 2 - CX) * k, y: CY + (pc.y + pc.h / 2 - CY) * k, k };
+};
+
+/**
+ * После хлопка: кусочек летит от центра и вязко тормозит — как в замедленной съёмке.
+ * Возвращает центр, поворот и «время после хлопка» в секундах.
+ */
+const flight = (pc: Piece, f: number) => {
+  const p0 = atPop(pc);
+  const t = Math.max(0, (f - POP) / 30);
+  const dx = p0.x - CX;
+  const dy = p0.y - CY;
+  const len = Math.hypot(dx, dy) || 1;
+  const speed = 700 + rnd(pc.id + 17) * 1300 + len * 0.6;
+  const tang = (rnd(pc.id + 29) - 0.5) * 500;
+  const vx = (dx / len) * speed - (dy / len) * tang;
+  const vy = (dy / len) * speed + (dx / len) * tang - 300;
+  // Вязкое торможение: путь растёт как 1 − e^(−t/τ).
+  const tau = 0.32;
+  const travel = tau * (1 - Math.exp(-t / tau));
+  // Медленное оседание вниз — «уходят в дни».
+  const sink = 160 * t * t;
+  return {
+    x: p0.x + vx * travel,
+    y: p0.y + vy * travel + sink,
+    rot: (rnd(pc.id + 41) - 0.5) * 540 * travel,
+    k: p0.k,
+    t,
+  };
+};
+
+/** Внешний вид кусочка — общий для пузыря и для полёта. */
+const PieceView = ({ pc, f, style }: { pc: Piece; f: number; style?: React.CSSProperties }) => {
+  const base: React.CSSProperties = { position: "absolute", left: 0, top: 0, width: pc.w, height: pc.h, ...style };
+  if (pc.kind === "num")
+    return <div style={{ ...base, textAlign: "center", ...flex(500), fontSize: 26, color: pc.label === "8" ? "#1A73E8" : "#3C4043" }}>{pc.label}</div>;
+  if (pc.kind === "long")
+    return <div style={{ ...base, borderRadius: 6, background: pc.tint, color: "#fff", ...flex(500), fontSize: 22, lineHeight: `${BAR_H}px`, paddingLeft: 8, boxSizing: "border-box", whiteSpace: "nowrap", overflow: "hidden" }}>{pc.label}</div>;
+  if (pc.kind === "more") {
+    const n = (pc.hidden ?? []).filter((a) => a <= Math.min(f, POP)).length;
+    // Каждое новое скрытое событие — счётчик подпрыгивает.
+    const last = Math.max(...(pc.hidden ?? [0]).filter((a) => a <= f), -100);
+    const bump = spring({ frame: f - last, fps: 30, config: { damping: 9, stiffness: 300, mass: 0.5 } });
+    return (
+      <div style={{ ...base, ...flex(800), fontSize: 21, color: n > 4 ? "#D93025" : "#5F6368", transform: `${style?.transform ?? ""} scale(${1 + 0.35 * (1 - bump)})`, transformOrigin: "0 50%" }}>
+        +{n}
+      </div>
+    );
+  }
   return (
-    <AbsoluteFill style={{ opacity: 1 - brk, transform: `translate(${shake}px, ${shake * 0.6}px)` }}>
-      <div style={{ position: "absolute", left: GRID_X, top: 150, ...flex(500), fontSize: 64, color: "#3C4043", opacity: head }}>{lang === "en" ? "October 2026" : "Октябрь 2026"}</div>
-      {/* Линии сетки. */}
-      {Array.from({ length: 6 }, (_, row) =>
-        Array.from({ length: 7 }, (_, col) => {
-          const day = row * 7 + col - OCT_START + 1;
+    <div style={{ ...base, display: "flex", alignItems: "center", gap: 4, ...flex(450), fontSize: 19, color: "#3C4043", whiteSpace: "nowrap", overflow: "hidden" }}>
+      <div style={{ width: 10, height: 10, borderRadius: 5, background: pc.tint, flex: "none" }} />
+      {pc.label}
+    </div>
+  );
+};
+
+/** Пузырь: сетка в белой «плёнке», наполняется, круглеет, дрожит и краснеет от давления. */
+const Bubble = ({ lang, f }: { lang: Lang; f: number }) => {
+  const p = pressure(f);
+  const k = bubbleScale(f);
+  const w = wobble(f);
+  const head = spring({ frame: f, fps: 30, config: { damping: 15, stiffness: 120, mass: 0.9 } });
+  const shake = Math.pow(p, 3) * 6;
+  const sx = Math.sin(f * 3.1) * shake;
+  const sy = Math.cos(f * 2.7) * shake;
+  return (
+    <AbsoluteFill style={{ background: "#ECEEF1" }}>
+      <div
+        style={{
+          position: "absolute",
+          left: BUBBLE.x,
+          top: BUBBLE.y,
+          width: BUBBLE.w,
+          height: BUBBLE.h,
+          borderRadius: 36 + Math.pow(p, 1.6) * 460,
+          background: "#FFFFFF",
+          overflow: "hidden",
+          transform: `translate(${sx}px, ${sy}px) scale(${k * (1 + w)}, ${k * (1 - w)})`,
+          transformOrigin: `${CX - BUBBLE.x}px ${CY - BUBBLE.y}px`,
+          boxShadow: `0 ${30 + 40 * p}px ${80 + 80 * p}px rgba(60,64,67,${0.18 + 0.2 * p}), inset 0 0 ${120 + 200 * p}px rgba(217,48,37,${0.4 * Math.pow(p, 3)})`,
+          opacity: head,
+        }}
+      >
+        <div style={{ position: "absolute", left: GRID_X - BUBBLE.x + 8, top: 26, ...flex(500), fontSize: 60, color: "#3C4043" }}>{lang === "en" ? "October 2026" : "Октябрь 2026"}</div>
+        {Array.from({ length: 6 }, (_, row) =>
+          Array.from({ length: 7 }, (_, col) => (
+            <div key={`${row}-${col}`} style={{ position: "absolute", left: GRID_X - BUBBLE.x + col * CELL_W, top: GRID_Y - BUBBLE.y + row * CELL_H, width: CELL_W, height: CELL_H, border: "1px solid #DADCE0", boxSizing: "border-box" }} />
+          )),
+        )}
+        {pieces(lang).map((pc) => {
+          if (f < pc.at) return null;
+          const a = spring({ frame: f - pc.at, fps: 30, config: { damping: 11, stiffness: 200, mass: 0.6 } });
+          // Под давлением кусочки мелко трясутся, каждый по-своему.
+          const j = Math.pow(p, 3) * 3;
+          const jx = Math.sin(f * 1.7 + pc.id) * j;
+          const jy = Math.cos(f * 2.3 + pc.id * 2) * j;
           return (
-            <div key={`${row}-${col}`} style={{ position: "absolute", left: GRID_X + col * CELL_W, top: GRID_Y + row * CELL_H, width: CELL_W, height: CELL_H, border: "1px solid #DADCE0", boxSizing: "border-box", opacity: head }}>
-              {day >= 1 && day <= 31 && <div style={{ textAlign: "center", ...flex(500), fontSize: 26, color: day === 8 ? "#FFFFFF" : "#3C4043", marginTop: 6 }}>{day === 8 ? <span style={{ background: "#1A73E8", borderRadius: 20, padding: "2px 10px" }}>{day}</span> : day}</div>}
-            </div>
-          );
-        }),
-      )}
-      {/* Многодневные полосы. */}
-      {longSegs.map((segs, li) =>
-        segs.map((sg, k) => {
-          const p = spring({ frame: f - 10 - li * 8 - k * 2, fps: 30, config: { damping: 14, stiffness: 140, mass: 0.8 } });
-          return (
-            <div
-              key={`${li}-${k}`}
+            <PieceView
+              key={pc.id}
+              pc={pc}
+              f={f}
               style={{
-                position: "absolute",
-                left: GRID_X + sg.c0 * CELL_W + 3,
-                top: GRID_Y + sg.row * CELL_H + 44 + sg.lane * (BAR_H + 4),
-                width: (sg.c1 - sg.c0 + 1) * CELL_W - 6,
-                height: BAR_H,
-                borderRadius: 6,
-                background: longs[li].tint,
-                color: "#fff",
-                ...flex(500),
-                fontSize: 22,
-                lineHeight: `${BAR_H}px`,
-                paddingLeft: 8,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                transformOrigin: "0 50%",
-                transform: `scaleX(${p})`,
-                opacity: Math.min(1, p * 2),
+                left: pc.x - BUBBLE.x + jx,
+                top: pc.y - BUBBLE.y + jy,
+                opacity: Math.min(1, a * 2),
+                transform: pc.kind === "long" ? `scaleX(${a})` : `scale(${0.4 + 0.6 * a})`,
+                transformOrigin: pc.kind === "long" ? "0 50%" : "50% 50%",
               }}
-            >
-              {longs[li].title}
-            </div>
+            />
           );
-        }),
+        })}
+        {/* Блик плёнки — проступает, когда пузырь круглеет. */}
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 38% 22% at 28% 16%, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%)", opacity: Math.pow(p, 1.5), mixBlendMode: "screen" }} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", boxShadow: `inset 0 0 0 ${2 + 6 * p}px rgba(255,255,255,${0.8 * p})` }} />
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** Хлопок: вспышка, ударная волна, «БАХ!», осколки разлетаются и тают. */
+const Pop = ({ lang, f }: { lang: Lang; f: number }) => {
+  const t = f - POP;
+  const flash = interpolate(t, [0, 7], [0.95, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const ring = interpolate(t, [0, 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: (x) => 1 - Math.pow(1 - x, 3) });
+  const word = spring({ frame: t, fps: 30, config: { damping: 9, stiffness: 220, mass: 0.6 } });
+  const wordOut = interpolate(t, [20, 30], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const burst = interpolate(t, [0, 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: (x) => 1 - Math.pow(1 - x, 2) });
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      {/* Цветная «клякса» хлопка в цветах приложения. */}
+      {t < 18 && (
+        <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+          <MorphShape names={["softBurst", "sunny"]} t={t / 8} size={900} color={s.tertiaryContainer} rotate={t * 6} style={{ transform: `scale(${0.3 + burst * 2.2})`, opacity: 1 - burst }} />
+        </AbsoluteFill>
       )}
-      {/* Короткие: не влезают — обрезаются и прячутся под «+N». */}
-      {short.map((ev, n) => {
-        const { col, row } = cellOf(ev.day);
-        const lane = lanes[row];
-        const y = GRID_Y + row * CELL_H + 44 + lane * (BAR_H + 4) + ev.slot * 30;
-        const overflow = y + 28 > GRID_Y + (row + 1) * CELL_H - 4;
-        const p = spring({ frame: f - ev.at, fps: 30, config: { damping: 12, stiffness: 180, mass: 0.6 } });
-        if (p <= 0.01) return null;
-        // При распаде короткие падают вниз — «уходят в дни».
-        const fall = Math.max(0, f - BREAK - rnd(n) * 10);
-        if (overflow)
-          return ev.slot === Math.ceil((GRID_Y + (row + 1) * CELL_H - 4 - (GRID_Y + row * CELL_H + 44 + lane * (BAR_H + 4)) - 28) / 30) ? (
-            <div key={n} style={{ position: "absolute", left: GRID_X + col * CELL_W + 8, top: y - 4, ...flex(600), fontSize: 20, color: "#5F6368", opacity: p }}>
-              +{2 + Math.floor(rnd(n) * 3)}
-            </div>
-          ) : null;
+      {/* Осколки сетки. Карточками станут только первые отрезки многодневных — их рисует Flying. */}
+      {pieces(lang).map((pc) => {
+        if (pc.at > POP || (pc.kind === "long" && pc.first)) return null;
+        const fl = flight(pc, f);
+        const fade = interpolate(fl.t, [0.5, 1.7], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        if (fade <= 0) return null;
         return (
-          <div
-            key={n}
+          <PieceView
+            key={pc.id}
+            pc={pc}
+            f={f}
             style={{
-              position: "absolute",
-              left: GRID_X + col * CELL_W + 6,
-              top: y + fall * fall * 1.6,
-              width: CELL_W - 12,
-              height: 26,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              ...flex(450),
-              fontSize: 19,
-              color: "#3C4043",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              opacity: p,
-              transform: `scale(${0.6 + 0.4 * p}) rotate(${fall * (rnd(n + 5) - 0.5) * 3}deg)`,
+              left: fl.x - pc.w / 2,
+              top: fl.y - pc.h / 2,
+              opacity: fade,
+              transform: `scale(${fl.k * (1 - 0.4 * (1 - fade))}) rotate(${fl.rot}deg)`,
+              filter: pc.kind === "num" ? undefined : `saturate(${fade})`,
             }}
-          >
-            <div style={{ width: 10, height: 10, borderRadius: 5, background: ev.tint, flex: "none" }} />
-            {ev.label}
-          </div>
+          />
         );
       })}
+      {t < 18 && (
+        <div
+          style={{
+            position: "absolute",
+            left: CX - ring * 1300,
+            top: CY - ring * 1300,
+            width: ring * 2600,
+            height: ring * 2600,
+            borderRadius: "50%",
+            border: `${40 * (1 - ring) + 2}px solid rgba(255,255,255,${0.9 * (1 - ring)})`,
+            boxSizing: "border-box",
+          }}
+        />
+      )}
+      <AbsoluteFill style={{ background: "#FFFFFF", opacity: flash }} />
+      {t < 32 && (
+        <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              ...flex(1000, 151),
+              fontSize: 260,
+              color: s.onTertiaryContainer,
+              WebkitTextStroke: `10px ${s.tertiaryContainer}`,
+              paintOrder: "stroke fill",
+              transform: `scale(${0.3 + 0.8 * word}) rotate(${-10 + 4 * word}deg)`,
+              opacity: wordOut,
+              textShadow: "0 20px 60px rgba(0,0,0,0.35)",
+            }}
+          >
+            {lang === "en" ? "POP!" : "БАХ!"}
+          </div>
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };
 
 /**
- * Долгое событие октября: из первой полоски сетки «вылетает» на своё место и раскрывается в
- * карточку — цвет, высота, скругление и фигура перетекают на пружине.
+ * Многодневное событие октября: после хлопка его полоска летит вместе с осколками, потом
+ * пружина ловит её и ведёт на своё место — по пути она раскрывается в карточку.
  */
 const Flying = ({ p, i, s, top, f, lang }: { p: Long; i: number; s: Scheme; top: number; f: number; lang: Lang }) => {
-  const seg = longLayout(LONGS[lang]).segs[i][0];
-  const fromRect = {
-    x: GRID_X + seg.c0 * CELL_W + 3,
-    y: GRID_Y + seg.row * CELL_H + 44 + seg.lane * (BAR_H + 4),
-    w: (seg.c1 - seg.c0 + 1) * CELL_W - 6,
-    h: BAR_H,
-  };
+  const pc = pieces(lang).find((x) => x.kind === "long" && x.li === i && x.first)!;
+  const fl = flight(pc, f);
   const toRect = { x: 16 * DP, y: top, w: CARD_W, h: projectHeight(p.days) };
-  const k = spring({ frame: f - BREAK - 4 - i * 5, fps: 30, config: { damping: 13, stiffness: 95, mass: 1 } });
+  // Мягкая, «спокойная» пружина: никуда не торопится.
+  const k = spring({ frame: f - POP - 16 - i * 7, fps: 30, config: { damping: 15, stiffness: 70, mass: 1.1 } });
   const lerp = (a: number, b: number) => a + (b - a) * k;
   const card = p.ongoing ? s.tertiaryContainer : s.primaryContainer;
-  if (k > 0.98) return <ProjectCard pr={p} s={s} top={top} height={toRect.h} grow={1} lang={lang} />;
-  const reveal = interpolate(k, [0.55, 0.98], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  if (k > 0.985) return <ProjectCard pr={p} s={s} top={top} height={toRect.h} grow={1} lang={lang} />;
+  const w = lerp(pc.w * fl.k, toRect.w);
+  const h = lerp(pc.h * fl.k, toRect.h);
+  const reveal = interpolate(k, [0.6, 0.985], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <>
       <div
         style={{
           position: "absolute",
-          left: lerp(fromRect.x, toRect.x),
-          top: lerp(fromRect.y, toRect.y),
-          width: lerp(fromRect.w, toRect.w),
-          height: lerp(fromRect.h, toRect.h),
+          left: lerp(fl.x - w / 2, toRect.x),
+          top: lerp(fl.y - h / 2, toRect.y),
+          width: w,
+          height: h,
           borderRadius: lerp(6, 20 * DP),
           background: mixHex(p.tint, card, Math.min(1, k * 1.3)),
-          transform: `rotate(${Math.sin(k * Math.PI) * (i % 2 ? 4 : -4)}deg)`,
+          transform: `rotate(${fl.rot * (1 - k)}deg)`,
           opacity: 1 - reveal,
           ...flex(500),
-          color: "#fff",
+          color: mixHex("#FFFFFF", p.ongoing ? s.onTertiaryContainer : s.onPrimaryContainer, k),
           fontSize: lerp(22, 24 * DP),
           whiteSpace: "nowrap",
           overflow: "hidden",
           paddingLeft: lerp(8, 16 * DP),
           paddingTop: lerp(4, 8 * DP),
           boxSizing: "border-box",
+          boxShadow: `0 ${20 * (1 - k)}px ${50 * (1 - k)}px rgba(0,0,0,0.3)`,
         }}
       >
         {p.title}
