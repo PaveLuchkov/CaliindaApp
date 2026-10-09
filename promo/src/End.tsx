@@ -15,8 +15,9 @@ export const End = ({ s, tagline }: { s: Scheme; tagline: string }) => {
   const glyph = useSpring(14, { damping: 14, stiffness: 140, mass: 0.8 });
   const name = useSpring(16, { damping: 14, stiffness: 130, mass: 0.8 });
   const tag = useSpring(24, { damping: 15, stiffness: 140, mass: 0.8 });
+  // zIndex: текущая карточка поднята над соседями своим zIndex — без него она «пробивала» финал.
   return (
-    <AbsoluteFill style={{ background: s.background, alignItems: "center", justifyContent: "center", opacity: interpolate(bg, [0, 0.4], [0, 1], { extrapolateRight: "clamp" }) }}>
+    <AbsoluteFill style={{ zIndex: 100, background: s.background, alignItems: "center", justifyContent: "center", opacity: interpolate(bg, [0, 0.4], [0, 1], { extrapolateRight: "clamp" }) }}>
       <MorphShape
         names={["cookie12", "flower", "sunny", "clover4"]}
         t={f / 30}
