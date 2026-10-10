@@ -1,9 +1,10 @@
-import { Composition } from "remotion";
+import { Composition, Still } from "remotion";
 import { Promo, PROMO_FRAMES } from "./Promo";
 import { SWIPE_FRAMES, Swipe } from "./Swipe";
 import { CHIPS_FRAMES, Chips } from "./Chips";
 import { LONG_FRAMES, LongEvents } from "./Long";
 import { COLORS_FRAMES, Colors } from "./Colors";
+import { SHOTS, StoreShot } from "./Store";
 
 export const Root = () => (
   <>
@@ -53,5 +54,11 @@ export const Root = () => (
     <Composition id="LongRu" component={LongEvents} durationInFrames={LONG_FRAMES} fps={30} width={1080} height={1920} defaultProps={{ lang: "ru" as const }} />
     <Composition id="Colors" component={Colors} durationInFrames={COLORS_FRAMES} fps={30} width={1080} height={1920} defaultProps={{ lang: "en" as const }} />
     <Composition id="ColorsRu" component={Colors} durationInFrames={COLORS_FRAMES} fps={30} width={1080} height={1920} defaultProps={{ lang: "ru" as const }} />
+    {/* Скриншоты для Google Play: Store-<кадр>-<язык>. */}
+    {Object.keys(SHOTS).flatMap((shot) =>
+      (["en", "ru"] as const).map((lang) => (
+        <Still key={shot + lang} id={`Store-${shot}-${lang}`} component={StoreShot} width={1080} height={1920} defaultProps={{ shot, lang }} />
+      )),
+    )}
   </>
 );
