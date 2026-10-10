@@ -2,6 +2,8 @@ import {
   Hct,
   MaterialDynamicColors as M,
   SchemeTonalSpot,
+  SchemeVibrant,
+  SchemeContent,
   hexFromArgb,
 } from "@material/material-color-utilities";
 
@@ -50,8 +52,10 @@ const ROLES = {
   onTertiaryContainer: M.onTertiaryContainer,
 };
 
-export const scheme = (seed: number, dark: boolean): Scheme => {
-  const s = new SchemeTonalSpot(Hct.fromInt(seed), dark, 0);
+export const scheme = (seed: number, dark: boolean, style: "tonal" | "vibrant" | "content" = "tonal"): Scheme => {
+  // Vibrant — стиль обоев «Яркий»: насыщеннее. Content держит цвет как есть: контейнер = сам цвет.
+  const S = style === "vibrant" ? SchemeVibrant : style === "content" ? SchemeContent : SchemeTonalSpot;
+  const s = new S(Hct.fromInt(seed), dark, 0);
   const out: Record<string, string | boolean> = { dark };
   for (const [k, role] of Object.entries(ROLES)) out[k] = hexFromArgb(role.getArgb(s));
   return out as unknown as Scheme;
@@ -67,6 +71,15 @@ export const SCHEMES: Scheme[] = [
   scheme(0xff8e4a8f, true), // ягода, тёмная
   scheme(0xff5b6aae, false), // обратно к лаванде
 ];
+
+/** Тёплая светлая: оранжевые обои, стиль «Яркий» — персик, янтарь, тёплый белый. */
+export const WARM = scheme(0xffe8792b, false, "vibrant");
+
+/** Сочная светлая: тёплый подсолнечный жёлтый как есть — сочно, но не кислотно. */
+export const JUICY = scheme(0xffffc94d, false, "content");
+
+/** Сочная абрикосовая: карточки #FFA94D, текущее — оливково-лаймовое. */
+export const APRICOT = scheme(0xffffa94d, false, "content");
 
 const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
 

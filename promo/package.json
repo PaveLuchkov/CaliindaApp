@@ -4,7 +4,8 @@
   "scripts": {
     "studio": "remotion studio",
     "render": "remotion render Promo out/caliinda-promo.mp4",
-    "still": "remotion still Promo"
+    "still": "remotion still Promo",
+    "render:variants": "for v in Swipe Chips Long Colors; do remotion render $v out/variants/caliinda-$(echo $v | tr A-Z a-z)-en.mp4 && remotion render ${v}Ru out/variants/caliinda-$(echo $v | tr A-Z a-z)-ru.mp4 || exit 1; done"
   },
   "dependencies": {
     "@material/material-color-utilities": "^0.3.0",
