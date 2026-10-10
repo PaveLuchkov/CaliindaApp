@@ -4,7 +4,7 @@ import { SWIPE_FRAMES, Swipe } from "./Swipe";
 import { CHIPS_FRAMES, Chips } from "./Chips";
 import { LONG_FRAMES, LongEvents } from "./Long";
 import { COLORS_FRAMES, Colors } from "./Colors";
-import { SHOTS, StoreShot } from "./Store";
+import { FeatureGraphic, SHOTS, StoreShot } from "./Store";
 
 export const Root = () => (
   <>
@@ -60,5 +60,7 @@ export const Root = () => (
         <Still key={shot + lang} id={`Store-${shot}-${lang}`} component={StoreShot} width={1080} height={1920} defaultProps={{ shot, lang }} />
       )),
     )}
+    <Still id="Store-feature-en" component={FeatureGraphic} width={1024} height={500} defaultProps={{ lang: "en" as const }} />
+    <Still id="Store-feature-ru" component={FeatureGraphic} width={1024} height={500} defaultProps={{ lang: "ru" as const }} />
   </>
 );

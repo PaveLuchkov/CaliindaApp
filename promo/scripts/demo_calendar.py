@@ -48,8 +48,20 @@ T = {
 }
 
 
+def week_events(ev, today, tz, t):
+    load = [3, 1, 4, 2, 5, 2, 3]  # сколько событий по дням недели
+    titles = [t["walk"], t["call"], t["lunch"], t["gym"], t["dinner"]]
+    for back in range(1, 7):
+        d = today - dt.timedelta(days=back)
+        base = dt.datetime.combine(d, dt.time(9), tz)
+        for i in range(load[d.weekday()]):
+            ev(titles[i], base + dt.timedelta(hours=2 * i), 60)
+
+
 def main():
     lang = sys.argv[1]
+    if lang.startswith("week-"):  # только неделя — не трогая остальное (виджеты держат id событий)
+        return week_only(T[lang[5:]])
     clear()
     if lang == "clear":
         return
@@ -100,7 +112,21 @@ def main():
     ev(t["walk"], tm.replace(hour=11), 90)
     ev(t["call"], tm.replace(hour=14), 30)
     ev(t["party"], tm.replace(hour=19), 180)
+    # Прошедшие дни недели — разная загрузка, чтобы виджет «Неделя» не был пустым.
+    week_events(ev, today, now.tzinfo, t)
     print("calendar", cal_id, "now", n.strftime("%H:%M"))
+
+
+def week_only(t):
+    cal_id = sh(f"content query --uri content://com.android.calendar/calendars --projection _id "
+                f"--where \"account_name='{ACC}'\"").split("_id=")[1].split()[0]
+    now = dt.datetime.now().astimezone()
+
+    def ev(title, start, minutes):
+        insert("content://com.android.calendar/events", calendar_id=int(cal_id), title=title,
+               dtstart=int(start.timestamp() * 1000),
+               dtend=int((start + dt.timedelta(minutes=minutes)).timestamp() * 1000), eventTimezone=TZ)
+    week_events(ev, now.date(), now.tzinfo, t)
 
 
 main()
