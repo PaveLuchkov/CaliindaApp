@@ -6,6 +6,10 @@
 Промо-видео: `promo/out/caliinda-promo-wide-en.mp4` → загрузить на YouTube, ссылку — в поле
 «Видео». Исходники ролика — `promo/` (`npm run render`).
 
+Скриншоты и обложка: `promo/out/store/{en,ru}/` (`node scripts/store.mjs out/store` из `promo/`).
+Порядок в Play: day → chips → long → widgets → colors → private; обложка — `feature`. Для de/es/fr/hi
+Play покажет английские, пока нет своих.
+
 ---
 
 ## English (en-US) — основной язык
