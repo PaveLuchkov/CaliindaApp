@@ -4,6 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek.FRIDAY
+import java.time.DayOfWeek.MONDAY
+import java.time.DayOfWeek.SATURDAY
+import java.time.DayOfWeek.SUNDAY
+import java.time.DayOfWeek.WEDNESDAY
 import java.time.LocalTime
 
 class SuggestionChipsTest {
@@ -29,16 +34,56 @@ class SuggestionChipsTest {
         window = HourWindow(t(13), t(15)))
     val clicks = mapOf("gym" to 50, "lunch" to 3)
 
-    assertEquals(listOf(mine, lunch, gym), orderChips(listOf(gym, lunch, mine), clicks, t(14)))
+    assertEquals(listOf(mine, lunch, gym), orderChips(listOf(gym, lunch, mine), clicks, MONDAY, t(14)))
     // Вне часов — просто по нажатиям.
-    assertEquals(listOf(gym, lunch, mine), orderChips(listOf(lunch, mine, gym), clicks, t(9)))
+    assertEquals(listOf(gym, lunch, mine), orderChips(listOf(lunch, mine, gym), clicks, MONDAY, t(9)))
   }
 
   @Test
   fun `при равенстве сохраняется порядок списка`() {
     val a = SuggestionChip("a", builtIn = true)
     val b = SuggestionChip("b", builtIn = true)
-    assertEquals(listOf(b, a), orderChips(listOf(b, a), emptyMap(), t(10)))
+    assertEquals(listOf(b, a), orderChips(listOf(b, a), emptyMap(), MONDAY, t(10)))
+  }
+
+  @Test
+  fun `в будни вперёд работа, в воскресенье она уходит в конец`() {
+    val work = SuggestionChip("work", builtIn = true, days = BuiltInChips.defaultDays("work"))
+    val cleaning =
+        SuggestionChip("cleaning", builtIn = true, days = BuiltInChips.defaultDays("cleaning"))
+    val coffee = SuggestionChip("coffee", builtIn = true)
+    val clicks = mapOf("work" to 1, "cleaning" to 1, "coffee" to 9)
+    val chips = listOf(coffee, work, cleaning)
+
+    assertEquals(listOf(work, coffee, cleaning), orderChips(chips, clicks, WEDNESDAY, t(10)))
+    assertEquals(listOf(cleaning, coffee, work), orderChips(chips, clicks, SUNDAY, t(10)))
+  }
+
+  @Test
+  fun `уместен, только если совпали и день, и часы`() {
+    val party =
+        SuggestionChip("party", builtIn = true, window = HourWindow(t(19), t(0)),
+            days = setOf(FRIDAY, SATURDAY))
+    assertEquals(ChipFit.MATCH, party.fit(FRIDAY, t(21)))
+    assertEquals(ChipFit.NEUTRAL, party.fit(FRIDAY, t(10)))
+    assertEquals(ChipFit.OFF_DAY, party.fit(MONDAY, t(21)))
+    assertEquals(ChipFit.NEUTRAL, SuggestionChip("coffee", builtIn = true).fit(MONDAY, t(9)))
+  }
+
+  @Test
+  fun `дни подряд склеиваются`() {
+    assertEquals(
+        listOf(listOf(MONDAY), listOf(WEDNESDAY, java.time.DayOfWeek.THURSDAY, FRIDAY)),
+        dayRuns(setOf(FRIDAY, MONDAY, WEDNESDAY, java.time.DayOfWeek.THURSDAY)))
+    assertEquals(listOf(listOf(SATURDAY, SUNDAY)), dayRuns(setOf(SUNDAY, SATURDAY)))
+  }
+
+  @Test
+  fun `список из старой версии получает дни по смыслу`() {
+    val json = """[{"id":"work","builtIn":true},{"id":"custom_1","short":"Йога"}]"""
+    val chips = SuggestionChipsCodec.decode(json)!!
+    assertEquals(BuiltInChips.defaultDays("work"), chips[0].days)
+    assertEquals(ALL_DAYS, chips[1].days)
   }
 
   @Test
@@ -46,7 +91,8 @@ class SuggestionChipsTest {
     val chips =
         listOf(
             SuggestionChip("breakfast", builtIn = true, window = HourWindow(t(5), t(11))),
-            SuggestionChip("custom_1", shortName = "Йога", fullName = "🧘 Йога \"утро\""),
+            SuggestionChip("custom_1", shortName = "Йога", fullName = "🧘 Йога \"утро\"",
+                days = setOf(SATURDAY, SUNDAY)),
             SuggestionChip("work", builtIn = true, shortName = "Офис", fullName = "Офис"))
     assertEquals(chips, SuggestionChipsCodec.decode(SuggestionChipsCodec.encode(chips)))
   }

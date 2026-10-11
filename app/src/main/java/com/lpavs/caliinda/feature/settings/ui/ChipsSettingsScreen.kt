@@ -67,6 +67,10 @@ import com.lpavs.caliinda.core.data.suggestions.SuggestionChip
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.util.fullText
 import com.lpavs.caliinda.core.ui.util.shortText
+import com.lpavs.caliinda.core.ui.util.weekdaysText
+import com.lpavs.caliinda.core.ui.components.WeekdayToggles
+import com.lpavs.caliinda.core.data.suggestions.ALL_DAYS
+import java.time.DayOfWeek
 import com.lpavs.caliinda.feature.settings.vm.ChipsSettingsViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -153,10 +157,7 @@ fun ChipsSettingsScreen(viewModel: ChipsSettingsViewModel, onNavigateBack: () ->
                         ListItemDefaults.segmentedColors(
                             containerColor = colorScheme.surfaceContainer),
                     supportingContent = {
-                      Text(
-                          listOf(chip.fullText(context), hoursText(chip.window))
-                              .joinToString(" · "),
-                          maxLines = 1)
+                      Text(whenText(chip, chip.fullText(context)), maxLines = 1)
                     },
                     trailingContent = {
                       IconButton(
@@ -180,7 +181,7 @@ fun ChipsSettingsScreen(viewModel: ChipsSettingsViewModel, onNavigateBack: () ->
     val existing = chips.firstOrNull { it.id == id }
     ChipEditSheet(
         initial = existing,
-        onSave = { short, full, window ->
+        onSave = { short, full, window, days ->
           if (existing == null) scrollToTop = true
           val base = existing ?: SuggestionChip(id = viewModel.newChipId())
           // Нетронутые названия встроенного чипа не фиксируем — пусть дальше переводятся.
@@ -191,7 +192,8 @@ fun ChipsSettingsScreen(viewModel: ChipsSettingsViewModel, onNavigateBack: () ->
                   shortName = short.takeUnless { base.builtIn && it == defaults.shortText(context) },
                   fullName =
                       fullOrShort.takeUnless { base.builtIn && it == defaults.fullText(context) },
-                  window = window))
+                  window = window,
+                  days = days))
           editingId = null
         },
         onDismiss = { editingId = null })
@@ -200,13 +202,15 @@ fun ChipsSettingsScreen(viewModel: ChipsSettingsViewModel, onNavigateBack: () ->
 
 private const val NEW_CHIP = "__new__"
 
+/** «🍳 Завтрак · Пн–Пт · 7:00–10:00»; без часов и дней — «в любое время». */
 @Composable
-private fun hoursText(window: HourWindow?): String {
-  if (window == null) return stringResource(R.string.chip_any_time)
+private fun whenText(chip: SuggestionChip, fullText: String): String {
   val formatter = remember {
     DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
   }
-  return "${window.from.format(formatter)}–${window.to.format(formatter)}"
+  val hours = chip.window?.let { "${it.from.format(formatter)}–${it.to.format(formatter)}" }
+  val anyTime = stringResource(R.string.chip_any_time).takeIf { !chip.hasContext }
+  return listOfNotNull(fullText, weekdaysText(chip.days), hours, anyTime).joinToString(" · ")
 }
 
 /** Шторка правки: подпись, полное название и рекомендуемые часы. */
@@ -214,7 +218,7 @@ private fun hoursText(window: HourWindow?): String {
 @Composable
 private fun ChipEditSheet(
     initial: SuggestionChip?,
-    onSave: (short: String, full: String, window: HourWindow?) -> Unit,
+    onSave: (short: String, full: String, window: HourWindow?, days: Set<DayOfWeek>) -> Unit,
     onDismiss: () -> Unit,
 ) {
   val context = LocalContext.current
@@ -224,6 +228,7 @@ private fun ChipEditSheet(
   var from by remember { mutableStateOf(initial?.window?.from ?: LocalTime.of(13, 0)) }
   var to by remember { mutableStateOf(initial?.window?.to ?: LocalTime.of(15, 0)) }
   var picking by remember { mutableStateOf<Boolean?>(null) } // true — «с», false — «до»
+  var days by rememberSaveable { mutableStateOf(initial?.days ?: ALL_DAYS) }
 
   ModalBottomSheet(
       onDismissRequest = onDismiss,
@@ -276,9 +281,19 @@ private fun ChipEditSheet(
                 }
               }
 
+              Column {
+                Text(stringResource(R.string.chip_days), style = typography.titleMedium)
+                Text(
+                    stringResource(R.string.chip_days_summary),
+                    style = typography.bodyMedium,
+                    color = colorScheme.onSurfaceVariant)
+              }
+              WeekdayToggles(selected = days, onChange = { days = it })
+
               Button(
                   onClick = {
-                    onSave(short.trim(), full.trim(), if (hasHours) HourWindow(from, to) else null)
+                    onSave(
+                        short.trim(), full.trim(), if (hasHours) HourWindow(from, to) else null, days)
                   },
                   enabled = short.isNotBlank(),
                   modifier =

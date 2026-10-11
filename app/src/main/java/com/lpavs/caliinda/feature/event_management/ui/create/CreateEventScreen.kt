@@ -94,9 +94,10 @@ fun CreateEventScreen(
   }
 
   // Обновление контекста для чипсов-подсказок
-  LaunchedEffect(eventDateTimeState.startTime, eventDateTimeState.isAllDay) {
+  LaunchedEffect(
+      eventDateTimeState.startDate, eventDateTimeState.startTime, eventDateTimeState.isAllDay) {
     suggestionsViewModel.updateSortContext(
-        eventDateTimeState.startTime, eventDateTimeState.isAllDay)
+        eventDateTimeState.startDate, eventDateTimeState.startTime, eventDateTimeState.isAllDay)
   }
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 

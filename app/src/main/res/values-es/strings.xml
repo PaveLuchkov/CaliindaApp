@@ -419,4 +419,6 @@
     <string name="calendars_filter_count">%1$d de %2$d</string>
     <string name="calendars_filter_hint">Los calendarios ocultos solo desaparecen de Caliinda y sus widgets. Google Calendar los sigue mostrando.</string>
     <string name="event_calendar">Calendario</string>
+    <string name="chip_days">Días</string>
+    <string name="chip_days_summary">Estos días el chip va primero; los demás pasa al final</string>
 </resources>

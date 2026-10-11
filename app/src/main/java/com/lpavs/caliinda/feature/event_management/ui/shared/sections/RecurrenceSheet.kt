@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import com.lpavs.caliinda.core.ui.components.WeekdayToggles
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -39,8 +39,6 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -62,7 +60,6 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.time.format.TextStyle
 import java.util.Locale
 
 /** Частоты, которые предлагает шторка, по порядку кнопок. */
@@ -206,33 +203,12 @@ private fun IntervalSection(state: EventDateTimeState, onStateChange: (EventDate
       })
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun WeekdaysRow(state: EventDateTimeState, onStateChange: (EventDateTimeState) -> Unit) {
   // Без явных дней RRULE повторяется в день начала — его и показываем выбранным.
-  val selected = state.selectedWeekdays.ifEmpty { setOf(state.startDate.dayOfWeek) }
-  Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        DayOfWeek.entries.forEach { day ->
-          val checked = day in selected
-          ToggleButton(
-              checked = checked,
-              onCheckedChange = {
-                // Последний день не снимаем: неделя без дней — бессмыслица.
-                val next = if (checked) selected - day else selected + day
-                if (next.isNotEmpty()) onStateChange(state.copy(selectedWeekdays = next))
-              },
-              shapes = ToggleButtonDefaults.shapes(),
-              contentPadding = ButtonDefaults.ExtraSmallContentPadding,
-              modifier = Modifier.weight(1f).aspectRatio(1f)) {
-                Text(
-                    day.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
-                    style = typography.labelMedium,
-                    maxLines = 1)
-              }
-        }
-      }
+  WeekdayToggles(
+      selected = state.selectedWeekdays.ifEmpty { setOf(state.startDate.dayOfWeek) },
+      onChange = { onStateChange(state.copy(selectedWeekdays = it)) })
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

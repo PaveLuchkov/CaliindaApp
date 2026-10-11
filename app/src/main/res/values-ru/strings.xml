@@ -436,4 +436,6 @@
     <string name="calendars_filter_count">%1$d из %2$d</string>
     <string name="calendars_filter_hint">Скрытые календари пропадают только из Caliinda и её виджетов. В Google Календаре они останутся.</string>
     <string name="event_calendar">Календарь</string>
+    <string name="chip_days">Дни</string>
+    <string name="chip_days_summary">В эти дни чип стоит первым, в остальные — уходит в конец</string>
 </resources>

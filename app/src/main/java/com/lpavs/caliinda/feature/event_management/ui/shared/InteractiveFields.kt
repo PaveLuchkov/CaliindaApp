@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -87,8 +88,16 @@ fun ChipsRow(
           SuggestionChip(
               onClick = { onChipClick(chip) },
               label = { Text(chip.name) },
-              modifier = Modifier.height(35.dp),
-              enabled = enabled)
+              modifier = Modifier.height(35.dp).animateItem(),
+              enabled = enabled,
+              // Уместный сейчас — тональная заливка без рамки: заметно, но не кричит.
+              colors =
+                  if (chip.highlighted)
+                      SuggestionChipDefaults.suggestionChipColors(
+                          containerColor = colorScheme.secondaryContainer,
+                          labelColor = colorScheme.onSecondaryContainer)
+                  else SuggestionChipDefaults.suggestionChipColors(),
+              border = if (chip.highlighted) null else SuggestionChipDefaults.suggestionChipBorder(enabled))
         }
       }
 }
