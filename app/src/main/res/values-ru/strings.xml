@@ -403,4 +403,32 @@
         <item quantity="many">За %d дней</item>
         <item quantity="other">За %d дня</item>
     </plurals>
+
+    <!-- Весёлые снекбары (FunMessages) -->
+    <string name="event_created_dropped">Новое событие уже в календаре! 📅</string>
+    <string name="event_created_baked">Свежее событие только из печи! 🍞</string>
+    <string name="event_created_nailed">Событие создано. Красиво! 💪</string>
+    <string name="event_created_with_name_live">«%1$s» уже в эфире! 🔥</string>
+    <string name="event_created_with_name_entered_chat">«%1$s» присоединяется к чату 💬</string>
+    <string name="event_created_with_name_deployed">«%1$s» — теперь в календаре! 🚀</string>
+    <string name="event_updated_glow_up">Событие похорошело! ✨</string>
+    <string name="event_updated_leveled">Событие прокачано! ⬆️</string>
+    <string name="event_updated_live">Событие 2.0 уже здесь! 🔥</string>
+    <string name="event_updated_with_name_glow_up">«%1$s»: новый образ готов! ✨</string>
+    <string name="event_updated_with_name_leveled">«%1$s»: уровень повышен! ⬆️</string>
+    <string name="event_updated_with_name_makeover">«%1$s»: преображение завершено 💅</string>
+    <string name="event_deleted_shadow_realm">Событие отправилось в теневое измерение 👻</string>
+    <string name="event_deleted_left_chat">Событие покинуло чат 💬</string>
+    <string name="event_deleted_vanished">Событие растворилось в воздухе 💨</string>
+    <string name="event_deleted_with_name_shadow_realm">«%1$s» отправляется в теневое измерение 👻</string>
+    <string name="event_deleted_with_name_left_chat">«%1$s» покидает чат 💬</string>
+    <string name="event_deleted_with_name_vanished">«%1$s» растворяется в воздухе 💨</string>
+    <string name="series_deleted_dynasty">Династия событий пала! 👑💥</string>
+    <string name="series_deleted_family_tree">Семейное древо событий срублено 🌳✂️</string>
+    <string name="error_create_rejected">Календарь отверг ваше событие 📅❌</string>
+    <string name="error_create_cook_failed">Событие не испеклось 🍳💔</string>
+    <string name="error_update_makeover_wrong">Преображение пошло не по плану 💔</string>
+    <string name="error_update_refused">Событие отказалось обновляться 📱❌</string>
+    <string name="error_delete_immortal">Похоже, событие бессмертно 👻</string>
+    <string name="error_delete_blocked">Удаление заблокировано 🚫</string>
 </resources>

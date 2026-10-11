@@ -372,4 +372,32 @@
         <item quantity="one">%d दिन पहले</item>
         <item quantity="other">%d दिन पहले</item>
     </plurals>
+
+    <!-- Весёлые снекбары (FunMessages) -->
+    <string name="event_created_dropped">नया इवेंट आ गया! 📅</string>
+    <string name="event_created_baked">ताज़ा इवेंट तैयार है! 🍞</string>
+    <string name="event_created_nailed">इवेंट बन गया — एकदम परफ़ेक्ट! 💪</string>
+    <string name="event_created_with_name_live">\"%1$s\" अब लाइव है! 🔥</string>
+    <string name="event_created_with_name_entered_chat">\"%1$s\" चैट में आ गया 💬</string>
+    <string name="event_created_with_name_deployed">\"%1$s\" कैलेंडर में पहुँच गया! 🚀</string>
+    <string name="event_updated_glow_up">इवेंट को नया लुक मिला! ✨</string>
+    <string name="event_updated_leveled">इवेंट लेवल अप! ⬆️</string>
+    <string name="event_updated_live">इवेंट 2.0 लाइव है! 🔥</string>
+    <string name="event_updated_with_name_glow_up">\"%1$s\" को नया लुक मिला! ✨</string>
+    <string name="event_updated_with_name_leveled">\"%1$s\" लेवल अप! ⬆️</string>
+    <string name="event_updated_with_name_makeover">\"%1$s\" का मेकओवर पूरा! 💅</string>
+    <string name="event_deleted_shadow_realm">इवेंट परछाइयों की दुनिया में भेज दिया गया 👻</string>
+    <string name="event_deleted_left_chat">इवेंट ने चैट छोड़ दी 💬</string>
+    <string name="event_deleted_vanished">इवेंट हवा में गायब हो गया 💨</string>
+    <string name="event_deleted_with_name_shadow_realm">\"%1$s\" परछाइयों की दुनिया में भेज दिया गया 👻</string>
+    <string name="event_deleted_with_name_left_chat">\"%1$s\" ने चैट छोड़ दी 💬</string>
+    <string name="event_deleted_with_name_vanished">\"%1$s\" हवा में गायब हो गया 💨</string>
+    <string name="series_deleted_dynasty">इवेंट्स का साम्राज्य ढह गया! 👑💥</string>
+    <string name="series_deleted_family_tree">इवेंट्स का पूरा खानदान साफ़ 🌳✂️</string>
+    <string name="error_create_rejected">कैलेंडर ने आपका इवेंट ठुकरा दिया 📅❌</string>
+    <string name="error_create_cook_failed">इवेंट पक नहीं पाया 🍳💔</string>
+    <string name="error_update_makeover_wrong">मेकओवर बिगड़ गया 💔</string>
+    <string name="error_update_refused">इवेंट ने अपडेट से मना कर दिया 📱❌</string>
+    <string name="error_delete_immortal">लगता है इवेंट अमर है 👻</string>
+    <string name="error_delete_blocked">डिलीट रोक दिया गया 🚫</string>
 </resources>
