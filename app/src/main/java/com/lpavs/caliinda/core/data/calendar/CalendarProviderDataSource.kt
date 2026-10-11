@@ -202,10 +202,15 @@ constructor(@ApplicationContext context: Context) {
   fun deleteEvent(eventId: Long): Int =
       resolver.delete(ContentUris.withAppendedId(Events.CONTENT_URI, eventId), null, null)
 
-  fun queryWritableCalendars(): List<DeviceCalendar> {
-    val selection =
-        "${Calendars.CALENDAR_ACCESS_LEVEL} >= ${Calendars.CAL_ACCESS_CONTRIBUTOR} AND " +
-            "${Calendars.VISIBLE} = 1"
+  fun queryWritableCalendars(): List<DeviceCalendar> =
+      queryCalendars(
+          "${Calendars.CALENDAR_ACCESS_LEVEL} >= ${Calendars.CAL_ACCESS_CONTRIBUTOR} AND " +
+              "${Calendars.VISIBLE} = 1")
+
+  /** Все видимые календари, включая только для чтения (праздники, дни рождения), — для фильтра. */
+  fun queryVisibleCalendars(): List<DeviceCalendar> = queryCalendars("${Calendars.VISIBLE} = 1")
+
+  private fun queryCalendars(selection: String): List<DeviceCalendar> {
     return resolver
         .query(Calendars.CONTENT_URI, CALENDAR_PROJECTION, selection, null, null)
         ?.use { c ->

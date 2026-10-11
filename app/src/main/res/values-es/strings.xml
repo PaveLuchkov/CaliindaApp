@@ -414,4 +414,8 @@
     <string name="error_update_refused">El evento rechazó la actualización 📱❌</string>
     <string name="error_delete_immortal">Al parecer, el evento es inmortal 👻</string>
     <string name="error_delete_blocked">Intento de borrado bloqueado 🚫</string>
+    <string name="calendars_filter_title">Mostrar calendarios</string>
+    <string name="calendars_filter_all">Todos los calendarios</string>
+    <string name="calendars_filter_count">%1$d de %2$d</string>
+    <string name="calendars_filter_hint">Los calendarios ocultos solo desaparecen de Caliinda y sus widgets. Google Calendar los sigue mostrando.</string>
 </resources>

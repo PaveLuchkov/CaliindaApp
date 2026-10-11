@@ -401,4 +401,8 @@
     <string name="error_update_refused">Termin verweigert das Update 📱❌</string>
     <string name="error_delete_immortal">Termin ist wohl unsterblich 👻</string>
     <string name="error_delete_blocked">Löschen blockiert 🚫</string>
+    <string name="calendars_filter_title">Kalender anzeigen</string>
+    <string name="calendars_filter_all">Alle Kalender</string>
+    <string name="calendars_filter_count">%1$d von %2$d</string>
+    <string name="calendars_filter_hint">Ausgeblendete Kalender verschwinden nur aus Caliinda und den Widgets. In Google Kalender bleiben sie sichtbar.</string>
 </resources>

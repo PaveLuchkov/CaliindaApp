@@ -10,6 +10,7 @@ import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
 import com.lpavs.caliinda.feature.live.LiveEventNotifier
+import com.lpavs.caliinda.feature.widget.WidgetRefresher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ constructor(
     private val calendarRepository: CalendarRepository,
     private val liveEventNotifier: LiveEventNotifier,
     private val googleCalendar: GoogleCalendarApp,
+    private val widgetRefresher: WidgetRefresher,
 ) : ViewModel() {
 
   val liveNotification: StateFlow<Boolean> =
@@ -109,6 +111,25 @@ constructor(
 
   fun selectDefaultCalendar(calendarId: Long) {
     viewModelScope.launch { settingsRepository.saveDefaultCalendarId(calendarId) }
+  }
+
+  /** Все видимые календари — и те, куда писать нельзя (праздники, дни рождения). */
+  val visibleCalendars: StateFlow<List<DeviceCalendar>> =
+      calendarRepository
+          .getVisibleCalendars()
+          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val hiddenCalendarIds: StateFlow<Set<Long>> =
+      settingsRepository.hiddenCalendarIdsFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+  fun setCalendarShown(calendarId: Long, shown: Boolean) {
+    viewModelScope.launch {
+      settingsRepository.setCalendarHidden(calendarId, hidden = !shown)
+      // Виджеты и live-уведомление не подписаны на настройки — будим их сами.
+      widgetRefresher.refresh()
+      liveEventNotifier.refresh()
+    }
   }
 
   companion object {

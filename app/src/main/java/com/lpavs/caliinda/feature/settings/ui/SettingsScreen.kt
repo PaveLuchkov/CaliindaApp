@@ -20,6 +20,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -47,11 +49,13 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
@@ -132,6 +136,9 @@ fun SettingsScreen(
   val currentZone = if (usesSystemZone) systemZone else savedZone
   var showZonePicker by rememberSaveable { mutableStateOf(false) }
   var calendarsExpanded by rememberSaveable { mutableStateOf(false) }
+  val visibleCalendars by settingsViewModel.visibleCalendars.collectAsStateWithLifecycle()
+  val hiddenCalendarIds by settingsViewModel.hiddenCalendarIds.collectAsStateWithLifecycle()
+  var showCalendarFilter by rememberSaveable { mutableStateOf(false) }
   val context = LocalContext.current
   val defaultReminder by settingsViewModel.defaultReminder.collectAsStateWithLifecycle()
   val defaultAllDayReminder by settingsViewModel.defaultAllDayReminder.collectAsStateWithLifecycle()
@@ -283,6 +290,32 @@ fun SettingsScreen(
                               else stringResource(R.string.calendars_show_all, calendars.size))
                         }
                   }
+                }
+              }
+
+              if (visibleCalendars.isNotEmpty()) {
+                item(key = "calendars_filter") {
+                  // Отдельной группой: это про показ, а не про то, куда сохранять.
+                  val shownCount = visibleCalendars.count { it.id !in hiddenCalendarIds }
+                  SegmentedListItem(
+                      onClick = { showCalendarFilter = true },
+                      shapes = settingsShapes(index = 0, count = 1),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.Visibility, contentDescription = null) },
+                      trailingContent = {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
+                      },
+                      supportingContent = {
+                        Text(
+                            if (shownCount == visibleCalendars.size)
+                                stringResource(R.string.calendars_filter_all)
+                            else
+                                stringResource(
+                                    R.string.calendars_filter_count, shownCount, visibleCalendars.size))
+                      },
+                      modifier = Modifier.padding(top = 8.dp).animateItem()) {
+                        Text(stringResource(R.string.calendars_filter_title))
+                      }
                 }
               }
 
@@ -450,6 +483,14 @@ fun SettingsScreen(
             }
       }
 
+  if (showCalendarFilter) {
+    CalendarFilterSheet(
+        calendars = visibleCalendars,
+        hiddenIds = hiddenCalendarIds,
+        onToggle = settingsViewModel::setCalendarShown,
+        onDismiss = { showCalendarFilter = false })
+  }
+
   if (showZonePicker) {
     TimeZonePickerSheet(
         current = currentZone,
@@ -515,6 +556,50 @@ private fun CalendarRow(
       supportingContent = { Text(calendar.accountName, maxLines = 1) }) {
         Text(calendar.displayName, maxLines = 1)
       }
+}
+
+/** Какие календари показывать в Caliinda: экраны, виджеты, live-уведомление. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarFilterSheet(
+    calendars: List<DeviceCalendar>,
+    hiddenIds: Set<Long>,
+    onToggle: (calendarId: Long, shown: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+  ModalBottomSheet(onDismissRequest = onDismiss) {
+    Text(
+        text = stringResource(R.string.calendars_filter_title),
+        style = typography.titleLarge,
+        modifier = Modifier.padding(horizontal = 24.dp))
+    Text(
+        text = stringResource(R.string.calendars_filter_hint),
+        style = typography.bodyMedium,
+        color = colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 8.dp))
+    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+      // Сначала по аккаунту: календари одного аккаунта стоят рядом.
+      val sorted = calendars.sortedWith(compareBy({ it.accountName }, { it.displayName }))
+      itemsIndexed(sorted, key = { _, it -> it.id }) { _, calendar ->
+        val shown = calendar.id !in hiddenIds
+        ListItem(
+            headlineContent = { Text(calendar.displayName, maxLines = 1) },
+            supportingContent = { Text(calendar.accountName, maxLines = 1) },
+            // Цвет календаря — только точкой (DESIGN.md).
+            leadingContent = {
+              Box(Modifier.size(16.dp).clip(CircleShape).background(Color(calendar.color)))
+            },
+            trailingContent = { Checkbox(checked = shown, onCheckedChange = null) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier =
+                Modifier.toggleable(
+                    value = shown,
+                    role = Role.Checkbox,
+                    onValueChange = { onToggle(calendar.id, it) }))
+      }
+      item { Spacer(Modifier.height(16.dp)) }
+    }
+  }
 }
 
 /** «Europe/Moscow · GMT+03:00» — у пояса сразу виден сдвиг. */
