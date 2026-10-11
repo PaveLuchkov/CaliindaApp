@@ -16,6 +16,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.R
+import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
 import com.lpavs.caliinda.core.data.calendar.model.EventDeleteMode
 import com.lpavs.caliinda.core.data.calendar.model.EventDraft
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
@@ -81,6 +82,18 @@ constructor(
               ReminderDefaults(
                   SettingsRepository.DEFAULT_REMINDER, SettingsRepository.DEFAULT_ALL_DAY_REMINDER))
 
+  /** Куда можно сохранить новое событие — только показанные фильтром календари. */
+  val writableCalendars: StateFlow<List<DeviceCalendar>> =
+      calendarRepository
+          .getWritableCalendars()
+          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  /** Календарь по умолчанию — с него форма создания начинает. */
+  val defaultCalendarId: StateFlow<Long?> =
+      calendarRepository
+          .getDefaultCalendarId()
+          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
   // --- Создание ---
 
   fun createEvent(
@@ -89,6 +102,7 @@ constructor(
       location: String,
       dateTimeState: EventDateTimeState,
       reminder: ReminderChoice = ReminderChoice.Default,
+      calendarId: Long? = null,
   ) {
     viewModelScope.launch {
       if (!validateInput(summary, dateTimeState)) {
@@ -105,8 +119,8 @@ constructor(
           buildDraft(
                   summary, description, location, dateTimeState, dateTimeState.toRrule(zone)?.format())
               .copy(
-                  reminders =
-                      listOfNotNull(reminder.minutes(defaults, dateTimeState.isAllDay)))
+                  reminders = listOfNotNull(reminder.minutes(defaults, dateTimeState.isAllDay)),
+                  calendarId = calendarId)
       runOperation(
           operation = { calendarRepository.createEvent(draft) },
           successMessage = { funMessages.getEventCreatedMessage(draft.summary) },
