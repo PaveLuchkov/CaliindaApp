@@ -27,14 +27,18 @@ node scripts/stills.mjs LongRu /tmp/stills 120 186 320   # отдельные к
 мысль на кадр. Кадры `Store-<кадр>-<язык>` (1080×1920) и обложка `Store-feature-<язык>` (1024×500).
 
 ```bash
-node scripts/store.mjs out/store          # все кадры → out/store/{en,ru}/
+node scripts/store.mjs out/store          # все кадры → out/store/{en,ru,de,es,fr,hi}/
 ```
 
 Экраны лежат в `public/store/<язык>_<экран>.png` (1080×2400). Снимались на отдельном чистом
 эмуляторе (Android 16, без аккаунта, иначе в кадр попадёт личный календарь):
 
-- данные — `python3 scripts/demo_calendar.py en|ru|clear`: локальный календарь, события вокруг
-  «сейчас», поездка «день 3 из 7», отпуск через 12 дней;
+- данные — `python3 scripts/demo_calendar.py <язык>|clear`: локальный календарь, события вокруг
+  «сейчас» (время берётся с эмулятора), поездка «день 3 из 7», отпуск через 12 дней;
+- часы — `settings put global auto_time 0` и `cmd alarm set-time <мс>` на ~15:15, иначе утром
+  события уезжают в ночь; 24-часовой формат — `settings put system time_12_24 24` (для hi — 12);
+- виджет обратного отсчёта держит id события: после перезаливки данных тапнуть по нему и снова
+  выбрать «🌴»;
 - цвет обоев без обоев: `settings put secure theme_customization_overlay_packages` с
   `system_palette` (#FFC94D, стиль CONTENT — как `JUICY`), тёмная — `cmd uimode night yes`;
   активность пересоздаётся сама, перезапускать приложение не нужно (холодный старт долгий);
