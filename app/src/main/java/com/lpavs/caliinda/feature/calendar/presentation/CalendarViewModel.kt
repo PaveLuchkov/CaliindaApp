@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.data.di.ICalendarStateHolder
 import com.lpavs.caliinda.core.data.di.ITimeTicker
+import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SettingsRepository
@@ -77,6 +78,15 @@ constructor(
 
   // --- ДЕЛЕГИРОВАННЫЕ И ПРОИЗВОДНЫЕ СОСТОЯНИЯ ДЛЯ UI ---
   val currentTime: StateFlow<Instant> = timeTicker.currentTime
+
+  /** Показанные фильтром календари — подробности события называют его календарь. */
+  val shownCalendars: StateFlow<List<DeviceCalendar>> =
+      combine(calendarRepository.getVisibleCalendars(), settingsRepository.hiddenCalendarIdsFlow) {
+              calendars,
+              hidden ->
+            calendars.filter { it.id !in hidden }
+          }
+          .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
   // Eagerly: .value читается вне подписок (детали события), там нужен пояс из настроек.
   val timeZone: StateFlow<ZoneId> =

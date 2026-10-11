@@ -69,6 +69,7 @@ fun CalendarScreen(
   val themeMode by calendarViewModel.themeMode.collectAsStateWithLifecycle()
   val reminderDefaults by eventManagementViewModel.reminderDefaults.collectAsStateWithLifecycle()
   val writableCalendars by eventManagementViewModel.writableCalendars.collectAsStateWithLifecycle()
+  val shownCalendars by calendarViewModel.shownCalendars.collectAsStateWithLifecycle()
   val defaultCalendarId by eventManagementViewModel.defaultCalendarId.collectAsStateWithLifecycle()
 
   val snackbarHostState = remember { SnackbarHostState() }
@@ -278,6 +279,11 @@ fun CalendarScreen(
   calendarState.eventDetails?.let { details ->
     CustomEventDetailsDialog(
         event = details,
+        // Календарь называем, только когда их несколько: при одном это лишняя строка.
+        calendar =
+            shownCalendars
+                .takeIf { it.size > 1 }
+                ?.firstOrNull { it.id == details.originalEvent.calendarId },
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone,
         onEdit = eventManagementViewModel::requestEditEvent,
