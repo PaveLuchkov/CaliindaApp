@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.lpavs.caliinda.core.data.model.ThemeMode
 import java.io.IOException
 import java.time.ZoneId
@@ -31,6 +32,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     val REMINDER_TIMED = intPreferencesKey("reminder_timed")
     val REMINDER_ALL_DAY = intPreferencesKey("reminder_all_day")
     val REMINDER_NOTIFICATIONS = booleanPreferencesKey("reminder_notifications")
+    val HIDDEN_CALENDARS = stringSetPreferencesKey("hidden_calendars")
   }
   val introFlow: Flow<Boolean> =
       dataStore.data
@@ -165,6 +167,25 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
 
   suspend fun saveReminderNotifications(enabled: Boolean) {
     dataStore.edit { prefs -> prefs[PreferencesKeys.REMINDER_NOTIFICATIONS] = enabled }
+  }
+
+  /**
+   * Календари, скрытые только в Caliinda. Системный `VISIBLE` не трогаем: он общий с Google
+   * Календарём, и скрытие здесь не должно менять другое приложение.
+   */
+  val hiddenCalendarIdsFlow: Flow<Set<Long>> =
+      dataStore.data
+          .map { prefs ->
+            prefs[PreferencesKeys.HIDDEN_CALENDARS].orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
+          }
+          .distinctUntilChanged()
+
+  suspend fun setCalendarHidden(calendarId: Long, hidden: Boolean) {
+    dataStore.edit { prefs ->
+      val current = prefs[PreferencesKeys.HIDDEN_CALENDARS].orEmpty()
+      val id = calendarId.toString()
+      prefs[PreferencesKeys.HIDDEN_CALENDARS] = if (hidden) current + id else current - id
+    }
   }
 
   suspend fun saveLiveNotification(enabled: Boolean) {

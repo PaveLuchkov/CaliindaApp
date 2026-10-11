@@ -400,4 +400,8 @@
     <string name="error_update_refused">इवेंट ने अपडेट से मना कर दिया 📱❌</string>
     <string name="error_delete_immortal">लगता है इवेंट अमर है 👻</string>
     <string name="error_delete_blocked">डिलीट रोक दिया गया 🚫</string>
+    <string name="calendars_filter_title">कैलेंडर दिखाएँ</string>
+    <string name="calendars_filter_all">सभी कैलेंडर</string>
+    <string name="calendars_filter_count">%2$d में से %1$d</string>
+    <string name="calendars_filter_hint">छिपाए गए कैलेंडर सिर्फ़ Caliinda और उसके विजेट से हटते हैं। Google Calendar में वे दिखते रहेंगे।</string>
 </resources>

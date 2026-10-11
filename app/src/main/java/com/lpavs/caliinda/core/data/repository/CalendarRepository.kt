@@ -60,9 +60,17 @@ constructor(
           }
           .shareIn(scope, SharingStarted.WhileSubscribed(5000), replay = 1)
 
-  private fun <T> observeCalendar(load: (ZoneId) -> T, empty: T): Flow<T> =
-      combine(dataChanges, settingsRepository.zoneFlow) { granted, zone -> granted to zone }
-          .mapLatest { (granted, zone) -> if (granted) load(zone) else empty }
+  /** Что нужно чтению: пояс из настроек и календари, скрытые в Caliinda. */
+  private class ReadScope(val zone: ZoneId, val hidden: Set<Long>)
+
+  private fun <T> observeCalendar(load: ReadScope.() -> T, empty: T): Flow<T> =
+      combine(
+              dataChanges,
+              settingsRepository.zoneFlow,
+              settingsRepository.hiddenCalendarIdsFlow) { granted, zone, hidden ->
+                if (granted) ReadScope(zone, hidden) else null
+              }
+          .mapLatest { read -> read?.load() ?: empty }
           .catch { e ->
             Log.e(TAG, "Error reading calendar", e)
             emit(empty)
@@ -77,10 +85,10 @@ constructor(
    */
   fun getDayFlow(date: LocalDate): Flow<DayEvents> =
       observeCalendar(
-          load = { zone ->
+          load = {
             val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
             val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            val instances = loadInstances(dayStart, dayEnd, zone)
+            val instances = loadInstances(dayStart, dayEnd)
             DayEvents(
                 events =
                     instances
@@ -108,12 +116,12 @@ constructor(
   /** "Проекты": многодневные события, которые идут в указанную дату. */
   fun getEventsFlowForProjects(date: LocalDate): Flow<List<EventDto>> =
       observeCalendar(
-          load = { zone ->
+          load = {
             // Идущие сейчас и предстоящие: иначе проект, начинающийся завтра, нигде не виден.
             val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
             val windowEnd =
                 date.plusDays(PROJECTS_LOOKAHEAD_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
-            loadInstances(dayStart, windowEnd, zone)
+            loadInstances(dayStart, windowEnd)
                 .filter { inst -> inst.overlaps(dayStart, windowEnd) && inst.isProject() }
                 .map { it.toDto(zone) }
           },
@@ -122,11 +130,11 @@ constructor(
   /** Многодневные события, пересекающие месяц (в том числе уже прошедшие) — страница месяца. */
   fun getMonthProjectsFlow(month: YearMonth): Flow<List<EventDto>> =
       observeCalendar(
-          load = { zone ->
+          load = {
             val first = month.atDay(1)
             val monthStart = first.atStartOfDay(zone).toInstant().toEpochMilli()
             val monthEnd = first.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            loadInstances(monthStart, monthEnd, zone)
+            loadInstances(monthStart, monthEnd)
                 .filter { it.overlaps(monthStart, monthEnd) && it.isProject() }
                 .map { it.toDto(zone) }
           },
@@ -138,10 +146,10 @@ constructor(
    */
   fun getUpcomingFlow(from: LocalDate, days: Long): Flow<List<EventDto>> =
       observeCalendar(
-          load = { zone ->
+          load = {
             val start = from.atStartOfDay(zone).toInstant().toEpochMilli()
             val end = from.plusDays(days).atStartOfDay(zone).toInstant().toEpochMilli()
-            loadInstances(start, end, zone)
+            loadInstances(start, end)
                 .filter { it.overlaps(start, end) }
                 .sortedBy { it.startMillis }
                 .distinctBy { it.row.eventId }
@@ -153,6 +161,16 @@ constructor(
   fun getWritableCalendars(): Flow<List<DeviceCalendar>> =
       dataChanges
           .mapLatest { granted -> if (granted) dataSource.queryWritableCalendars() else emptyList() }
+          .catch { e ->
+            Log.e(TAG, "Error reading calendars", e)
+            emit(emptyList())
+          }
+          .flowOn(ioDispatcher)
+
+  /** Все видимые календари устройства — для фильтра в настройках. */
+  fun getVisibleCalendars(): Flow<List<DeviceCalendar>> =
+      dataChanges
+          .mapLatest { granted -> if (granted) dataSource.queryVisibleCalendars() else emptyList() }
           .catch { e ->
             Log.e(TAG, "Error reading calendars", e)
             emit(emptyList())
@@ -428,22 +446,25 @@ constructor(
       if (row.isAllDay) ChronoUnit.DAYS.between(allDayStart, allDayEndExclusive) > 1
       else endMillis - startMillis >= DAY_MILLIS
 
-  private fun loadInstances(dayStart: Long, dayEnd: Long, zone: ZoneId): List<LocalInstance> =
+  private fun ReadScope.loadInstances(dayStart: Long, dayEnd: Long): List<LocalInstance> =
       // All-day события хранятся в UTC, поэтому расширяем окно на сутки в обе стороны.
-      dataSource.queryInstances(dayStart - DAY_MILLIS, dayEnd + DAY_MILLIS).map { row ->
-        if (row.isAllDay) {
-          val start = utcDate(row.begin)
-          val end = utcDate(row.end).let { if (it.isAfter(start)) it else start.plusDays(1) }
-          LocalInstance(
-              row,
-              start.atStartOfDay(zone).toInstant().toEpochMilli(),
-              end.atStartOfDay(zone).toInstant().toEpochMilli(),
-              start,
-              end)
-        } else {
-          LocalInstance(row, row.begin, maxOf(row.end, row.begin), null, null)
-        }
-      }
+      dataSource
+          .queryInstances(dayStart - DAY_MILLIS, dayEnd + DAY_MILLIS)
+          .filter { it.calendarId !in hidden }
+          .map { row ->
+            if (row.isAllDay) {
+              val start = utcDate(row.begin)
+              val end = utcDate(row.end).let { if (it.isAfter(start)) it else start.plusDays(1) }
+              LocalInstance(
+                  row,
+                  start.atStartOfDay(zone).toInstant().toEpochMilli(),
+                  end.atStartOfDay(zone).toInstant().toEpochMilli(),
+                  start,
+                  end)
+            } else {
+              LocalInstance(row, row.begin, maxOf(row.end, row.begin), null, null)
+            }
+          }
 
   private fun LocalInstance.toDto(zone: ZoneId): EventDto {
     val originalTime =

@@ -415,4 +415,8 @@
         <item quantity="one">%d day before</item>
         <item quantity="other">%d days before</item>
     </plurals>
+    <string name="calendars_filter_title">Show calendars</string>
+    <string name="calendars_filter_all">All calendars</string>
+    <string name="calendars_filter_count">%1$d of %2$d</string>
+    <string name="calendars_filter_hint">Hidden calendars disappear only from Caliinda and its widgets. Google Calendar keeps showing them.</string>
 </resources>
