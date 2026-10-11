@@ -60,6 +60,8 @@ fun EventFormContent(
     modifier: Modifier = Modifier,
     nameFocusRequester: FocusRequester? = null,
     showRecurrence: Boolean = true,
+    /** Строка календаря под деталями — только в форме создания. */
+    calendarField: (@Composable () -> Unit)? = null,
 ) {
     var activePicker by remember { mutableStateOf<ActivePicker>(ActivePicker.None) }
     val context = LocalContext.current
@@ -115,6 +117,10 @@ fun EventFormContent(
                 isAllDay = dateTimeState.isAllDay,
                 onReminderClick = { showReminderPicker = true },
                 enabled = !isLoading)
+            calendarField?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                it()
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

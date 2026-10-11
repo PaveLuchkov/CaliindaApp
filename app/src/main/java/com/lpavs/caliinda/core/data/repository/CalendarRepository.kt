@@ -202,7 +202,7 @@ constructor(
   suspend fun createEvent(draft: EventDraft): Result<Unit> = write {
     val values =
         draft.contentValues().apply {
-          put(Events.CALENDAR_ID, resolveTargetCalendarId())
+          put(Events.CALENDAR_ID, resolveTargetCalendarId(draft.calendarId))
           putTiming(timingOf(draft), draft.recurrenceRule)
         }
     val id = dataSource.insertEvent(values)
@@ -421,10 +421,11 @@ constructor(
         put(Events.ALL_DAY, if (isAllDay) 1 else 0)
       }
 
-  private suspend fun resolveTargetCalendarId(): Long {
-    val calendars =
-        shownCalendars(
-            dataSource.queryWritableCalendars(), settingsRepository.hiddenCalendarIdsFlow.first())
+  private suspend fun resolveTargetCalendarId(chosen: Long?): Long {
+    val writable = dataSource.queryWritableCalendars()
+    // Выбранный в форме — если в него по-прежнему можно писать (аккаунт могли удалить).
+    if (chosen != null && writable.any { it.id == chosen }) return chosen
+    val calendars = shownCalendars(writable, settingsRepository.hiddenCalendarIdsFlow.first())
     val saved = settingsRepository.defaultCalendarIdFlow.first()
     return targetCalendar(calendars, saved)?.id ?: dataSource.createLocalCalendar()
   }

@@ -418,4 +418,5 @@
     <string name="calendars_filter_all">Tous les calendriers</string>
     <string name="calendars_filter_count">%1$d sur %2$d</string>
     <string name="calendars_filter_hint">Les calendriers masqués disparaissent seulement de Caliinda et de ses widgets. Google Agenda continue de les afficher.</string>
+    <string name="event_calendar">Calendrier</string>
 </resources>

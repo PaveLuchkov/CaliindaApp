@@ -22,6 +22,8 @@ data class EventDraft(
      * (правка, где напоминание не меняли); пустой список — без напоминаний.
      */
     val reminders: List<Int>? = null,
+    /** Календарь, выбранный в форме создания; null — календарь по умолчанию. */
+    val calendarId: Long? = null,
 )
 
 enum class EventUpdateMode {

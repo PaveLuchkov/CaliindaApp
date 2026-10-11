@@ -2,9 +2,11 @@ package com.lpavs.caliinda.feature.event_management.ui.create
 
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.repeatOn
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
+import com.lpavs.caliinda.feature.event_management.ui.shared.sections.CalendarField
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderDefaults
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.ReminderChoice
-import com.lpavs.caliinda.feature.event_management.ui.shared.sections.OnSaveEvent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,8 +35,11 @@ import java.time.temporal.ChronoUnit
 fun CreateEventScreen(
     userTimeZone: ZoneId,
     isLoading: Boolean,
-    onSave: OnSaveEvent,
+    onSave: OnCreateEvent,
     reminderDefaults: ReminderDefaults,
+    /** Календари, куда можно сохранить, и календарь по умолчанию из настроек. */
+    calendars: List<DeviceCalendar>,
+    defaultCalendarId: Long?,
     initialDate: LocalDate,
     initialProject: Boolean = false,
     /** «Ещё раз»: заполнить форму как у этого события, сдвинув его на [initialDate]. */
@@ -102,7 +107,15 @@ fun CreateEventScreen(
       reminder = ReminderChoice.Custom(templateReminders.firstOrNull())
     }
   }
-  val save = { onSave(summary, description, location, eventDateTimeState, reminder) }
+  // null — пока не выбрали: следуем календарю по умолчанию, даже если он загрузится позже.
+  var chosenCalendarId by rememberSaveable { mutableStateOf<Long?>(null) }
+  val calendar =
+      calendars.firstOrNull { it.id == chosenCalendarId }
+          ?: calendars.firstOrNull { it.id == defaultCalendarId }
+          ?: calendars.firstOrNull()
+  val save = {
+    onSave(summary, description, location, eventDateTimeState, reminder, calendar?.id)
+  }
   // Сразу клавиатура в названии: типичное событие — это название и время. У копии название уже
   // есть, менять скорее будут день и время — клавиатура закрыла бы их.
   val nameFocusRequester = remember { FocusRequester() }
@@ -132,7 +145,28 @@ fun CreateEventScreen(
         suggestedChips = suggestedChips,
         onSave = save,
         nameFocusRequester = nameFocusRequester,
+        calendarField =
+            calendar?.let { selected ->
+              {
+                CalendarField(
+                    calendars = calendars,
+                    selected = selected,
+                    onSelect = { chosenCalendarId = it },
+                    enabled = !isLoading)
+              }
+            },
         modifier = Modifier.weight(1f, fill = false))
     SaveBar(enabled = summary.isNotBlank(), isLoading = isLoading, onSave = save)
   }
 }
+
+/** Сохранение из формы создания: как [OnSaveEvent], плюс выбранный календарь. */
+typealias OnCreateEvent =
+    (
+        summary: String,
+        description: String,
+        location: String,
+        dateTime: EventDateTimeState,
+        reminder: ReminderChoice,
+        calendarId: Long?,
+    ) -> Unit
