@@ -157,10 +157,14 @@ constructor(
           },
           empty = emptyList())
 
-  /** Календари, в которые можно записывать события. */
+  /** Календари, в которые можно записывать события, — кроме скрытых фильтром. */
   fun getWritableCalendars(): Flow<List<DeviceCalendar>> =
-      dataChanges
-          .mapLatest { granted -> if (granted) dataSource.queryWritableCalendars() else emptyList() }
+      combine(dataChanges, settingsRepository.hiddenCalendarIdsFlow) { granted, hidden ->
+            granted to hidden
+          }
+          .mapLatest { (granted, hidden) ->
+            if (granted) shownCalendars(dataSource.queryWritableCalendars(), hidden) else emptyList()
+          }
           .catch { e ->
             Log.e(TAG, "Error reading calendars", e)
             emit(emptyList())
@@ -181,7 +185,7 @@ constructor(
   fun getDefaultCalendarId(): Flow<Long?> =
       combine(getWritableCalendars(), settingsRepository.defaultCalendarIdFlow) { calendars, saved
         ->
-        (calendars.firstOrNull { it.id == saved } ?: pickDefaultCalendar(calendars))?.id
+        targetCalendar(calendars, saved)?.id
       }
 
   /** Просит систему подтянуть свежие данные из Google и других аккаунтов. */
@@ -418,16 +422,12 @@ constructor(
       }
 
   private suspend fun resolveTargetCalendarId(): Long {
-    val calendars = dataSource.queryWritableCalendars()
+    val calendars =
+        shownCalendars(
+            dataSource.queryWritableCalendars(), settingsRepository.hiddenCalendarIdsFlow.first())
     val saved = settingsRepository.defaultCalendarIdFlow.first()
-    return (calendars.firstOrNull { it.id == saved } ?: pickDefaultCalendar(calendars))?.id
-        ?: dataSource.createLocalCalendar()
+    return targetCalendar(calendars, saved)?.id ?: dataSource.createLocalCalendar()
   }
-
-  private fun pickDefaultCalendar(calendars: List<DeviceCalendar>): DeviceCalendar? =
-      calendars.firstOrNull { it.isPrimary && it.accountType == GOOGLE_ACCOUNT_TYPE }
-          ?: calendars.firstOrNull { it.isPrimary }
-          ?: calendars.firstOrNull()
 
   /** Экземпляр с временем, приведённым к локальному часовому поясу пользователя. */
   private class LocalInstance(
@@ -530,7 +530,6 @@ constructor(
 
   companion object {
     private const val TAG = "CalendarRepository"
-    private const val GOOGLE_ACCOUNT_TYPE = "com.google"
     private val DAY_MILLIS = TimeUnit.DAYS.toMillis(1)
     /** На сколько дней вперёд экран проектов показывает предстоящие длинные события. */
     private const val PROJECTS_LOOKAHEAD_DAYS = 180L
@@ -539,3 +538,22 @@ constructor(
 
 /** Страница дня: события самого дня и проекты, которые его захватывают. */
 data class DayEvents(val events: List<EventDto>, val projects: List<EventDto>)
+
+private const val GOOGLE_ACCOUNT_TYPE = "com.google"
+
+/**
+ * Куда сохранять можно только в показанные календари: иначе новое событие сразу пропадёт с
+ * экрана. Если скрыты все — не прячем ничего, чтобы не плодить локальный календарь.
+ */
+internal fun shownCalendars(writable: List<DeviceCalendar>, hidden: Set<Long>): List<DeviceCalendar> =
+    writable.filter { it.id !in hidden }.ifEmpty { writable }
+
+/**
+ * Сохранённый выбор, а если он скрыт или исчез — автоподбор. Сам выбор не перезаписываем: покажут
+ * календарь снова — он вернётся календарём по умолчанию.
+ */
+internal fun targetCalendar(calendars: List<DeviceCalendar>, saved: Long?): DeviceCalendar? =
+    calendars.firstOrNull { it.id == saved }
+        ?: calendars.firstOrNull { it.isPrimary && it.accountType == GOOGLE_ACCOUNT_TYPE }
+        ?: calendars.firstOrNull { it.isPrimary }
+        ?: calendars.firstOrNull()
