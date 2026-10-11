@@ -373,4 +373,32 @@
         <item quantity="one">%d Tag vorher</item>
         <item quantity="other">%d Tage vorher</item>
     </plurals>
+
+    <!-- Весёлые снекбары (FunMessages) -->
+    <string name="event_created_dropped">Neuer Termin ist da! 📅</string>
+    <string name="event_created_baked">Frisch gebackener Termin! 🍞</string>
+    <string name="event_created_nailed">Termin erstellt – sitzt! 💪</string>
+    <string name="event_created_with_name_live">„%1$s“ ist jetzt live! 🔥</string>
+    <string name="event_created_with_name_entered_chat">„%1$s“ ist dem Chat beigetreten 💬</string>
+    <string name="event_created_with_name_deployed">„%1$s“ – ab in den Kalender! 🚀</string>
+    <string name="event_updated_glow_up">Glow-up für den Termin! ✨</string>
+    <string name="event_updated_leveled">Level-up für den Termin! ⬆️</string>
+    <string name="event_updated_live">Termin 2.0 ist live! 🔥</string>
+    <string name="event_updated_with_name_glow_up">Glow-up für „%1$s“! ✨</string>
+    <string name="event_updated_with_name_leveled">Level-up für „%1$s“! ⬆️</string>
+    <string name="event_updated_with_name_makeover">Makeover für „%1$s“ abgeschlossen! 💅</string>
+    <string name="event_deleted_shadow_realm">Termin ins Schattenreich geschickt 👻</string>
+    <string name="event_deleted_left_chat">Termin hat den Chat verlassen 💬</string>
+    <string name="event_deleted_vanished">Termin hat sich in Luft aufgelöst 💨</string>
+    <string name="event_deleted_with_name_shadow_realm">„%1$s“ ins Schattenreich geschickt 👻</string>
+    <string name="event_deleted_with_name_left_chat">„%1$s“ hat den Chat verlassen 💬</string>
+    <string name="event_deleted_with_name_vanished">„%1$s“ hat sich in Luft aufgelöst 💨</string>
+    <string name="series_deleted_dynasty">Die Termin-Dynastie ist gefallen! 👑💥</string>
+    <string name="series_deleted_family_tree">Termin-Stammbaum gefällt 🌳✂️</string>
+    <string name="error_create_rejected">Der Kalender hat Ihren Termin abgelehnt 📅❌</string>
+    <string name="error_create_cook_failed">Termin ist angebrannt 🍳💔</string>
+    <string name="error_update_makeover_wrong">Makeover ging schief 💔</string>
+    <string name="error_update_refused">Termin verweigert das Update 📱❌</string>
+    <string name="error_delete_immortal">Termin ist wohl unsterblich 👻</string>
+    <string name="error_delete_blocked">Löschen blockiert 🚫</string>
 </resources>

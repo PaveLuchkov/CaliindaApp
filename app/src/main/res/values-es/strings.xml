@@ -386,4 +386,32 @@
         <item quantity="many">%d días antes</item>
         <item quantity="other">%d días antes</item>
     </plurals>
+
+    <!-- Весёлые снекбары (FunMessages) -->
+    <string name="event_created_dropped">¡Nuevo evento recién salido! 📅</string>
+    <string name="event_created_baked">¡Evento recién horneado! 🍞</string>
+    <string name="event_created_nailed">Evento creado: ¡lo clavaste! 💪</string>
+    <string name="event_created_with_name_live">¡«%1$s» ya está en vivo! 🔥</string>
+    <string name="event_created_with_name_entered_chat">«%1$s» se ha unido al chat 💬</string>
+    <string name="event_created_with_name_deployed">¡«%1$s», directo al calendario! 🚀</string>
+    <string name="event_updated_glow_up">¡El evento estrena look! ✨</string>
+    <string name="event_updated_leveled">¡El evento subió de nivel! ⬆️</string>
+    <string name="event_updated_live">¡Evento 2.0 disponible! 🔥</string>
+    <string name="event_updated_with_name_glow_up">¡«%1$s» estrena look! ✨</string>
+    <string name="event_updated_with_name_leveled">¡«%1$s» subió de nivel! ⬆️</string>
+    <string name="event_updated_with_name_makeover">¡Cambio de imagen de «%1$s» completado! 💅</string>
+    <string name="event_deleted_shadow_realm">Evento enviado al reino de las sombras 👻</string>
+    <string name="event_deleted_left_chat">El evento ha abandonado el chat 💬</string>
+    <string name="event_deleted_vanished">El evento se esfumó 💨</string>
+    <string name="event_deleted_with_name_shadow_realm">«%1$s», enviado al reino de las sombras 👻</string>
+    <string name="event_deleted_with_name_left_chat">«%1$s» ha abandonado el chat 💬</string>
+    <string name="event_deleted_with_name_vanished">«%1$s» se esfumó 💨</string>
+    <string name="series_deleted_dynasty">¡La dinastía de eventos ha caído! 👑💥</string>
+    <string name="series_deleted_family_tree">Árbol genealógico de eventos talado 🌳✂️</string>
+    <string name="error_create_rejected">El calendario rechazó tu evento 📅❌</string>
+    <string name="error_create_cook_failed">Tu evento se quemó en el horno 🍳💔</string>
+    <string name="error_update_makeover_wrong">El cambio de imagen salió mal 💔</string>
+    <string name="error_update_refused">El evento rechazó la actualización 📱❌</string>
+    <string name="error_delete_immortal">Al parecer, el evento es inmortal 👻</string>
+    <string name="error_delete_blocked">Intento de borrado bloqueado 🚫</string>
 </resources>
