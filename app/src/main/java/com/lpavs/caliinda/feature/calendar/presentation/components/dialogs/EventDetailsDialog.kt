@@ -54,12 +54,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.lpavs.caliinda.core.ui.util.formatRRule
 import com.lpavs.caliinda.feature.calendar.presentation.model.EventDetailsUiModel
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
+import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
+import androidx.compose.foundation.shape.CircleShape
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -70,6 +73,8 @@ fun CustomEventDetailsDialog(
     onEdit: (EventDto) -> Unit,
     onDelete: (EventDto) -> Unit,
     onRepeat: (EventDto) -> Unit,
+    /** Календарь события; null — не показываем (он один или не найден). */
+    calendar: DeviceCalendar? = null,
 ) {
   Dialog(
       onDismissRequest = onDismissRequest,
@@ -151,6 +156,10 @@ fun CustomEventDetailsDialog(
                                   color = onCard)
                               Spacer(modifier = Modifier.height(12.dp))
                             }
+                            calendar?.let {
+                              CalendarRow(it, color = onCard)
+                              Spacer(modifier = Modifier.height(12.dp))
+                            }
                             event.originalEvent.description?.takeIf { it.isNotBlank() }?.let { text ->
                               Text(text = text, style = typography.bodyMedium, color = onCard)
                             }
@@ -219,4 +228,28 @@ private fun DetailRow(
           Icon(trailing, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         }
       }
+}
+
+/** Календарь события: точка его цвета на месте иконки (DESIGN.md), название и аккаунт. */
+@Composable
+private fun CalendarRow(calendar: DeviceCalendar, color: Color) {
+  Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+      Box(Modifier.size(14.dp).clip(CircleShape).background(Color(calendar.color)))
+    }
+    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+    Text(
+        text = calendar.displayName,
+        style = typography.bodyLarge,
+        color = color,
+        maxLines = 1,
+        modifier = Modifier.weight(1f, fill = false))
+    Text(
+        text = " · ${calendar.accountName}",
+        style = typography.bodyMedium,
+        color = color.copy(alpha = 0.7f),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.weight(1f, fill = false))
+  }
 }
