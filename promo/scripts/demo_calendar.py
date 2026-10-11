@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Демо-календарь для скриншотов Play: локальный календарь + события вокруг «сейчас».
 
-python3 demo_calendar.py en|ru|clear
+python3 demo_calendar.py en|ru|de|es|fr|hi|clear
 """
 import datetime as dt
 import os
@@ -27,6 +27,11 @@ def insert(uri, **vals):
     sh(f"content insert --uri {shlex.quote(uri)} " + " ".join(binds))
 
 
+def device_now():
+    # Время берём с эмулятора: часы там можно сдвинуть (`cmd alarm set-time`) на удобный час.
+    return dt.datetime.fromtimestamp(int(sh("date +%s").strip())).astimezone()
+
+
 def clear():
     sh(f"content delete --uri 'content://com.android.calendar/calendars?caller_is_syncadapter=true"
        f"&account_name={ACC}&account_type=LOCAL' --where \"account_name='{ACC}'\"")
@@ -45,6 +50,30 @@ T = {
                trip="✈️ Поездка в Лиссабон", course="📚 Курс испанского", moving="📦 Переезд",
                vacation="🌴 Отпуск", walk="🚶 Прогулка", call="📞 Телефонный звонок",
                party="🎉 Вечеринка", place="Кафе «Люмьер»"),
+    "de": dict(cal="Privat", breakfast="🍳 Frühstück", gym="🏋️‍♀️ Ab ins Fitnessstudio",
+               lunch="🥪 Mittagspause", project="💻 Arbeit am Projekt", coffee="☕ Kaffee mit Anna",
+               dinner="🍽️ Abendessen", movie="🎬 Filmabend", bday="🎂 Mamas Geburtstag",
+               trip="✈️ Reise nach Lissabon", course="📚 Spanischkurs", moving="📦 Umzug",
+               vacation="🌴 Urlaub", walk="🚶 Spaziergang", call="📞 Telefonat", party="🎉 Party",
+               place="Café Lumière"),
+    "es": dict(cal="Personal", breakfast="🍳 Desayuno", gym="🏋️‍♀️ Al gimnasio",
+               lunch="🥪 Almuerzo", project="💻 Trabajo en el proyecto", coffee="☕ Café con Ana",
+               dinner="🍽️ Cena", movie="🎬 Noche de cine", bday="🎂 Cumpleaños de mamá",
+               trip="✈️ Viaje a Lisboa", course="📚 Curso de inglés", moving="📦 Mudanza",
+               vacation="🌴 Vacaciones", walk="🚶 Paseo", call="📞 Llamada", party="🎉 Fiesta",
+               place="Café Lumière"),
+    "fr": dict(cal="Personnel", breakfast="🍳 Petit-déjeuner", gym="🏋️‍♀️ Séance de sport",
+               lunch="🥪 Pause déjeuner", project="💻 Travail sur le projet", coffee="☕ Café avec Anna",
+               dinner="🍽️ Dîner", movie="🎬 Soirée ciné", bday="🎂 Anniversaire de maman",
+               trip="✈️ Voyage à Lisbonne", course="📚 Cours d'espagnol", moving="📦 Déménagement",
+               vacation="🌴 Vacances", walk="🚶 Balade", call="📞 Appel", party="🎉 Fête",
+               place="Café Lumière"),
+    "hi": dict(cal="निजी", breakfast="🍳 नाश्ता", gym="🏋️‍♀️ जिम जाना",
+               lunch="🥪 लंच ब्रेक", project="💻 प्रोजेक्ट पर काम", coffee="☕ अनन्या के साथ कॉफ़ी",
+               dinner="🍽️ डिनर", movie="🎬 मूवी नाइट", bday="🎂 माँ का जन्मदिन",
+               trip="✈️ गोवा की यात्रा", course="📚 स्पेनिश कोर्स", moving="📦 घर बदलना",
+               vacation="🌴 छुट्टियाँ", walk="🚶 सैर", call="📞 फ़ोन कॉल", party="🎉 पार्टी",
+               place="Café Lumière"),
 }
 
 
@@ -74,7 +103,7 @@ def main():
     cal_id = sh(f"content query --uri content://com.android.calendar/calendars --projection _id "
                 f"--where \"account_name='{ACC}'\"").split("_id=")[1].split()[0]
 
-    now = dt.datetime.now().astimezone()
+    now = device_now()
     n = now.replace(second=0, microsecond=0)
     n = n - dt.timedelta(minutes=n.minute % 15)
     today = n.date()
@@ -120,7 +149,7 @@ def main():
 def week_only(t):
     cal_id = sh(f"content query --uri content://com.android.calendar/calendars --projection _id "
                 f"--where \"account_name='{ACC}'\"").split("_id=")[1].split()[0]
-    now = dt.datetime.now().astimezone()
+    now = device_now()
 
     def ev(title, start, minutes):
         insert("content://com.android.calendar/events", calendar_id=int(cal_id), title=title,
