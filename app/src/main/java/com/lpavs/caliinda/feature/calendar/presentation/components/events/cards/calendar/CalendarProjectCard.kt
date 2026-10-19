@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -101,11 +102,6 @@ fun CalendarProjectItem(
   val shapeParams = uiModel.shapeParams
   val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
   val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
-  val animatedHeight by
-      animateDpAsState(
-          targetValue = targetHeight,
-          animationSpec = AppMotion.defaultSpatialSpec(),
-          label = "eventItemHeightAnimation")
   val animatedElevation by
       animateDpAsState(
           targetValue = targetElevatioion,
@@ -168,6 +164,24 @@ fun CalendarProjectItem(
             CaliindaFonts.Card
       }
   // --- Композиция UI ---
+  BoxWithConstraints {
+  val titleFit =
+      rememberCardTitleFit(
+          title = uiModel.summary,
+          timeText = uiModel.formattedTimeString,
+          micro = micro,
+          baseHeight = uiModel.baseHeight,
+          cardMaxWidth = maxWidth,
+          style = textStyle,
+          regular = cardFontFamily,
+          condensed = if (current) CaliindaFonts.ProjectCurrentCondensed else CaliindaFonts.CardCondensed)
+  val titleLines = if (isExpanded) titleFit.expandedLines else titleFit.maxLines
+  val animatedHeight by
+      animateDpAsState(
+          targetValue = if (isExpanded) targetHeight + titleFit.expandedExtra else targetHeight,
+          animationSpec = AppMotion.defaultSpatialSpec(),
+          label = "eventItemHeightAnimation")
+
   Box( // Корневой Box для тени, фона, высоты и кликабельности
       modifier =
           Modifier.padding(
@@ -228,8 +242,8 @@ fun CalendarProjectItem(
                             text = uiModel.summary,
                             color = cardTextColor,
                             style = textStyle,
-                            fontFamily = cardFontFamily,
-                            maxLines = 1,
+                            fontFamily = titleFit.fontFamily,
+                            maxLines = titleLines,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false))
                         Spacer(modifier = Modifier.width(cuid.padding))
@@ -245,8 +259,8 @@ fun CalendarProjectItem(
                         text = uiModel.summary,
                         color = cardTextColor,
                         style = textStyle,
-                        fontFamily = cardFontFamily,
-                        maxLines = 1,
+                        fontFamily = titleFit.fontFamily,
+                        maxLines = titleLines,
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
                     Row {
@@ -329,6 +343,7 @@ fun CalendarProjectItem(
               } // Конец AnimatedVisibility
         }
       } // Конец Column (контент + кнопки)
+  } // Конец BoxWithConstraints
 } // Конец корневого Box
 
 val normalProjectEvent =

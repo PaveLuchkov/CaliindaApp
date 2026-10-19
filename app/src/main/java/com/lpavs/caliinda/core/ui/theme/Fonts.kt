@@ -33,6 +33,23 @@ object CaliindaFonts {
           FontVariation.width(65f),
           FontVariation.slant(-5f))
 
+  /**
+   * Длинное название, не влезающее в карточку: уже по ширине, а не мельче. Умеренно — узость
+   * сама по себе означает «сейчас» ([CardCurrent]).
+   */
+  val CardCondensed = robotoFlex(FontVariation.weight(600), FontVariation.width(80f))
+
+  /** Длинное название текущего события: ещё уже, наклон сохраняется. */
+  val CardCurrentCondensed =
+      robotoFlex(
+          FontVariation.weight(600),
+          FontVariation.grade(70),
+          FontVariation.width(45f),
+          FontVariation.slant(-5f))
+
   /** Текущий «проект»: узкое, жирное. */
   val ProjectCurrent = robotoFlex(FontVariation.weight(800), FontVariation.width(60f))
+
+  /** Длинное название текущего «проекта». */
+  val ProjectCurrentCondensed = robotoFlex(FontVariation.weight(800), FontVariation.width(35f))
 }
