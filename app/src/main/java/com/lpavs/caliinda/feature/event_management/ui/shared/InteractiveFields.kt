@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
@@ -38,15 +39,17 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChi
 @OptIn(ExperimentalTextApi::class)
 @Composable
 fun CustomOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
+    // TextFieldValue, а не строка: нужен курсор — эмодзи вставляется на его место.
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     enabled: Boolean = true,
     isError: Boolean = false,
-    supportingText: (@Composable () -> Unit)? = null
+    supportingText: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
 ) {
   TextField(
       value = value,
@@ -71,6 +74,7 @@ fun CustomOutlinedTextField(
       singleLine = true,
       isError = isError,
       supportingText = supportingText,
+      leadingIcon = leadingIcon,
       shape = RoundedCornerShape(cuid.ContainerCornerRadius))
 }
 
@@ -112,7 +116,7 @@ private val CHIP_CORNER = 8.dp
 fun CustomOutlinedTextFieldPreview() {
     CaliindaTheme {
         CustomOutlinedTextField(
-            value = "Name",
+            value = TextFieldValue("Name"),
             onValueChange = {},
             label = ""
         )

@@ -407,4 +407,8 @@
     <string name="event_calendar">कैलेंडर</string>
     <string name="chip_days">दिन</string>
     <string name="chip_days_summary">इन दिनों चिप सबसे पहले दिखेगी, बाकी दिनों में आख़िर में</string>
+    <string name="emoji_button">इमोजी जोड़ें</string>
+    <string name="emoji_matching">मेल खाते</string>
+    <string name="emoji_yours">आपके</string>
+    <string name="emoji_popular">लोकप्रिय</string>
 </resources>

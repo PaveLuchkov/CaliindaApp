@@ -421,4 +421,8 @@
     <string name="event_calendar">Calendrier</string>
     <string name="chip_days">Jours</string>
     <string name="chip_days_summary">Ces jours-là, la puce passe en premier ; les autres jours, à la fin</string>
+    <string name="emoji_button">Ajouter un emoji</string>
+    <string name="emoji_matching">Correspond</string>
+    <string name="emoji_yours">Les vôtres</string>
+    <string name="emoji_popular">Populaires</string>
 </resources>

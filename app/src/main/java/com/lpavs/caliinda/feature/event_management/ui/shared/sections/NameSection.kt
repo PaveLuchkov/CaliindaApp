@@ -12,6 +12,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.core.data.suggestions.insertEmoji
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,11 +49,18 @@ fun EventNameSection(
     onImeDone: () -> Unit,
     focusRequester: FocusRequester? = null,
 ) {
+  val emojiSuggestions by suggestionsViewModel.emojiSuggestions.collectAsStateWithLifecycle()
+  // Курсор живёт здесь; текст — у формы. Пришёл другой текст снаружи (чип) — курсор в конец.
+  var field by remember { mutableStateOf(TextFieldValue(summary, TextRange(summary.length))) }
+  if (field.text != summary) field = TextFieldValue(summary, TextRange(summary.length))
   CustomOutlinedTextField(
-      value = summary,
+      value = field,
       onValueChange = {
-        onSummaryChange(it)
-        onSummaryErrorChange(null)
+        field = it
+        if (it.text != summary) {
+          onSummaryChange(it.text)
+          onSummaryErrorChange(null)
+        }
       },
       label = stringResource(R.string.event_name),
       modifier =
@@ -58,6 +73,18 @@ fun EventNameSection(
       isError = summaryError != null,
       supportingText = { if (summaryError != null) Text(summaryError) },
       enabled = !isLoading,
+      leadingIcon = {
+        EmojiButton(
+            suggestions = emojiSuggestions,
+            onPick = { emoji ->
+              val (text, cursor) =
+                  insertEmoji(field.text, field.selection.start, field.selection.end, emoji)
+              field = TextFieldValue(text, TextRange(cursor))
+              onSummaryChange(text)
+              onSummaryErrorChange(null)
+            },
+            enabled = !isLoading)
+      },
   )
   // Набранное название поднимает подходящие чипы вперёд.
   LaunchedEffect(summary) { suggestionsViewModel.updateQuery(summary) }

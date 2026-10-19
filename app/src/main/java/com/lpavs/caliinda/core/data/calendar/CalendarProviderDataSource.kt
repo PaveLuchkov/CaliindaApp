@@ -115,6 +115,31 @@ constructor(@ApplicationContext context: Context) {
         } ?: emptyList()
   }
 
+  /**
+   * Названия событий (не экземпляров) видимых календарей, шедших после [sinceMillis], с
+   * датой начала. Серия считается один раз — по своему DTSTART.
+   */
+  fun queryTitlesSince(sinceMillis: Long): List<Pair<String, Long>> {
+    val selection =
+        "${Events.DELETED} = 0 AND ${Events.VISIBLE} = 1 AND " +
+            "(${Events.LAST_DATE} IS NULL OR ${Events.LAST_DATE} >= ?)"
+    return resolver
+        .query(
+            Events.CONTENT_URI,
+            arrayOf(Events.TITLE, Events.DTSTART),
+            selection,
+            arrayOf(sinceMillis.toString()),
+            null)
+        ?.use { c ->
+          buildList {
+            while (c.moveToNext()) {
+              val title = c.getStringOrNull(0)?.takeIf { it.isNotBlank() } ?: continue
+              add(title to c.getLong(1))
+            }
+          }
+        } ?: emptyList()
+  }
+
   fun getEvent(eventId: Long): EventRow? =
       resolver
           .query(
