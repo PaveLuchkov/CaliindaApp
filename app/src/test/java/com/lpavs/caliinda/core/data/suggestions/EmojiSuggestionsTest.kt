@@ -18,10 +18,14 @@ class EmojiSuggestionsTest {
   }
 
   @Test
-  fun `эмодзи в начале ставится или заменяется`() {
-    assertEquals("🏋️ Зал", withLeadingEmoji("Зал", "🏋️"))
-    assertEquals("🧘 Зал", withLeadingEmoji("🏋️ Зал", "🧘"))
-    assertEquals("☕ ", withLeadingEmoji("", "☕"))
+  fun `эмодзи встаёт на место курсора отдельным словом`() {
+    // Курсор в начале, в конце, посреди слова, перед пробелом; выделение заменяется.
+    assertEquals("🏋️ Зал" to 4, insertEmoji("Зал", 0, 0, "🏋️"))
+    assertEquals("Зал 🏋️ " to 8, insertEmoji("Зал", 3, 3, "🏋️"))
+    assertEquals("Ко ☕ фе" to 5, insertEmoji("Кофе", 2, 2, "☕"))
+    assertEquals("Кофе ☕ с Олей" to 7, insertEmoji("Кофе с Олей", 4, 4, "☕"))
+    assertEquals("☕ с Олей" to 2, insertEmoji("Кофе с Олей", 0, 4, "☕"))
+    assertEquals("☕ " to 2, insertEmoji("", 0, 0, "☕"))
     assertEquals("🏋️", leadingEmoji("  🏋️ Зал"))
     assertNull(leadingEmoji("Зал 🏋️"))
   }

@@ -72,10 +72,20 @@ val DEFAULT_EMOJIS =
         "💼", "📞", "🤝", "💻", "📚", "🎓", "🍳", "🍽️", "☕", "🛒", "🏋️", "🏃",
         "🧘", "🚶", "🩺", "🦷", "✈️", "🚗", "🎉", "🎂", "🎬", "🎵", "🧹", "❤️")
 
-/** Ставит [emoji] в начало названия; если там уже было эмодзи — заменяет его. */
-fun withLeadingEmoji(title: String, emoji: String): String {
-  val rest = leadingEmoji(title)?.let { title.removePrefix(it).trimStart() } ?: title.trimStart()
-  return if (rest.isEmpty()) "$emoji " else "$emoji $rest"
+/**
+ * Вставляет [emoji] на место курсора (или выделения) отдельным словом: пробел перед ним, если
+ * слева текст, и после — курсор встаёт за пробел, можно сразу печатать дальше.
+ * Возвращает новый текст и позицию курсора.
+ */
+fun insertEmoji(text: String, selStart: Int, selEnd: Int, emoji: String): Pair<String, Int> {
+  val start = minOf(selStart, selEnd).coerceIn(0, text.length)
+  val end = maxOf(selStart, selEnd).coerceIn(start, text.length)
+  val before = if (start > 0 && !text[start - 1].isWhitespace()) " " else ""
+  // Справа уже пробел — второй не добавляем, курсор просто переходит за него.
+  val nextIsSpace = end < text.length && text[end].isWhitespace()
+  val inserted = before + emoji + if (nextIsSpace) "" else " "
+  val result = text.substring(0, start) + inserted + text.substring(end)
+  return result to start + inserted.length + if (nextIsSpace) 1 else 0
 }
 
 /** Эмодзи в самом начале названия или null. */

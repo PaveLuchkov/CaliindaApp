@@ -1,6 +1,5 @@
 package com.lpavs.caliinda.feature.event_management.ui.shared.sections
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,28 +33,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.suggestions.EmojiSuggestions
-import com.lpavs.caliinda.core.data.suggestions.leadingEmoji
 
 /**
- * Кнопка эмодзи слева в поле названия. Показывает эмодзи, уже стоящее в начале, или значок;
- * по тапу — панель: подходящие к названию и свои из истории календаря.
+ * Кнопка эмодзи слева в поле названия. По тапу — панель: подходящие к названию и свои из
+ * истории календаря; выбранное встаёт на место курсора ([onPick]).
  */
 @Composable
 fun EmojiButton(
-    title: String,
     suggestions: EmojiSuggestions,
     onPick: (String) -> Unit,
     enabled: Boolean,
 ) {
   var open by rememberSaveable { mutableStateOf(false) }
-  val current = leadingEmoji(title)
   Box {
     IconButton(onClick = { open = true }, enabled = enabled) {
-      if (current != null) Text(current, fontSize = 22.sp)
-      else
-          Icon(
-              Icons.Rounded.AddReaction,
-              contentDescription = stringResource(R.string.emoji_button))
+      Icon(Icons.Rounded.AddReaction, contentDescription = stringResource(R.string.emoji_button))
     }
     DropdownMenu(
         expanded = open,
@@ -70,14 +62,13 @@ fun EmojiButton(
                   open = false
                 }
                 if (suggestions.matching.isNotEmpty()) {
-                  EmojiSection(stringResource(R.string.emoji_matching), suggestions.matching, current, pick)
+                  EmojiSection(stringResource(R.string.emoji_matching), suggestions.matching, pick)
                 }
                 EmojiSection(
                     stringResource(
                         if (suggestions.fromHistory) R.string.emoji_yours else R.string.emoji_popular),
                     // Подходящие уже показаны выше — не дублируем.
                     suggestions.yours - suggestions.matching.toSet(),
-                    current,
                     pick)
               }
         }
@@ -89,7 +80,6 @@ fun EmojiButton(
 private fun EmojiSection(
     title: String,
     emojis: List<String>,
-    current: String?,
     onPick: (String) -> Unit,
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -101,10 +91,6 @@ private fun EmojiSection(
             modifier =
                 Modifier.size(CELL)
                     .clip(CircleShape)
-                    // Стоящее сейчас в названии — на подложке: здесь заливка и значит «выбрано».
-                    .then(
-                        if (emoji == current) Modifier.background(colorScheme.secondaryContainer)
-                        else Modifier)
                     .clickable(role = Role.Button) { onPick(emoji) }) {
               Text(emoji, fontSize = 24.sp)
             }
