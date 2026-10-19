@@ -1,0 +1,6 @@
+• Wählen Sie, welche Kalender angezeigt werden. In Google Kalender bleiben ausgeblendete erhalten
+• Kalender direkt im Formular für neue Termine wählen – und in den Details sehen
+• Chips kennen den Wochentag: werktags Arbeit, am Wochenende Freizeit. Passende sind abgerundet
+• Lange Titel brechen um und passen in die Karte. Antippen zeigt den ganzen Titel
+• Emoji-Taste: Ihre bisherigen Emojis, direkt an der Cursorposition
+• Lustige Meldungen jetzt in Ihrer Sprache

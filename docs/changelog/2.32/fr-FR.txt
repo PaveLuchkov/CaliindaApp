@@ -1,0 +1,6 @@
+• Choisissez les agendas à afficher. Les agendas masqués restent dans Google Agenda
+• Choisissez l'agenda dans le formulaire du nouvel événement et retrouvez-le dans les détails
+• Les puces connaissent le jour : travail en semaine, loisirs le week-end. Celles qui conviennent sont arrondies
+• Les titres longs passent à la ligne. Touchez la carte pour voir le titre entier
+• Bouton emoji : vos emojis déjà utilisés, placés au curseur
+• Les messages amusants parlent votre langue

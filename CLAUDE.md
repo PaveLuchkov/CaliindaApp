@@ -23,5 +23,13 @@ Android-календарь на Jetpack Compose (Kotlin, Hilt). Данные —
 - M3 `DatePicker` работает в UTC — даты конвертировать через `ZoneOffset.UTC`,
   события — в поясе из настроек (`SettingsRepository.timeZoneFlow`).
 - Сборка: `./gradlew assembleDebug`, тесты: `./gradlew testDebugUnitTest`.
+- **Новая версия** (когда просят «сделай версию / ченджлог»): `versionCode` +1, `versionName` —
+  следующий номер в формате `Breakfast — 2.NN` (`app/build.gradle.kts`). Ченджлог — изменения
+  в main с прошлого тега версии (`git log vX.YY..HEAD --first-parent`): по файлу на язык в
+  `docs/changelog/<версия>/<локаль>.txt` (en-US, ru-RU, de-DE, es-ES, fr-FR, hi-IN — как в
+  `docs/store-listing.md`) и `play-console.txt` — все языки в тегах `<en-US>…</en-US>`, чтобы
+  вставить в «Что нового» Play одним разом. Пишем для пользователя, а не про код: что стало
+  удобнее; лимит Play — 500 символов на язык, проверять длину. Коммит версии в main, тег
+  `vX.YY` на нём.
 - Скиллы Google в `.claude/skills` (edge-to-edge, agp-9-upgrade, testing-setup) — общие
   советы; при расхождении с `docs/DESIGN.md` и этими соглашениями правила проекта главнее.
