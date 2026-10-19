@@ -4,7 +4,10 @@ import com.lpavs.caliinda.core.data.suggestions.rankByQuery
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lpavs.caliinda.core.data.repository.CalendarRepository
 import com.lpavs.caliinda.core.data.repository.SuggestionsRepository
+import com.lpavs.caliinda.core.data.suggestions.EmojiIndex
+import com.lpavs.caliinda.core.data.suggestions.EmojiSuggestions
 import com.lpavs.caliinda.core.data.suggestions.ChipFit
 import com.lpavs.caliinda.core.data.suggestions.fit
 import com.lpavs.caliinda.core.data.suggestions.orderChips
@@ -26,6 +29,7 @@ class SuggestionsViewModel
 @Inject
 constructor(
     private val suggestionsRepository: SuggestionsRepository,
+    private val calendarRepository: CalendarRepository,
     private val application: Application
 ) : ViewModel() {
   /** День и время начала события — от них зависит, какие чипы уместны. */
@@ -33,9 +37,21 @@ constructor(
   private val clicks = MutableStateFlow<Map<String, Int>>(emptyMap())
   private val query = MutableStateFlow("")
 
+  /** Эмодзи из истории календаря — читаем один раз на открытие формы. */
+  private val emojiIndex = MutableStateFlow(EmojiIndex(emptyList()))
+
   init {
     viewModelScope.launch { clicks.value = suggestionsRepository.getWeights() }
+    viewModelScope.launch { emojiIndex.value = EmojiIndex(calendarRepository.recentTitles()) }
   }
+
+  /** Панель эмодзи: подходящие к набранному названию и все свои. */
+  val emojiSuggestions: StateFlow<EmojiSuggestions> =
+      combine(emojiIndex, query) { index, text -> index.suggest(text) }
+          .stateIn(
+              viewModelScope,
+              SharingStarted.WhileSubscribed(5000),
+              EmojiIndex(emptyList()).suggest(""))
 
   /**
    * Чипы для дня и времени начала: уместные — первыми (см. [orderChips]), первые из них

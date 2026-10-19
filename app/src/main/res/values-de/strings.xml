@@ -408,4 +408,8 @@
     <string name="event_calendar">Kalender</string>
     <string name="chip_days">Tage</string>
     <string name="chip_days_summary">An diesen Tagen steht der Chip vorne, an anderen rückt er ans Ende</string>
+    <string name="emoji_button">Emoji hinzufügen</string>
+    <string name="emoji_matching">Passt</string>
+    <string name="emoji_yours">Ihre</string>
+    <string name="emoji_popular">Beliebt</string>
 </resources>

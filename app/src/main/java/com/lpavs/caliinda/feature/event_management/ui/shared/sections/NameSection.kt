@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lpavs.caliinda.core.data.suggestions.withLeadingEmoji
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,6 +44,7 @@ fun EventNameSection(
     onImeDone: () -> Unit,
     focusRequester: FocusRequester? = null,
 ) {
+  val emojiSuggestions by suggestionsViewModel.emojiSuggestions.collectAsStateWithLifecycle()
   CustomOutlinedTextField(
       value = summary,
       onValueChange = {
@@ -58,6 +62,13 @@ fun EventNameSection(
       isError = summaryError != null,
       supportingText = { if (summaryError != null) Text(summaryError) },
       enabled = !isLoading,
+      leadingIcon = {
+        EmojiButton(
+            title = summary,
+            suggestions = emojiSuggestions,
+            onPick = { onSummaryChange(withLeadingEmoji(summary, it)) },
+            enabled = !isLoading)
+      },
   )
   // Набранное название поднимает подходящие чипы вперёд.
   LaunchedEffect(summary) { suggestionsViewModel.updateQuery(summary) }

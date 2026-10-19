@@ -438,4 +438,8 @@
     <string name="event_calendar">Календарь</string>
     <string name="chip_days">Дни</string>
     <string name="chip_days_summary">В эти дни чип стоит первым, в остальные — уходит в конец</string>
+    <string name="emoji_button">Добавить эмодзи</string>
+    <string name="emoji_matching">Подходит</string>
+    <string name="emoji_yours">Ваши</string>
+    <string name="emoji_popular">Популярные</string>
 </resources>

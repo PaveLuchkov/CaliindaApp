@@ -15,6 +15,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventDraft
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.calendar.model.EventUpdateMode
 import com.lpavs.caliinda.core.data.calendar.recurrence.Rrule
+import com.lpavs.caliinda.core.data.suggestions.PastTitle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -156,6 +157,20 @@ constructor(
                 .map { it.toDto(zone) }
           },
           empty = emptyList())
+
+  /** Названия за последний год с возрастом в днях — для подсказки эмодзи. */
+  suspend fun recentTitles(now: Instant = Instant.now()): List<PastTitle> =
+      withContext(ioDispatcher) {
+        if (!permissionManager.isGranted.value) return@withContext emptyList()
+        val since = now.minus(365, ChronoUnit.DAYS).toEpochMilli()
+        runCatching { dataSource.queryTitlesSince(since) }
+            .onFailure { Log.w(TAG, "Error reading titles", it) }
+            .getOrDefault(emptyList())
+            .map { (title, start) ->
+              // Будущие и давние серии — как «сегодня» и «год назад», не отрицательный возраст.
+              PastTitle(title, ChronoUnit.DAYS.between(Instant.ofEpochMilli(start), now).coerceIn(0, 365))
+            }
+      }
 
   /** Календари, в которые можно записывать события, — кроме скрытых фильтром. */
   fun getWritableCalendars(): Flow<List<DeviceCalendar>> =

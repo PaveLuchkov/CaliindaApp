@@ -46,7 +46,8 @@ fun CustomOutlinedTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     enabled: Boolean = true,
     isError: Boolean = false,
-    supportingText: (@Composable () -> Unit)? = null
+    supportingText: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
 ) {
   TextField(
       value = value,
@@ -71,6 +72,7 @@ fun CustomOutlinedTextField(
       singleLine = true,
       isError = isError,
       supportingText = supportingText,
+      leadingIcon = leadingIcon,
       shape = RoundedCornerShape(cuid.ContainerCornerRadius))
 }
 
