@@ -7,9 +7,10 @@ import com.lpavs.caliinda.core.ui.util.fullText
 import com.lpavs.caliinda.core.ui.util.shortText
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
 
-fun SuggestionChip.toUi(context: Context) =
+fun SuggestionChip.toUi(context: Context, highlighted: Boolean = false) =
     SugNameChips(
         key = id,
         name = shortText(context),
         fullText = fullText(context),
-        terms = searchTerms(context))
+        terms = searchTerms(context),
+        highlighted = highlighted)

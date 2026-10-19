@@ -5,6 +5,8 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.repository.SuggestionsRepository
+import com.lpavs.caliinda.core.data.suggestions.ChipFit
+import com.lpavs.caliinda.core.data.suggestions.fit
 import com.lpavs.caliinda.core.data.suggestions.orderChips
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.SugNameChips
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
 
@@ -24,7 +28,8 @@ constructor(
     private val suggestionsRepository: SuggestionsRepository,
     private val application: Application
 ) : ViewModel() {
-  private val timeContext = MutableStateFlow(LocalTime.now())
+  /** День и время начала события — от них зависит, какие чипы уместны. */
+  private val timeContext = MutableStateFlow(LocalDateTime.now())
   private val clicks = MutableStateFlow<Map<String, Int>>(emptyMap())
   private val query = MutableStateFlow("")
 
@@ -33,22 +38,29 @@ constructor(
   }
 
   /**
-   * Чипы для времени начала: попавшие в свои часы — первыми (см. [orderChips]); подходящие к
-   * набранному названию — ещё раньше (см. [rankByQuery]).
+   * Чипы для дня и времени начала: уместные — первыми (см. [orderChips]), первые из них
+   * подсвечены; подходящие к набранному названию — ещё раньше (см. [rankByQuery]).
    */
   val suggestionChips: StateFlow<List<SugNameChips>> =
       combine(suggestionsRepository.chipsFlow, timeContext, clicks, query) {
               chips,
-              time,
+              start,
               weights,
               text ->
-            val ordered = orderChips(chips, weights, time).map { it.toUi(application) }
-            rankByQuery(ordered, text) { it.terms }
+            val day = start.dayOfWeek
+            val time = start.toLocalTime()
+            val ordered = orderChips(chips, weights, day, time)
+            // Подсвечиваем немного: если выделено всё, не выделено ничего.
+            val highlighted =
+                ordered.filter { it.fit(day, time) == ChipFit.MATCH }.take(MAX_HIGHLIGHTED)
+            val ui = ordered.map { it.toUi(application, highlighted = it in highlighted) }
+            rankByQuery(ui, text) { it.terms }
           }
           .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-  fun updateSortContext(startTime: LocalTime?, isAllDay: Boolean) {
-    timeContext.value = if (isAllDay || startTime == null) LocalTime.now() else startTime
+  fun updateSortContext(startDate: LocalDate, startTime: LocalTime?, isAllDay: Boolean) {
+    val time = if (isAllDay || startTime == null) LocalTime.now() else startTime
+    timeContext.value = startDate.atTime(time)
   }
 
   fun updateQuery(text: String) {
@@ -60,5 +72,9 @@ constructor(
       suggestionsRepository.incrementWeight(chip.key)
       clicks.value = suggestionsRepository.getWeights()
     }
+  }
+
+  private companion object {
+    const val MAX_HIGHLIGHTED = 3
   }
 }

@@ -25,6 +25,8 @@ data class SugNameChips(
     val name: String,
     val fullText: String,
     val terms: ChipTerms = ChipTerms(listOf(name, fullText), emptyList()),
+    /** Уместен прямо сейчас (день и часы) — чуть выделен в ряду. */
+    val highlighted: Boolean = false,
 )
 
 @Composable

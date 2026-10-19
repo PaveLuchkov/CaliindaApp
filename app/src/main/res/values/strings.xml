@@ -420,4 +420,6 @@
     <string name="calendars_filter_count">%1$d of %2$d</string>
     <string name="calendars_filter_hint">Hidden calendars disappear only from Caliinda and its widgets. Google Calendar keeps showing them.</string>
     <string name="event_calendar">Calendar</string>
+    <string name="chip_days">Days</string>
+    <string name="chip_days_summary">On these days the chip comes first; on other days it moves to the end</string>
 </resources>

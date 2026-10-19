@@ -4,6 +4,11 @@ import com.lpavs.caliinda.core.data.suggestions.ChipTerms
 import android.content.Context
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.suggestions.SuggestionChip
+import com.lpavs.caliinda.core.data.suggestions.ALL_DAYS
+import com.lpavs.caliinda.core.data.suggestions.dayRuns
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.Locale
 
 /** Тексты встроенных чипов: id → (подпись, полное название). */
 private val BUILT_IN_TEXTS: Map<String, Pair<Int, Int>> =
@@ -85,3 +90,13 @@ fun SuggestionChip.searchTerms(context: Context): ChipTerms =
         names = listOf(shortText(context), fullText(context)),
         keywords =
             BUILT_IN_KEYWORDS[id]?.let { context.getString(it).split(',') }.orEmpty())
+
+/** «Пн–Пт», «Пт, Сб», «Пн, Ср–Пт»; все дни — null: подписывать нечего. */
+fun weekdaysText(days: Set<DayOfWeek>, locale: Locale = Locale.getDefault()): String? {
+  if (days == ALL_DAYS) return null
+  fun name(day: DayOfWeek) = day.getDisplayName(TextStyle.SHORT, locale)
+  return dayRuns(days).joinToString(", ") { run ->
+    if (run.size >= 3) "${name(run.first())}–${name(run.last())}"
+    else run.joinToString(", ", transform = ::name)
+  }
+}

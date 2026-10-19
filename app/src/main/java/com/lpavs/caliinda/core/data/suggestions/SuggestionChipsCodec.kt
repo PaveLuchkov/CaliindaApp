@@ -2,6 +2,7 @@ package com.lpavs.caliinda.core.data.suggestions
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.DayOfWeek
 import java.time.LocalTime
 
 /** Список чипов ⇄ JSON для DataStore. Битые записи пропускаем, а не роняем весь список. */
@@ -18,6 +19,8 @@ object SuggestionChipsCodec {
                     put("from", it.from.toString())
                     put("to", it.to.toString())
                   }
+                  // Пишем всегда: отсутствие ключа значит «список из старой версии».
+                  put("days", JSONArray(chip.days.sorted().map { it.value }))
                 }
               })
           .toString()
@@ -38,10 +41,22 @@ object SuggestionChipsCodec {
                         window =
                             if (from != null && to != null) {
                               HourWindow(LocalTime.parse(from), LocalTime.parse(to))
-                            } else null)
+                            } else null,
+                        days = decodeDays(o))
                   }
                   .getOrNull()
             }
           }
           .getOrNull()
+
+  /**
+   * Дней нет — список сохранён до их появления: встроенный получает дни по смыслу, свой —
+   * все дни. Пустой набор тоже считаем битым — чип без дней никогда не был бы уместен.
+   */
+  private fun decodeDays(o: JSONObject): Set<DayOfWeek> {
+    val array = o.optJSONArray("days")
+    val days = array?.let { (0 until it.length()).map { i -> DayOfWeek.of(it.getInt(i)) }.toSet() }
+    return days?.takeIf { it.isNotEmpty() }
+        ?: if (o.optBoolean("builtIn")) BuiltInChips.defaultDays(o.getString("id")) else ALL_DAYS
+  }
 }

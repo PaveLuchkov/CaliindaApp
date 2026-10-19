@@ -58,9 +58,10 @@ fun EditEventScreen(
   // Подписки на события
   val suggestedChips by suggestionsViewModel.suggestionChips.collectAsStateWithLifecycle()
 
-  LaunchedEffect(eventDateTimeState.startTime) {
+  LaunchedEffect(
+      eventDateTimeState.startDate, eventDateTimeState.startTime, eventDateTimeState.isAllDay) {
     suggestionsViewModel.updateSortContext(
-        eventDateTimeState.startTime, eventDateTimeState.isAllDay)
+        eventDateTimeState.startDate, eventDateTimeState.startTime, eventDateTimeState.isAllDay)
   }
 
   var reminder by remember(eventToEdit.id) { mutableStateOf<ReminderChoice>(ReminderChoice.Default) }

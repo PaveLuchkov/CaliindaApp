@@ -405,4 +405,6 @@
     <string name="calendars_filter_count">%2$d में से %1$d</string>
     <string name="calendars_filter_hint">छिपाए गए कैलेंडर सिर्फ़ Caliinda और उसके विजेट से हटते हैं। Google Calendar में वे दिखते रहेंगे।</string>
     <string name="event_calendar">कैलेंडर</string>
+    <string name="chip_days">दिन</string>
+    <string name="chip_days_summary">इन दिनों चिप सबसे पहले दिखेगी, बाकी दिनों में आख़िर में</string>
 </resources>

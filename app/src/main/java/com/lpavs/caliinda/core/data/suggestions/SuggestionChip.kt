@@ -1,5 +1,13 @@
 package com.lpavs.caliinda.core.data.suggestions
 
+import java.time.DayOfWeek
+import java.time.DayOfWeek.FRIDAY
+import java.time.DayOfWeek.MONDAY
+import java.time.DayOfWeek.SATURDAY
+import java.time.DayOfWeek.SUNDAY
+import java.time.DayOfWeek.THURSDAY
+import java.time.DayOfWeek.TUESDAY
+import java.time.DayOfWeek.WEDNESDAY
 import java.time.LocalTime
 
 /**
@@ -17,7 +25,15 @@ data class SuggestionChip(
     val fullName: String? = null,
     /** Рекомендуемые часы: в них чип идёт первым. null — в любое время. */
     val window: HourWindow? = null,
-)
+    /** Дни, когда чип уместен; в остальные он уходит в конец ряда. */
+    val days: Set<DayOfWeek> = ALL_DAYS,
+) {
+  /** Чипу заданы часы или дни — значит, он знает, когда уместен. */
+  val hasContext: Boolean
+    get() = window != null || days != ALL_DAYS
+}
+
+val ALL_DAYS: Set<DayOfWeek> = DayOfWeek.entries.toSet()
 
 /** Часы [from, to). Может переходить через полночь: 22:00–02:00. */
 data class HourWindow(val from: LocalTime, val to: LocalTime) {
@@ -27,6 +43,10 @@ data class HourWindow(val from: LocalTime, val to: LocalTime) {
 
 /** Встроенные чипы и их часы по умолчанию — в порядке показа без истории нажатий. */
 object BuiltInChips {
+  // Раньше defaults: объект инициализируется сверху вниз.
+  private val WORKDAYS = setOf(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY)
+  private val WEEKEND = setOf(SATURDAY, SUNDAY)
+
   private fun w(from: Int, to: Int) = HourWindow(LocalTime.of(from, 0), LocalTime.of(to % 24, 0))
 
   val defaults: List<SuggestionChip> =
@@ -60,23 +80,69 @@ object BuiltInChips {
               "sleep" to w(22, 2),
               "breakfast" to w(5, 11),
               "pet" to w(6, 12))
-          .map { (id, window) -> SuggestionChip(id = id, builtIn = true, window = window) }
+          .map { (id, window) ->
+            SuggestionChip(id = id, builtIn = true, window = window, days = defaultDays(id))
+          }
+
+  /**
+   * Дни встроенного чипа по смыслу: работа — в будни, уборка — в выходные, вечеринка — в
+   * пятницу и субботу. Чип не прячется, а лишь уступает место уместным в этот день.
+   */
+  fun defaultDays(id: String): Set<DayOfWeek> =
+      when (id) {
+        "work", "meeting", "presentation", "study" -> WORKDAYS
+        "cleaning", "shopping" -> WEEKEND
+        "party" -> setOf(FRIDAY, SATURDAY)
+        "movie", "date" -> setOf(FRIDAY, SATURDAY, SUNDAY)
+        else -> ALL_DAYS
+      }
 }
 
+/** Насколько чип уместен в день и час начала события. */
+enum class ChipFit {
+  /** Совпали день и (если заданы) часы — чип вперёд и подсвечен. */
+  MATCH,
+  /** Ни часов, ни дней не задано, или не те часы. */
+  NEUTRAL,
+  /** Не его день — в конец ряда. */
+  OFF_DAY,
+}
+
+fun SuggestionChip.fit(day: DayOfWeek, time: LocalTime): ChipFit =
+    when {
+      day !in days -> ChipFit.OFF_DAY
+      hasContext && (window == null || time in window) -> ChipFit.MATCH
+      else -> ChipFit.NEUTRAL
+    }
+
 /**
- * Порядок чипов для времени начала события: сначала те, чьи часы его захватывают (свои —
- * впереди встроенных), потом остальные; внутри — по числу нажатий, при равенстве — как в списке.
+ * Порядок чипов для дня и времени начала события: сначала уместные (свои — впереди встроенных),
+ * потом нейтральные, в конце — не в свой день; внутри — по нажатиям, при равенстве — как в списке.
  */
 fun orderChips(
     chips: List<SuggestionChip>,
     clicks: Map<String, Int>,
+    day: DayOfWeek,
     time: LocalTime,
 ): List<SuggestionChip> =
     chips
         .withIndex()
         .sortedWith(
-            compareByDescending<IndexedValue<SuggestionChip>> { it.value.window?.contains(time) == true }
-                .thenByDescending { it.value.window?.contains(time) == true && !it.value.builtIn }
+            compareBy<IndexedValue<SuggestionChip>> { it.value.fit(day, time).ordinal }
+                .thenByDescending { it.value.fit(day, time) == ChipFit.MATCH && !it.value.builtIn }
                 .thenByDescending { clicks[it.value.id] ?: 0 }
                 .thenBy { it.index })
         .map { it.value }
+
+/**
+ * Дни подряд (с понедельника) — для подписи «Пн–Пт» вместо «Пн, Вт, Ср, Чт, Пт».
+ * Выходные через границу недели («Сб–Пн») не склеиваем: так короче не станет.
+ */
+fun dayRuns(days: Set<DayOfWeek>): List<List<DayOfWeek>> =
+    DayOfWeek.entries.fold(mutableListOf<MutableList<DayOfWeek>>()) { runs, day ->
+      if (day in days) {
+        val last = runs.lastOrNull()
+        if (last != null && last.last().plus(1) == day) last += day else runs += mutableListOf(day)
+      }
+      runs
+    }

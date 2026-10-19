@@ -17,7 +17,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.animation.core.animateDpAsState
+import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -71,6 +74,7 @@ fun CustomOutlinedTextField(
       shape = RoundedCornerShape(cuid.ContainerCornerRadius))
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChipsRow(
     chips: List<SugNameChips>,
@@ -84,14 +88,24 @@ fun ChipsRow(
       horizontalArrangement = Arrangement.spacedBy(cuid.padding),
       contentPadding = PaddingValues(bottom = cuid.padding)) {
         items(chips, key = { it.key }) { chip ->
+          // Уместный сейчас — таблетка: форма, а не заливка (заливка читается как «выбрано»).
+          val corner by
+              animateDpAsState(
+                  if (chip.highlighted) CHIP_HEIGHT / 2 else CHIP_CORNER,
+                  AppMotion.defaultSpatialSpec(),
+                  label = "chipCorner")
           SuggestionChip(
               onClick = { onChipClick(chip) },
               label = { Text(chip.name) },
-              modifier = Modifier.height(35.dp),
-              enabled = enabled)
+              modifier = Modifier.height(CHIP_HEIGHT).animateItem(),
+              enabled = enabled,
+              shape = RoundedCornerShape(corner))
         }
       }
 }
+
+private val CHIP_HEIGHT = 35.dp
+private val CHIP_CORNER = 8.dp
 
 @Preview(showBackground = true, wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE)
 @Composable
