@@ -1,0 +1,6 @@
+• Choose which calendars to show. Hidden ones stay in Google Calendar
+• Pick the calendar right in the new event form, and see it in event details
+• Chips know the day of the week: work on weekdays, fun on weekends. The ones that fit right now are rounded
+• Long titles wrap to fit the card. Tap a card to see the whole title
+• Emoji button: the emoji you've used before, placed right at the cursor
+• Fun messages now speak your language

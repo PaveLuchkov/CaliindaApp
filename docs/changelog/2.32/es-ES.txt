@@ -1,0 +1,6 @@
+• Elige qué calendarios mostrar. Los ocultos siguen en Google Calendar
+• Elige el calendario en el formulario del nuevo evento y míralo en los detalles
+• Los chips conocen el día: trabajo entre semana, planes el fin de semana. Los que encajan ahora son redondeados
+• Los títulos largos se ajustan a la tarjeta. Toca para ver el título completo
+• Botón de emoji: tus emojis de eventos anteriores, justo en el cursor
+• Los mensajes divertidos ya hablan tu idioma
