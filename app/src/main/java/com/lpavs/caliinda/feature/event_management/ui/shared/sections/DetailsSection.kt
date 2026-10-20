@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Notes
 import androidx.compose.material.icons.rounded.Place
@@ -52,8 +55,8 @@ import com.lpavs.caliinda.feature.event_management.ui.shared.ConnectedToggles
 fun DetailsSection(
     location: String,
     onLocationChange: (String) -> Unit,
-    description: String,
-    onDescriptionChange: (String) -> Unit,
+    /** Состояние поля, а не строка: длинное описание не перерисовывает форму на каждую букву. */
+    description: TextFieldState,
     reminderMinutes: Int?,
     isAllDay: Boolean,
     onReminderClick: () -> Unit,
@@ -71,7 +74,9 @@ fun DetailsSection(
   var placeOpen by rememberSaveable { mutableStateOf(false) }
   var notesOpen by rememberSaveable { mutableStateOf(false) }
   val showPlace = placeOpen || location.isNotEmpty()
-  val showNotes = notesOpen || description.isNotEmpty()
+  // derivedStateOf: перерисовываемся, только когда описание стало пустым или непустым.
+  val hasNotes by remember(description) { derivedStateOf { description.text.isNotEmpty() } }
+  val showNotes = notesOpen || hasNotes
   val placeFocus = remember { FocusRequester() }
   val notesFocus = remember { FocusRequester() }
 
@@ -83,7 +88,7 @@ fun DetailsSection(
                   if (location.isEmpty()) placeOpen = !placeOpen
                 },
                 ConnectedToggle(stringResource(R.string.details_notes), showNotes, Icons.Rounded.Notes) {
-                  if (description.isEmpty()) notesOpen = !notesOpen
+                  if (!hasNotes) notesOpen = !notesOpen
                 },
                 ConnectedToggle(
                     reminderShortLabel(reminderMinutes, isAllDay),
@@ -104,14 +109,11 @@ fun DetailsSection(
         visible = showNotes,
         enter = fadeIn(AppMotion.fastEffectsSpec()) + expandVertically(AppMotion.defaultSpatialSpec()),
         exit = fadeOut(AppMotion.fastEffectsSpec()) + shrinkVertically(AppMotion.defaultSpatialSpec())) {
-          DetailField(
-              value = description,
-              onValueChange = onDescriptionChange,
+          NotesField(
+              state = description,
               label = stringResource(R.string.description),
-              icon = Icons.Rounded.Notes,
               enabled = enabled,
-              focusRequester = notesFocus,
-              singleLine = false)
+              focusRequester = notesFocus)
         }
   }
 
@@ -144,16 +146,44 @@ fun DetailField(
       textStyle = typography.bodyLarge,
       keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
       shape = shapes.extraLarge,
-      colors =
-          TextFieldDefaults.colors(
-              focusedContainerColor = colorScheme.surfaceContainerHighest,
-              unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-              disabledContainerColor = colorScheme.surfaceContainerHigh,
-              focusedIndicatorColor = Color.Transparent,
-              unfocusedIndicatorColor = Color.Transparent,
-              disabledIndicatorColor = Color.Transparent),
+      colors = detailFieldColors(),
       modifier = modifier.fillMaxWidth().focusRequester(focusRequester))
 }
+
+/**
+ * Описание: тот же вид, что у [DetailField], но на [TextFieldState]. Описания из Zoom и Meet —
+ * тысячи символов, и строковое поле пересобирало форму и весь текст на каждую букву.
+ */
+@Composable
+private fun NotesField(
+    state: TextFieldState,
+    label: String,
+    enabled: Boolean,
+    focusRequester: FocusRequester,
+) {
+  TextField(
+      state = state,
+      label = { Text(label) },
+      leadingIcon = { Icon(Icons.Rounded.Notes, contentDescription = null) },
+      lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1, maxHeightInLines = 6),
+      enabled = enabled,
+      textStyle = typography.bodyLarge,
+      keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+      shape = shapes.extraLarge,
+      colors = detailFieldColors(),
+      modifier = Modifier.fillMaxWidth().focusRequester(focusRequester))
+}
+
+/** Без рамки, на ступень темнее секции. */
+@Composable
+private fun detailFieldColors() =
+    TextFieldDefaults.colors(
+        focusedContainerColor = colorScheme.surfaceContainerHighest,
+        unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+        disabledContainerColor = colorScheme.surfaceContainerHigh,
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        disabledIndicatorColor = Color.Transparent)
 
 /** Короткая подпись напоминания для кнопки: «15 мин», «1 ч», «Накануне»; нет — «Напоминание». */
 @Composable
