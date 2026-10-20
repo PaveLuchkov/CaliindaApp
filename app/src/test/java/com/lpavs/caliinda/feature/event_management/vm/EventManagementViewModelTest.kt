@@ -33,6 +33,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -49,7 +50,7 @@ class EventManagementViewModelTest {
   private val funMessages: IFunMessages = mock {
     on { getEventUpdatedMessage(any()) } doReturn message
     on { getEventCreatedMessage(any()) } doReturn message
-    on { getEventDeletedMessage(any()) } doReturn message
+    on { getEventDeletedMessage(anyOrNull()) } doReturn message
     on { getSeriesDeletedMessage() } doReturn message
   }
   private lateinit var viewModel: EventManagementViewModel
@@ -138,6 +139,8 @@ class EventManagementViewModelTest {
     whenever(repository.deleteEvent(any(), any())).thenReturn(Result.success(Unit))
     viewModel.requestDelete(single)
     assertTrue(single.id in pendingDeletions.deleting.value)
+    // Название и так крупно в призраке — фраза без него.
+    verify(funMessages).getEventDeletedMessage(null)
     verify(repository, times(0)).deleteEvent(any(), any())
 
     advanceTimeBy(UNDO_MS + 1)

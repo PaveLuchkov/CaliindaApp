@@ -206,7 +206,8 @@ constructor(
     pendingDeletions.startCountdown(
         event.id,
         DeletionCountdown(
-            message = funMessages.getEventDeletedMessage(event.nameForMessage()),
+            // Без названия: оно и так крупно в призраке — в фразе вышло бы дважды.
+            message = funMessages.getEventDeletedMessage(null),
             startedAtMillis = SystemClock.uptimeMillis(),
             durationMillis = window))
     val timer =
