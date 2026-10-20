@@ -221,17 +221,15 @@ constructor(
   }
 
   fun requestEventDetails(event: EventDto) {
-    val details = eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
-    _uiState.update { it.copy(eventDetails = details) }
-    // Подробности — сразу, участников — следом: их запрос не должен задерживать карточку.
+    // Участники — до показа: запрос к локальной базе быстрый, а догруженные после открытия они
+    // заставляли карточку расти прямо на глазах.
     viewModelScope.launch {
       val attendees = calendarRepository.attendeesOf(event)
-      if (attendees.isEmpty()) return@launch
-      _uiState.update { state ->
-        val shown = state.eventDetails
-        if (shown?.originalEvent?.id == event.id) state.copy(eventDetails = shown.copy(attendees = attendees))
-        else state
-      }
+      val details =
+          eventUiDetailsModelMapper
+              .mapToUiModels(event, timeZone.value, currentTime.value)
+              .copy(attendees = attendees)
+      _uiState.update { it.copy(eventDetails = details) }
     }
   }
 
