@@ -144,14 +144,24 @@ fun CalendarScreen(
   var showDatePicker by remember { mutableStateOf(false) }
 
   val deletions by calendarViewModel.deletions.collectAsStateWithLifecycle()
+  val celebration by eventManagementViewModel.celebration.collectAsStateWithLifecycle()
+  // Сохранили на другой день — подсвечивать на экране нечего; пока нет плашки сверху, говорим
+  // снекбаром, иначе сохранение прошло бы молча.
+  LaunchedEffect(celebration?.startedAt) {
+    val saved = celebration ?: return@LaunchedEffect
+    if (horizontalPagerState.currentPage == 1 && saved.date != currentVisibleDate) {
+      snackbarHostState.showSnackbar(saved.message.asString(context))
+    }
+  }
   val eventActions =
-      remember(eventManagementViewModel, calendarViewModel, deletions) {
+      remember(eventManagementViewModel, calendarViewModel, deletions, celebration) {
         EventActions(
             onDelete = eventManagementViewModel::requestDelete,
             onEdit = eventManagementViewModel::requestEditEvent,
             onDetails = calendarViewModel::requestEventDetails,
             deletions = deletions,
-            onUndoDelete = eventManagementViewModel::undoDelete)
+            onUndoDelete = eventManagementViewModel::undoDelete,
+            celebration = celebration)
       }
   val createEventAction = {
     // С экрана проектов (страница 0) сразу предлагаем промежуток дней, начиная с сегодня.
@@ -301,7 +311,12 @@ fun CalendarScreen(
                 ?.firstOrNull { it.id == details.originalEvent.calendarId },
         onDismissRequest = { calendarViewModel.cancelEventDetails() },
         userTimeZone = timeZone,
-        onEdit = eventManagementViewModel::requestEditEvent,
+        // Подробности закрываем: после сохранения в ленте «рождается» карточка — за ними её
+        // не было бы видно, да и показывали бы они уже старое.
+        onEdit = { event ->
+          calendarViewModel.cancelEventDetails()
+          eventManagementViewModel.requestEditEvent(event)
+        },
         onDelete = eventManagementViewModel::requestDelete,
         onRepeat = { event ->
           calendarViewModel.cancelEventDetails()

@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -94,7 +95,11 @@ fun CalendarProjectItem(
     onDeleteClickFromList: () -> Unit,
     onEditClickFromList: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Только что сохранено: фраза на месте дат и «рождение»; null — как обычно. */
+    celebration: String? = null,
+    celebrationKey: Long? = null,
 ) {
+  val birth = rememberCardBirth(celebrationKey)
   val darkTheme = isSystemInDarkTheme()
   val haptic = LocalHapticFeedback.current
   val current = uiModel.isCurrent
@@ -190,7 +195,11 @@ fun CalendarProjectItem(
               .dropShadow(shape = cardShape, shadow = cardElevation)
               .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
-              .background(cardBackground)
+              .background(
+                  lerp(
+                      cardBackground,
+                      if (current) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
+                      birth.flash))
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
                 detectTapGestures(
@@ -227,7 +236,7 @@ fun CalendarProjectItem(
                               .graphicsLayer(
                                   translationX = with(density) { starOffsetX.toPx() },
                                   translationY = with(density) { starOffsetY.toPx() },
-                                  rotationZ = rotationAngle)
+                                  rotationZ = rotationAngle + birth.rotation)
                               .requiredSize(starContainerSize)
                               .clip(clipStar)
                               .background(starBackground)
@@ -247,8 +256,8 @@ fun CalendarProjectItem(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false))
                         Spacer(modifier = Modifier.width(cuid.padding))
-                        Text(
-                            text = uiModel.formattedTimeString,
+                        RollingText(
+                            text = celebration ?: uiModel.formattedTimeString,
                             color = cardTextColor,
                             style = typography.labelMedium,
                             maxLines = 1)
@@ -264,8 +273,8 @@ fun CalendarProjectItem(
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
                     Row {
-                      Text(
-                          text = uiModel.formattedTimeString,
+                      RollingText(
+                          text = celebration ?: uiModel.formattedTimeString,
                           color = cardTextColor,
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                           maxLines = 1)
