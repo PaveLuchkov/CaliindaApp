@@ -20,6 +20,24 @@ import com.lpavs.caliinda.core.ui.util.placeIcon
 import com.lpavs.caliinda.core.ui.util.placeLabel
 import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import com.lpavs.caliinda.core.data.calendar.model.AttendeeStatus
+import com.lpavs.caliinda.core.data.calendar.model.Attendee
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Help
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.Group
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -174,6 +192,10 @@ fun CustomEventDetailsDialog(
                                   color = onCard)
                               Spacer(modifier = Modifier.height(12.dp))
                             }
+                            if (event.attendees.isNotEmpty()) {
+                              AttendeesSection(event.attendees, color = onCard)
+                              Spacer(modifier = Modifier.height(12.dp))
+                            }
                             calendar?.let {
                               CalendarRow(it, color = onCard)
                               Spacer(modifier = Modifier.height(12.dp))
@@ -221,6 +243,8 @@ fun CustomEventDetailsDialog(
 }
 
 private val CARD_HEIGHT = 320.dp
+/** Сколько ждать раскрытия списка участников, прежде чем подкрутить к нему. */
+private const val LIST_REVEAL_MS = 250L
 private val SHAPE_SIZE = 280.dp
 
 @Composable
@@ -305,3 +329,105 @@ private fun DateChip(text: String, color: Color, onClick: () -> Unit) {
               .clickable(role = Role.Button, onClick = onClick)
               .padding(horizontal = 10.dp, vertical = 4.dp))
 }
+
+/**
+ * Участники: свёрнуто — «Олег, Аня и ещё 3 · 3 из 6 придут», по тапу — список с ответами.
+ * Цвета — только цветом текста карточки с разной прозрачностью, как остальная карточка.
+ */
+@Composable
+private fun AttendeesSection(attendees: List<Attendee>, color: Color) {
+  var expanded by rememberSaveable { mutableStateOf(false) }
+  val others = attendees.filterNot { it.isSelf }
+  val shownNames = others.take(2).joinToString(", ") { it.name }
+  val names =
+      if (others.size > 2) stringResource(R.string.attendees_and_more, shownNames, others.size - 2)
+      else shownNames
+  val going = attendees.count { it.status == AttendeeStatus.ACCEPTED }
+  Column {
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .clip(MaterialTheme.shapes.small)
+                .clickable(role = Role.Button) { expanded = !expanded },
+        verticalAlignment = Alignment.CenterVertically) {
+          Icon(Icons.Rounded.Group, contentDescription = null, tint = color)
+          Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+          Column(Modifier.weight(1f)) {
+            Text(names, style = typography.bodyLarge, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                stringResource(R.string.attendees_going, going, attendees.size),
+                style = typography.bodySmall,
+                color = color.copy(alpha = 0.7f))
+          }
+          Icon(
+              if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+              contentDescription = stringResource(R.string.attendees_toggle),
+              tint = color)
+        }
+    // Карточка фиксированной высоты: раскрытый список оказался бы ниже края — подкручиваем к нему.
+    val listInView = remember { BringIntoViewRequester() }
+    LaunchedEffect(expanded) {
+      if (expanded) {
+        delay(LIST_REVEAL_MS)
+        listInView.bringIntoView()
+      }
+    }
+    AnimatedVisibility(visible = expanded) {
+      Column(
+          modifier = Modifier.padding(top = 8.dp).bringIntoViewRequester(listInView),
+          verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            attendees.forEach { AttendeeRow(it, color) }
+          }
+    }
+  }
+}
+
+@Composable
+private fun AttendeeRow(attendee: Attendee, color: Color) {
+  // Не придёт — приглушаем: человек в списке есть, но на встрече его не будет.
+  val tone = if (attendee.status == AttendeeStatus.DECLINED) color.copy(alpha = 0.55f) else color
+  // Себя — «Вы», а не своей почтой (и в кружке тоже); роль в подписи — только «организатор».
+  val name =
+      if (attendee.isSelf) stringResource(R.string.attendee_you).replaceFirstChar { it.titlecase() }
+      else attendee.name
+  Row(verticalAlignment = Alignment.CenterVertically) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(32.dp).clip(CircleShape).background(color.copy(alpha = 0.12f))) {
+          Text(
+              name.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "?",
+              style = typography.labelLarge,
+              color = tone)
+        }
+    Spacer(Modifier.size(12.dp))
+    Column(Modifier.weight(1f)) {
+      Text(
+          if (attendee.isOrganizer) "$name · ${stringResource(R.string.attendee_organizer)}" else name,
+          style = typography.bodyMedium,
+          color = tone,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis)
+      Text(
+          stringResource(attendee.status.labelRes()),
+          style = typography.bodySmall,
+          color = tone.copy(alpha = tone.alpha * 0.75f))
+    }
+    Icon(attendee.status.icon(), contentDescription = null, tint = tone, modifier = Modifier.size(18.dp))
+  }
+}
+
+private fun AttendeeStatus.labelRes(): Int =
+    when (this) {
+      AttendeeStatus.ACCEPTED -> R.string.attendee_accepted
+      AttendeeStatus.TENTATIVE -> R.string.attendee_tentative
+      AttendeeStatus.AWAITING -> R.string.attendee_awaiting
+      AttendeeStatus.DECLINED -> R.string.attendee_declined
+    }
+
+private fun AttendeeStatus.icon(): ImageVector =
+    when (this) {
+      AttendeeStatus.ACCEPTED -> Icons.Rounded.CheckCircle
+      AttendeeStatus.TENTATIVE -> Icons.Rounded.Help
+      AttendeeStatus.AWAITING -> Icons.Rounded.Schedule
+      AttendeeStatus.DECLINED -> Icons.Rounded.Cancel
+    }

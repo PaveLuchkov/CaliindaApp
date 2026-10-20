@@ -435,4 +435,13 @@
     <string name="meeting_telegram" translatable="false">Telegram</string>
     <string name="meeting_whereby" translatable="false">Whereby</string>
     <string name="meeting_telemost">Yandex Telemost</string>
+    <string name="attendees_and_more">%1$s and %2$d more</string>
+    <string name="attendees_going">%1$d of %2$d going</string>
+    <string name="attendees_toggle">Show participants</string>
+    <string name="attendee_you">you</string>
+    <string name="attendee_organizer">organizer</string>
+    <string name="attendee_accepted">Going</string>
+    <string name="attendee_tentative">Maybe</string>
+    <string name="attendee_awaiting">Awaiting reply</string>
+    <string name="attendee_declined">Not going</string>
 </resources>

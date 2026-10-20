@@ -412,4 +412,13 @@
     <string name="emoji_yours">आपके</string>
     <string name="emoji_popular">लोकप्रिय</string>
     <string name="meeting_telemost">Yandex Telemost</string>
+    <string name="attendees_and_more">%1$s और %2$d अन्य</string>
+    <string name="attendees_going">%2$d में से %1$d आएँगे</string>
+    <string name="attendees_toggle">प्रतिभागी दिखाएँ</string>
+    <string name="attendee_you">आप</string>
+    <string name="attendee_organizer">आयोजक</string>
+    <string name="attendee_accepted">आएँगे</string>
+    <string name="attendee_tentative">शायद</string>
+    <string name="attendee_awaiting">जवाब नहीं दिया</string>
+    <string name="attendee_declined">नहीं आएँगे</string>
 </resources>

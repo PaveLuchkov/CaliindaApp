@@ -1,6 +1,7 @@
 package com.lpavs.caliinda.feature.calendar.presentation.model
 
 import androidx.compose.ui.unit.Dp
+import com.lpavs.caliinda.core.data.calendar.model.Attendee
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.data.utils.EventPlace
 import com.lpavs.caliinda.core.ui.util.EventEnds
@@ -38,4 +39,6 @@ data class EventDetailsUiModel(
     val isProject: Boolean = false,
     /** Начало и конец многодневного — кнопками перехода на эти дни; однодневное — null. */
     val ends: EventEnds? = null,
+    /** Участники; догружаются после открытия, пусто — никого, кроме вас. */
+    val attendees: List<Attendee> = emptyList(),
 )
