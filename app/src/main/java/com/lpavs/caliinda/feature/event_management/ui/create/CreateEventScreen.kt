@@ -103,8 +103,9 @@ fun CreateEventScreen(
 
   // Пока не выбрали своё — напоминание из настроек (своё для «весь день» и со временем).
   var reminder by remember { mutableStateOf<ReminderChoice>(ReminderChoice.Default) }
+  // Напоминания шаблона — только для «Ещё раз»; у обычного создания их быть не должно.
   LaunchedEffect(templateReminders) {
-    if (templateReminders != null && reminder == ReminderChoice.Default) {
+    if (template != null && templateReminders != null && reminder == ReminderChoice.Default) {
       reminder = ReminderChoice.Custom(templateReminders.firstOrNull())
     }
   }

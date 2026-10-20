@@ -312,7 +312,11 @@ constructor(
   // --- Состояние диалогов ---
 
   fun openCreate(date: LocalDate, asProject: Boolean) {
-    _uiState.update { it.copy(dialog = EventDialog.Creating(date, asProject)) }
+    // Напоминания прошлой правки или «Ещё раз» здесь лишние: иначе новое событие унаследует их
+    // (у all-day из Google «накануне в 17:00» = 420 мин — в событии со временем «за 7 часов»).
+    _uiState.update {
+      it.copy(dialog = EventDialog.Creating(date, asProject), editingReminders = null)
+    }
   }
 
   /**
