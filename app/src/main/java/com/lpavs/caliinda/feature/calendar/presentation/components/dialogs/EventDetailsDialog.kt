@@ -262,13 +262,16 @@ private fun CalendarRow(calendar: DeviceCalendar, color: Color) {
         color = color,
         maxLines = 1,
         modifier = Modifier.weight(1f, fill = false))
-    Text(
-        text = " · ${calendar.accountName}",
-        style = typography.bodyMedium,
-        color = color.copy(alpha = 0.7f),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.weight(1f, fill = false))
+    // Основной календарь Google назван почтой — второй раз её не повторяем.
+    if (calendar.accountName != calendar.displayName) {
+      Text(
+          text = " · ${calendar.accountName}",
+          style = typography.bodyMedium,
+          color = color.copy(alpha = 0.7f),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.weight(1f, fill = false))
+    }
   }
 }
 

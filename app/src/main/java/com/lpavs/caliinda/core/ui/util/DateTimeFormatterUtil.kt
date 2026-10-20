@@ -72,8 +72,11 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
     fun date(instant: Instant) = formatDate(instant, zoneId, locale)
     val start = event.startTime
     val end = event.endTime
+    val lastDay = end.minus(1, ChronoUnit.DAYS)
     return when {
-      event.isAllDay -> "${date(start)} - ${date(end.minus(1, ChronoUnit.DAYS))}"
+      // Однодневное «весь день» — одна дата, а не «21 октября - 21 октября».
+      event.isAllDay && date(start) == date(lastDay) -> date(start)
+      event.isAllDay -> "${date(start)} - ${date(lastDay)}"
       date(start) == date(end) -> "${time(start)} - ${time(end)}\n${date(end)}"
       else -> "${date(start)} ${time(start)} - ${time(end)} ${date(end)}"
     }
