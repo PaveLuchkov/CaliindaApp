@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation.model
 
+import com.lpavs.caliinda.core.data.utils.eventPlace
 import com.lpavs.caliinda.core.ui.util.displayTitle
 import android.content.Context
 import androidx.compose.ui.unit.Dp
@@ -100,7 +101,7 @@ constructor(
           EventUiModel(
               id = event.id,
               summary = event.displayTitle(context),
-              location = event.location,
+              place = eventPlace(event.location, event.description),
               isAllDay = event.isAllDay,
               formattedTimeString =
                   dateTimeFormatterUtil.formatEventListTime(

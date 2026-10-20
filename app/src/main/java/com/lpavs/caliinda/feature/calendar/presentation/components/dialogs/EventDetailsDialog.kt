@@ -15,7 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.ui.platform.LocalContext
-import com.lpavs.caliinda.core.ui.util.openInMaps
+import com.lpavs.caliinda.core.ui.util.openPlace
+import com.lpavs.caliinda.core.ui.util.placeIcon
+import com.lpavs.caliinda.core.ui.util.placeLabel
+import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.R
@@ -36,7 +39,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -138,14 +140,18 @@ fun CustomEventDetailsDialog(
                                 maxLines = 2)
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            event.originalEvent.location?.takeIf { it.isNotBlank() }?.let { place ->
+                            val place =
+                                remember(event.originalEvent) {
+                                  eventPlace(event.originalEvent.location, event.originalEvent.description)
+                                }
+                            place?.let {
                               val context = LocalContext.current
-                              // Место — кнопка: открывает карты на этом адресе.
+                              // Место — кнопка: адрес открывает карты, ссылка — Zoom/Meet/браузер.
                               DetailRow(
-                                  Icons.Filled.LocationOn,
-                                  place,
+                                  placeIcon(it),
+                                  placeLabel(it),
                                   color = onCard,
-                                  onClick = { context.openInMaps(place) },
+                                  onClick = { context.openPlace(it) },
                                   trailing = Icons.AutoMirrored.Rounded.OpenInNew)
                               Spacer(modifier = Modifier.height(12.dp))
                             }
