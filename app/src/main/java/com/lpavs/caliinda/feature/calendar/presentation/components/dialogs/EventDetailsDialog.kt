@@ -20,6 +20,9 @@ import com.lpavs.caliinda.core.ui.util.placeIcon
 import com.lpavs.caliinda.core.ui.util.placeLabel
 import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import com.lpavs.caliinda.core.ui.theme.AppMotion
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.wrapContentSize
@@ -120,8 +123,20 @@ fun CustomEventDetailsDialog(
             }
         val params = event.shapeParams
 
+        // Окно — на весь экран, карточка — по центру внутри. Окно по размеру карточки менялось
+        // бы на каждом кадре её роста: система перекраивает и перецентрирует его — рывки.
+        // Тап мимо карточки закрывает, как у обычного диалога.
+        Box(
+            modifier =
+                Modifier.fillMaxSize()
+                    .clickable(interactionSource = null, indication = null, onClick = onDismissRequest),
+            contentAlignment = Alignment.Center) {
         Surface(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    // Тапы по самой карточке не проваливаются в подложку и не закрывают её.
+                    .clickable(interactionSource = null, indication = null) {},
             shape = RoundedCornerShape(cuid.ContainerCornerRadius),
             color = container,
             tonalElevation = 8.dp) {
@@ -132,7 +147,8 @@ fun CustomEventDetailsDialog(
               Box(
                   modifier =
                       Modifier.heightIn(min = MIN_CARD_HEIGHT, max = maxHeight)
-                          .animateContentSize(AppMotion.defaultSpatialSpec())) {
+                          // Без пружины: отскок на высоте читается как тяжёлое сползание.
+                          .animateContentSize(tween(SIZE_ANIMATION_MS, easing = FastOutSlowInEasing))) {
                 Box(
                     modifier =
                         Modifier.matchParentSize()
@@ -250,12 +266,14 @@ fun CustomEventDetailsDialog(
                     }
               }
             }
+        }
       }
 }
 
 /** Карточка без деталей: название, время и кнопки — не выше этого. */
 private val MIN_CARD_HEIGHT = 200.dp
 private const val MAX_HEIGHT_FRACTION = 0.8f
+private const val SIZE_ANIMATION_MS = 250
 /** Сколько ждать раскрытия списка участников, прежде чем подкрутить к нему. */
 private const val LIST_REVEAL_MS = 250L
 private val SHAPE_SIZE = 280.dp
