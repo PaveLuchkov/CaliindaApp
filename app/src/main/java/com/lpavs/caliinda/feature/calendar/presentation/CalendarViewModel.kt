@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -222,6 +223,19 @@ constructor(
   fun requestEventDetails(event: EventDto) {
     val details = eventUiDetailsModelMapper.mapToUiModels(event, timeZone.value, currentTime.value)
     _uiState.update { it.copy(eventDetails = details) }
+  }
+
+  /**
+   * Событие с виджета: ищем экземпляр в его дне и открываем подробности. Не нашли (удалили, пока
+   * виджет не обновился) — остаётся просто открытый день.
+   */
+  fun openEventFromWidget(date: LocalDate, eventId: Long, instanceBegin: Long) {
+    viewModelScope.launch {
+      val day = calendarRepository.getDayFlow(date).first()
+      (day.events + day.projects)
+          .firstOrNull { it.eventId == eventId && it.instanceBegin == instanceBegin }
+          ?.let(::requestEventDetails)
+    }
   }
 
   fun cancelEventDetails() {

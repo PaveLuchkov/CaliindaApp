@@ -85,7 +85,10 @@ private fun WidgetCard(data: WidgetData) {
                 .height(cardHeight.dp)
                 .background(container)
                 .cornerRadius(20.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+                // Есть событие — открываем его, пусто — просто приложение.
+                .clickable(
+                    focus?.let { openEventAction(context, it, data.zone, data.today) }
+                        ?: actionStartActivity<MainActivity>()),
         contentAlignment = Alignment.CenterStart) {
           if (focus != null) {
             Image(

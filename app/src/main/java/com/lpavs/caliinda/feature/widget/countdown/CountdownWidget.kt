@@ -53,6 +53,7 @@ import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.util.displayTitle
 import com.lpavs.caliinda.feature.widget.TitleImage
 import com.lpavs.caliinda.feature.widget.WidgetEntryPoint
+import com.lpavs.caliinda.feature.widget.openEventAction
 import com.lpavs.caliinda.feature.widget.date.dayNumberBitmap
 import com.lpavs.caliinda.feature.widget.date.emojiInShapeBitmap
 import com.lpavs.caliinda.feature.widget.date.polygonBitmap
@@ -167,7 +168,19 @@ private fun CountdownContent(data: CountdownData, appWidgetId: Int) {
                   .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                   // Своя «задача» на каждый виджет, иначе система переиспользует интент.
                   .setData(android.net.Uri.parse("caliinda://countdown/$appWidgetId")))
-      else actionStartActivity<MainActivity>()
+      else {
+        // Идёт отсчёт — открываем само событие: его день и подробности.
+        val event =
+            when (countdown) {
+              is Countdown.Ahead -> countdown.event
+              is Countdown.Today -> countdown.event
+              is Countdown.Ongoing -> countdown.event
+              else -> null
+            }
+        event?.let {
+          openEventAction(context, it, data.zone, java.time.LocalDate.now(data.zone))
+        } ?: actionStartActivity<MainActivity>()
+      }
 
   Box(
       modifier =
