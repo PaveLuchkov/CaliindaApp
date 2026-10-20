@@ -443,4 +443,13 @@
     <string name="emoji_yours">Ваши</string>
     <string name="emoji_popular">Популярные</string>
     <string name="meeting_telemost">Яндекс Телемост</string>
+    <string name="attendees_and_more">%1$s и ещё %2$d</string>
+    <string name="attendees_going">Придут %1$d из %2$d</string>
+    <string name="attendees_toggle">Показать участников</string>
+    <string name="attendee_you">вы</string>
+    <string name="attendee_organizer">организатор</string>
+    <string name="attendee_accepted">Придёт</string>
+    <string name="attendee_tentative">Может быть</string>
+    <string name="attendee_awaiting">Не ответил(а)</string>
+    <string name="attendee_declined">Не придёт</string>
 </resources>

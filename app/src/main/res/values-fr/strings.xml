@@ -426,4 +426,13 @@
     <string name="emoji_yours">Les vôtres</string>
     <string name="emoji_popular">Populaires</string>
     <string name="meeting_telemost">Yandex Telemost</string>
+    <string name="attendees_and_more">%1$s et %2$d autres</string>
+    <string name="attendees_going">%1$d sur %2$d participent</string>
+    <string name="attendees_toggle">Afficher les participants</string>
+    <string name="attendee_you">vous</string>
+    <string name="attendee_organizer">organisateur</string>
+    <string name="attendee_accepted">Participe</string>
+    <string name="attendee_tentative">Peut-être</string>
+    <string name="attendee_awaiting">Pas de réponse</string>
+    <string name="attendee_declined">Ne participe pas</string>
 </resources>

@@ -11,11 +11,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.CalendarContract
+import android.provider.CalendarContract.Attendees
 import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
 import android.provider.CalendarContract.Instances
 import android.provider.CalendarContract.Reminders
 import android.util.Log
+import com.lpavs.caliinda.core.data.calendar.model.AttendeeRow
 import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
@@ -139,6 +141,46 @@ constructor(@ApplicationContext context: Context) {
           }
         } ?: emptyList()
   }
+
+  /** Участники события в сыром виде. */
+  fun queryAttendees(eventId: Long): List<AttendeeRow> =
+      resolver
+          .query(
+              Attendees.CONTENT_URI,
+              arrayOf(
+                  Attendees.ATTENDEE_NAME,
+                  Attendees.ATTENDEE_EMAIL,
+                  Attendees.ATTENDEE_STATUS,
+                  Attendees.ATTENDEE_RELATIONSHIP,
+                  Attendees.ATTENDEE_TYPE),
+              "${Attendees.EVENT_ID} = ?",
+              arrayOf(eventId.toString()),
+              null)
+          ?.use { c ->
+            buildList {
+              while (c.moveToNext()) {
+                add(
+                    AttendeeRow(
+                        name = c.getStringOrNull(0),
+                        email = c.getStringOrNull(1),
+                        status = c.getIntOrNull(2) ?: Attendees.ATTENDEE_STATUS_NONE,
+                        relationship = c.getIntOrNull(3) ?: Attendees.RELATIONSHIP_NONE,
+                        type = c.getIntOrNull(4) ?: Attendees.TYPE_NONE))
+              }
+            }
+          } ?: emptyList()
+
+  /** Организатор события и владелец его календаря — чтобы отметить «организатор» и «вы». */
+  fun queryOrganizerAndOwner(eventId: Long): Pair<String?, String?> =
+      resolver
+          .query(
+              ContentUris.withAppendedId(Events.CONTENT_URI, eventId),
+              arrayOf(Events.ORGANIZER, Events.OWNER_ACCOUNT),
+              null,
+              null,
+              null)
+          ?.use { c -> if (c.moveToFirst()) c.getStringOrNull(0) to c.getStringOrNull(1) else null }
+          ?: (null to null)
 
   fun getEvent(eventId: Long): EventRow? =
       resolver

@@ -9,7 +9,9 @@ import com.lpavs.caliinda.core.data.calendar.CalendarPermissionManager
 import com.lpavs.caliinda.core.data.calendar.CalendarProviderDataSource
 import com.lpavs.caliinda.core.data.calendar.EventRow
 import com.lpavs.caliinda.core.data.calendar.InstanceRow
+import com.lpavs.caliinda.core.data.calendar.model.Attendee
 import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
+import com.lpavs.caliinda.core.data.calendar.model.toAttendees
 import com.lpavs.caliinda.core.data.calendar.model.EventDeleteMode
 import com.lpavs.caliinda.core.data.calendar.model.EventDraft
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
@@ -201,6 +203,17 @@ constructor(
       combine(getWritableCalendars(), settingsRepository.defaultCalendarIdFlow) { calendars, saved
         ->
         targetCalendar(calendars, saved)?.id
+      }
+
+  /** Участники события для подробностей; пусто — никого, кроме вас, или нет доступа. */
+  suspend fun attendeesOf(event: EventDto): List<Attendee> =
+      withContext(ioDispatcher) {
+        runCatching {
+              val (organizer, owner) = dataSource.queryOrganizerAndOwner(event.eventId)
+              toAttendees(dataSource.queryAttendees(event.eventId), owner, organizer)
+            }
+            .onFailure { Log.w(TAG, "Error reading attendees", it) }
+            .getOrDefault(emptyList())
       }
 
   /** Просит систему подтянуть свежие данные из Google и других аккаунтов. */
