@@ -426,4 +426,13 @@
     <string name="emoji_matching">Fits</string>
     <string name="emoji_yours">Yours</string>
     <string name="emoji_popular">Popular</string>
+    <!-- Сервисы созвонов в «месте» события: бренды, не переводятся (кроме Телемоста). -->
+    <string name="meeting_zoom" translatable="false">Zoom</string>
+    <string name="meeting_meet" translatable="false">Google Meet</string>
+    <string name="meeting_teams" translatable="false">Microsoft Teams</string>
+    <string name="meeting_webex" translatable="false">Webex</string>
+    <string name="meeting_discord" translatable="false">Discord</string>
+    <string name="meeting_telegram" translatable="false">Telegram</string>
+    <string name="meeting_whereby" translatable="false">Whereby</string>
+    <string name="meeting_telemost">Yandex Telemost</string>
 </resources>

@@ -21,6 +21,7 @@ import com.lpavs.caliinda.app.MainActivity
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.core.ui.util.displayTitle
 import com.lpavs.caliinda.feature.widget.WidgetEntryPoint
+import com.lpavs.caliinda.feature.widget.openEventIntent
 import com.lpavs.caliinda.feature.widget.scheduleWidgetUpdate
 import com.lpavs.caliinda.feature.widget.timeRange
 import com.lpavs.caliinda.feature.widget.widgetShapeBitmap
@@ -163,7 +164,9 @@ private fun stackViews(context: Context, data: StackData, size: SizeF): RemoteVi
       PendingIntent.getActivity(
           context,
           0,
-          Intent(context, MainActivity::class.java),
+          // Флаги — в шаблоне: как у «+», открытое приложение получит интент в onNewIntent.
+          Intent(context, MainActivity::class.java)
+              .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
           // MUTABLE: в шаблон подставляется fill-in интент карточки.
           PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
   views.setPendingIntentTemplate(R.id.stack, open)
@@ -216,6 +219,8 @@ private fun cardViews(
     setColorStateList(R.id.card_label, "setTextColor", day.content, night.content)
     setTextViewText(R.id.card_time, event.timeRange(context, data.zone))
     setColorStateList(R.id.card_time, "setTextColor", day.content, night.content)
-    setOnClickFillInIntent(R.id.card, Intent())
+    // Карточка открывает своё событие: действие и данные подставятся в шаблон.
+    setOnClickFillInIntent(
+        R.id.card, openEventIntent(context, event, data.zone, data.now.atZone(data.zone).toLocalDate()))
   }
 }

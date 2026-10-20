@@ -15,8 +15,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.ui.platform.LocalContext
-import com.lpavs.caliinda.core.ui.util.openInMaps
+import com.lpavs.caliinda.core.ui.util.openPlace
+import com.lpavs.caliinda.core.ui.util.placeIcon
+import com.lpavs.caliinda.core.ui.util.placeLabel
+import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import com.lpavs.caliinda.core.ui.util.EventEnds
+import java.time.LocalDate
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.R
 import androidx.compose.ui.res.stringResource
@@ -36,7 +44,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -73,6 +80,8 @@ fun CustomEventDetailsDialog(
     onEdit: (EventDto) -> Unit,
     onDelete: (EventDto) -> Unit,
     onRepeat: (EventDto) -> Unit,
+    /** Тап по дате начала или конца многодневного события — перейти на этот день. */
+    onOpenDate: (LocalDate) -> Unit,
     /** Календарь события; null — не показываем (он один или не найден). */
     calendar: DeviceCalendar? = null,
 ) {
@@ -131,21 +140,30 @@ fun CustomEventDetailsDialog(
                                 style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = onCard)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = event.formattedTimeString,
-                                color = onCard,
-                                style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
-                                maxLines = 2)
+                            val ends = event.ends
+                            if (ends == null) {
+                              Text(
+                                  text = event.formattedTimeString,
+                                  color = onCard,
+                                  style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
+                                  maxLines = 2)
+                            } else {
+                              EndsRow(ends, color = onCard, onOpenDate = onOpenDate)
+                            }
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            event.originalEvent.location?.takeIf { it.isNotBlank() }?.let { place ->
+                            val place =
+                                remember(event.originalEvent) {
+                                  eventPlace(event.originalEvent.location, event.originalEvent.description)
+                                }
+                            place?.let {
                               val context = LocalContext.current
-                              // Место — кнопка: открывает карты на этом адресе.
+                              // Место — кнопка: адрес открывает карты, ссылка — Zoom/Meet/браузер.
                               DetailRow(
-                                  Icons.Filled.LocationOn,
-                                  place,
+                                  placeIcon(it),
+                                  placeLabel(it),
                                   color = onCard,
-                                  onClick = { context.openInMaps(place) },
+                                  onClick = { context.openPlace(it) },
                                   trailing = Icons.AutoMirrored.Rounded.OpenInNew)
                               Spacer(modifier = Modifier.height(12.dp))
                             }
@@ -244,12 +262,46 @@ private fun CalendarRow(calendar: DeviceCalendar, color: Color) {
         color = color,
         maxLines = 1,
         modifier = Modifier.weight(1f, fill = false))
-    Text(
-        text = " · ${calendar.accountName}",
-        style = typography.bodyMedium,
-        color = color.copy(alpha = 0.7f),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.weight(1f, fill = false))
+    // Основной календарь Google назван почтой — второй раз её не повторяем.
+    if (calendar.accountName != calendar.displayName) {
+      Text(
+          text = " · ${calendar.accountName}",
+          style = typography.bodyMedium,
+          color = color.copy(alpha = 0.7f),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.weight(1f, fill = false))
+    }
   }
+}
+
+/**
+ * Начало и конец многодневного события — две кнопки: видно, что это разные дни, и по тапу
+ * можно на них перейти. Подложка лёгкая, цветом текста карточки — без нового цвета в карточке.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EndsRow(ends: EventEnds, color: Color, onOpenDate: (LocalDate) -> Unit) {
+  FlowRow(
+      verticalArrangement = Arrangement.spacedBy(6.dp),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      itemVerticalAlignment = Alignment.CenterVertically) {
+        DateChip(ends.startText, color) { onOpenDate(ends.startDate) }
+        Text("–", style = typography.titleLarge, color = color)
+        DateChip(ends.endText, color) { onOpenDate(ends.endDate) }
+      }
+}
+
+@Composable
+private fun DateChip(text: String, color: Color, onClick: () -> Unit) {
+  Text(
+      text = text,
+      style = typography.titleLarge.copy(fontWeight = FontWeight.Normal),
+      color = color,
+      maxLines = 1,
+      modifier =
+          Modifier.clip(MaterialTheme.shapes.medium)
+              .background(color.copy(alpha = 0.1f))
+              .clickable(role = Role.Button, onClick = onClick)
+              .padding(horizontal = 10.dp, vertical = 4.dp))
 }

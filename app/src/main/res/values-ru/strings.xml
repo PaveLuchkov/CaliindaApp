@@ -442,4 +442,5 @@
     <string name="emoji_matching">Подходит</string>
     <string name="emoji_yours">Ваши</string>
     <string name="emoji_popular">Популярные</string>
+    <string name="meeting_telemost">Яндекс Телемост</string>
 </resources>

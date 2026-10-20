@@ -170,6 +170,28 @@ fun CalendarScreen(
       eventManagementViewModel.openCreate(today, false)
     }
   }
+  // Перейти на день: из выбора даты и из подробностей события (тап по дате начала/конца).
+  val goToDate: (LocalDate) -> Unit = { date ->
+    if (date != currentVisibleDate) {
+      calendarViewModel.onVisibleDateChanged(date)
+      scope.launch { pagerState.scrollToPage(pageForDate(date)) }
+    }
+    // С экрана проектов — переходим к самому дню.
+    if (horizontalPagerState.currentPage == 0) {
+      scope.launch { horizontalPagerState.animateScrollToPage(1) }
+    }
+  }
+
+  // Тап по событию на виджете: его день и подробности — тоже после доступа к календарю.
+  val openRequest by LaunchRequests.openEvent.collectAsStateWithLifecycle()
+  LaunchedEffect(openRequest, calendarState.hasCalendarPermission) {
+    val request = openRequest
+    if (request != null && calendarState.hasCalendarPermission) {
+      LaunchRequests.consumeOpenEvent()
+      goToDate(request.date)
+      calendarViewModel.openEventFromWidget(request.date, request.eventId, request.instanceBegin)
+    }
+  }
   Scaffold(
       snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
@@ -230,17 +252,7 @@ fun CalendarScreen(
     AppDatePickerDialog(
       initialDate = currentVisibleDate,
       onDismiss = { showDatePicker = false },
-      onDateSelected = { selectedDate ->
-        if (selectedDate != currentVisibleDate) {
-          calendarViewModel.onVisibleDateChanged(selectedDate)
-
-          scope.launch { pagerState.scrollToPage(pageForDate(selectedDate)) }
-        }
-        // Выбор даты с экрана проектов — переходим к этому дню.
-        if (horizontalPagerState.currentPage == 0) {
-          scope.launch { horizontalPagerState.animateScrollToPage(1) }
-        }
-      })
+      onDateSelected = goToDate)
   }
   EventFormSheet(
       dialog = eventManagementState.dialog, onDismiss = eventManagementViewModel::dismissDialog) {
@@ -291,6 +303,10 @@ fun CalendarScreen(
         onRepeat = { event ->
           calendarViewModel.cancelEventDetails()
           eventManagementViewModel.openRepeat(event, event.repeatDate(today, timeZone))
+        },
+        onOpenDate = { date ->
+          calendarViewModel.cancelEventDetails()
+          goToDate(date)
         })
   }
   EventManagementDialogs(

@@ -46,6 +46,7 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import com.lpavs.caliinda.core.ui.util.placeLabel
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -288,9 +289,9 @@ fun CalendarEventItem(
                             trackColor = cardTextColor.copy(alpha = 0.15f))
                         Spacer(modifier = Modifier.width(8.dp))
                       }
-                      uiModel.location?.let {
+                      uiModel.place?.let {
                         Text(
-                            text = it,
+                            text = placeLabel(it),
                             color = cardTextColor,
                             style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                             maxLines = 1)
@@ -381,7 +382,7 @@ val normalEvent =
                 shadowOffsetYSeed = 6.0.dp,
                 shadowOffsetXSeed = 6.0.dp,
                 offestParam = 0.2f),
-        location = null,
+        place = null,
         originalEvent =
             EventDto(
                 id = "qp919hj747psg010hiua4qvmho_20250818T140000Z",

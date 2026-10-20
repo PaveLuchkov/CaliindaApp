@@ -2,11 +2,14 @@ package com.lpavs.caliinda.feature.calendar.presentation.model
 
 import androidx.compose.ui.unit.Dp
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
+import com.lpavs.caliinda.core.data.utils.EventPlace
+import com.lpavs.caliinda.core.ui.util.EventEnds
 
 data class EventUiModel(
     val id: String,
     val summary: String,
-    val location: String?,
+    /** Место: адрес или ссылка (в том числе созвон из описания). */
+    val place: EventPlace?,
     val isAllDay: Boolean,
     val formattedTimeString: String,
     val durationMinutes: Long,
@@ -33,4 +36,6 @@ data class EventDetailsUiModel(
     val shapeParams: GeneratedShapeParams = generateShapeParams(originalEvent.id),
     /** Многодневное — у проектов своя фигура (см. ProjectShapes.kt). */
     val isProject: Boolean = false,
+    /** Начало и конец многодневного — кнопками перехода на эти дни; однодневное — null. */
+    val ends: EventEnds? = null,
 )

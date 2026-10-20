@@ -44,6 +44,7 @@ import com.lpavs.caliinda.core.ui.util.displayTitle
 import com.lpavs.caliinda.feature.widget.NowLine
 import com.lpavs.caliinda.feature.widget.TitleImage
 import com.lpavs.caliinda.feature.widget.WidgetData
+import com.lpavs.caliinda.feature.widget.openEventAction
 import com.lpavs.caliinda.feature.widget.WidgetEntryPoint
 import com.lpavs.caliinda.feature.widget.date.dayNumberBitmap
 import com.lpavs.caliinda.feature.widget.date.dayShapeBitmap
@@ -128,6 +129,7 @@ private fun ComboContent(data: WidgetData) {
               val mainH = if (second) innerH - GAP_DP - SECOND_CARD_DP else innerH
               MainCard(
                   event = project.event,
+                  data = data,
                   colors =
                       CardColors(
                           GlanceTheme.colors.secondaryContainer,
@@ -166,6 +168,7 @@ private fun ComboContent(data: WidgetData) {
               val after = data.afterFocus?.takeIf { innerH >= 120f }
               MainCard(
                   event = focus,
+                  data = data,
                   colors = eventColors(data.focusIsNow),
                   widthDp = cardsW,
                   heightDp = if (after != null) innerH - GAP_DP - SECOND_CARD_DP else innerH) {
@@ -295,6 +298,7 @@ private fun DateColumn(data: WidgetData, widthDp: Float, heightDp: Float) {
 @Composable
 private fun MainCard(
     event: EventDto,
+    data: WidgetData,
     colors: CardColors,
     widthDp: Float,
     heightDp: Float,
@@ -314,7 +318,9 @@ private fun MainCard(
           GlanceModifier.width(widthDp.dp)
               .height(heightDp.dp)
               .background(colors.container)
-              .cornerRadius(android.R.dimen.system_app_widget_inner_radius),
+              .cornerRadius(android.R.dimen.system_app_widget_inner_radius)
+              // Сама карточка — к событию; остальной виджет открывает день.
+              .clickable(openEventAction(context, event, data.zone, data.today)),
       contentAlignment = Alignment.CenterStart) {
         Image(
             provider = ImageProvider(
@@ -351,6 +357,7 @@ private fun SecondCard(event: EventDto, isNow: Boolean, data: WidgetData, widthD
               .height(SECOND_CARD_DP.dp)
               .background(colors.container)
               .cornerRadius(android.R.dimen.system_app_widget_inner_radius)
+              .clickable(openEventAction(context, event, data.zone, data.today))
               .padding(horizontal = 14.dp),
       verticalAlignment = Alignment.CenterVertically) {
         TitleImage(title, colors.content, event.displayTitle(context))

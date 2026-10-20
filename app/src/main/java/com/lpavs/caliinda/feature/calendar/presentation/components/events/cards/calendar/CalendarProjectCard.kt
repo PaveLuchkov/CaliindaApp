@@ -367,7 +367,7 @@ val normalProjectEvent =
                 shadowOffsetYSeed = 6.0.dp,
                 shadowOffsetXSeed = 6.0.dp,
                 offestParam = 0.2f),
-        location = null,
+        place = null,
         originalEvent =
             EventDto(
                 id = "qp919hj747psg010hiua4qvmho_20250818T140000Z",
