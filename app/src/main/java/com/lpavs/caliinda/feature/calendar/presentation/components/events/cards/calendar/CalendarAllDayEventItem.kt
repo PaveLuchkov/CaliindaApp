@@ -103,13 +103,16 @@ fun AllDayEventItem(
                     .padding(
                         horizontal = CalendarUiDefaults.AllDayItemPadding,
                         vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
-              Text(
+              // Сохранили — название «барабаном» сменяется фразой и обратно.
+              RollingText(
                   text = celebration ?: event.displayTitle(),
                   style = Typography.bodyLargeEmphasized,
                   fontFamily = cardFontFamily,
                   fontWeight = FontWeight.Companion.Medium,
                   color = cardTextColor,
                   textAlign = TextAlign.Companion.Center,
+                  // Как раньше: длинное название переносится, а не обрезается.
+                  maxLines = Int.MAX_VALUE,
                   modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 3.dp),
               )
 

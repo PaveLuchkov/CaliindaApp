@@ -256,12 +256,11 @@ fun CalendarProjectItem(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false))
                         Spacer(modifier = Modifier.width(cuid.padding))
-                        Text(
+                        RollingText(
                             text = celebration ?: uiModel.formattedTimeString,
                             color = cardTextColor,
                             style = typography.labelMedium,
-                            maxLines = 1,
-                          overflow = TextOverflow.Ellipsis)
+                            maxLines = 1)
                       }
                 } else {
                   Column(verticalArrangement = Arrangement.Top) {
@@ -274,12 +273,11 @@ fun CalendarProjectItem(
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
                     Row {
-                      Text(
+                      RollingText(
                           text = celebration ?: uiModel.formattedTimeString,
                           color = cardTextColor,
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                          maxLines = 1,
-                          overflow = TextOverflow.Ellipsis)
+                          maxLines = 1)
                       Spacer(modifier = Modifier.width(8.dp))
                       uiModel.daysLeft?.let {
                         Text(

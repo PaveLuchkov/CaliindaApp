@@ -263,12 +263,11 @@ fun CalendarEventItem(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false))
                         Spacer(modifier = Modifier.width(cuid.padding))
-                        Text(
+                        RollingText(
                             text = celebration ?: uiModel.formattedTimeString,
                             color = cardTextColor,
                             style = typography.labelMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis)
+                            maxLines = 1)
                       }
                 } else {
                   Column(verticalArrangement = Arrangement.Top) {
@@ -282,12 +281,11 @@ fun CalendarEventItem(
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                       // Сохранили — на пару секунд весёлая фраза вместо времени.
-                      Text(
+                      RollingText(
                           text = celebration ?: uiModel.formattedTimeString,
                           color = cardTextColor,
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                          maxLines = 1,
-                          overflow = TextOverflow.Ellipsis)
+                          maxLines = 1)
                       Spacer(modifier = Modifier.width(8.dp))
                       if (current) {
                         // Идущее событие: заполненная часть — сколько прошло, а волна бежит.
