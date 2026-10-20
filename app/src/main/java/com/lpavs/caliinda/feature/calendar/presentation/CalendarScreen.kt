@@ -226,21 +226,23 @@ fun CalendarScreen(
     }
   }
 
+  // Перейти на день: из выбора даты и из подробностей события (тап по дате начала/конца).
+  val goToDate: (LocalDate) -> Unit = { date ->
+    if (date != currentVisibleDate) {
+      calendarViewModel.onVisibleDateChanged(date)
+      scope.launch { pagerState.scrollToPage(pageForDate(date)) }
+    }
+    // С экрана проектов — переходим к самому дню.
+    if (horizontalPagerState.currentPage == 0) {
+      scope.launch { horizontalPagerState.animateScrollToPage(1) }
+    }
+  }
+
   if (showDatePicker) {
     AppDatePickerDialog(
       initialDate = currentVisibleDate,
       onDismiss = { showDatePicker = false },
-      onDateSelected = { selectedDate ->
-        if (selectedDate != currentVisibleDate) {
-          calendarViewModel.onVisibleDateChanged(selectedDate)
-
-          scope.launch { pagerState.scrollToPage(pageForDate(selectedDate)) }
-        }
-        // Выбор даты с экрана проектов — переходим к этому дню.
-        if (horizontalPagerState.currentPage == 0) {
-          scope.launch { horizontalPagerState.animateScrollToPage(1) }
-        }
-      })
+      onDateSelected = goToDate)
   }
   EventFormSheet(
       dialog = eventManagementState.dialog, onDismiss = eventManagementViewModel::dismissDialog) {
@@ -291,6 +293,10 @@ fun CalendarScreen(
         onRepeat = { event ->
           calendarViewModel.cancelEventDetails()
           eventManagementViewModel.openRepeat(event, event.repeatDate(today, timeZone))
+        },
+        onOpenDate = { date ->
+          calendarViewModel.cancelEventDetails()
+          goToDate(date)
         })
   }
   EventManagementDialogs(

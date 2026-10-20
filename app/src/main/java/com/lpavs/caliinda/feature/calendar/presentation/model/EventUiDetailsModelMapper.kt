@@ -26,19 +26,18 @@ constructor(
     val endInstant = event.endTime
     val isCurrent = !currentTime.isBefore(startInstant) && currentTime.isBefore(endInstant)
 
+    val locale =
+        ConfigurationCompat.getLocales(context.resources.configuration).get(0)
+            ?: java.util.Locale.getDefault()
     val eventDetailsUiModel =
         EventDetailsUiModel(
             summary = event.displayTitle(context),
             formattedTimeString =
-                dateTimeFormatterUtil.formatEventDetailsTime(
-                    context,
-                    event,
-                    zone,
-                    ConfigurationCompat.getLocales(context.resources.configuration).get(0)
-                        ?: java.util.Locale.getDefault()),
+                dateTimeFormatterUtil.formatEventDetailsTime(context, event, zone, locale),
             isCurrent = isCurrent,
             originalEvent = event,
-            isProject = event.isProject())
+            isProject = event.isProject(),
+            ends = dateTimeFormatterUtil.formatEventEnds(context, event, zone, locale))
     return eventDetailsUiModel
   }
 }

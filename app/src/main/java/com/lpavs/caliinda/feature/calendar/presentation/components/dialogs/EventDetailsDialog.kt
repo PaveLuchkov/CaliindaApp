@@ -20,6 +20,11 @@ import com.lpavs.caliinda.core.ui.util.placeIcon
 import com.lpavs.caliinda.core.ui.util.placeLabel
 import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import com.lpavs.caliinda.core.ui.util.EventEnds
+import java.time.LocalDate
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.R
 import androidx.compose.ui.res.stringResource
@@ -75,6 +80,8 @@ fun CustomEventDetailsDialog(
     onEdit: (EventDto) -> Unit,
     onDelete: (EventDto) -> Unit,
     onRepeat: (EventDto) -> Unit,
+    /** Тап по дате начала или конца многодневного события — перейти на этот день. */
+    onOpenDate: (LocalDate) -> Unit,
     /** Календарь события; null — не показываем (он один или не найден). */
     calendar: DeviceCalendar? = null,
 ) {
@@ -133,11 +140,16 @@ fun CustomEventDetailsDialog(
                                 style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = onCard)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = event.formattedTimeString,
-                                color = onCard,
-                                style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
-                                maxLines = 2)
+                            val ends = event.ends
+                            if (ends == null) {
+                              Text(
+                                  text = event.formattedTimeString,
+                                  color = onCard,
+                                  style = typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
+                                  maxLines = 2)
+                            } else {
+                              EndsRow(ends, color = onCard, onOpenDate = onOpenDate)
+                            }
                             Spacer(modifier = Modifier.height(16.dp))
 
                             val place =
@@ -258,4 +270,35 @@ private fun CalendarRow(calendar: DeviceCalendar, color: Color) {
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.weight(1f, fill = false))
   }
+}
+
+/**
+ * Начало и конец многодневного события — две кнопки: видно, что это разные дни, и по тапу
+ * можно на них перейти. Подложка лёгкая, цветом текста карточки — без нового цвета в карточке.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EndsRow(ends: EventEnds, color: Color, onOpenDate: (LocalDate) -> Unit) {
+  FlowRow(
+      verticalArrangement = Arrangement.spacedBy(6.dp),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      itemVerticalAlignment = Alignment.CenterVertically) {
+        DateChip(ends.startText, color) { onOpenDate(ends.startDate) }
+        Text("–", style = typography.titleLarge, color = color)
+        DateChip(ends.endText, color) { onOpenDate(ends.endDate) }
+      }
+}
+
+@Composable
+private fun DateChip(text: String, color: Color, onClick: () -> Unit) {
+  Text(
+      text = text,
+      style = typography.titleLarge.copy(fontWeight = FontWeight.Normal),
+      color = color,
+      maxLines = 1,
+      modifier =
+          Modifier.clip(MaterialTheme.shapes.medium)
+              .background(color.copy(alpha = 0.1f))
+              .clickable(role = Role.Button, onClick = onClick)
+              .padding(horizontal = 10.dp, vertical = 4.dp))
 }
