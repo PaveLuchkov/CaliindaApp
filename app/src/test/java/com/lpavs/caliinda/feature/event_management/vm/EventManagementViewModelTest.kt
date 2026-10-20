@@ -114,6 +114,19 @@ class EventManagementViewModelTest {
   }
 
   @Test
+  fun `новое событие не наследует напоминания прошлой правки`() = runTest(dispatcher) {
+    // All-day из Google: «накануне в 17:00» = 420 минут — в форме создания было «за 7 часов».
+    whenever(repository.remindersOf(single)).thenReturn(listOf(420))
+    viewModel.requestEditEvent(single)
+    advanceUntilIdle()
+    assertEquals(listOf(420), viewModel.uiState.value.editingReminders)
+
+    viewModel.dismissDialog()
+    viewModel.openCreate(LocalDate.of(2026, 10, 6), asProject = false)
+    assertEquals(null, viewModel.uiState.value.editingReminders)
+  }
+
+  @Test
   fun `удаление повторяющегося спрашивает режим`() {
     viewModel.requestDelete(recurring)
     assertEquals(EventDialog.ChooseDeleteMode(recurring), viewModel.uiState.value.dialog)

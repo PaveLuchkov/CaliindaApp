@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +54,8 @@ fun CreateEventScreen(
   // Состояние полей
   // «(Без названия)» шаблона в поле не подставляем — сохранилось бы как настоящее название.
   var summary by remember { mutableStateOf(template?.takeUnless { it.isUntitled }?.summary ?: "") }
-  var description by remember { mutableStateOf(template?.description ?: "") }
+  // Состояние поля, а не строка: см. NotesField.
+  val description = remember { TextFieldState(template?.description ?: "") }
   var location by remember { mutableStateOf(template?.location ?: "") }
 
   // Ошибки
@@ -103,8 +105,9 @@ fun CreateEventScreen(
 
   // Пока не выбрали своё — напоминание из настроек (своё для «весь день» и со временем).
   var reminder by remember { mutableStateOf<ReminderChoice>(ReminderChoice.Default) }
+  // Напоминания шаблона — только для «Ещё раз»; у обычного создания их быть не должно.
   LaunchedEffect(templateReminders) {
-    if (templateReminders != null && reminder == ReminderChoice.Default) {
+    if (template != null && templateReminders != null && reminder == ReminderChoice.Default) {
       reminder = ReminderChoice.Custom(templateReminders.firstOrNull())
     }
   }
@@ -115,7 +118,7 @@ fun CreateEventScreen(
           ?: calendars.firstOrNull { it.id == defaultCalendarId }
           ?: calendars.firstOrNull()
   val save = {
-    onSave(summary, description, location, eventDateTimeState, reminder, calendar?.id)
+    onSave(summary, description.text.toString(), location, eventDateTimeState, reminder, calendar?.id)
   }
   // Сразу клавиатура в названии: типичное событие — это название и время. У копии название уже
   // есть, менять скорее будут день и время — клавиатура закрыла бы их.
@@ -133,7 +136,6 @@ fun CreateEventScreen(
         summaryError = summaryError,
         onSummaryErrorChange = { summaryError = it },
         description = description,
-        onDescriptionChange = { description = it },
         location = location,
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,

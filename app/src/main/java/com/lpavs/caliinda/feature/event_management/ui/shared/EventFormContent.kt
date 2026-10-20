@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,8 +45,7 @@ fun EventFormContent(
     onSummaryChange: (String) -> Unit,
     summaryError: String?,
     onSummaryErrorChange: (String?) -> Unit,
-    description: String,
-    onDescriptionChange: (String) -> Unit,
+    description: TextFieldState,
     location: String,
     onLocationChange: (String) -> Unit,
     dateTimeState: EventDateTimeState,
@@ -112,7 +112,6 @@ fun EventFormContent(
                 location = location,
                 onLocationChange = onLocationChange,
                 description = description,
-                onDescriptionChange = onDescriptionChange,
                 reminderMinutes = reminderMinutes,
                 isAllDay = dateTimeState.isAllDay,
                 onReminderClick = { showReminderPicker = true },

@@ -24,6 +24,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -567,19 +570,33 @@ private fun CalendarFilterSheet(
     onToggle: (calendarId: Long, shown: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-  ModalBottomSheet(onDismissRequest = onDismiss) {
-    Text(
-        text = stringResource(R.string.calendars_filter_title),
-        style = typography.titleLarge,
-        modifier = Modifier.padding(horizontal = 24.dp))
-    Text(
-        text = stringResource(R.string.calendars_filter_hint),
-        style = typography.bodyMedium,
-        color = colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 8.dp))
-    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-      // Сначала по аккаунту: календари одного аккаунта стоят рядом.
-      val sorted = calendars.sortedWith(compareBy({ it.accountName }, { it.displayName }))
+  // Сразу целиком, как шторка пояса: дотянутая с половины до верха шторка (material3 alpha)
+  // переставала принимать касания. Заголовок — внутри списка: иначе на весь экран
+  // прокручивалась только узкая полоска под ним, а свайп по заголовку тянул шторку.
+  val sorted =
+      remember(calendars) {
+        // Сначала по аккаунту: календари одного аккаунта стоят рядом.
+        calendars.sortedWith(compareBy({ it.accountName }, { it.displayName }))
+      }
+  ModalBottomSheet(
+      onDismissRequest = onDismiss,
+      sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = WindowInsets.navigationBars.asPaddingValues()) {
+      item(key = "title") {
+        Text(
+            text = stringResource(R.string.calendars_filter_title),
+            style = typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 24.dp))
+      }
+      item(key = "hint") {
+        Text(
+            text = stringResource(R.string.calendars_filter_hint),
+            style = typography.bodyMedium,
+            color = colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 8.dp))
+      }
       itemsIndexed(sorted, key = { _, it -> it.id }) { _, calendar ->
         val shown = calendar.id !in hiddenIds
         ListItem(

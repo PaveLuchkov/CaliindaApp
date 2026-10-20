@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +45,8 @@ fun EditEventScreen(
       remember(eventToEdit.id) {
         mutableStateOf(if (eventToEdit.isUntitled) "" else eventToEdit.summary)
       }
-  var description by remember(eventToEdit.id) { mutableStateOf(eventToEdit.description ?: "") }
+  // Состояние поля, а не строка: см. NotesField.
+  val description = remember(eventToEdit.id) { TextFieldState(eventToEdit.description ?: "") }
   var location by remember(eventToEdit.id) { mutableStateOf(eventToEdit.location ?: "") }
 
   // Состояние ошибок и валидации
@@ -71,7 +73,7 @@ fun EditEventScreen(
       reminder = ReminderChoice.Custom(initialReminders.firstOrNull())
     }
   }
-  val save = { onSave(summary, description, location, eventDateTimeState, reminder) }
+  val save = { onSave(summary, description.text.toString(), location, eventDateTimeState, reminder) }
 
   // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
   // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.
@@ -82,7 +84,6 @@ fun EditEventScreen(
         summaryError = summaryError,
         onSummaryErrorChange = { summaryError = it },
         description = description,
-        onDescriptionChange = { description = it },
         location = location,
         onLocationChange = { location = it },
         dateTimeState = eventDateTimeState,
