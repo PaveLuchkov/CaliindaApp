@@ -110,7 +110,7 @@ constructor(
     viewModelScope.launch {
       if (!validateInput(summary, dateTimeState)) {
         _events.send(
-            EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
+            EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data), isError = true))
         return@launch
       }
       val zone = timeZone.value
@@ -128,7 +128,7 @@ constructor(
           operation = { calendarRepository.createEvent(draft) },
           onSuccess = { id ->
             // Без названия: фраза встаёт в саму карточку, где оно и так крупно.
-            celebrate(setOf(id), draft.startDate, funMessages.getEventCreatedMessage(null))
+            celebrate(setOf(id), draft.startDate, funMessages.getEventCreatedMessage(null), created = true)
           },
           errorMessage = { funMessages.getCreateErrorMessage() })
     }
@@ -152,7 +152,7 @@ constructor(
       }
       if (!validateInput(summary, dateTimeState)) {
         _events.send(
-            EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data)))
+            EventManagementUiEvent.ShowMessage(UiText.from(R.string.error_check_input_data), isError = true))
         return@launch
       }
 
@@ -196,7 +196,7 @@ constructor(
                     originalEvent.eventId,
                     originalEvent.originalEventId,
                     originalEvent.recurringEventId?.toLongOrNull())
-            celebrate(ids, draft.startDate, funMessages.getEventUpdatedMessage(null))
+            celebrate(ids, draft.startDate, funMessages.getEventUpdatedMessage(null), created = false)
           },
           errorMessage = { funMessages.getUpdateErrorMessage() })
     }
@@ -243,7 +243,7 @@ constructor(
     pendingDeletions.release(event.id)
     if (result.isSuccess) refreshSurfaces()
     if (result.isFailure) {
-      _events.send(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
+      _events.send(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage(), isError = true))
     }
   }
 
@@ -299,8 +299,12 @@ constructor(
           dismissDialog()
           onSuccess(value)
         }
-        .onFailure { _events.send(EventManagementUiEvent.ShowMessage(errorMessage())) }
+        .onFailure { _events.send(EventManagementUiEvent.ShowMessage(errorMessage(), isError = true)) }
   }
+
+  /** Тап по плашке «Создано на чт, 22 окт →»: экран перешёл на день — «рождение» ещё раз, там. */
+  fun celebrateAgain(celebration: Celebration) =
+      celebrate(celebration.eventIds, celebration.date, celebration.message, celebration.created)
 
   // --- «Рождение» сохранённой карточки ---
 
@@ -310,8 +314,8 @@ constructor(
   private var celebrationJob: Job? = null
 
   /** Сохранили — карточка этого события играет «рождение» с фразой, потом всё как обычно. */
-  private fun celebrate(eventIds: Set<Long>, date: LocalDate, message: UiText) {
-    val celebration = Celebration(eventIds, date, message, SystemClock.uptimeMillis())
+  private fun celebrate(eventIds: Set<Long>, date: LocalDate, message: UiText, created: Boolean) {
+    val celebration = Celebration(eventIds, date, message, SystemClock.uptimeMillis(), created)
     _celebration.value = celebration
     celebrationJob?.cancel()
     celebrationJob =
@@ -456,7 +460,8 @@ sealed interface EventDialog {
 }
 
 sealed interface EventManagementUiEvent {
-  data class ShowMessage(val message: UiText) : EventManagementUiEvent
+  /** [isError] — показать тоном ошибки. */
+  data class ShowMessage(val message: UiText, val isError: Boolean = false) : EventManagementUiEvent
 }
 
 /**
@@ -469,6 +474,8 @@ data class Celebration(
     val date: LocalDate,
     val message: UiText,
     val startedAt: Long,
+    /** true — создано, false — изменено: «Создано на …» или «Перенесено на …» в плашке. */
+    val created: Boolean = true,
 ) {
   fun matches(event: EventDto): Boolean =
       event.eventId in eventIds || event.originalEventId in eventIds

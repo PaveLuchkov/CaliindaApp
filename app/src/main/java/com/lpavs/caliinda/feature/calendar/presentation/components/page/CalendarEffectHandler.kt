@@ -2,7 +2,6 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.page
 
 import android.content.Context
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
@@ -20,7 +19,7 @@ fun CalendarEffectHandler(
     calendarViewModel: CalendarViewModel,
     eventManagementViewModel: EventManagementViewModel,
     pagerState: PagerState,
-    snackbarHostState: SnackbarHostState,
+    noticeState: TopNoticeState,
     context: Context = LocalContext.current,
     initialPageIndex: Int,
     anchorDate: LocalDate,
@@ -36,12 +35,12 @@ fun CalendarEffectHandler(
   LaunchedEffect(Unit) {
     merge(calendarViewModel.events, eventManagementViewModel.events).collect { event ->
       when (event) {
-        is CalendarUiEvent.ShowMessage -> {
-          snackbarHostState.showSnackbar(event.message.asString(context))
-        }
-        is EventManagementUiEvent.ShowMessage -> {
-          snackbarHostState.showSnackbar(event.message.asString(context))
-        }
+        is CalendarUiEvent.ShowMessage -> noticeState.show(Notice(event.message.asString(context)))
+        is EventManagementUiEvent.ShowMessage ->
+            noticeState.show(
+                Notice(
+                    event.message.asString(context),
+                    tone = if (event.isError) NoticeTone.ERROR else NoticeTone.INFO))
       }
     }
   }

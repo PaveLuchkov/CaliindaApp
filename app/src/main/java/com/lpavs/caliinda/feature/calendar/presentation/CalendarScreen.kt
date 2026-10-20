@@ -1,5 +1,12 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import androidx.compose.ui.unit.dp
+import com.lpavs.caliinda.R
+import java.util.Locale
+import java.time.format.DateTimeFormatter
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.rememberTopNoticeState
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.TopNoticeHost
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.Notice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.repeatDate
 import java.time.YearMonth
 import android.app.Activity
@@ -17,8 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,7 +77,7 @@ fun CalendarScreen(
   val shownCalendars by calendarViewModel.shownCalendars.collectAsStateWithLifecycle()
   val defaultCalendarId by eventManagementViewModel.defaultCalendarId.collectAsStateWithLifecycle()
 
-  val snackbarHostState = remember { SnackbarHostState() }
+  val noticeState = rememberTopNoticeState()
   val haptic = LocalHapticFeedback.current
 
   val context = LocalContext.current
@@ -137,7 +142,7 @@ fun CalendarScreen(
       calendarViewModel = calendarViewModel,
       eventManagementViewModel = eventManagementViewModel,
       pagerState = pagerState,
-      snackbarHostState = snackbarHostState,
+      noticeState = noticeState,
       initialPageIndex = initialPageIndex,
       anchorDate = anchorDate)
 
@@ -145,14 +150,6 @@ fun CalendarScreen(
 
   val deletions by calendarViewModel.deletions.collectAsStateWithLifecycle()
   val celebration by eventManagementViewModel.celebration.collectAsStateWithLifecycle()
-  // Сохранили на другой день — подсвечивать на экране нечего; пока нет плашки сверху, говорим
-  // снекбаром, иначе сохранение прошло бы молча.
-  LaunchedEffect(celebration?.startedAt) {
-    val saved = celebration ?: return@LaunchedEffect
-    if (horizontalPagerState.currentPage == 1 && saved.date != currentVisibleDate) {
-      snackbarHostState.showSnackbar(saved.message.asString(context))
-    }
-  }
   val eventActions =
       remember(eventManagementViewModel, calendarViewModel, deletions, celebration) {
         EventActions(
@@ -195,6 +192,23 @@ fun CalendarScreen(
     }
   }
 
+  // Сохранили на другой день — подсвечивать на экране нечего: плашка «Создано на чт, 22 окт →»,
+  // тап — переход на день и «рождение» уже там.
+  val dayFormat = remember(context) { DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()) }
+  LaunchedEffect(celebration?.startedAt) {
+    val saved = celebration ?: return@LaunchedEffect
+    if (horizontalPagerState.currentPage == 1 && saved.date != currentVisibleDate) {
+      val day = saved.date.format(dayFormat)
+      noticeState.show(
+          Notice(
+              context.getString(
+                  if (saved.created) R.string.notice_created_on else R.string.notice_moved_to, day),
+              onClick = {
+                goToDate(saved.date)
+                eventManagementViewModel.celebrateAgain(saved)
+              }))
+    }
+  }
   // Тап по событию на виджете: его день и подробности — тоже после доступа к календарю.
   val openRequest by LaunchRequests.openEvent.collectAsStateWithLifecycle()
   LaunchedEffect(openRequest, calendarState.hasCalendarPermission) {
@@ -206,7 +220,6 @@ fun CalendarScreen(
     }
   }
   Scaffold(
-      snackbarHost = { SnackbarHost(snackbarHostState) },
       topBar = {
         CalendarAppBar(
             onNavigateToSettings = onNavigateToSettings,
@@ -252,6 +265,10 @@ fun CalendarScreen(
           initialPageIndex = initialPageIndex,
           anchorDate = anchorDate,
           introductionState = introductionState)
+
+      // Плашка под шапкой — вместо снекбара над кнопкой создания.
+      TopNoticeHost(
+          noticeState, Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
 
       if (calendarState.hasCalendarPermission) {
         BottomBar(

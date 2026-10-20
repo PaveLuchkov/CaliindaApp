@@ -454,4 +454,6 @@
     <string name="attendee_declined">Не придёт</string>
     <string name="description_expand">Показать полностью</string>
     <string name="description_collapse">Свернуть</string>
+    <string name="notice_created_on">Создано на %1$s</string>
+    <string name="notice_moved_to">Перенесено на %1$s</string>
 </resources>

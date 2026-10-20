@@ -437,4 +437,6 @@
     <string name="attendee_declined">Ne participe pas</string>
     <string name="description_expand">Afficher plus</string>
     <string name="description_collapse">Afficher moins</string>
+    <string name="notice_created_on">Créé pour le %1$s</string>
+    <string name="notice_moved_to">Déplacé au %1$s</string>
 </resources>
