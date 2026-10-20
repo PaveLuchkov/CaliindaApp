@@ -46,6 +46,7 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.lerp
 import com.lpavs.caliinda.core.ui.util.placeLabel
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.getValue
@@ -90,9 +91,14 @@ fun CalendarEventItem(
     onDetailsClickFromList: () -> Unit,
     onDeleteClickFromList: () -> Unit,
     onEditClickFromList: () -> Unit,
+    /** Только что сохранено: фраза на месте времени и «рождение»; null — как обычно. */
+    celebration: String? = null,
+    /** Метка сохранения: новая — «рождение» играет заново. */
+    celebrationKey: Long? = null,
 ) {
   val haptic = LocalHapticFeedback.current
   val current = uiModel.isCurrent
+  val birth = rememberCardBirth(celebrationKey)
   val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
   val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
@@ -194,7 +200,12 @@ fun CalendarEventItem(
               .dropShadow(shape = cardShape, shadow = cardElevation)
               .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
-              .background(cardBackground)
+              // Вспышка «рождения» — к цвету «сейчас», у текущего (он и так такой) — к обычному.
+              .background(
+                  lerp(
+                      cardBackground,
+                      if (current) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
+                      birth.flash))
               .height(animatedHeight)
               .pointerInput(uiModel.id) {
                 detectTapGestures(
@@ -231,7 +242,7 @@ fun CalendarEventItem(
                               .graphicsLayer(
                                   translationX = with(density) { starOffsetX.toPx() },
                                   translationY = with(density) { starOffsetY.toPx() },
-                                  rotationZ = rotationAngle)
+                                  rotationZ = rotationAngle + birth.rotation)
                               .requiredSize(starContainerSize)
                               .clip(clipStar)
                               .background(starBackground)
@@ -253,10 +264,11 @@ fun CalendarEventItem(
                             modifier = Modifier.weight(1f, fill = false))
                         Spacer(modifier = Modifier.width(cuid.padding))
                         Text(
-                            text = uiModel.formattedTimeString,
+                            text = celebration ?: uiModel.formattedTimeString,
                             color = cardTextColor,
                             style = typography.labelMedium,
-                            maxLines = 1)
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis)
                       }
                 } else {
                   Column(verticalArrangement = Arrangement.Top) {
@@ -269,11 +281,13 @@ fun CalendarEventItem(
                         overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                      // Сохранили — на пару секунд весёлая фраза вместо времени.
                       Text(
-                          text = uiModel.formattedTimeString,
+                          text = celebration ?: uiModel.formattedTimeString,
                           color = cardTextColor,
                           style = typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-                          maxLines = 1)
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis)
                       Spacer(modifier = Modifier.width(8.dp))
                       if (current) {
                         // Идущее событие: заполненная часть — сколько прошло, а волна бежит.

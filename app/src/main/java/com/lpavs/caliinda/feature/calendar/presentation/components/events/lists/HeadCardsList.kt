@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +41,10 @@ fun HeadCardsList(
                 cardHeight = 0.dp,
                 onUndo = { actions.onUndoDelete(event.id) },
                 padding = PaddingValues(0.dp)) {
+              val celebrated = actions.celebration?.takeIf { it.matches(event) }
               AllDayEventItem(
+                  celebration = celebrated?.message?.asString(LocalContext.current),
+                  celebrationKey = celebrated?.startedAt,
                   event = event,
                   isExpanded = isExpanded,
                   onToggleExpand = {

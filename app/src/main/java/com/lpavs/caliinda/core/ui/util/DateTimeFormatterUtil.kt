@@ -57,7 +57,8 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
       // В списке проектов многодневному событию хватает дат — время тут шум. Конец ровно в
       // полночь — это предыдущий день.
       project && date(start) != date(end) -> "${date(start)} - ${date(end.minusMillis(1))}"
-      date(start) == date(end) -> "${time(start)} - ${time(end)}"
+      // Конец ровно в полночь — тот же день: 22:00–00:00 — просто время, без дат.
+      date(start) == date(end.minusMillis(1)) -> "${time(start)} - ${time(end)}"
       else -> "${date(start)} ${time(start)} - ${time(end)} ${date(end)}"
     }
   }

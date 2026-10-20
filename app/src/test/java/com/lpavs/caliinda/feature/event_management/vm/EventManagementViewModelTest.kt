@@ -48,8 +48,8 @@ class EventManagementViewModelTest {
   private val repository: CalendarRepository = mock()
   private val message = UiText.DynamicString("ok")
   private val funMessages: IFunMessages = mock {
-    on { getEventUpdatedMessage(any()) } doReturn message
-    on { getEventCreatedMessage(any()) } doReturn message
+    on { getEventUpdatedMessage(anyOrNull()) } doReturn message
+    on { getEventCreatedMessage(anyOrNull()) } doReturn message
     on { getEventDeletedMessage(anyOrNull()) } doReturn message
     on { getSeriesDeletedMessage() } doReturn message
   }
@@ -186,17 +186,33 @@ class EventManagementViewModelTest {
   }
 
   @Test
-  fun `после успешного сохранения шторка закрывается и приходит сообщение`() = runTest(dispatcher) {
+  fun `после сохранения шторка закрывается, а карточка «рождается» вместо снекбара`() = runTest(dispatcher) {
     whenever(repository.updateEvent(any(), any(), any())).thenReturn(Result.success(Unit))
     advanceUntilIdle() // пояс из настроек подтянулся
     viewModel.requestEditEvent(single)
 
     viewModel.updateEvent(
         "Новое название", "", "", single.toDateTimeState(zone), EventUpdateMode.ALL_IN_SERIES)
-    advanceUntilIdle()
+    advanceTimeBy(100)
 
     assertEquals(EventDialog.None, viewModel.uiState.value.dialog)
-    assertEquals(EventManagementUiEvent.ShowMessage(message), viewModel.events.first())
+    val celebration = viewModel.celebration.value!!
+    assertTrue(celebration.matches(single))
+    assertEquals(LocalDate.of(2026, 10, 5), celebration.date)
+    // Фраза без названия — оно и так в карточке.
+    verify(funMessages).getEventUpdatedMessage(null)
+    // Отыграла — пропадает сама.
+    advanceTimeBy(Celebration.DURATION_MS)
+    assertEquals(null, viewModel.celebration.value)
+  }
+
+  @Test
+  fun `созданное событие «рождается» по своему новому id`() = runTest(dispatcher) {
+    whenever(repository.createEvent(any())).thenReturn(Result.success(42L))
+    advanceUntilIdle()
+    viewModel.createEvent("Встреча", "", "", single.toDateTimeState(zone))
+    advanceTimeBy(100)
+    assertTrue(viewModel.celebration.value!!.matches(single.copy(eventId = 42L)))
   }
 
   @Test
@@ -221,7 +237,7 @@ class EventManagementViewModelTest {
 
   @Test
   fun `новое событие получает напоминание по умолчанию`() = runTest(dispatcher) {
-    whenever(repository.createEvent(any())).thenReturn(Result.success(Unit))
+    whenever(repository.createEvent(any())).thenReturn(Result.success(1L))
     advanceUntilIdle()
     val timed = single.toDateTimeState(zone)
 

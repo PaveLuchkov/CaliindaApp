@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -63,9 +64,18 @@ fun AllDayEventItem(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit,
     onDetailsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Только что сохранено: фраза вместо названия и вспышка; null — как обычно. */
+    celebration: String? = null,
+    celebrationKey: Long? = null,
 ) {
-  val cardBackground = MaterialTheme.colorScheme.tertiaryContainer
+  val birth = rememberCardBirth(celebrationKey)
+  // Фигуры у ленты нет — «рождение» здесь только вспышка.
+  val cardBackground =
+      lerp(
+          MaterialTheme.colorScheme.tertiaryContainer,
+          MaterialTheme.colorScheme.primaryContainer,
+          birth.flash)
   val cardTextColor = MaterialTheme.colorScheme.onTertiaryContainer
   val haptic = LocalHapticFeedback.current
     val cardFontFamily =
@@ -94,7 +104,7 @@ fun AllDayEventItem(
                         horizontal = CalendarUiDefaults.AllDayItemPadding,
                         vertical = CalendarUiDefaults.AllDayItemVerticalContentPadding)) {
               Text(
-                  text = event.displayTitle(),
+                  text = celebration ?: event.displayTitle(),
                   style = Typography.bodyLargeEmphasized,
                   fontFamily = cardFontFamily,
                   fontWeight = FontWeight.Companion.Medium,

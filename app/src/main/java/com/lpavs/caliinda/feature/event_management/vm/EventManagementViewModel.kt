@@ -126,7 +126,10 @@ constructor(
                   calendarId = calendarId)
       runOperation(
           operation = { calendarRepository.createEvent(draft) },
-          successMessage = { funMessages.getEventCreatedMessage(draft.summary) },
+          onSuccess = { id ->
+            // Без названия: фраза встаёт в саму карточку, где оно и так крупно.
+            celebrate(setOf(id), draft.startDate, funMessages.getEventCreatedMessage(null))
+          },
           errorMessage = { funMessages.getCreateErrorMessage() })
     }
   }
@@ -186,7 +189,15 @@ constructor(
 
       runOperation(
           operation = { calendarRepository.updateEvent(originalEvent, draft, updateMode) },
-          successMessage = { funMessages.getEventUpdatedMessage(originalEvent.nameForMessage()) },
+          onSuccess = {
+            // Правка экземпляра даёт новую запись-исключение — её узнаём по ссылке на серию.
+            val ids =
+                setOfNotNull(
+                    originalEvent.eventId,
+                    originalEvent.originalEventId,
+                    originalEvent.recurringEventId?.toLongOrNull())
+            celebrate(ids, draft.startDate, funMessages.getEventUpdatedMessage(null))
+          },
           errorMessage = { funMessages.getUpdateErrorMessage() })
     }
   }
@@ -267,26 +278,47 @@ constructor(
     viewModelScope.launch {
       runOperation(
           operation = { calendarRepository.deleteEvent(eventToDelete, mode) },
-          successMessage = { funMessages.getSeriesDeletedMessage() },
+          onSuccess = {
+            _events.send(EventManagementUiEvent.ShowMessage(funMessages.getSeriesDeletedMessage()))
+          },
           errorMessage = { funMessages.getDeleteErrorMessage() })
     }
   }
 
-  private suspend fun runOperation(
-      operation: suspend () -> Result<Unit>,
-      successMessage: () -> UiText,
+  private suspend fun <T> runOperation(
+      operation: suspend () -> Result<T>,
+      onSuccess: suspend (T) -> Unit,
       errorMessage: () -> UiText
   ) {
     _uiState.update { it.copy(isLoading = true) }
     val result = operation()
     _uiState.update { it.copy(isLoading = false) }
-    if (result.isSuccess) {
-      refreshSurfaces()
-      dismissDialog()
-      _events.send(EventManagementUiEvent.ShowMessage(successMessage()))
-    } else {
-      _events.send(EventManagementUiEvent.ShowMessage(errorMessage()))
-    }
+    result
+        .onSuccess { value ->
+          refreshSurfaces()
+          dismissDialog()
+          onSuccess(value)
+        }
+        .onFailure { _events.send(EventManagementUiEvent.ShowMessage(errorMessage())) }
+  }
+
+  // --- «Рождение» сохранённой карточки ---
+
+  private val _celebration = MutableStateFlow<Celebration?>(null)
+  /** Только что созданное или изменённое событие: его карточка «рождается» (см. Celebration). */
+  val celebration: StateFlow<Celebration?> = _celebration.asStateFlow()
+  private var celebrationJob: Job? = null
+
+  /** Сохранили — карточка этого события играет «рождение» с фразой, потом всё как обычно. */
+  private fun celebrate(eventIds: Set<Long>, date: LocalDate, message: UiText) {
+    val celebration = Celebration(eventIds, date, message, SystemClock.uptimeMillis())
+    _celebration.value = celebration
+    celebrationJob?.cancel()
+    celebrationJob =
+        viewModelScope.launch {
+          delay(Celebration.DURATION_MS)
+          _celebration.update { if (it == celebration) null else it }
+        }
   }
 
   // --- Форма <-> модель ---
@@ -425,4 +457,23 @@ sealed interface EventDialog {
 
 sealed interface EventManagementUiEvent {
   data class ShowMessage(val message: UiText) : EventManagementUiEvent
+}
+
+/**
+ * Карточка события из [eventIds] на дне [date] «рождается»: фигура оборачивается, контейнер
+ * вспыхивает, вместо времени на [DURATION_MS] — [message]. [startedAt] отличает повторное
+ * сохранение того же события — анимация играет заново.
+ */
+data class Celebration(
+    val eventIds: Set<Long>,
+    val date: LocalDate,
+    val message: UiText,
+    val startedAt: Long,
+) {
+  fun matches(event: EventDto): Boolean =
+      event.eventId in eventIds || event.originalEventId in eventIds
+
+  companion object {
+    const val DURATION_MS = 2_500L
+  }
 }

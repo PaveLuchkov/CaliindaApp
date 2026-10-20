@@ -227,15 +227,21 @@ constructor(
 
   // --- Запись ---
 
-  suspend fun createEvent(draft: EventDraft): Result<Unit> = write {
-    val values =
-        draft.contentValues().apply {
-          put(Events.CALENDAR_ID, resolveTargetCalendarId(draft.calendarId))
-          putTiming(timingOf(draft), draft.recurrenceRule)
-        }
-    val id = dataSource.insertEvent(values)
-    draft.reminders?.let { dataSource.replaceReminders(id, it) }
-  }
+  /** Создаёт событие; в результате — его id, чтобы экран нашёл и подсветил новую карточку. */
+  suspend fun createEvent(draft: EventDraft): Result<Long> =
+      withContext(ioDispatcher) {
+        runCatching {
+              val values =
+                  draft.contentValues().apply {
+                    put(Events.CALENDAR_ID, resolveTargetCalendarId(draft.calendarId))
+                    putTiming(timingOf(draft), draft.recurrenceRule)
+                  }
+              val id = dataSource.insertEvent(values)
+              draft.reminders?.let { dataSource.replaceReminders(id, it) }
+              id
+            }
+            .onFailure { Log.e(TAG, "Calendar write failed", it) }
+      }
 
   /** Напоминания события (минуты до начала) — для формы правки. */
   suspend fun remindersOf(event: EventDto): List<Int> =
