@@ -52,6 +52,7 @@ class EventManagementViewModelTest {
     on { getEventCreatedMessage(anyOrNull()) } doReturn message
     on { getEventDeletedMessage(anyOrNull()) } doReturn message
     on { getSeriesDeletedMessage() } doReturn message
+    on { getDeleteErrorMessage() } doReturn message
   }
   private lateinit var viewModel: EventManagementViewModel
   private val pendingDeletions = PendingDeletions()
@@ -143,12 +144,25 @@ class EventManagementViewModelTest {
     verify(funMessages).getEventDeletedMessage(null)
     verify(repository, times(0)).deleteEvent(any(), any())
 
-    advanceTimeBy(UNDO_MS + 1)
-    advanceUntilIdle()
-    assertTrue(single.id !in pendingDeletions.deleting.value)
+    // Чуть раньше конца отсчёта — уже стираем и скрываем, призрак при этом не снимаем:
+    // из ленты уходит он, а не мелькнувшая исходная карточка.
+    advanceTimeBy(UNDO_MS - 100)
     verify(repository).deleteEvent(single, EventDeleteMode.DEFAULT)
-    // Записали — скрывать больше нечего.
+    assertTrue(single.id in pendingDeletions.hidden.value)
+    assertTrue(single.id in pendingDeletions.deleting.value)
+    // Лента успела перечитать календарь — всё снято.
+    advanceUntilIdle()
     assertTrue(pendingDeletions.hidden.value.isEmpty())
+    assertTrue(pendingDeletions.deleting.value.isEmpty())
+  }
+
+  @Test
+  fun `не удалось стереть — карточка возвращается сразу`() = runTest(dispatcher) {
+    whenever(repository.deleteEvent(any(), any())).thenReturn(Result.failure(Exception("нет")))
+    viewModel.requestDelete(single)
+    advanceTimeBy(UNDO_MS)
+    assertTrue(pendingDeletions.hidden.value.isEmpty())
+    assertTrue(pendingDeletions.deleting.value.isEmpty())
   }
 
   @Test

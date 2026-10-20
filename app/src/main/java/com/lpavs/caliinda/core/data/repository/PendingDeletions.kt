@@ -34,12 +34,15 @@ class PendingDeletions @Inject constructor() {
   /** Отменили — карточка возвращается как была. */
   fun cancel(id: String) = _deleting.update { it - id }
 
-  /** Отсчёт истёк — карточка уходит из списка (схлопывается), начинается запись в календарь. */
-  fun hide(id: String) {
-    _hidden.update { it + id }
+  /**
+   * Отсчёт почти истёк — карточка уходит из списка, начинается запись в календарь. Отсчёт не
+   * снимаем: из списка уходит призрак, а не мелькнувшая на кадр исходная карточка.
+   */
+  fun hide(id: String) = _hidden.update { it + id }
+
+  /** Всё: записано (или не вышло) — ни призрака, ни скрытия. */
+  fun release(id: String) {
+    _hidden.update { it - id }
     _deleting.update { it - id }
   }
-
-  /** Записали в календарь — провайдер уже без события, скрывать больше нечего. */
-  fun release(id: String) = _hidden.update { it - id }
 }

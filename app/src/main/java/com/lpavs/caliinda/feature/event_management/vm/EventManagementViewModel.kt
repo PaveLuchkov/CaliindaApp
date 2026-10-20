@@ -223,7 +223,8 @@ constructor(
             durationMillis = window))
     val timer =
         viewModelScope.launch {
-          delay(window)
+          // Чуть раньше конца: призрак уходит из списка ровно когда отсчёт дотикал.
+          delay((window - HIDE_LEAD_MS).coerceAtLeast(0))
           undoableDeletes.remove(event.id)
           pendingDeletions.hide(event.id)
           deleteFromCalendar(event, mode)
@@ -239,9 +240,13 @@ constructor(
 
   private suspend fun deleteFromCalendar(event: EventDto, mode: EventDeleteMode) {
     val result = calendarRepository.deleteEvent(event, mode)
-    // Снимаем скрытие после записи: провайдер уже без события, и карточка не мигнёт обратно.
+    if (result.isSuccess) {
+      refreshSurfaces()
+      // Провайдер уже без события, но лента перечитает его не мгновенно: сними скрытие сразу —
+      // карточка мигнула бы обратно. Не вышло — снимаем сразу, карточка возвращается.
+      delay(RELEASE_GRACE_MS)
+    }
     pendingDeletions.release(event.id)
-    if (result.isSuccess) refreshSurfaces()
     if (result.isFailure) {
       _events.send(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage(), isError = true))
     }
@@ -428,6 +433,10 @@ constructor(
 
   companion object {
     private const val TAG = "EventManagementViewModel"
+    /** За сколько до конца отсчёта призрак уходит из списка. */
+    private const val HIDE_LEAD_MS = 200L
+    /** Сколько держать удалённое скрытым после записи, пока лента перечитывает календарь. */
+    private const val RELEASE_GRACE_MS = 3_000L
   }
 }
 
