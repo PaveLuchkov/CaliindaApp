@@ -77,7 +77,8 @@ class DateTimeFormatterUtilImpl @Inject constructor() :
       // Однодневное «весь день» — одна дата, а не «21 октября - 21 октября».
       event.isAllDay && date(start) == date(lastDay) -> date(start)
       event.isAllDay -> "${date(start)} - ${date(lastDay)}"
-      date(start) == date(end) -> "${time(start)} - ${time(end)}\n${date(end)}"
+      // Конец ровно в полночь — тот же день: 23:00–00:00 не «два дня».
+      date(start) == date(end.minusMillis(1)) -> "${time(start)} - ${time(end)}\n${date(start)}"
       else -> "${date(start)} ${time(start)} - ${time(end)} ${date(end)}"
     }
   }

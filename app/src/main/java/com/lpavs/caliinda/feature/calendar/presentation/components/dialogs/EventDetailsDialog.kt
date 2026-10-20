@@ -20,6 +20,10 @@ import com.lpavs.caliinda.core.ui.util.placeIcon
 import com.lpavs.caliinda.core.ui.util.placeLabel
 import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
+import com.lpavs.caliinda.core.ui.theme.AppMotion
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.animation.animateContentSize
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -121,12 +125,20 @@ fun CustomEventDetailsDialog(
             shape = RoundedCornerShape(cuid.ContainerCornerRadius),
             color = container,
             tonalElevation = 8.dp) {
-              // Высота постоянная: по центру экрана кнопки всегда в одной точке, длинное
-              // содержимое листается внутри.
-              Box(modifier = Modifier.height(CARD_HEIGHT)) {
+              // Высота — по содержимому: пустая карточка не выше нужного, с местом, участниками и
+              // описанием — растёт (плавно, когда участники догрузились или раскрылись). Выше
+              // ~80% экрана — листается внутри, кнопки остаются внизу.
+              val maxHeight = LocalConfiguration.current.screenHeightDp.dp * MAX_HEIGHT_FRACTION
+              Box(
+                  modifier =
+                      Modifier.heightIn(min = MIN_CARD_HEIGHT, max = maxHeight)
+                          .animateContentSize(AppMotion.defaultSpatialSpec())) {
                 Box(
                     modifier =
-                        Modifier.align(Alignment.BottomEnd)
+                        Modifier.matchParentSize()
+                            // Фигура больше низкой карточки: держим её у правого нижнего угла, а
+                            // не по центру, — без unbounded её бы сжало и сдвинуло.
+                            .wrapContentSize(Alignment.BottomEnd, unbounded = true)
                             // Чуть выглядывает из правого нижнего угла, повернута как в ленте.
                             .graphicsLayer {
                               translationX = SHAPE_SIZE.toPx() * 0.22f
@@ -147,12 +159,11 @@ fun CustomEventDetailsDialog(
                                             DpOffset(params.shadowOffsetXSeed, params.shadowOffsetYSeed))))
 
                 Column(
-                    modifier =
-                        Modifier.matchParentSize()
-                            .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)) {
-                      // Подробности листаются, если не влезают; кнопки остаются внизу.
+                    modifier = Modifier.padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)) {
+                      // Подробности листаются, только если не влезли в предел; кнопки — внизу.
                       Column(
-                          modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                          modifier =
+                              Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                             Text(
                                 text = event.summary,
                                 style = typography.displaySmall.copy(fontWeight = FontWeight.SemiBold),
@@ -242,7 +253,9 @@ fun CustomEventDetailsDialog(
       }
 }
 
-private val CARD_HEIGHT = 320.dp
+/** Карточка без деталей: название, время и кнопки — не выше этого. */
+private val MIN_CARD_HEIGHT = 200.dp
+private const val MAX_HEIGHT_FRACTION = 0.8f
 /** Сколько ждать раскрытия списка участников, прежде чем подкрутить к нему. */
 private const val LIST_REVEAL_MS = 250L
 private val SHAPE_SIZE = 280.dp
