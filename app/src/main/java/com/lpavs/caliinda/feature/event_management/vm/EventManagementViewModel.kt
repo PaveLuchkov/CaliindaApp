@@ -11,7 +11,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
+import com.lpavs.caliinda.core.data.repository.DeletionCountdown
 import com.lpavs.caliinda.core.data.repository.PendingDeletions
+import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -54,6 +56,7 @@ constructor(
     private val pendingDeletions: PendingDeletions,
     private val widgetRefresher: WidgetRefresher,
     private val liveEventNotifier: LiveEventNotifier,
+    private val undoWindow: UndoWindow,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EventManagementUiState())
   val uiState: StateFlow<EventManagementUiState> = _uiState.asStateFlow()
@@ -190,45 +193,42 @@ constructor(
 
   // --- Удаление ---
 
-  /** Удалённые, но ещё не стёртые из календаря события: id экземпляра → (событие, таймер). */
-  private val undoableDeletes = mutableMapOf<String, Pair<EventDto, Job>>()
+  /** Удаления в обратном отсчёте: id экземпляра → (событие, как удалять, таймер). */
+  private val undoableDeletes = mutableMapOf<String, Triple<EventDto, EventDeleteMode, Job>>()
 
   /**
-   * Обычное событие удаляем без диалога: сразу прячем и даём отменить в снекбаре. Стираем из
-   * календаря, когда снекбар закрылся, или по таймеру — если снекбар так и не показали.
+   * Удаление с отменой: на месте карточки — призрак с отсчётом и «Отменить» (см. PendingDeletions).
+   * Время вышло — карточка уходит из списка, и только тогда событие стирается из календаря.
    */
-  private fun deleteWithUndo(event: EventDto) {
+  private fun deleteWithUndo(event: EventDto, mode: EventDeleteMode = EventDeleteMode.DEFAULT) {
     if (event.id in undoableDeletes) return
-    pendingDeletions.add(event.id)
+    val window = undoWindow.millis()
+    pendingDeletions.startCountdown(
+        event.id,
+        DeletionCountdown(
+            message = funMessages.getEventDeletedMessage(event.nameForMessage()),
+            startedAtMillis = SystemClock.uptimeMillis(),
+            durationMillis = window))
     val timer =
         viewModelScope.launch {
-          delay(UNDO_FALLBACK_MS)
-          commitDelete(event.id)
+          delay(window)
+          undoableDeletes.remove(event.id)
+          pendingDeletions.hide(event.id)
+          deleteFromCalendar(event, mode)
         }
-    undoableDeletes[event.id] = event to timer
-    viewModelScope.launch {
-      _events.send(
-          EventManagementUiEvent.ShowUndoDelete(
-              event.id, funMessages.getEventDeletedMessage(event.nameForMessage())))
-    }
+    undoableDeletes[event.id] = Triple(event, mode, timer)
   }
 
   fun undoDelete(id: String) {
-    val (_, timer) = undoableDeletes.remove(id) ?: return
+    val (_, _, timer) = undoableDeletes.remove(id) ?: return
     timer.cancel()
-    pendingDeletions.remove(id)
+    pendingDeletions.cancel(id)
   }
 
-  fun commitDelete(id: String) {
-    val (event, timer) = undoableDeletes.remove(id) ?: return
-    timer.cancel()
-    viewModelScope.launch { deleteFromCalendar(event) }
-  }
-
-  private suspend fun deleteFromCalendar(event: EventDto) {
-    val result = calendarRepository.deleteEvent(event, EventDeleteMode.DEFAULT)
+  private suspend fun deleteFromCalendar(event: EventDto, mode: EventDeleteMode) {
+    val result = calendarRepository.deleteEvent(event, mode)
     // Снимаем скрытие после записи: провайдер уже без события, и карточка не мигнёт обратно.
-    pendingDeletions.remove(event.id)
+    pendingDeletions.release(event.id)
     if (result.isSuccess) refreshSurfaces()
     if (result.isFailure) {
       _events.send(EventManagementUiEvent.ShowMessage(funMessages.getDeleteErrorMessage()))
@@ -236,13 +236,14 @@ constructor(
   }
 
   override fun onCleared() {
-    // Экран ушёл, пока снекбар висел: отмены уже не будет — удаляем, а не теряем действие.
-    val leftovers = undoableDeletes.values.map { it.first }
+    // Экран ушёл, пока шёл отсчёт: отмены уже не будет — удаляем, а не теряем действие.
+    val leftovers = undoableDeletes.values.map { (event, mode, _) -> event to mode }
     undoableDeletes.clear()
+    leftovers.forEach { (event, _) -> pendingDeletions.hide(event.id) }
     if (leftovers.isNotEmpty()) {
       // Своя область: viewModelScope к этому моменту уже отменён.
       CoroutineScope(SupervisorJob()).launch {
-        leftovers.forEach { deleteFromCalendar(it) }
+        leftovers.forEach { (event, mode) -> deleteFromCalendar(event, mode) }
       }
     }
   }
@@ -256,14 +257,16 @@ constructor(
           RecurringDeleteChoice.THIS_AND_FOLLOWING -> EventDeleteMode.THIS_AND_FOLLOWING
           RecurringDeleteChoice.ALL_IN_SERIES -> EventDeleteMode.ALL_IN_SERIES
         }
+    // Один экземпляр — тот же призрак с отменой. «Это и следующие» и «вся серия» уже
+    // подтверждены в диалоге — удаляем сразу.
+    if (mode == EventDeleteMode.INSTANCE_ONLY) {
+      deleteWithUndo(eventToDelete, mode)
+      return
+    }
     viewModelScope.launch {
       runOperation(
           operation = { calendarRepository.deleteEvent(eventToDelete, mode) },
-          successMessage = {
-            if (mode == EventDeleteMode.INSTANCE_ONLY)
-                funMessages.getEventDeletedMessage(eventToDelete.nameForMessage())
-            else funMessages.getSeriesDeletedMessage()
-          },
+          successMessage = { funMessages.getSeriesDeletedMessage() },
           errorMessage = { funMessages.getDeleteErrorMessage() })
     }
   }
@@ -388,8 +391,6 @@ constructor(
 
   companion object {
     private const val TAG = "EventManagementViewModel"
-    /** Запасной таймер окна отмены; обычно удаление запускает закрытие снекбара раньше. */
-    private const val UNDO_FALLBACK_MS = 15_000L
   }
 }
 
@@ -423,6 +424,4 @@ sealed interface EventDialog {
 
 sealed interface EventManagementUiEvent {
   data class ShowMessage(val message: UiText) : EventManagementUiEvent
-
-  data class ShowUndoDelete(val eventId: String, val message: UiText) : EventManagementUiEvent
 }

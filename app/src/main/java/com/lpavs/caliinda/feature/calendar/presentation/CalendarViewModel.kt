@@ -1,5 +1,6 @@
 package com.lpavs.caliinda.feature.calendar.presentation
 
+import com.lpavs.caliinda.core.data.repository.DeletionCountdown
 import com.lpavs.caliinda.core.data.repository.PendingDeletions
 import com.lpavs.caliinda.core.data.utils.UiText
 import com.lpavs.caliinda.R
@@ -148,7 +149,7 @@ constructor(
   fun getDayPageUiState(date: LocalDate): Flow<DayPageUiState> {
     return combine(
             calendarRepository.getDayFlow(date),
-            pendingDeletions.ids,
+            pendingDeletions.hidden,
             currentTime,
             timeZone) { day, hidden, now, zoneId ->
           val events = day.events.withoutHidden(hidden)
@@ -258,9 +259,12 @@ constructor(
     }
   }
 
-  /** Прячет события, удалённые с возможностью отмены, до их настоящего удаления. */
+  /** Удаления в обратном отсчёте — карточки показывают вместо себя призрак. */
+  val deletions: StateFlow<Map<String, DeletionCountdown>> = pendingDeletions.deleting
+
+  /** Прячет события, отсчёт удаления которых истёк, до их настоящего удаления. */
   private fun Flow<List<EventDto>>.withoutPendingDeletions(): Flow<List<EventDto>> =
-      combine(pendingDeletions.ids) { events, hidden -> events.withoutHidden(hidden) }
+      combine(pendingDeletions.hidden) { events, hidden -> events.withoutHidden(hidden) }
 
   private fun List<EventDto>.withoutHidden(hidden: Set<String>): List<EventDto> =
       if (hidden.isEmpty()) this else filterNot { it.id in hidden }

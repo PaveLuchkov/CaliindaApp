@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lpavs.caliinda.core.data.calendar.model.EventDto
 import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.AllDayEventItem
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.GhostWhenDeleting
+import androidx.compose.foundation.layout.PaddingValues
 
 @Composable
 fun HeadCardsList(
@@ -31,21 +33,29 @@ fun HeadCardsList(
       Box(modifier = eventItemAnimation().padding(bottom = 4.dp)) {
             val isExpanded = event.id == expandedEventId
 
-            AllDayEventItem(
-                event = event,
-                isExpanded = isExpanded,
-                onToggleExpand = {
-                  expandedEventId =
-                      if (expandedEventId == event.id) {
-                        null
-                      } else {
-                        event.id
-                      }
-                },
-                onDeleteClick = { actions.onDelete(event) },
-                onEditClick = { actions.onEdit(event) },
-                onDetailsClick = { actions.onDetails(event) },
-            )
+            // У ленты события на весь день свои отступы — призрак встаёт на её место без них.
+            GhostWhenDeleting(
+                countdown = actions.deletions[event.id],
+                title = event.summary,
+                cardHeight = 0.dp,
+                onUndo = { actions.onUndoDelete(event.id) },
+                padding = PaddingValues(0.dp)) {
+              AllDayEventItem(
+                  event = event,
+                  isExpanded = isExpanded,
+                  onToggleExpand = {
+                    expandedEventId =
+                        if (expandedEventId == event.id) {
+                          null
+                        } else {
+                          event.id
+                        }
+                  },
+                  onDeleteClick = { actions.onDelete(event) },
+                  onEditClick = { actions.onEdit(event) },
+                  onDetailsClick = { actions.onDetails(event) },
+              )
+            }
           }
     }
   }
