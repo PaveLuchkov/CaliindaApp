@@ -165,7 +165,9 @@ private fun NotesField(
       state = state,
       label = { Text(label) },
       leadingIcon = { Icon(Icons.Rounded.Notes, contentDescription = null) },
-      lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1, maxHeightInLines = 6),
+      // Без своей прокрутки — растёт целиком, листается вся форма: иначе свайп по полю делили
+      // две прокрутки, и шторка тянулась вдвое медленнее пальца.
+      lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1),
       enabled = enabled,
       textStyle = typography.bodyLarge,
       keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
