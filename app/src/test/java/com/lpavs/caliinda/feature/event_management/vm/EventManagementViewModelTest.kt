@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
+import com.lpavs.caliinda.core.data.calendar.model.EventDeleteMode
+import com.lpavs.caliinda.feature.event_management.ui.shared.RecurringDeleteChoice
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -30,6 +33,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -46,8 +50,11 @@ class EventManagementViewModelTest {
   private val funMessages: IFunMessages = mock {
     on { getEventUpdatedMessage(any()) } doReturn message
     on { getEventCreatedMessage(any()) } doReturn message
+    on { getEventDeletedMessage(anyOrNull()) } doReturn message
+    on { getSeriesDeletedMessage() } doReturn message
   }
   private lateinit var viewModel: EventManagementViewModel
+  private val pendingDeletions = PendingDeletions()
 
   private val single =
       EventDto(
@@ -70,9 +77,10 @@ class EventManagementViewModelTest {
             settings,
             repository,
             funMessages,
-            PendingDeletions(),
+            pendingDeletions,
             mock<WidgetRefresher>(),
-            mock<LiveEventNotifier>())
+            mock<LiveEventNotifier>(),
+            mock<UndoWindow> { on { millis() } doReturn UNDO_MS })
   }
 
   @After
@@ -124,6 +132,49 @@ class EventManagementViewModelTest {
     viewModel.dismissDialog()
     viewModel.openCreate(LocalDate.of(2026, 10, 6), asProject = false)
     assertEquals(null, viewModel.uiState.value.editingReminders)
+  }
+
+  @Test
+  fun `удаление — призрак с отсчётом, по таймеру событие стирается`() = runTest(dispatcher) {
+    whenever(repository.deleteEvent(any(), any())).thenReturn(Result.success(Unit))
+    viewModel.requestDelete(single)
+    assertTrue(single.id in pendingDeletions.deleting.value)
+    // Название и так крупно в призраке — фраза без него.
+    verify(funMessages).getEventDeletedMessage(null)
+    verify(repository, times(0)).deleteEvent(any(), any())
+
+    advanceTimeBy(UNDO_MS + 1)
+    advanceUntilIdle()
+    assertTrue(single.id !in pendingDeletions.deleting.value)
+    verify(repository).deleteEvent(single, EventDeleteMode.DEFAULT)
+    // Записали — скрывать больше нечего.
+    assertTrue(pendingDeletions.hidden.value.isEmpty())
+  }
+
+  @Test
+  fun `отмена во время отсчёта — событие остаётся`() = runTest(dispatcher) {
+    viewModel.requestDelete(single)
+    advanceTimeBy(UNDO_MS / 2)
+    viewModel.undoDelete(single.id)
+    advanceUntilIdle()
+    assertTrue(pendingDeletions.deleting.value.isEmpty())
+    verify(repository, times(0)).deleteEvent(any(), any())
+  }
+
+  @Test
+  fun `один экземпляр серии — тоже с отменой, а вся серия сразу`() = runTest(dispatcher) {
+    whenever(repository.deleteEvent(any(), any())).thenReturn(Result.success(Unit))
+    viewModel.requestDelete(recurring)
+    viewModel.confirmRecurringDelete(RecurringDeleteChoice.SINGLE_INSTANCE)
+    assertTrue(recurring.id in pendingDeletions.deleting.value)
+    advanceTimeBy(UNDO_MS + 1)
+    advanceUntilIdle()
+    verify(repository).deleteEvent(recurring, EventDeleteMode.INSTANCE_ONLY)
+
+    viewModel.requestDelete(recurring)
+    viewModel.confirmRecurringDelete(RecurringDeleteChoice.ALL_IN_SERIES)
+    advanceUntilIdle()
+    verify(repository).deleteEvent(recurring, EventDeleteMode.ALL_IN_SERIES)
   }
 
   @Test
@@ -207,5 +258,9 @@ class EventManagementViewModelTest {
     val drafts = argumentCaptor<EventDraft>()
     verify(repository, times(2)).updateEvent(any(), drafts.capture(), any())
     assertEquals(listOf(null, listOf(30)), drafts.allValues.map { it.reminders })
+  }
+
+  private companion object {
+    const val UNDO_MS = 5_000L
   }
 }

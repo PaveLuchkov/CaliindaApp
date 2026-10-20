@@ -143,12 +143,15 @@ fun CalendarScreen(
 
   var showDatePicker by remember { mutableStateOf(false) }
 
+  val deletions by calendarViewModel.deletions.collectAsStateWithLifecycle()
   val eventActions =
-      remember(eventManagementViewModel, calendarViewModel) {
+      remember(eventManagementViewModel, calendarViewModel, deletions) {
         EventActions(
             onDelete = eventManagementViewModel::requestDelete,
             onEdit = eventManagementViewModel::requestEditEvent,
-            onDetails = calendarViewModel::requestEventDetails)
+            onDetails = calendarViewModel::requestEventDetails,
+            deletions = deletions,
+            onUndoDelete = eventManagementViewModel::undoDelete)
       }
   val createEventAction = {
     // С экрана проектов (страница 0) сразу предлагаем промежуток дней, начиная с сегодня.
