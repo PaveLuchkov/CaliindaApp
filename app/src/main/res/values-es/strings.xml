@@ -437,4 +437,6 @@
     <string name="attendee_declined">No asiste</string>
     <string name="description_expand">Ver más</string>
     <string name="description_collapse">Ver menos</string>
+    <string name="notice_created_on">Creado para el %1$s</string>
+    <string name="notice_moved_to">Movido al %1$s</string>
 </resources>
