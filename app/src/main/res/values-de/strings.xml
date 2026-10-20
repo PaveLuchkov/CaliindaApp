@@ -422,4 +422,6 @@
     <string name="attendee_tentative">Vielleicht</string>
     <string name="attendee_awaiting">Keine Antwort</string>
     <string name="attendee_declined">Nimmt nicht teil</string>
+    <string name="description_expand">Mehr anzeigen</string>
+    <string name="description_collapse">Weniger anzeigen</string>
 </resources>

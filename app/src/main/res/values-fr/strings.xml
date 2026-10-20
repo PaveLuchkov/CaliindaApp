@@ -435,4 +435,6 @@
     <string name="attendee_tentative">Peut-être</string>
     <string name="attendee_awaiting">Pas de réponse</string>
     <string name="attendee_declined">Ne participe pas</string>
+    <string name="description_expand">Afficher plus</string>
+    <string name="description_collapse">Afficher moins</string>
 </resources>

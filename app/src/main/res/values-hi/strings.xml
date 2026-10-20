@@ -421,4 +421,6 @@
     <string name="attendee_tentative">शायद</string>
     <string name="attendee_awaiting">जवाब नहीं दिया</string>
     <string name="attendee_declined">नहीं आएँगे</string>
+    <string name="description_expand">और दिखाएँ</string>
+    <string name="description_collapse">कम दिखाएँ</string>
 </resources>

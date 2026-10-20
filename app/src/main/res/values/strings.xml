@@ -444,4 +444,6 @@
     <string name="attendee_tentative">Maybe</string>
     <string name="attendee_awaiting">Awaiting reply</string>
     <string name="attendee_declined">Not going</string>
+    <string name="description_expand">Show more</string>
+    <string name="description_collapse">Show less</string>
 </resources>

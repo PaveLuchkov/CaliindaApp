@@ -452,4 +452,6 @@
     <string name="attendee_tentative">Может быть</string>
     <string name="attendee_awaiting">Не ответил(а)</string>
     <string name="attendee_declined">Не придёт</string>
+    <string name="description_expand">Показать полностью</string>
+    <string name="description_collapse">Свернуть</string>
 </resources>

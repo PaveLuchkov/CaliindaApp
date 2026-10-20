@@ -20,6 +20,7 @@ import com.lpavs.caliinda.core.ui.util.placeIcon
 import com.lpavs.caliinda.core.ui.util.placeLabel
 import com.lpavs.caliinda.core.data.utils.eventPlace
 import java.time.ZoneId
+import com.lpavs.caliinda.core.data.utils.readableDescription
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -227,9 +228,13 @@ fun CustomEventDetailsDialog(
                               CalendarRow(it, color = onCard)
                               Spacer(modifier = Modifier.height(12.dp))
                             }
-                            event.originalEvent.description?.takeIf { it.isNotBlank() }?.let { text ->
-                              Text(text = text, style = typography.bodyMedium, color = onCard)
-                            }
+                            val description =
+                                remember(event.originalEvent.description) {
+                                  event.originalEvent.description
+                                      ?.let(::readableDescription)
+                                      ?.takeIf { it.isNotBlank() }
+                                }
+                            description?.let { DescriptionSection(it, color = onCard) }
                           }
                       Spacer(Modifier.height(12.dp))
                       Row(
@@ -274,6 +279,8 @@ fun CustomEventDetailsDialog(
 private val MIN_CARD_HEIGHT = 200.dp
 private const val MAX_HEIGHT_FRACTION = 0.8f
 private const val SIZE_ANIMATION_MS = 250
+/** Сколько строк описания видно, пока его не раскрыли. */
+private const val DESCRIPTION_LINES = 4
 /** Сколько ждать раскрытия списка участников, прежде чем подкрутить к нему. */
 private const val LIST_REVEAL_MS = 250L
 private val SHAPE_SIZE = 280.dp
@@ -462,3 +469,35 @@ private fun AttendeeStatus.icon(): ImageVector =
       AttendeeStatus.AWAITING -> Icons.Rounded.Schedule
       AttendeeStatus.DECLINED -> Icons.Rounded.Cancel
     }
+
+/**
+ * Описание свёрнуто до нескольких строк: из Outlook и Zoom приходят простыни, и карточка
+ * не должна каждый раз открываться ими. Короткое — целиком и без кнопки.
+ */
+@Composable
+private fun DescriptionSection(text: String, color: Color) {
+  var expanded by rememberSaveable { mutableStateOf(false) }
+  // Обрезалось ли в свёрнутом виде — тогда и нужна кнопка.
+  var overflows by remember(text) { mutableStateOf(false) }
+  // Без своей анимации: высоту плавно меняет сама карточка, две анимации разом дёргались бы.
+  Column {
+    Text(
+        text = text,
+        style = typography.bodyMedium,
+        color = color,
+        maxLines = if (expanded) Int.MAX_VALUE else DESCRIPTION_LINES,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow })
+    if (overflows || expanded) {
+      Text(
+          text = stringResource(if (expanded) R.string.description_collapse else R.string.description_expand),
+          style = typography.labelLarge,
+          color = color,
+          modifier =
+              Modifier.padding(top = 4.dp)
+                  .clip(MaterialTheme.shapes.small)
+                  .clickable(role = Role.Button) { expanded = !expanded }
+                  .padding(vertical = 6.dp, horizontal = 4.dp))
+    }
+  }
+}
