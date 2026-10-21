@@ -47,8 +47,6 @@ fun CreateEventScreen(
     template: EventDto? = null,
     /** Напоминания [template]; null — нет шаблона или ещё загружаются. */
     templateReminders: List<Int>? = null,
-    /** Шторка встала на место — можно звать клавиатуру, не сбивая анимацию появления. */
-    sheetSettled: Boolean = true,
     suggestionsViewModel: SuggestionsViewModel = hiltViewModel(),
 ) {
   // Состояние полей
@@ -121,11 +119,10 @@ fun CreateEventScreen(
     onSave(summary, description.text.toString(), location, eventDateTimeState, reminder, calendar?.id)
   }
   // Сразу клавиатура в названии: типичное событие — это название и время. У копии название уже
-  // есть, менять скорее будут день и время — клавиатура закрыла бы их.
+  // есть, менять скорее будут день и время — клавиатура закрыла бы их. Зовём сразу, не дожидаясь
+  // шторки: она выезжает вместе с клавиатурой одним движением, а не встаёт и снова подпрыгивает.
   val nameFocusRequester = remember { FocusRequester() }
-  LaunchedEffect(sheetSettled) {
-    if (sheetSettled && template == null) runCatching { nameFocusRequester.requestFocus() }
-  }
+  LaunchedEffect(Unit) { if (template == null) runCatching { nameFocusRequester.requestFocus() } }
 
   // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
   // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.

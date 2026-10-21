@@ -3,13 +3,12 @@ package com.lpavs.caliinda.feature.calendar.presentation.components.dialogs
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ModalBottomSheet
@@ -34,7 +33,7 @@ import com.lpavs.caliinda.feature.event_management.vm.EventDialog
 fun EventFormSheet(
     dialog: EventDialog,
     onDismiss: () -> Unit,
-    content: @Composable (dialog: EventDialog, sheetSettled: Boolean) -> Unit,
+    content: @Composable (dialog: EventDialog) -> Unit,
 ) {
   val target = dialog.takeIf { it is EventDialog.Creating || it is EventDialog.Editing }
   // Последнее открытое содержимое держим, пока шторка уезжает, — иначе она закрывалась бы пустой.
@@ -62,22 +61,40 @@ fun EventFormSheet(
   // выше, её «развёрнутое» положение пересчитывается — и тянущуюся шторку отбрасывает наверх,
   // по кругу (на Pixel 9: статус-бар 173 px, рывок каждые ~100 px). Поэтому сверху отступа нет
   // вовсе, а высоту ограничиваем сами — шторка просто не заезжает под статус-бар.
-  val density = LocalDensity.current
-  val windowHeight = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
-  val statusBar = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
-  val bottom = with(density) { WindowInsets.safeDrawing.getBottom(this).toDp() }
-  val maxContentHeight = windowHeight - statusBar - bottom - DRAG_HANDLE_HEIGHT - TOP_GAP
   ModalBottomSheet(
       sheetState = sheetState,
       onDismissRequest = onDismiss,
       contentWindowInsets = {
         WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
       }) {
-        // Шторка встала на место — форма может звать клавиатуру, не сбивая анимацию появления.
-        Box(Modifier.heightIn(max = maxContentHeight)) {
-          content(current, sheetState.currentValue != SheetValue.Hidden)
+        Box(Modifier.fitAboveKeyboard(LocalWindowInfo.current.containerSize.height)) {
+          content(current)
         }
       }
+}
+
+/**
+ * Не выше экрана за вычетом статус-бара, низа (навигация или клавиатура), ручки и зазора.
+ * Отступы читаем здесь, внутри шторки и при раскладке, — так же и тогда же, как шторка ставит
+ * свой отступ снизу, и сумма в каждом кадре сходится. Окно приложения получает высоту клавиатуры
+ * сразу итоговой: форма в первом кадре ужималась на всю клавиатуру, а отступ рос постепенно —
+ * шторка подпрыгивала и проваливалась. А прочитанные при перекомпоновке, отступы отставали от
+ * отступа шторки на кадр — шторка дрожала, пока выезжает клавиатура.
+ */
+@Composable
+private fun Modifier.fitAboveKeyboard(windowHeight: Int): Modifier {
+  val statusBars = WindowInsets.statusBars
+  val bottom = WindowInsets.safeDrawing
+  return layout { measurable, constraints ->
+    val max =
+        (windowHeight - statusBars.getTop(this) - bottom.getBottom(this) -
+                (DRAG_HANDLE_HEIGHT + TOP_GAP).roundToPx())
+            .coerceIn(0, constraints.maxHeight)
+    val placeable =
+        measurable.measure(
+            constraints.copy(minHeight = minOf(constraints.minHeight, max), maxHeight = max))
+    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+  }
 }
 
 /** Ручка шторки M3: 4dp полоска и по 22dp сверху и снизу. */
