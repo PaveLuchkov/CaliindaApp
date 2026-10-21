@@ -24,6 +24,9 @@ import com.lpavs.caliinda.core.ui.theme.AppMotion
  * Надпись, которая сменяется «барабаном»: старая уезжает вниз, новая въезжает сверху — для
  * времени ↔ весёлой фразы при «рождении» карточки. Обрезана по своей строке, чтобы прокрутка
  * шла внутри неё и не наезжала на соседние.
+ *
+ * [order] — порядок надписи (например, день): выросла — барабан крутится в другую сторону,
+ * новая въезжает снизу, как следующий день при листании вверх.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -36,17 +39,24 @@ fun RollingText(
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight? = null,
     textAlign: TextAlign? = null,
+    order: Long? = null,
 ) {
   AnimatedContent(
-      targetState = text,
+      targetState = RollingLabel(text, order),
       transitionSpec = {
-        (slideInVertically(AppMotion.defaultSpatialSpec()) { -it } + fadeIn(AppMotion.fastEffectsSpec()))
+        val from = initialState.order
+        val to = targetState.order
+        // 1 — новая сверху, старая вниз; -1 — наоборот.
+        val down = if (from != null && to != null && to > from) -1 else 1
+        (slideInVertically(AppMotion.defaultSpatialSpec()) { -it * down } + fadeIn(AppMotion.fastEffectsSpec()))
             .togetherWith(
-                slideOutVertically(AppMotion.defaultSpatialSpec()) { it } + fadeOut(AppMotion.fastEffectsSpec()))
+                slideOutVertically(AppMotion.defaultSpatialSpec()) { it * down } +
+                    fadeOut(AppMotion.fastEffectsSpec()))
             .using(SizeTransform(clip = false))
       },
+      contentKey = { it.text },
       modifier = modifier.clipToBounds(),
-      label = "rollingText") { shown ->
+      label = "rollingText") { (shown) ->
         Text(
             text = shown,
             style = style,
@@ -58,3 +68,5 @@ fun RollingText(
             textAlign = textAlign)
       }
 }
+
+private data class RollingLabel(val text: String, val order: Long?)

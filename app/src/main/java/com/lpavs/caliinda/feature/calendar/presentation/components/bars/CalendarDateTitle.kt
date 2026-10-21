@@ -140,6 +140,8 @@ fun CalendarDateTitle(
             fontFamily = headerFontFamily,
             color = headerTextColor,
             textAlign = TextAlign.Center,
+            // Листаем на следующий день (месяц) — дата въезжает снизу, на предыдущий — сверху.
+            order = month?.let { it.year * 12L + it.monthValue } ?: date.toEpochDay(),
             modifier =
                 Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                     .fillMaxWidth()
