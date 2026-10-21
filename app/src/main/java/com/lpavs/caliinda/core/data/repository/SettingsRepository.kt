@@ -29,6 +29,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
     val INTRO_COMPLETED = booleanPreferencesKey("introduction")
     val DEFAULT_CALENDAR_ID = longPreferencesKey("default_calendar_id")
     val LIVE_NOTIFICATION = booleanPreferencesKey("live_notification")
+    val VIBRANT_COLORS = booleanPreferencesKey("vibrant_colors")
     val REMINDER_TIMED = intPreferencesKey("reminder_timed")
     val REMINDER_ALL_DAY = intPreferencesKey("reminder_all_day")
     val REMINDER_NOTIFICATIONS = booleanPreferencesKey("reminder_notifications")
@@ -186,6 +187,14 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
       val id = calendarId.toString()
       prefs[PreferencesKeys.HIDDEN_CALENDARS] = if (hidden) current + id else current - id
     }
+  }
+
+  /** Насыщенные цвета (палитра Vibrant) вместо стандартных приглушённых. */
+  val vibrantColorsFlow: Flow<Boolean> =
+      dataStore.data.map { prefs -> prefs[PreferencesKeys.VIBRANT_COLORS] ?: false }
+
+  suspend fun saveVibrantColors(enabled: Boolean) {
+    dataStore.edit { prefs -> prefs[PreferencesKeys.VIBRANT_COLORS] = enabled }
   }
 
   suspend fun saveLiveNotification(enabled: Boolean) {

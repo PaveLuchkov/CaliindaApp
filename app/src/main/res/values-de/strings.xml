@@ -426,4 +426,6 @@
     <string name="description_collapse">Weniger anzeigen</string>
     <string name="notice_created_on">Erstellt für %1$s</string>
     <string name="notice_moved_to">Verschoben auf %1$s</string>
+    <string name="vibrant_colors">Kräftige Farben</string>
+    <string name="vibrant_colors_summary">Leuchtendere Akzente und Karten</string>
 </resources>

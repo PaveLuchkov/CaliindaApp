@@ -43,9 +43,8 @@ class MainActivity : ComponentActivity() {
 
     setContent {
       val themeMode by settingsViewModel.themeMode.collectAsStateWithLifecycle()
-      CaliindaTheme(
-        themeMode = themeMode
-      ) {
+      val vibrant by settingsViewModel.vibrantColors.collectAsStateWithLifecycle()
+      CaliindaTheme(themeMode = themeMode, vibrant = vibrant) {
         AppNavHost(
             modifier = Modifier.background(colorScheme.background),
         )

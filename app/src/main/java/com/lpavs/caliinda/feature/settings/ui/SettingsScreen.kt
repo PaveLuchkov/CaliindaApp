@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Visibility
@@ -131,6 +132,7 @@ fun SettingsScreen(
     onNavigateToChips: () -> Unit,
 ) {
   val themeMode by settingsViewModel.themeMode.collectAsStateWithLifecycle()
+  val vibrant by settingsViewModel.vibrantColors.collectAsStateWithLifecycle()
   val calendars by settingsViewModel.calendars.collectAsStateWithLifecycle()
   val defaultCalendarId by settingsViewModel.defaultCalendarId.collectAsStateWithLifecycle()
   val savedZone by settingsViewModel.timeZone.collectAsStateWithLifecycle()
@@ -237,7 +239,20 @@ fun SettingsScreen(
                 item {
                   ThemePickerItem(
                       currentMode = themeMode,
-                      onModeSelected = settingsViewModel::updateThemeMode)
+                      onModeSelected = settingsViewModel::updateThemeMode,
+                      vibrant = vibrant)
+                }
+                item {
+                  SegmentedListItem(
+                      onClick = { settingsViewModel.setVibrantColors(!vibrant) },
+                      shapes = settingsShapes(index = 0, count = 1),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.Palette, contentDescription = null) },
+                      trailingContent = { Switch(checked = vibrant, onCheckedChange = null) },
+                      supportingContent = { Text(stringResource(R.string.vibrant_colors_summary)) },
+                      modifier = Modifier.padding(top = 8.dp)) {
+                        Text(stringResource(R.string.vibrant_colors))
+                      }
                 }
               }
 
@@ -675,7 +690,8 @@ private fun TimeZonePickerSheet(current: String, onSelect: (String) -> Unit, onD
 fun ThemeItem(
     mode: ThemeMode,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    vibrant: Boolean = false,
 ) {
     // 1. Определяем форму в зависимости от темы
     val modeShape: Shape = when(mode) {
@@ -688,7 +704,8 @@ fun ThemeItem(
     }
 
     // Цвет превью и контрастная к нему галочка — из схемы самой темы.
-    val previewScheme = themeColorScheme(themeMode = mode)
+    // Образцы — в том же варианте, что включён: насыщенном или обычном.
+    val previewScheme = themeColorScheme(themeMode = mode, vibrant = vibrant)
     val previewColor = previewScheme.primary
     val checkMarkColor = previewScheme.onPrimary
 
@@ -731,7 +748,8 @@ fun ThemeItem(
 fun ThemePickerItem(
     modifier: Modifier = Modifier,
     currentMode: ThemeMode,
-    onModeSelected: (ThemeMode) -> Unit
+    onModeSelected: (ThemeMode) -> Unit,
+    vibrant: Boolean = false,
 ) {
     val cornerRadius = cuid.SettingsItemCornerRadius // замени на  если есть доступ
 
@@ -750,6 +768,7 @@ fun ThemePickerItem(
             ThemeMode.entries.forEach { mode ->
                 ThemeItem(
                     mode = mode,
+                    vibrant = vibrant,
                     isSelected = (mode == currentMode),
                     onClick = { onModeSelected(mode) }
                 )

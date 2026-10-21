@@ -425,4 +425,6 @@
     <string name="description_collapse">कम दिखाएँ</string>
     <string name="notice_created_on">%1$s के लिए बनाया गया</string>
     <string name="notice_moved_to">%1$s पर ले जाया गया</string>
+    <string name="vibrant_colors">चटकीले रंग</string>
+    <string name="vibrant_colors_summary">ज़्यादा चमकीले रंग और कार्ड</string>
 </resources>

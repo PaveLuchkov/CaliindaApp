@@ -99,13 +99,14 @@ class CountdownConfigActivity : ComponentActivity() {
 
     setContent {
       val themeMode by settingsRepository.themeModeFlow.collectAsStateWithLifecycle(ThemeMode.SYSTEM)
+      val vibrant by settingsRepository.vibrantColorsFlow.collectAsStateWithLifecycle(false)
       val zone by settingsRepository.zoneFlow.collectAsStateWithLifecycle(ZoneId.systemDefault())
       val today = remember(zone) { LocalDate.now(zone) }
       val events by
           remember(today) { calendarRepository.getUpcomingFlow(today, COUNTDOWN_LOOKAHEAD_DAYS) }
               .collectAsStateWithLifecycle(null)
       val scope = rememberCoroutineScope()
-      CaliindaTheme(themeMode = themeMode) {
+      CaliindaTheme(themeMode = themeMode, vibrant = vibrant) {
         CountdownPicker(
             events = events,
             today = today,
