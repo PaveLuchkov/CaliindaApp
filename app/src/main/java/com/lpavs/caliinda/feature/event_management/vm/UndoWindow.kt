@@ -7,7 +7,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Сколько длится окно «Отменить» после удаления: 5 с, а если в настройках доступности просят
+ * Сколько длится окно «Отменить» после удаления: 3,5 с, а если в настройках доступности просят
  * больше времени на действия — сколько попросили.
  */
 @Singleton
@@ -22,6 +22,6 @@ class UndoWindow @Inject constructor(@ApplicationContext private val context: Co
   }
 
   private companion object {
-    const val BASE_MS = 5_000L
+    const val BASE_MS = 3_500L
   }
 }
