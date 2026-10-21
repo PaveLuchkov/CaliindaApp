@@ -106,6 +106,7 @@ fun CalendarProjectItem(
   val deletion = LocalCardDeletion.current
   val ghost = ghostProgress()
   val expanded = isExpanded || deletion != null
+  val shadows = shadowPresence(ghost)
   val current = uiModel.isCurrent
   val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
@@ -121,7 +122,7 @@ fun CalendarProjectItem(
       Shadow(
           radius = 0.dp,
           spread = 0.dp,
-          color = shadowColor.copy(0.5f),
+          color = shadowColor.copy(0.5f * shadows),
           offset = DpOffset(x = 0.dp, 0.dp))
   // У проектов свои фигуры, отличные от звёзд событий дня (см. ProjectShapes.kt).
   val clipStar = remember(uiModel.id) { projectShape(uiModel.id) }
@@ -196,12 +197,10 @@ fun CalendarProjectItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
-              // Тени залиты по форме карточки — сквозь полупрозрачный призрак они просвечивали бы
-              // серым: уходят сразу при удалении, а после «Отменить» — когда карточка снова плотная.
               .then(
-                  if (deletion == null && ghost == 0f)
+                  if (shadows > 0f)
                       Modifier.dropShadow(shape = cardShape, shadow = cardElevation)
-                          .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
+                          .shadow(elevation = animatedElevation * shadows, shape = cardShape, clip = false)
                   else Modifier)
               .clip(cardShape)
               .height(animatedHeight)

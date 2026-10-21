@@ -101,6 +101,7 @@ fun CalendarEventItem(
   val deletion = LocalCardDeletion.current
   val ghost = ghostProgress()
   val expanded = isExpanded || deletion != null
+  val shadows = shadowPresence(ghost)
   val current = uiModel.isCurrent
   val birth = rememberCardBirth(celebrationKey)
   val micro = uiModel.isMicroEvent
@@ -121,13 +122,13 @@ fun CalendarEventItem(
           Shadow(
               radius = 5.dp,
               spread = 2.dp,
-              color = shadowColor.copy(0.5f),
+              color = shadowColor.copy(0.5f * shadows),
               offset = DpOffset(x = 0.dp, 4.dp))
       else
           Shadow(
               radius = 0.dp,
               spread = 0.dp,
-              color = Color.Black.copy(0.5f),
+              color = Color.Black.copy(0.5f * shadows),
               offset = DpOffset(x = 0.dp, 0.dp))
   val starShadow =
       Shadow(
@@ -201,12 +202,10 @@ fun CalendarEventItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
-              // Тени залиты по форме карточки — сквозь полупрозрачный призрак они просвечивали бы
-              // серым: уходят сразу при удалении, а после «Отменить» — когда карточка снова плотная.
               .then(
-                  if (deletion == null && ghost == 0f)
+                  if (shadows > 0f)
                       Modifier.dropShadow(shape = cardShape, shadow = cardElevation)
-                          .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
+                          .shadow(elevation = animatedElevation * shadows, shape = cardShape, clip = false)
                   else Modifier)
               .clip(cardShape)
               .height(animatedHeight)

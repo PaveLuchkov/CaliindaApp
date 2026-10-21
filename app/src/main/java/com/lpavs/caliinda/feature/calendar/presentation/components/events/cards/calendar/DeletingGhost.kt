@@ -8,6 +8,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -111,6 +112,23 @@ fun ghostProgress(deleting: Boolean = LocalCardDeletion.current != null): Float 
       animateFloatAsState(
           if (deleting) 1f else 0f, tween(MORPH_MS, easing = FastOutSlowInEasing), label = "ghost")
   return ghost
+}
+
+/**
+ * Сила теней карточки, 0…1. Тени залиты по форме карточки и сквозь полупрозрачный призрак
+ * просвечивали бы серым: при удалении гаснут сразу, а после «Отменить» плавно проявляются,
+ * когда карточка снова плотная.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun shadowPresence(ghost: Float): Float {
+  val shown = LocalCardDeletion.current == null && ghost == 0f
+  val presence by
+      animateFloatAsState(
+          if (shown) 1f else 0f,
+          if (shown) AppMotion.slowEffectsSpec() else snap(),
+          label = "shadowPresence")
+  return presence
 }
 
 /**
