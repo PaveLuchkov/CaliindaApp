@@ -202,9 +202,9 @@ fun CalendarEventItem(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
               // Тени залиты по форме карточки — сквозь полупрозрачный призрак они просвечивали бы
-              // серым, поэтому на время отсчёта их нет сразу, а не по мере угасания.
+              // серым: уходят сразу при удалении, а после «Отменить» — когда карточка снова плотная.
               .then(
-                  if (deletion == null)
+                  if (deletion == null && ghost == 0f)
                       Modifier.dropShadow(shape = cardShape, shadow = cardElevation)
                           .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
                   else Modifier)

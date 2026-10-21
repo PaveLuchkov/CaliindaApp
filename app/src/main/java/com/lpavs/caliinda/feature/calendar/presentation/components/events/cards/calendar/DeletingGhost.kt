@@ -147,7 +147,9 @@ fun DeletableActions(
       verticalAlignment = Alignment.CenterVertically) {
         AnimatedVisibility(
             visible = deletion != null,
-            modifier = if (deletion != null) Modifier.weight(1f) else Modifier,
+            // Вес и пока червяк растворяется: без него он на миг забрал бы всю ширину ряда,
+            // кнопки сжались бы, а с ними прыгнула бы высота ряда и фигура над ним.
+            modifier = Modifier.weight(1f),
             enter = fadeIn(tween(MORPH_MS, delayMillis = WORM_DELAY_MS)),
             exit = fadeOut(AppMotion.fastEffectsSpec())) {
               shown?.let { CountdownWorm(it.countdown, wormColor, Modifier.padding(end = 12.dp)) }
