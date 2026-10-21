@@ -1,8 +1,5 @@
 package com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar
 
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.RenderEffect
 import android.os.SystemClock
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -45,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -69,7 +65,7 @@ class CardDeletion(val countdown: DeletionCountdown, val onUndo: () -> Unit)
 val LocalCardDeletion = compositionLocalOf<CardDeletion?> { null }
 
 /**
- * Удаление как превращение самой карточки: она теряет окрас ([ghostly]), вокруг проявляется
+ * Удаление как превращение самой карточки: она становится полупрозрачной ([ghostly]), вокруг проявляется
  * пунктир — тем же языком, что пунктирная «+ создать», — а в её ряду кнопок остаются только
  * червяк отсчёта и «Отменить» ([DeletableActions]). Ничего не дорастает снизу: карточка
  * раскрыта, как при нажатии на неё. Отменили — всё в обратную сторону.
@@ -117,17 +113,10 @@ fun ghostProgress(deleting: Boolean = LocalCardDeletion.current != null): Float 
 }
 
 /**
- * Теряет окрас: прозрачность и насыщенность почти в серый. Вешается на фон и содержимое карточки,
- * но не на ряд кнопок — «Отменить» и отсчёт должны остаться живыми.
+ * Становится полупрозрачной, цвета свои. Вешается на фон и содержимое карточки, но не на ряд
+ * кнопок — «Отменить» и отсчёт должны остаться живыми.
  */
-fun Modifier.ghostly(ghost: Float) = graphicsLayer {
-  alpha = 1f - (1f - GHOST_ALPHA) * ghost
-  renderEffect =
-      if (ghost > 0f) {
-        val matrix = ColorMatrix().apply { setSaturation(1f - 0.8f * ghost) }
-        RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(matrix)).asComposeRenderEffect()
-      } else null
-}
+fun Modifier.ghostly(ghost: Float) = graphicsLayer { alpha = 1f - (1f - GHOST_ALPHA) * ghost }
 
 /**
  * Ряд кнопок раскрытой карточки. Пока идёт отсчёт удаления, [others] (подробности, правка)

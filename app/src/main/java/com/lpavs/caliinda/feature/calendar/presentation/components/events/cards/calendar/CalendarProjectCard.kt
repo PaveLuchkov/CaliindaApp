@@ -196,7 +196,8 @@ fun CalendarProjectItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
-              .dropShadow(shape = cardShape, shadow = cardElevation)
+              // Тень залита по форме карточки — сквозь полупрозрачный призрак она просвечивала бы серым.
+              .then(if (deletion == null) Modifier.dropShadow(shape = cardShape, shadow = cardElevation) else Modifier)
               .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
               .height(animatedHeight)

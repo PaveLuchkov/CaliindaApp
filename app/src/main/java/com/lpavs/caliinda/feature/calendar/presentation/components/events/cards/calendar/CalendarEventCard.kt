@@ -117,7 +117,7 @@ fun CalendarEventItem(
   val shadowColor = if (!darkTheme) Color.Black else Color.White
   val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)
   val cardElevation =
-      if (current && deletion == null)
+      if (current)
           Shadow(
               radius = 5.dp,
               spread = 2.dp,
@@ -201,7 +201,8 @@ fun CalendarEventItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
-              .dropShadow(shape = cardShape, shadow = cardElevation)
+              // Тень залита по форме карточки — сквозь полупрозрачный призрак она просвечивала бы серым.
+              .then(if (deletion == null) Modifier.dropShadow(shape = cardShape, shadow = cardElevation) else Modifier)
               .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
               .height(animatedHeight)
