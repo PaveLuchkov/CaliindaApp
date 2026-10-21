@@ -29,6 +29,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.ui.theme.Typography
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import com.lpavs.caliinda.core.ui.theme.AppMotion
+import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.calendar.RollingText
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.Notice
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.NoticeTone
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -41,22 +51,40 @@ fun CalendarDateTitle(
     month: YearMonth? = null,
     hasCalendarAccess: Boolean,
     onTitleClick: () -> Unit,
-    onTitleHold: () -> Unit
+    onTitleHold: () -> Unit,
+    /**
+     * Сообщение вместо даты — вместо снекбара над кнопкой создания: дата «барабаном» сменяется
+     * им и обратно. С [Notice.onClick] тап по шапке — переход («Создано на чт, 22 окт →»).
+     */
+    notice: Notice? = null,
+    onNoticeClick: () -> Unit = {},
 ) {
     val isToday = if (month != null) month == YearMonth.from(today) else date == today
     val isCurrentYear = date.year == today.year
-    val headerBackgroundColor =
-        if (isToday) {
-            colorScheme.tertiary
-        } else {
-            colorScheme.secondary
-        }
-    val headerTextColor =
-        if (isToday) {
-            colorScheme.onTertiary
-        } else {
-            colorScheme.onSecondary
-        }
+    val isError = notice?.tone == NoticeTone.ERROR
+    // Ошибка — шапка на время сообщения перекрашивается в цвет ошибки и плавно возвращается.
+    val headerBackgroundColor by
+        animateColorAsState(
+            when {
+                isError -> colorScheme.error
+                isToday -> colorScheme.tertiary
+                else -> colorScheme.secondary
+            },
+            AppMotion.defaultEffectsSpec(),
+            label = "headerColor")
+    val headerTextColor by
+        animateColorAsState(
+            when {
+                isError -> colorScheme.onError
+                isToday -> colorScheme.onTertiary
+                else -> colorScheme.onSecondary
+            },
+            AppMotion.defaultEffectsSpec(),
+            label = "headerTextColor")
+    // pointerInput(Unit) не пересоздаётся — свежие значения берём через rememberUpdatedState.
+    val currentNotice by rememberUpdatedState(notice)
+    val currentOnTitleClick by rememberUpdatedState(onTitleClick)
+    val currentOnNoticeClick by rememberUpdatedState(onNoticeClick)
     val headerTextStyle =
         when {
             isToday -> Typography.titleLargeEmphasized
@@ -85,7 +113,10 @@ fun CalendarDateTitle(
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 tryAwaitRelease()
                             },
-                            onTap = { onTitleClick() },
+                            onTap = {
+                                if (currentNotice?.onClick != null) currentOnNoticeClick()
+                                else currentOnTitleClick()
+                            },
                             onLongPress = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onTitleHold()
@@ -95,23 +126,25 @@ fun CalendarDateTitle(
                 },
 
         ) {
-        Text(
-            text =
-                if (month != null) {
-                  val pattern = if (month.year == today.year) "LLLL" else "LLLL yyyy"
-                  month.format(DateTimeFormatter.ofPattern(pattern, currentLocale))
-                      .replaceFirstChar { it.titlecase(currentLocale) }
-                } else {
-                  date.format(formatterWithShortDay)
-                },
-            style = headerTextStyle,
+        val dateText =
+            if (month != null) {
+              val pattern = if (month.year == today.year) "LLLL" else "LLLL yyyy"
+              month.format(DateTimeFormatter.ofPattern(pattern, currentLocale))
+                  .replaceFirstChar { it.titlecase(currentLocale) }
+            } else {
+              date.format(formatterWithShortDay)
+            }
+        RollingText(
+            text = notice?.let { if (it.onClick != null) "${it.text} →" else it.text } ?: dateText,
+            style = headerTextStyle.copy(fontSize = 16.sp),
             fontFamily = headerFontFamily,
             color = headerTextColor,
+            textAlign = TextAlign.Center,
             modifier =
                 Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    .fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            fontSize = 16.sp,
+                    .fillMaxWidth()
+                    // Снекбар TalkBack зачитывал сам — сообщение в шапке тоже.
+                    .semantics { liveRegion = LiveRegionMode.Polite },
         )
     }
 }

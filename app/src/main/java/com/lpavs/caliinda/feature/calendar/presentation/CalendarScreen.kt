@@ -5,7 +5,7 @@ import com.lpavs.caliinda.R
 import java.util.Locale
 import java.time.format.DateTimeFormatter
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.rememberTopNoticeState
-import com.lpavs.caliinda.feature.calendar.presentation.components.page.TopNoticeHost
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.NoticeAutoDismiss
 import com.lpavs.caliinda.feature.calendar.presentation.components.page.Notice
 import com.lpavs.caliinda.feature.event_management.ui.shared.sections.repeatDate
 import java.time.YearMonth
@@ -221,7 +221,15 @@ fun CalendarScreen(
   }
   Scaffold(
       topBar = {
+        NoticeAutoDismiss(noticeState)
         CalendarAppBar(
+            notice = noticeState.current,
+            onNoticeClick = {
+              noticeState.current?.let { notice ->
+                notice.onClick?.invoke()
+                noticeState.dismiss(notice)
+              }
+            },
             onNavigateToSettings = onNavigateToSettings,
             onGoToTodayClick = {
               scope.launch {
@@ -265,10 +273,6 @@ fun CalendarScreen(
           initialPageIndex = initialPageIndex,
           anchorDate = anchorDate,
           introductionState = introductionState)
-
-      // Плашка под шапкой — вместо снекбара над кнопкой создания.
-      TopNoticeHost(
-          noticeState, Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
 
       if (calendarState.hasCalendarPermission) {
         BottomBar(
