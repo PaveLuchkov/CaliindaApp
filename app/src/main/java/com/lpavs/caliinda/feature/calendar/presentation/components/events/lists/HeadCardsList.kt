@@ -37,8 +37,6 @@ fun HeadCardsList(
             // У ленты события на весь день свои отступы — призрак встаёт на её место без них.
             GhostWhenDeleting(
                 countdown = actions.deletions[event.id],
-                title = event.summary,
-                cardHeight = 0.dp,
                 onUndo = { actions.onUndoDelete(event.id) },
                 padding = PaddingValues(0.dp)) {
               val celebrated = actions.celebration?.takeIf { it.matches(event) }
