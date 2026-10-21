@@ -28,8 +28,6 @@ fun ProjectsCardsList(
     ) { event, isExpanded, toggleExpand ->
         GhostWhenDeleting(
             countdown = actions.deletions[event.id],
-            title = event.summary,
-            cardHeight = event.baseHeight,
             onUndo = { actions.onUndoDelete(event.id) }) {
             val celebrated = actions.celebration?.takeIf { it.matches(event.originalEvent) }
             CalendarProjectItem(
