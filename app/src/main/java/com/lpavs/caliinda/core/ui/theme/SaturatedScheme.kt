@@ -7,19 +7,35 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.google.android.material.color.utilities.DynamicColor
+import com.google.android.material.color.utilities.DynamicScheme
 import com.google.android.material.color.utilities.Hct
 import com.google.android.material.color.utilities.MaterialDynamicColors
-import com.google.android.material.color.utilities.SchemeVibrant
+import com.google.android.material.color.utilities.TonalPalette
+import com.google.android.material.color.utilities.Variant
 
 /**
- * Насыщенный вариант схемы: стиль палитры Vibrant вместо стандартного Tonal Spot — системные
- * цвета от обоев иначе не умеют, приглушённость там заложена в сам стиль. Строим своими силами
- * от базового цвета тем же алгоритмом Material (утилиты цвета из библиотеки material — новой
- * зависимости не нужно; API помечено restricted, но стабильно и используется самой библиотекой).
+ * Насыщенный вариант схемы — тот же стиль Tonal Spot, что у тем и системных цветов, только
+ * насыщенность палитр выше в [CHROMA_BOOST] раз: оттенки и логика тонов прежние, просто сочнее.
+ * Vibrant пробовали — акценты на пределе насыщенности и сдвинутые оттенки второстепенных цветов
+ * выглядели резко. Строим тем же алгоритмом Material (утилиты цвета из библиотеки material —
+ * новой зависимости не нужно; API помечено restricted, но стабильно и используется самой библиотекой).
  */
 @SuppressLint("RestrictedApi")
-fun vibrantColorScheme(seed: Color, dark: Boolean): ColorScheme {
-  val scheme = SchemeVibrant(Hct.fromInt(seed.toArgb()), dark, CONTRAST)
+fun saturatedColorScheme(seed: Color, dark: Boolean): ColorScheme {
+  val hct = Hct.fromInt(seed.toArgb())
+  // Хрома стандартного Tonal Spot: 36 / 16 / 24 (третичный — со сдвигом оттенка на 60°),
+  // нейтральные 6 / 8 не трогаем — фон и поверхности остаются спокойными.
+  val scheme =
+      DynamicScheme(
+          hct,
+          Variant.TONAL_SPOT,
+          dark,
+          0.0,
+          TonalPalette.fromHueAndChroma(hct.hue, 36.0 * CHROMA_BOOST),
+          TonalPalette.fromHueAndChroma(hct.hue, 16.0 * CHROMA_BOOST),
+          TonalPalette.fromHueAndChroma((hct.hue + 60.0) % 360.0, 24.0 * CHROMA_BOOST),
+          TonalPalette.fromHueAndChroma(hct.hue, 6.0),
+          TonalPalette.fromHueAndChroma(hct.hue, 8.0))
   val roles = MaterialDynamicColors()
   fun DynamicColor.color() = Color(getArgb(scheme))
   val base = if (dark) darkColorScheme() else lightColorScheme()
@@ -63,8 +79,5 @@ fun vibrantColorScheme(seed: Color, dark: Boolean): ColorScheme {
   )
 }
 
-/**
- * Контраст схемы. У Vibrant при 0 контейнеры того же светлого тона, что и у приглушённой, —
- * насыщенность в них не видна; 0.2 чуть опускает их тон, и цвет проявляется (0.5 — уже тяжело).
- */
-private const val CONTRAST = 0.2
+/** Во сколько раз насыщеннее стандартного Tonal Spot; подобрано на странице сравнения стилей. */
+private const val CHROMA_BOOST = 1.5

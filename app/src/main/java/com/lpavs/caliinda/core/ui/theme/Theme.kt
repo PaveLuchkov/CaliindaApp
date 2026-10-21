@@ -31,16 +31,16 @@ fun colorSchemeFor(
     themeMode: ThemeMode,
     darkTheme: Boolean,
     context: Context,
-    /** Насыщенный вариант (палитра Vibrant) — от того же базового цвета, что и тема. */
+    /** Насыщенный вариант (Tonal Spot сочнее) — от того же базового цвета, что и тема. */
     vibrant: Boolean = false,
 ): ColorScheme {
   val muted = mutedColorSchemeFor(themeMode, darkTheme, context)
   if (!vibrant) return muted
-  // База — главный цвет той же темы (светлой: в тёмной он уже осветлён): Vibrant поднимает
+  // База — главный цвет той же темы (светлой: в тёмной он уже осветлён): схема поднимает
   // насыщенность, а оттенок остаётся. Цвет обоев напрямую сдвигал оттенок — система выбирает
   // его из обоев по-своему.
   val seed = mutedColorSchemeFor(themeMode, darkTheme = false, context).primary
-  return vibrantColorScheme(seed, darkTheme)
+  return saturatedColorScheme(seed, darkTheme)
 }
 
 private fun mutedColorSchemeFor(themeMode: ThemeMode, darkTheme: Boolean, context: Context): ColorScheme =
