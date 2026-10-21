@@ -102,11 +102,16 @@ fun CalendarProjectItem(
   val birth = rememberCardBirth(celebrationKey)
   val darkTheme = isSystemInDarkTheme()
   val haptic = LocalHapticFeedback.current
+  // Удаляется — раскрыта, как при нажатии: в ряду кнопок отсчёт и «Отменить».
+  val deletion = LocalCardDeletion.current
+  val ghost = ghostProgress()
+  val expanded = isExpanded || deletion != null
+  val shadows = shadowPresence(ghost)
   val current = uiModel.isCurrent
   val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
-  val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
-  val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
+  val targetElevatioion = if (isExpanded && deletion == null) cuid.CurrentEventElevation else 0.dp
+  val targetHeight = if (expanded) uiModel.expandedHeight else uiModel.baseHeight
   val animatedElevation by
       animateDpAsState(
           targetValue = targetElevatioion,
@@ -117,7 +122,7 @@ fun CalendarProjectItem(
       Shadow(
           radius = 0.dp,
           spread = 0.dp,
-          color = shadowColor.copy(0.5f),
+          color = shadowColor.copy(0.5f * shadows),
           offset = DpOffset(x = 0.dp, 0.dp))
   // У проектов свои фигуры, отличные от звёзд событий дня (см. ProjectShapes.kt).
   val clipStar = remember(uiModel.id) { projectShape(uiModel.id) }
@@ -180,10 +185,10 @@ fun CalendarProjectItem(
           style = textStyle,
           regular = cardFontFamily,
           condensed = if (current) CaliindaFonts.ProjectCurrentCondensed else CaliindaFonts.CardCondensed)
-  val titleLines = if (isExpanded) titleFit.expandedLines else titleFit.maxLines
+  val titleLines = if (expanded) titleFit.expandedLines else titleFit.maxLines
   val animatedHeight by
       animateDpAsState(
-          targetValue = if (isExpanded) targetHeight + titleFit.expandedExtra else targetHeight,
+          targetValue = if (expanded) targetHeight + titleFit.expandedExtra else targetHeight,
           animationSpec = AppMotion.defaultSpatialSpec(),
           label = "eventItemHeightAnimation")
 
@@ -192,17 +197,16 @@ fun CalendarProjectItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
-              .dropShadow(shape = cardShape, shadow = cardElevation)
-              .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
+              .then(
+                  if (shadows > 0f)
+                      Modifier.dropShadow(shape = cardShape, shadow = cardElevation)
+                          .shadow(elevation = animatedElevation * shadows, shape = cardShape, clip = false)
+                  else Modifier)
               .clip(cardShape)
-              .background(
-                  lerp(
-                      cardBackground,
-                      if (current) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
-                      birth.flash))
               .height(animatedHeight)
-              .pointerInput(uiModel.id) {
-                detectTapGestures(
+              // Пока идёт отсчёт удаления, карточка не сворачивается и не открывает подробности.
+              .pointerInput(uiModel.id, deletion != null) {
+                if (deletion == null) detectTapGestures(
                     onTap = {
                       haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                       onToggleExpand()
@@ -212,11 +216,21 @@ fun CalendarProjectItem(
                       onDetailsClickFromList()
                     })
               }) {
+        // Фон отдельным слоем: бледнеет при удалении вместе с содержимым, а ряд кнопок — нет.
+        Box(
+            Modifier.matchParentSize()
+                .ghostly(ghost)
+                .background(
+                    lerp(
+                        cardBackground,
+                        if (current) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
+                        birth.flash)))
         Column(modifier = Modifier.fillMaxSize()) {
           Box(
               modifier =
                   Modifier.weight(1f) // Занимает все место, ОСТАВЛЯЯ место для кнопок снизу
                       .fillMaxWidth()
+                      .ghostly(ghost)
                       // Внутренние отступы для текста и звезды
                       .padding(
                           horizontal = cuid.ItemHorizontalPadding,
@@ -295,7 +309,7 @@ fun CalendarProjectItem(
                 }
               }
           AnimatedVisibility(
-              visible = isExpanded,
+              visible = expanded,
               enter =
                   fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                       expandVertically(
@@ -305,12 +319,25 @@ fun CalendarProjectItem(
                   shrinkVertically(
                       animationSpec = AppMotion.defaultSpatialSpec(), shrinkTowards = Alignment.Top) +
                       fadeOut(animationSpec = AppMotion.fastEffectsSpec())) {
-                Row(
+                DeletableActions(
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically) {
+                    delete = {
+                      FilledIconButton(
+                          onClick = { onDeleteClickFromList() },
+                          modifier =
+                              Modifier.minimumInteractiveComponentSize()
+                                  .size(
+                                      IconButtonDefaults.smallContainerSize(
+                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
+                          shape = IconButtonDefaults.smallRoundShape) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.delete),
+                            )
+                          }
+                    }) {
                       FilledIconButton(
                           onClick = {
                             onDetailsClickFromList()
@@ -334,19 +361,6 @@ fun CalendarProjectItem(
                             Icon(Icons.Filled.Edit, contentDescription = null)
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.edit))
-                          }
-                      FilledIconButton(
-                          onClick = { onDeleteClickFromList() },
-                          modifier =
-                              Modifier.minimumInteractiveComponentSize()
-                                  .size(
-                                      IconButtonDefaults.smallContainerSize(
-                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
-                          shape = IconButtonDefaults.smallRoundShape) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.delete),
-                            )
                           }
                     }
               } // Конец AnimatedVisibility
