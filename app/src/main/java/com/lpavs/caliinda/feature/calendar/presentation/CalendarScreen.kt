@@ -290,8 +290,7 @@ fun CalendarScreen(
   }
   EventFormSheet(
       dialog = eventManagementState.dialog, onDismiss = eventManagementViewModel::dismissDialog) {
-          dialog,
-          sheetSettled ->
+          dialog ->
         when (dialog) {
           is EventDialog.Creating ->
               CreateEventScreen(
@@ -304,8 +303,7 @@ fun CalendarScreen(
                   initialDate = dialog.date,
                   initialProject = dialog.asProject,
                   template = dialog.template,
-                  templateReminders = eventManagementState.editingReminders,
-                  sheetSettled = sheetSettled)
+                  templateReminders = eventManagementState.editingReminders)
           is EventDialog.Editing ->
               EditEventScreen(
                   eventToEdit = dialog.event,
