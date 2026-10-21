@@ -26,6 +26,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 import com.lpavs.caliinda.core.ui.theme.CaliindaTheme
+import com.lpavs.caliinda.feature.calendar.presentation.components.page.Notice
 import java.time.LocalDate
 
 @OptIn(
@@ -42,6 +43,9 @@ fun CalendarAppBar(
     today: LocalDate,
     month: YearMonth? = null,
     hasCalendarAccess: Boolean,
+    /** Сообщение в шапке вместо даты (см. CalendarDateTitle). */
+    notice: Notice? = null,
+    onNoticeClick: () -> Unit = {},
 ) {
   CenterAlignedTopAppBar(
       title = {
@@ -51,7 +55,9 @@ fun CalendarAppBar(
             month = month,
             hasCalendarAccess = hasCalendarAccess,
             onTitleHold = onTitleHold,
-            onTitleClick = onTitleClick)
+            onTitleClick = onTitleClick,
+            notice = notice,
+            onNoticeClick = onNoticeClick)
       },
       navigationIcon = {
           val haptic = LocalHapticFeedback.current
