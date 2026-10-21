@@ -1,0 +1,7 @@
+• New: attendee list — see who's invited and who's coming
+• Video meeting links in the location field open with one tap
+• Deleting without a pop-up bar: Undo is now right in the card
+• Outlook and Teams invites look clean, long descriptions are collapsed
+• Tap an event on a widget to open it
+• New Vibrant colors setting in Appearance
+• Bug fixes and performance improvements

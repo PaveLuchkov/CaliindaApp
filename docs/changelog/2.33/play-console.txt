@@ -1,0 +1,54 @@
+<en-US>
+• New: attendee list — see who's invited and who's coming
+• Video meeting links in the location field open with one tap
+• Deleting without a pop-up bar: Undo is now right in the card
+• Outlook and Teams invites look clean, long descriptions are collapsed
+• Tap an event on a widget to open it
+• New Vibrant colors setting in Appearance
+• Bug fixes and performance improvements
+</en-US>
+<ru-RU>
+• Добавлен список участников: видно, кто приглашён и кто придёт
+• Ссылки на видеовстречи в поле места открываются одним тапом
+• Удаление без всплывающей плашки: «Отменить» теперь прямо в карточке
+• Приглашения из Outlook и Teams показываются аккуратно, длинные свёрнуты
+• Тап по событию на виджете открывает его
+• Новая настройка «Насыщенные цвета» в «Оформлении»
+• Исправлены ошибки и улучшена производительность
+</ru-RU>
+<de-DE>
+• Neu: Teilnehmerliste – sehen, wer eingeladen ist und wer kommt
+• Links zu Videomeetings im Ort öffnen sich mit einem Tipp
+• Löschen ohne Einblendung: „Rückgängig“ jetzt direkt in der Karte
+• Einladungen aus Outlook und Teams sauber, lange eingeklappt
+• Termin im Widget antippen öffnet ihn
+• Neue Einstellung „Kräftige Farben“ unter „Darstellung“
+• Fehlerbehebungen und bessere Leistung
+</de-DE>
+<es-ES>
+• Nuevo: lista de invitados, mira quién está invitado y quién asistirá
+• Los enlaces a videollamadas en el lugar se abren con un toque
+• Eliminar sin barra emergente: «Deshacer» ahora está en la tarjeta
+• Invitaciones de Outlook y Teams limpias, las largas plegadas
+• Toca un evento del widget para abrirlo
+• Nuevo ajuste «Colores vivos» en Apariencia
+• Corrección de errores y mejor rendimiento
+</es-ES>
+<fr-FR>
+• Nouveau : liste des participants, voyez qui est invité et qui vient
+• Les liens de visioconférence dans le lieu s'ouvrent d'un toucher
+• Suppression sans bandeau : « Annuler » est désormais dans la carte
+• Invitations Outlook et Teams épurées, les longues repliées
+• Touchez un événement du widget pour l'ouvrir
+• Nouveau réglage « Couleurs vives » dans Apparence
+• Corrections de bugs et meilleures performances
+</fr-FR>
+<hi-IN>
+• नया: प्रतिभागियों की सूची — देखें कौन आमंत्रित है और कौन आ रहा है
+• स्थान में वीडियो मीटिंग लिंक एक टैप में खुलते हैं
+• हटाने पर अब पॉप-अप पट्टी नहीं: «पूर्ववत करें» सीधे कार्ड में
+• Outlook और Teams के निमंत्रण साफ़ दिखते हैं, लंबे सिमटे हुए
+• विजेट पर इवेंट टैप करें, वह खुल जाएगा
+• «रूप-रंग» में नई सेटिंग «चटकीले रंग»
+• गड़बड़ियाँ ठीक की गईं और प्रदर्शन बेहतर हुआ
+</hi-IN>

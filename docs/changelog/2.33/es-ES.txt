@@ -1,0 +1,7 @@
+• Nuevo: lista de invitados, mira quién está invitado y quién asistirá
+• Los enlaces a videollamadas en el lugar se abren con un toque
+• Eliminar sin barra emergente: «Deshacer» ahora está en la tarjeta
+• Invitaciones de Outlook y Teams limpias, las largas plegadas
+• Toca un evento del widget para abrirlo
+• Nuevo ajuste «Colores vivos» en Apariencia
+• Corrección de errores y mejor rendimiento

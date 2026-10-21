@@ -1,0 +1,7 @@
+• Nouveau : liste des participants, voyez qui est invité et qui vient
+• Les liens de visioconférence dans le lieu s'ouvrent d'un toucher
+• Suppression sans bandeau : « Annuler » est désormais dans la carte
+• Invitations Outlook et Teams épurées, les longues repliées
+• Touchez un événement du widget pour l'ouvrir
+• Nouveau réglage « Couleurs vives » dans Apparence
+• Corrections de bugs et meilleures performances

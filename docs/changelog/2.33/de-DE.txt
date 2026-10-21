@@ -1,0 +1,7 @@
+• Neu: Teilnehmerliste – sehen, wer eingeladen ist und wer kommt
+• Links zu Videomeetings im Ort öffnen sich mit einem Tipp
+• Löschen ohne Einblendung: „Rückgängig“ jetzt direkt in der Karte
+• Einladungen aus Outlook und Teams sauber, lange eingeklappt
+• Termin im Widget antippen öffnet ihn
+• Neue Einstellung „Kräftige Farben“ unter „Darstellung“
+• Fehlerbehebungen und bessere Leistung
