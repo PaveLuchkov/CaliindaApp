@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -114,9 +115,13 @@ fun ghostProgress(deleting: Boolean = LocalCardDeletion.current != null): Float 
 
 /**
  * Становится полупрозрачной, цвета свои. Вешается на фон и содержимое карточки, но не на ряд
- * кнопок — «Отменить» и отсчёт должны остаться живыми.
+ * кнопок — «Отменить» и отсчёт должны остаться живыми. Прозрачность — на каждый мазок, без
+ * отдельного буфера: буфер размером с содержимое обрезал бы фигуру, вылезающую за его край.
  */
-fun Modifier.ghostly(ghost: Float) = graphicsLayer { alpha = 1f - (1f - GHOST_ALPHA) * ghost }
+fun Modifier.ghostly(ghost: Float) = graphicsLayer {
+  alpha = 1f - (1f - GHOST_ALPHA) * ghost
+  compositingStrategy = CompositingStrategy.ModulateAlpha
+}
 
 /**
  * Ряд кнопок раскрытой карточки. Пока идёт отсчёт удаления, [others] (подробности, правка)

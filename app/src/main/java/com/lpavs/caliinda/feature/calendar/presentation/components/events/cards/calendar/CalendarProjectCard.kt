@@ -196,9 +196,13 @@ fun CalendarProjectItem(
           Modifier.padding(
                   horizontal = CalendarUiDefaults.ItemHorizontalPadding,
                   vertical = CalendarUiDefaults.ItemVerticalPadding)
-              // Тень залита по форме карточки — сквозь полупрозрачный призрак она просвечивала бы серым.
-              .then(if (deletion == null) Modifier.dropShadow(shape = cardShape, shadow = cardElevation) else Modifier)
-              .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
+              // Тени залиты по форме карточки — сквозь полупрозрачный призрак они просвечивали бы
+              // серым, поэтому на время отсчёта их нет сразу, а не по мере угасания.
+              .then(
+                  if (deletion == null)
+                      Modifier.dropShadow(shape = cardShape, shadow = cardElevation)
+                          .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
+                  else Modifier)
               .clip(cardShape)
               .height(animatedHeight)
               // Пока идёт отсчёт удаления, карточка не сворачивается и не открывает подробности.
