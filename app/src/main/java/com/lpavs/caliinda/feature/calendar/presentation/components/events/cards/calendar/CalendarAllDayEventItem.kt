@@ -78,6 +78,13 @@ fun AllDayEventItem(
           birth.flash)
   val cardTextColor = MaterialTheme.colorScheme.onTertiaryContainer
   val haptic = LocalHapticFeedback.current
+  // Удаляется — раскрыта, как при нажатии: в ряду кнопок отсчёт и «Отменить».
+  val deletion = LocalCardDeletion.current
+  val ghost = ghostProgress()
+  val buttonColors =
+      ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.onTertiary,
+          contentColor = MaterialTheme.colorScheme.tertiary)
     val cardFontFamily =
                 CaliindaFonts.Card
   Box(
@@ -85,9 +92,9 @@ fun AllDayEventItem(
           modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(cuid.EventItemCornerRadius))
-              .background(cardBackground)
-              .pointerInput(event.id) {
-                detectTapGestures(
+              // Пока идёт отсчёт удаления, лента не сворачивается и не открывает подробности.
+              .pointerInput(event.id, deletion != null) {
+                if (deletion == null) detectTapGestures(
                     onTap = {
                       haptic.performHapticFeedback(HapticFeedbackType.Companion.ContextClick)
                       onToggleExpand()
@@ -97,6 +104,8 @@ fun AllDayEventItem(
                       onDetailsClick()
                     })
               }) {
+        // Фон отдельным слоем: бледнеет при удалении вместе с названием, а ряд кнопок — нет.
+        Box(Modifier.matchParentSize().ghostly(ghost).background(cardBackground))
         Column(
             modifier =
                 Modifier.Companion.fillMaxWidth()
@@ -113,11 +122,11 @@ fun AllDayEventItem(
                   textAlign = TextAlign.Companion.Center,
                   // Как раньше: длинное название переносится, а не обрезается.
                   maxLines = Int.MAX_VALUE,
-                  modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 3.dp),
+                  modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 3.dp).ghostly(ghost),
               )
 
               AnimatedVisibility(
-                  visible = isExpanded,
+                  visible = isExpanded || deletion != null,
                   enter =
                       fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                           expandVertically(
@@ -129,20 +138,29 @@ fun AllDayEventItem(
                           shrinkTowards = Alignment.Companion.Top) +
                           fadeOut(animationSpec = AppMotion.fastEffectsSpec())) {
                     Spacer(modifier = Modifier.Companion.height(8.dp))
-                    Row(
+                    DeletableActions(
                         modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.Companion.CenterVertically) {
+                        wormColor = MaterialTheme.colorScheme.tertiary,
+                        undoColors = buttonColors,
+                        delete = {
+                          Button(
+                              onClick = { onDeleteClick() },
+                              contentPadding = PaddingValues(horizontal = 12.dp),
+                              colors = buttonColors) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = stringResource(R.string.delete),
+                                    modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
+                              }
+                        }) {
                           Button(
                               onClick = {
                                 onDetailsClick()
                                 onToggleExpand()
                               },
                               contentPadding = PaddingValues(horizontal = 12.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = MaterialTheme.colorScheme.onTertiary,
-                                      contentColor = MaterialTheme.colorScheme.tertiary)) {
+                              colors = buttonColors) {
                                 Icon(
                                     Icons.Filled.Info,
                                     contentDescription = stringResource(R.string.details),
@@ -152,28 +170,13 @@ fun AllDayEventItem(
                           Button(
                               onClick = { onEditClick() },
                               contentPadding = PaddingValues(horizontal = 12.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = MaterialTheme.colorScheme.onTertiary,
-                                      contentColor = MaterialTheme.colorScheme.tertiary)) {
+                              colors = buttonColors) {
                                 Icon(
                                     Icons.Filled.Edit,
                                     contentDescription = stringResource(R.string.edit),
                                     modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
                               }
                           Spacer(modifier = Modifier.Companion.width(8.dp))
-                          Button(
-                              onClick = { onDeleteClick() },
-                              contentPadding = PaddingValues(horizontal = 12.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = MaterialTheme.colorScheme.onTertiary,
-                                      contentColor = MaterialTheme.colorScheme.tertiary)) {
-                                Icon(
-                                    Icons.Filled.Delete,
-                                    contentDescription = stringResource(R.string.delete),
-                                    modifier = Modifier.Companion.size(ButtonDefaults.IconSize))
-                              }
                         }
                   }
             }

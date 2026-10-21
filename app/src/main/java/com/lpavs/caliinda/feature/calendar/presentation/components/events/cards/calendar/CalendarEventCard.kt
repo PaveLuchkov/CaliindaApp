@@ -97,12 +97,16 @@ fun CalendarEventItem(
     celebrationKey: Long? = null,
 ) {
   val haptic = LocalHapticFeedback.current
+  // Удаляется — раскрыта, как при нажатии: в ряду кнопок отсчёт и «Отменить».
+  val deletion = LocalCardDeletion.current
+  val ghost = ghostProgress()
+  val expanded = isExpanded || deletion != null
   val current = uiModel.isCurrent
   val birth = rememberCardBirth(celebrationKey)
   val micro = uiModel.isMicroEvent
   val shapeParams = uiModel.shapeParams
-  val targetHeight = if (isExpanded) uiModel.expandedHeight else uiModel.baseHeight
-  val targetElevatioion = if (isExpanded) cuid.CurrentEventElevation else 0.dp
+  val targetHeight = if (expanded) uiModel.expandedHeight else uiModel.baseHeight
+  val targetElevatioion = if (isExpanded && deletion == null) cuid.CurrentEventElevation else 0.dp
   val animatedElevation by
       animateDpAsState(
           targetValue = targetElevatioion,
@@ -113,7 +117,7 @@ fun CalendarEventItem(
   val shadowColor = if (!darkTheme) Color.Black else Color.White
   val cardShape = RoundedCornerShape(cuid.EventItemCornerRadius)
   val cardElevation =
-      if (current)
+      if (current && deletion == null)
           Shadow(
               radius = 5.dp,
               spread = 2.dp,
@@ -185,10 +189,10 @@ fun CalendarEventItem(
           style = textStyle,
           regular = cardFontFamily,
           condensed = if (current) CaliindaFonts.CardCurrentCondensed else CaliindaFonts.CardCondensed)
-  val titleLines = if (isExpanded) titleFit.expandedLines else titleFit.maxLines
+  val titleLines = if (expanded) titleFit.expandedLines else titleFit.maxLines
   val animatedHeight by
       animateDpAsState(
-          targetValue = if (isExpanded) targetHeight + titleFit.expandedExtra else targetHeight,
+          targetValue = if (expanded) targetHeight + titleFit.expandedExtra else targetHeight,
           animationSpec = AppMotion.defaultSpatialSpec(),
           label = "eventItemHeightAnimation")
 
@@ -200,15 +204,10 @@ fun CalendarEventItem(
               .dropShadow(shape = cardShape, shadow = cardElevation)
               .shadow(elevation = animatedElevation, shape = cardShape, clip = false)
               .clip(cardShape)
-              // Вспышка «рождения» — к цвету «сейчас», у текущего (он и так такой) — к обычному.
-              .background(
-                  lerp(
-                      cardBackground,
-                      if (current) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
-                      birth.flash))
               .height(animatedHeight)
-              .pointerInput(uiModel.id) {
-                detectTapGestures(
+              // Пока идёт отсчёт удаления, карточка не сворачивается и не открывает подробности.
+              .pointerInput(uiModel.id, deletion != null) {
+                if (deletion == null) detectTapGestures(
                     onTap = {
                       haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                       onToggleExpand()
@@ -218,11 +217,22 @@ fun CalendarEventItem(
                       onDetailsClickFromList()
                     })
               }) {
+        // Фон отдельным слоем: бледнеет при удалении вместе с содержимым, а ряд кнопок — нет.
+        // Вспышка «рождения» — к цвету «сейчас», у текущего (он и так такой) — к обычному.
+        Box(
+            Modifier.matchParentSize()
+                .ghostly(ghost)
+                .background(
+                    lerp(
+                        cardBackground,
+                        if (current) colorScheme.primaryContainer else colorScheme.tertiaryContainer,
+                        birth.flash)))
         Column(modifier = Modifier.fillMaxSize()) {
           Box(
               modifier =
                   Modifier.weight(1f) // Занимает все место, ОСТАВЛЯЯ место для кнопок снизу
                       .fillMaxWidth()
+                      .ghostly(ghost)
                       // Внутренние отступы для текста и звезды
                       .padding(
                           horizontal = cuid.ItemHorizontalPadding,
@@ -313,7 +323,7 @@ fun CalendarEventItem(
                 }
               }
           AnimatedVisibility(
-              visible = isExpanded,
+              visible = expanded,
               enter =
                   fadeIn(animationSpec = AppMotion.fastEffectsSpec()) +
                       expandVertically(
@@ -323,12 +333,25 @@ fun CalendarEventItem(
                   shrinkVertically(
                       animationSpec = AppMotion.defaultSpatialSpec(), shrinkTowards = Alignment.Top) +
                       fadeOut(animationSpec = AppMotion.fastEffectsSpec())) {
-                Row(
+                DeletableActions(
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(horizontal = cuid.ItemHorizontalPadding, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically) {
+                    delete = {
+                      FilledIconButton(
+                          onClick = { onDeleteClickFromList() },
+                          modifier =
+                              Modifier.minimumInteractiveComponentSize()
+                                  .size(
+                                      IconButtonDefaults.smallContainerSize(
+                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
+                          shape = IconButtonDefaults.smallRoundShape) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.delete),
+                            )
+                          }
+                    }) {
                       FilledIconButton(
                           onClick = {
                             onDetailsClickFromList()
@@ -352,19 +375,6 @@ fun CalendarEventItem(
                             Icon(Icons.Filled.Edit, contentDescription = null)
                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                             Text(stringResource(R.string.edit))
-                          }
-                      FilledIconButton(
-                          onClick = { onDeleteClickFromList() },
-                          modifier =
-                              Modifier.minimumInteractiveComponentSize()
-                                  .size(
-                                      IconButtonDefaults.smallContainerSize(
-                                          IconButtonDefaults.IconButtonWidthOption.Narrow)),
-                          shape = IconButtonDefaults.smallRoundShape) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.delete),
-                            )
                           }
                     }
               } // Конец AnimatedVisibility
