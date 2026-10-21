@@ -456,4 +456,6 @@
     <string name="description_collapse">Свернуть</string>
     <string name="notice_created_on">Создано на %1$s</string>
     <string name="notice_moved_to">Перенесено на %1$s</string>
+    <string name="vibrant_colors">Насыщенные цвета</string>
+    <string name="vibrant_colors_summary">Ярче акценты и карточки</string>
 </resources>

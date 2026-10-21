@@ -448,4 +448,6 @@
     <string name="description_collapse">Show less</string>
     <string name="notice_created_on">Created for %1$s</string>
     <string name="notice_moved_to">Moved to %1$s</string>
+    <string name="vibrant_colors">Vibrant colors</string>
+    <string name="vibrant_colors_summary">Brighter accents and cards</string>
 </resources>

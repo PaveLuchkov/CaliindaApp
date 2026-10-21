@@ -27,7 +27,23 @@ import com.lpavs.caliinda.core.data.model.ThemeMode
  * Цветовая схема для режима темы. SYSTEM — динамические цвета от обоев (minSdk 32, доступны
  * всегда), остальные — собственные M3-схемы.
  */
-fun colorSchemeFor(themeMode: ThemeMode, darkTheme: Boolean, context: Context): ColorScheme =
+fun colorSchemeFor(
+    themeMode: ThemeMode,
+    darkTheme: Boolean,
+    context: Context,
+    /** Насыщенный вариант (палитра Vibrant) — от того же базового цвета, что и тема. */
+    vibrant: Boolean = false,
+): ColorScheme {
+  val muted = mutedColorSchemeFor(themeMode, darkTheme, context)
+  if (!vibrant) return muted
+  // База — главный цвет той же темы (светлой: в тёмной он уже осветлён): Vibrant поднимает
+  // насыщенность, а оттенок остаётся. Цвет обоев напрямую сдвигал оттенок — система выбирает
+  // его из обоев по-своему.
+  val seed = mutedColorSchemeFor(themeMode, darkTheme = false, context).primary
+  return vibrantColorScheme(seed, darkTheme)
+}
+
+private fun mutedColorSchemeFor(themeMode: ThemeMode, darkTheme: Boolean, context: Context): ColorScheme =
     when (themeMode) {
       ThemeMode.SYSTEM ->
           if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -52,11 +68,14 @@ val AppMotion: MotionScheme = MotionScheme.expressive()
 fun CaliindaTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    vibrant: Boolean = false,
     content: @Composable () -> Unit
 ) {
   val context = LocalContext.current
   val colorScheme =
-      remember(themeMode, darkTheme, context) { colorSchemeFor(themeMode, darkTheme, context) }
+      remember(themeMode, darkTheme, vibrant, context) {
+        colorSchemeFor(themeMode, darkTheme, context, vibrant)
+      }
 
   MaterialExpressiveTheme(
       colorScheme = colorScheme,
@@ -67,5 +86,8 @@ fun CaliindaTheme(
 
 /** Схема произвольной темы — для превью выбора темы в настройках. */
 @Composable
-fun themeColorScheme(themeMode: ThemeMode, darkTheme: Boolean = isSystemInDarkTheme()): ColorScheme =
-    colorSchemeFor(themeMode, darkTheme, LocalContext.current)
+fun themeColorScheme(
+    themeMode: ThemeMode,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    vibrant: Boolean = false,
+): ColorScheme = colorSchemeFor(themeMode, darkTheme, LocalContext.current, vibrant)

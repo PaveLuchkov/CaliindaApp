@@ -83,6 +83,14 @@ constructor(
           started = SharingStarted.WhileSubscribed(5000),
           initialValue = ThemeMode.SYSTEM)
 
+  val vibrantColors: StateFlow<Boolean> =
+      settingsRepository.vibrantColorsFlow.stateIn(
+          viewModelScope, SharingStarted.Eagerly, false)
+
+  fun setVibrantColors(enabled: Boolean) {
+    viewModelScope.launch { settingsRepository.saveVibrantColors(enabled) }
+  }
+
   // 2. Обновление темы
   fun updateThemeMode(newMode: ThemeMode) {
     viewModelScope.launch {
