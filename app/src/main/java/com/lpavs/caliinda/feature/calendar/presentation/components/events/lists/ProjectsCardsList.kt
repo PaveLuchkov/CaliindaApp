@@ -13,7 +13,8 @@ import com.lpavs.caliinda.feature.calendar.presentation.components.events.cards.
 fun ProjectsCardsList(
     events: List<EventUiModel>,
     listState: LazyListState,
-    actions: EventActions
+    actions: EventActions,
+    userScrollEnabled: Boolean = true,
 ) {
     // Сохранили событие с этой страницы — докручиваем ленту к его карточке, где идёт «рождение».
     val celebration = actions.celebration
@@ -24,7 +25,8 @@ fun ProjectsCardsList(
     BaseEventList(
         items = events,
         key = { it.id },
-        listState = listState
+        listState = listState,
+        userScrollEnabled = userScrollEnabled
     ) { event, isExpanded, toggleExpand ->
         GhostWhenDeleting(
             countdown = actions.deletions[event.id],

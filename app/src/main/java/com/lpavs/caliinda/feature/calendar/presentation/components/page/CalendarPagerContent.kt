@@ -64,6 +64,9 @@ fun CalendarPagerScreen(
                     MonthProjectsPage(
                         pageState = rememberPageState(month, MonthPageUiState(), monthPageState),
                         actions = actions,
+                        // Как у дней: пока листаются месяцы, жест не отдаём списку проектов —
+                        // иначе пейджер застревает между месяцами.
+                        listScrollEnabled = !monthPagerState.isScrollInProgress,
                         hasCalendarAccess = hasCalendarAccess,
                         onGrantAccessClick = onGrantAccessClick,
                         createEventClick = createEventAction,
