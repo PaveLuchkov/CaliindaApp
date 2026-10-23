@@ -24,6 +24,7 @@ import com.lpavs.caliinda.feature.event_management.EventActions
 fun MonthProjectsPage(
     pageState: MonthPageUiState,
     actions: EventActions,
+    listScrollEnabled: Boolean,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     createEventClick: () -> Unit,
@@ -40,7 +41,11 @@ fun MonthProjectsPage(
               onGrantAccessClick = onGrantAccessClick,
               projectView = true)
       pageState.events.isNotEmpty() ->
-          ProjectsCardsList(events = pageState.events, listState = listState, actions = actions)
+          ProjectsCardsList(
+              events = pageState.events,
+              listState = listState,
+              actions = actions,
+              userScrollEnabled = listScrollEnabled)
       pageState.isLoading ->
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LoadingIndicator(modifier = Modifier.size(80.dp))
