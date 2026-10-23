@@ -25,6 +25,7 @@ fun MonthProjectsPage(
     pageState: MonthPageUiState,
     actions: EventActions,
     listScrollEnabled: Boolean,
+    pagePosition: () -> Float,
     hasCalendarAccess: Boolean,
     onGrantAccessClick: () -> Unit,
     createEventClick: () -> Unit,
@@ -45,7 +46,8 @@ fun MonthProjectsPage(
               events = pageState.events,
               listState = listState,
               actions = actions,
-              userScrollEnabled = listScrollEnabled)
+              userScrollEnabled = listScrollEnabled,
+              pagePosition = pagePosition)
       pageState.isLoading ->
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LoadingIndicator(modifier = Modifier.size(80.dp))

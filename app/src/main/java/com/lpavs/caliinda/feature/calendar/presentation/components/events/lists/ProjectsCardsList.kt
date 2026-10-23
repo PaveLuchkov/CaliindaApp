@@ -15,6 +15,7 @@ fun ProjectsCardsList(
     listState: LazyListState,
     actions: EventActions,
     userScrollEnabled: Boolean = true,
+    pagePosition: (() -> Float)? = null,
 ) {
     // Сохранили событие с этой страницы — докручиваем ленту к его карточке, где идёт «рождение».
     val celebration = actions.celebration
@@ -26,7 +27,8 @@ fun ProjectsCardsList(
         items = events,
         key = { it.id },
         listState = listState,
-        userScrollEnabled = userScrollEnabled
+        userScrollEnabled = userScrollEnabled,
+        pagePosition = pagePosition
     ) { event, isExpanded, toggleExpand ->
         GhostWhenDeleting(
             countdown = actions.deletions[event.id],

@@ -61,12 +61,23 @@ fun CalendarPagerScreen(
                         remember(pageIndex) {
                           anchorMonth.plusMonths((pageIndex - initialPageIndex).toLong())
                         }
+                    // Сдвиг пейджера относительно страницы в px — «вес» карточек, как у дней.
+                    val pagePosition =
+                        remember(pageIndex) {
+                          {
+                            val info = monthPagerState.layoutInfo
+                            (monthPagerState.currentPage - pageIndex +
+                                monthPagerState.currentPageOffsetFraction) *
+                                (info.pageSize + info.pageSpacing)
+                          }
+                        }
                     MonthProjectsPage(
                         pageState = rememberPageState(month, MonthPageUiState(), monthPageState),
                         actions = actions,
                         // Как у дней: пока листаются месяцы, жест не отдаём списку проектов —
                         // иначе пейджер застревает между месяцами.
                         listScrollEnabled = !monthPagerState.isScrollInProgress,
+                        pagePosition = pagePosition,
                         hasCalendarAccess = hasCalendarAccess,
                         onGrantAccessClick = onGrantAccessClick,
                         createEventClick = createEventAction,
