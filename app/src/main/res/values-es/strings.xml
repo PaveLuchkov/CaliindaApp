@@ -450,4 +450,5 @@
     <string name="dark_mode_dark">Oscuro</string>
     <string name="vibrant_colors">Colores vivos</string>
     <string name="vibrant_colors_summary">Acentos y tarjetas más intensos</string>
+    <string name="ics_import_failed">No se pudo leer el evento de este archivo</string>
 </resources>

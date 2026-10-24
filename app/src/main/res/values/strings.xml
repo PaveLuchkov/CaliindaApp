@@ -459,4 +459,5 @@
     <string name="dark_mode_dark">Dark</string>
     <string name="vibrant_colors">Vibrant colors</string>
     <string name="vibrant_colors_summary">Brighter accents and cards</string>
+    <string name="ics_import_failed">Couldn’t read the event from this file</string>
 </resources>

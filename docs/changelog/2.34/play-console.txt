@@ -1,48 +1,42 @@
 <en-US>
 • New Dark theme setting in Appearance: system, light or dark
-• Share an event with a QR code: a friend scans it and adds the event to their calendar. Or copy the link, or send it as text with a calendar file
-• The date bar slides sideways with the screen when you switch between projects and days
-• Project cards bounce when you flip months, just like days
-• Month paging no longer gets stuck halfway
+• Share an event with a QR code, a link or a calendar file
+• Caliinda can be your main calendar: “Add to calendar” from other apps and .ics files open it
+• Smoother paging: the date bar slides with the screen, project cards bounce, months no longer get stuck halfway
 • Bug fixes and performance improvements
 </en-US>
 <ru-RU>
 • Новая настройка «Тёмная тема» в «Оформлении»: как в системе, светлая или тёмная
-• «Поделиться» с QR-кодом: друг наводит камеру и добавляет событие к себе. Или скопируйте ссылку, или отправьте текстом с файлом календаря
-• Шапка с датой уезжает вбок вместе с экраном при переходе между проектами и днями
-• Карточки проектов пружинят при листании месяцев, как у дней
-• Листание месяцев больше не застревает на полпути
+• «Поделиться» событием: QR-код, ссылка или файл календаря
+• Caliinda может быть основным календарём: «Добавить в календарь» из других приложений и файлы .ics открываются в нём
+• Плавнее листание: шапка с датой едет вместе с экраном, карточки проектов пружинят, месяцы не застревают на полпути
 • Исправлены ошибки и улучшена производительность
 </ru-RU>
 <de-DE>
 • Neue Einstellung „Dunkles Design“ unter „Darstellung“: System, hell oder dunkel
-• Termin per QR-Code teilen: scannen und in den eigenen Kalender übernehmen. Oder Link kopieren bzw. als Text mit Kalenderdatei senden
-• Die Datumsleiste gleitet beim Wechsel zwischen Projekten und Tagen seitlich mit
-• Projektkarten federn beim Blättern der Monate, wie bei Tagen
-• Das Blättern der Monate bleibt nicht mehr auf halbem Weg hängen
+• Termine teilen per QR-Code, Link oder Kalenderdatei
+• Caliinda kann dein Hauptkalender sein: „Zum Kalender hinzufügen“ aus anderen Apps und .ics-Dateien öffnen sich darin
+• Flüssigeres Blättern: die Datumsleiste gleitet mit, Projektkarten federn, Monate bleiben nicht mehr hängen
 • Fehlerbehebungen und bessere Leistung
 </de-DE>
 <es-ES>
 • Nuevo ajuste «Tema oscuro» en Apariencia: sistema, claro u oscuro
-• Comparte un evento con un código QR: tu amigo lo escanea y lo añade a su calendario. O copia el enlace, o envíalo como texto con archivo
-• La barra de fecha se desliza de lado con la pantalla al pasar entre proyectos y días
-• Las tarjetas de proyectos rebotan al pasar los meses, como las de días
-• Pasar los meses ya no se queda atascado a medias
+• Comparte un evento con código QR, enlace o archivo de calendario
+• Caliinda puede ser tu calendario principal: «Añadir al calendario» desde otras apps y los archivos .ics se abren en él
+• Paso de páginas más fluido: la barra de fecha se desliza, las tarjetas de proyectos rebotan, los meses ya no se atascan
 • Corrección de errores y mejor rendimiento
 </es-ES>
 <fr-FR>
 • Nouveau réglage « Thème sombre » dans Apparence : système, clair ou sombre
-• Partagez un événement par QR code : un ami le scanne et l'ajoute à son agenda. Ou copiez le lien, ou envoyez-le en texte avec un fichier
-• La barre de date glisse sur le côté avec l'écran entre projets et jours
-• Les cartes de projets rebondissent quand on change de mois, comme les jours
-• Le défilement des mois ne reste plus bloqué à mi-chemin
+• Partagez un événement par QR code, lien ou fichier d'agenda
+• Caliinda peut devenir votre agenda principal : « Ajouter à l'agenda » depuis d'autres apps et les fichiers .ics s'y ouvrent
+• Défilement plus fluide : la barre de date suit l'écran, les cartes de projets rebondissent, les mois ne bloquent plus
 • Corrections de bugs et meilleures performances
 </fr-FR>
 <hi-IN>
 • «रूप-रंग» में नई सेटिंग «डार्क थीम»: सिस्टम के अनुसार, लाइट या डार्क
-• QR कोड से इवेंट शेयर करें: दोस्त स्कैन करके अपने कैलेंडर में जोड़ ले। या लिंक कॉपी करें, या कैलेंडर फ़ाइल के साथ टेक्स्ट भेजें
-• प्रोजेक्ट और दिनों के बीच जाने पर तारीख वाली पट्टी स्क्रीन के साथ बगल में खिसकती है
-• महीने बदलने पर प्रोजेक्ट कार्ड उछलते हैं, जैसे दिनों में
-• महीने पलटना अब बीच में नहीं अटकता
+• QR कोड, लिंक या कैलेंडर फ़ाइल से इवेंट शेयर करें
+• Caliinda आपका मुख्य कैलेंडर बन सकता है: दूसरे ऐप्स से «कैलेंडर में जोड़ें» और .ics फ़ाइलें इसी में खुलती हैं
+• पलटना अब ज़्यादा सहज: तारीख वाली पट्टी स्क्रीन के साथ खिसकती है, प्रोजेक्ट कार्ड उछलते हैं, महीने बीच में नहीं अटकते
 • गड़बड़ियाँ ठीक की गईं और प्रदर्शन बेहतर हुआ
 </hi-IN>

@@ -234,17 +234,19 @@ constructor(
     }
   }
 
+  /** День события по ссылке из другого приложения, где дня нет — только id и, может, начало. */
+  suspend fun dayOfEvent(eventId: Long, instanceBegin: Long): LocalDate? =
+      calendarRepository.dayOfEvent(eventId, instanceBegin.takeIf { it >= 0 })
+
   /**
-   * Событие с виджета: ищем экземпляр в его дне и открываем подробности. Не нашли (удалили, пока
-   * виджет не обновился) — остаётся просто открытый день.
+   * Событие с виджета или по ссылке: ищем экземпляр в его дне. Начало неизвестно или не совпало
+   * (у all-day его считают по-разному) — любой экземпляр события. Не нашли (удалили, пока виджет
+   * не обновился, или календарь скрыт) — null, остаётся просто открытый день.
    */
-  fun openEventFromWidget(date: LocalDate, eventId: Long, instanceBegin: Long) {
-    viewModelScope.launch {
-      val day = calendarRepository.getDayFlow(date).first()
-      (day.events + day.projects)
-          .firstOrNull { it.eventId == eventId && it.instanceBegin == instanceBegin }
-          ?.let(::requestEventDetails)
-    }
+  suspend fun findEvent(date: LocalDate, eventId: Long, instanceBegin: Long): EventDto? {
+    val day = calendarRepository.getDayFlow(date).first()
+    val candidates = (day.events + day.projects).filter { it.eventId == eventId }
+    return candidates.firstOrNull { it.instanceBegin == instanceBegin } ?: candidates.firstOrNull()
   }
 
   fun cancelEventDetails() {

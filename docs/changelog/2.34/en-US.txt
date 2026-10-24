@@ -1,6 +1,5 @@
 • New Dark theme setting in Appearance: system, light or dark
-• Share an event with a QR code: a friend scans it and adds the event to their calendar. Or copy the link, or send it as text with a calendar file
-• The date bar slides sideways with the screen when you switch between projects and days
-• Project cards bounce when you flip months, just like days
-• Month paging no longer gets stuck halfway
+• Share an event with a QR code, a link or a calendar file
+• Caliinda can be your main calendar: “Add to calendar” from other apps and .ics files open it
+• Smoother paging: the date bar slides with the screen, project cards bounce, months no longer get stuck halfway
 • Bug fixes and performance improvements

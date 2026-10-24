@@ -437,4 +437,5 @@
     <string name="dark_mode_dark">Dunkel</string>
     <string name="vibrant_colors">Kräftige Farben</string>
     <string name="vibrant_colors_summary">Leuchtendere Akzente und Karten</string>
+    <string name="ics_import_failed">Termin konnte aus dieser Datei nicht gelesen werden</string>
 </resources>

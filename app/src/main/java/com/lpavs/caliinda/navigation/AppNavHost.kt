@@ -31,10 +31,16 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
-  // Виджет «+» просит новое событие — форма живёт на главном экране, уходим на него.
+  // Просьба снаружи (виджет, другое приложение) — форма и подробности живут на главном экране,
+  // уходим на него, если открыты настройки.
   val createRequested by LaunchRequests.createEvent.collectAsStateWithLifecycle()
-  LaunchedEffect(createRequested) {
-    if (createRequested) navController.popBackStack(NavRoutes.Main.route, inclusive = false)
+  val openRequest by LaunchRequests.openEvent.collectAsStateWithLifecycle()
+  val insertRequest by LaunchRequests.insertEvent.collectAsStateWithLifecycle()
+  val openTime by LaunchRequests.openTime.collectAsStateWithLifecycle()
+  val requested =
+      createRequested || openRequest != null || insertRequest != null || openTime != null
+  LaunchedEffect(requested) {
+    if (requested) navController.popBackStack(NavRoutes.Main.route, inclusive = false)
   }
   NavHost(
       navController = navController,
