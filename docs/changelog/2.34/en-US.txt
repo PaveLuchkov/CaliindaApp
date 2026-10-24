@@ -1,4 +1,5 @@
 • New Dark theme setting in Appearance: system, light or dark
+• Share an event: a text summary plus a calendar file, so friends can add it in one tap
 • The date bar slides sideways with the screen when you switch between projects and days
 • Project cards bounce when you flip months, just like days
 • Month paging no longer gets stuck halfway
