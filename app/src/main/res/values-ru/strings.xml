@@ -467,4 +467,5 @@
     <string name="dark_mode_dark">Тёмная</string>
     <string name="vibrant_colors">Насыщенные цвета</string>
     <string name="vibrant_colors_summary">Ярче акценты и карточки</string>
+    <string name="ics_import_failed">Не получилось прочитать событие из файла</string>
 </resources>

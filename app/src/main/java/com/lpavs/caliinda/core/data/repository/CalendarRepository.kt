@@ -315,6 +315,18 @@ constructor(
             event.originalEventId?.let { runCatching { dataSource.getEvent(it)?.rrule }.getOrNull() }
           }
 
+  /**
+   * День экземпляра для ссылки из другого приложения: [instanceBegin] — начало экземпляра (как
+   * Instances.BEGIN), null — день начала самого события. Нет события или доступа — null.
+   */
+  suspend fun dayOfEvent(eventId: Long, instanceBegin: Long?): LocalDate? =
+      withContext(ioDispatcher) {
+        val row = runCatching { dataSource.getEvent(eventId) }.getOrNull() ?: return@withContext null
+        val begin = instanceBegin ?: row.dtStart
+        if (row.isAllDay) utcDate(begin)
+        else Instant.ofEpochMilli(begin).atZone(settingsRepository.zoneFlow.first()).toLocalDate()
+      }
+
   private fun updateWholeSeries(event: EventDto, draft: EventDraft) {
     val masterId = event.originalEventId ?: event.eventId
     val master = dataSource.getEvent(masterId) ?: error("Series $masterId not found")

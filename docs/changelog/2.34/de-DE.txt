@@ -1,6 +1,5 @@
 • Neue Einstellung „Dunkles Design“ unter „Darstellung“: System, hell oder dunkel
-• Termin per QR-Code teilen: scannen und in den eigenen Kalender übernehmen. Oder Link kopieren bzw. als Text mit Kalenderdatei senden
-• Die Datumsleiste gleitet beim Wechsel zwischen Projekten und Tagen seitlich mit
-• Projektkarten federn beim Blättern der Monate, wie bei Tagen
-• Das Blättern der Monate bleibt nicht mehr auf halbem Weg hängen
+• Termine teilen per QR-Code, Link oder Kalenderdatei
+• Caliinda kann dein Hauptkalender sein: „Zum Kalender hinzufügen“ aus anderen Apps und .ics-Dateien öffnen sich darin
+• Flüssigeres Blättern: die Datumsleiste gleitet mit, Projektkarten federn, Monate bleiben nicht mehr hängen
 • Fehlerbehebungen und bessere Leistung

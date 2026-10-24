@@ -43,7 +43,10 @@ fun CreateEventScreen(
     defaultCalendarId: Long?,
     initialDate: LocalDate,
     initialProject: Boolean = false,
-    /** «Ещё раз»: заполнить форму как у этого события, сдвинув его на [initialDate]. */
+    /**
+     * «Ещё раз» или поля от другого приложения: заполнить форму как у этого события, сдвинув его
+     * на [initialDate].
+     */
     template: EventDto? = null,
     /** Напоминания [template]; null — нет шаблона или ещё загружаются. */
     templateReminders: List<Int>? = null,
@@ -121,8 +124,11 @@ fun CreateEventScreen(
   // Сразу клавиатура в названии: типичное событие — это название и время. У копии название уже
   // есть, менять скорее будут день и время — клавиатура закрыла бы их. Зовём сразу, не дожидаясь
   // шторки: она выезжает вместе с клавиатурой одним движением, а не встаёт и снова подпрыгивает.
+  // Пришло из другого приложения без названия — его всё равно вводить, клавиатура нужна.
   val nameFocusRequester = remember { FocusRequester() }
-  LaunchedEffect(Unit) { if (template == null) runCatching { nameFocusRequester.requestFocus() } }
+  LaunchedEffect(Unit) {
+    if (template == null || template.isUntitled) runCatching { nameFocusRequester.requestFocus() }
+  }
 
   // Шторка по содержимому: кнопка сразу под формой, без пустоты до низа экрана. Если форма
   // не влезает (клавиатура), она прокручивается, а кнопка остаётся видна.

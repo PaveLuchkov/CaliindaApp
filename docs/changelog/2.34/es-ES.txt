@@ -1,6 +1,5 @@
 • Nuevo ajuste «Tema oscuro» en Apariencia: sistema, claro u oscuro
-• Comparte un evento con un código QR: tu amigo lo escanea y lo añade a su calendario. O copia el enlace, o envíalo como texto con archivo
-• La barra de fecha se desliza de lado con la pantalla al pasar entre proyectos y días
-• Las tarjetas de proyectos rebotan al pasar los meses, como las de días
-• Pasar los meses ya no se queda atascado a medias
+• Comparte un evento con código QR, enlace o archivo de calendario
+• Caliinda puede ser tu calendario principal: «Añadir al calendario» desde otras apps y los archivos .ics se abren en él
+• Paso de páginas más fluido: la barra de fecha se desliza, las tarjetas de proyectos rebotan, los meses ya no se atascan
 • Corrección de errores y mejor rendimiento

@@ -1,6 +1,5 @@
 • Nouveau réglage « Thème sombre » dans Apparence : système, clair ou sombre
-• Partagez un événement par QR code : un ami le scanne et l'ajoute à son agenda. Ou copiez le lien, ou envoyez-le en texte avec un fichier
-• La barre de date glisse sur le côté avec l'écran entre projets et jours
-• Les cartes de projets rebondissent quand on change de mois, comme les jours
-• Le défilement des mois ne reste plus bloqué à mi-chemin
+• Partagez un événement par QR code, lien ou fichier d'agenda
+• Caliinda peut devenir votre agenda principal : « Ajouter à l'agenda » depuis d'autres apps et les fichiers .ics s'y ouvrent
+• Défilement plus fluide : la barre de date suit l'écran, les cartes de projets rebondissent, les mois ne bloquent plus
 • Corrections de bugs et meilleures performances

@@ -57,6 +57,7 @@ import com.lpavs.caliinda.feature.event_management.vm.EventDialog
 import com.lpavs.caliinda.feature.event_management.vm.EventManagementViewModel
 import com.lpavs.caliinda.feature.event_management.EventActions
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -209,15 +210,40 @@ fun CalendarScreen(
               }))
     }
   }
-  // Тап по событию на виджете: его день и подробности — тоже после доступа к календарю.
+  // Тап по событию на виджете или ссылка на событие из другого приложения: его день и подробности
+  // (или сразу правка) — тоже после доступа к календарю.
   val openRequest by LaunchRequests.openEvent.collectAsStateWithLifecycle()
   LaunchedEffect(openRequest, calendarState.hasCalendarPermission) {
     val request = openRequest
     if (request != null && calendarState.hasCalendarPermission) {
       LaunchRequests.consumeOpenEvent()
-      goToDate(request.date)
-      calendarViewModel.openEventFromWidget(request.date, request.eventId, request.instanceBegin)
+      val date =
+          request.date
+              ?: calendarViewModel.dayOfEvent(request.eventId, request.instanceBegin)
+              ?: return@LaunchedEffect
+      goToDate(date)
+      val event =
+          calendarViewModel.findEvent(date, request.eventId, request.instanceBegin)
+              ?: return@LaunchedEffect
+      if (request.edit) eventManagementViewModel.requestEditEvent(event)
+      else calendarViewModel.requestEventDetails(event)
     }
+  }
+  // «Добавить в календарь» из другого приложения или .ics-файл: форма с его полями.
+  val insertRequest by LaunchRequests.insertEvent.collectAsStateWithLifecycle()
+  LaunchedEffect(insertRequest, calendarState.hasCalendarPermission) {
+    val request = insertRequest
+    if (request != null && calendarState.hasCalendarPermission) {
+      LaunchRequests.consumeInsertEvent()
+      eventManagementViewModel.openInsert(request)
+    }
+  }
+  // «Открыть календарь на этом времени»: просто переходим на день.
+  val openTime by LaunchRequests.openTime.collectAsStateWithLifecycle()
+  LaunchedEffect(openTime) {
+    val millis = openTime ?: return@LaunchedEffect
+    LaunchRequests.consumeOpenTime()
+    goToDate(Instant.ofEpochMilli(millis).atZone(timeZone).toLocalDate())
   }
   Scaffold(
       topBar = {

@@ -436,4 +436,5 @@
     <string name="dark_mode_dark">डार्क</string>
     <string name="vibrant_colors">चटकीले रंग</string>
     <string name="vibrant_colors_summary">ज़्यादा चमकीले रंग और कार्ड</string>
+    <string name="ics_import_failed">इस फ़ाइल से इवेंट नहीं पढ़ा जा सका</string>
 </resources>

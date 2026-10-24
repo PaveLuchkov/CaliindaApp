@@ -42,6 +42,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.lpavs.caliinda.app.InsertEventRequest
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -374,6 +376,19 @@ constructor(
     viewModelScope.launch {
       val reminders = runCatching { calendarRepository.remindersOf(event) }.getOrNull()
       _uiState.update { if (it.dialog == creating) it.copy(editingReminders = reminders) else it }
+    }
+  }
+
+  /**
+   * «Добавить в календарь» из другого приложения или .ics: форма создания с его полями. Шаблон —
+   * как у «Ещё раз», но на свой же день, то есть без сдвига. Время не передали — ближайший час.
+   */
+  fun openInsert(request: InsertEventRequest, now: Instant = Instant.now()) {
+    val template = request.toTemplate(timeZone.value, now)
+    val date = template.startTime.atZone(timeZone.value).toLocalDate()
+    _uiState.update {
+      it.copy(dialog = EventDialog.Creating(date, asProject = false, template = template),
+          editingReminders = null)
     }
   }
 
