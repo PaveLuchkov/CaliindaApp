@@ -1,0 +1,5 @@
+• New Dark theme setting in Appearance: system, light or dark
+• The date bar slides sideways with the screen when you switch between projects and days
+• Project cards bounce when you flip months, just like days
+• Month paging no longer gets stuck halfway
+• Bug fixes and performance improvements

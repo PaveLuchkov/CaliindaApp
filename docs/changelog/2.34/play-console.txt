@@ -1,0 +1,42 @@
+<en-US>
+• New Dark theme setting in Appearance: system, light or dark
+• The date bar slides sideways with the screen when you switch between projects and days
+• Project cards bounce when you flip months, just like days
+• Month paging no longer gets stuck halfway
+• Bug fixes and performance improvements
+</en-US>
+<ru-RU>
+• Новая настройка «Тёмная тема» в «Оформлении»: как в системе, светлая или тёмная
+• Шапка с датой уезжает вбок вместе с экраном при переходе между проектами и днями
+• Карточки проектов пружинят при листании месяцев, как у дней
+• Листание месяцев больше не застревает на полпути
+• Исправлены ошибки и улучшена производительность
+</ru-RU>
+<de-DE>
+• Neue Einstellung „Dunkles Design“ unter „Darstellung“: System, hell oder dunkel
+• Die Datumsleiste gleitet beim Wechsel zwischen Projekten und Tagen seitlich mit
+• Projektkarten federn beim Blättern der Monate, wie bei Tagen
+• Das Blättern der Monate bleibt nicht mehr auf halbem Weg hängen
+• Fehlerbehebungen und bessere Leistung
+</de-DE>
+<es-ES>
+• Nuevo ajuste «Tema oscuro» en Apariencia: sistema, claro u oscuro
+• La barra de fecha se desliza de lado con la pantalla al pasar entre proyectos y días
+• Las tarjetas de proyectos rebotan al pasar los meses, como las de días
+• Pasar los meses ya no se queda atascado a medias
+• Corrección de errores y mejor rendimiento
+</es-ES>
+<fr-FR>
+• Nouveau réglage « Thème sombre » dans Apparence : système, clair ou sombre
+• La barre de date glisse sur le côté avec l'écran entre projets et jours
+• Les cartes de projets rebondissent quand on change de mois, comme les jours
+• Le défilement des mois ne reste plus bloqué à mi-chemin
+• Corrections de bugs et meilleures performances
+</fr-FR>
+<hi-IN>
+• «रूप-रंग» में नई सेटिंग «डार्क थीम»: सिस्टम के अनुसार, लाइट या डार्क
+• प्रोजेक्ट और दिनों के बीच जाने पर तारीख वाली पट्टी स्क्रीन के साथ बगल में खिसकती है
+• महीने बदलने पर प्रोजेक्ट कार्ड उछलते हैं, जैसे दिनों में
+• महीने पलटना अब बीच में नहीं अटकता
+• गड़बड़ियाँ ठीक की गईं और प्रदर्शन बेहतर हुआ
+</hi-IN>
