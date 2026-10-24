@@ -70,6 +70,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -255,6 +256,14 @@ fun CustomEventDetailsDialog(
                                   Icon(
                                       imageVector = Icons.Filled.Replay,
                                       contentDescription = stringResource(R.string.repeat_event))
+                                }
+                            val context = LocalContext.current
+                            FilledIconButton(
+                                onClick = { context.shareEvent(event.originalEvent, userTimeZone) },
+                                modifier = Modifier.size(48.dp)) {
+                                  Icon(
+                                      imageVector = Icons.Filled.Share,
+                                      contentDescription = stringResource(R.string.share_event))
                                 }
                             FilledIconButton(
                                 onClick = {

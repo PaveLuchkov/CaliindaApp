@@ -1,4 +1,5 @@
 • Neue Einstellung „Dunkles Design“ unter „Darstellung“: System, hell oder dunkel
+• Termin teilen: als Text und Kalenderdatei – Freunde fügen ihn mit einem Tipp hinzu
 • Die Datumsleiste gleitet beim Wechsel zwischen Projekten und Tagen seitlich mit
 • Projektkarten federn beim Blättern der Monate, wie bei Tagen
 • Das Blättern der Monate bleibt nicht mehr auf halbem Weg hängen

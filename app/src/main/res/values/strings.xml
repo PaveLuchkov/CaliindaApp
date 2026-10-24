@@ -190,6 +190,7 @@
     <string name="create_event">Create event</string>
     <string name="go_to_today">Go to today</string>
     <string name="edit">Edit</string>
+    <string name="share_event">Share</string>
     <string name="repeat_event">Again</string>
     <string name="details">Details</string>
     <string name="calendar_access_title">Calendar access</string>

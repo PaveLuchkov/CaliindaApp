@@ -149,6 +149,7 @@
     <string name="create_event">Создать событие</string>
     <string name="go_to_today">Перейти к сегодня</string>
     <string name="edit">Изменить</string>
+    <string name="share_event">Поделиться</string>
     <string name="repeat_event">Ещё раз</string>
     <string name="details">Подробнее</string>
     <string name="calendar_access_title">Доступ к календарю</string>
