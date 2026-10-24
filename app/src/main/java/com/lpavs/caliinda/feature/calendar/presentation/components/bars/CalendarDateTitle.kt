@@ -142,6 +142,8 @@ fun CalendarDateTitle(
             textAlign = TextAlign.Center,
             // Листаем на следующий день (месяц) — дата въезжает снизу, на предыдущий — сверху.
             order = month?.let { it.year * 12L + it.monthValue } ?: date.toEpochDay(),
+            // Проекты слева, дни справа — между экранами надпись едет вбок, как сам пейджер.
+            screen = if (month != null) 0 else 1,
             modifier =
                 Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                     .fillMaxWidth()

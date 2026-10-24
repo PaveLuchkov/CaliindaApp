@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -27,6 +29,9 @@ import com.lpavs.caliinda.core.ui.theme.AppMotion
  *
  * [order] — порядок надписи (например, день): выросла — барабан крутится в другую сторону,
  * новая въезжает снизу, как следующий день при листании вверх.
+ *
+ * [screen] — индекс экрана в горизонтальном пейджере: сменился — надпись едет вбок вслед за
+ * листанием, а не барабаном.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -40,10 +45,23 @@ fun RollingText(
     fontWeight: FontWeight? = null,
     textAlign: TextAlign? = null,
     order: Long? = null,
+    screen: Int? = null,
 ) {
   AnimatedContent(
-      targetState = RollingLabel(text, order),
+      targetState = RollingLabel(text, order, screen),
       transitionSpec = {
+        val fromScreen = initialState.screen
+        val toScreen = targetState.screen
+        if (fromScreen != null && toScreen != null && fromScreen != toScreen) {
+          // Вправо на следующий экран — новая въезжает справа, старая уходит влево.
+          val right = if (toScreen > fromScreen) 1 else -1
+          return@AnimatedContent (slideInHorizontally(AppMotion.defaultSpatialSpec()) { it * right } +
+                  fadeIn(AppMotion.fastEffectsSpec()))
+              .togetherWith(
+                  slideOutHorizontally(AppMotion.defaultSpatialSpec()) { -it * right } +
+                      fadeOut(AppMotion.fastEffectsSpec()))
+              .using(SizeTransform(clip = false))
+        }
         val from = initialState.order
         val to = targetState.order
         // 1 — новая сверху, старая вниз; -1 — наоборот.
@@ -69,4 +87,4 @@ fun RollingText(
       }
 }
 
-private data class RollingLabel(val text: String, val order: Long?)
+private data class RollingLabel(val text: String, val order: Long?, val screen: Int?)
