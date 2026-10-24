@@ -1,5 +1,5 @@
 • Nouveau réglage « Thème sombre » dans Apparence : système, clair ou sombre
-• Partagez un événement : texte et fichier d'agenda, à ajouter d'un toucher
+• Partagez un événement par QR code : un ami le scanne et l'ajoute à son agenda. Ou copiez le lien, ou envoyez-le en texte avec un fichier
 • La barre de date glisse sur le côté avec l'écran entre projets et jours
 • Les cartes de projets rebondissent quand on change de mois, comme les jours
 • Le défilement des mois ne reste plus bloqué à mi-chemin

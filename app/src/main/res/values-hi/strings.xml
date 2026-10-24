@@ -147,6 +147,10 @@
     <string name="go_to_today">आज पर जाएं</string>
     <string name="edit">संपादित करें</string>
     <string name="share_event">शेयर करें</string>
+    <string name="share_qr_hint">इवेंट को Google Calendar में जोड़ने के लिए कैमरा यहाँ करें</string>
+    <string name="copy_link">लिंक कॉपी करें</string>
+    <string name="link_copied">कॉपी हो गया</string>
+    <string name="share_send">भेजें</string>
     <string name="repeat_event">फिर से</string>
     <string name="details">विवरण</string>
     <string name="calendar_access_title">कैलेंडर एक्सेस</string>

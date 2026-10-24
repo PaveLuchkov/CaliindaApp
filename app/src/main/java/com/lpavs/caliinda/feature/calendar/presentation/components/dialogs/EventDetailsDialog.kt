@@ -257,9 +257,12 @@ fun CustomEventDetailsDialog(
                                       imageVector = Icons.Filled.Replay,
                                       contentDescription = stringResource(R.string.repeat_event))
                                 }
-                            val context = LocalContext.current
+                            var showShare by remember { mutableStateOf(false) }
+                            if (showShare) {
+                              ShareEventSheet(event.originalEvent, userTimeZone, onDismiss = { showShare = false })
+                            }
                             FilledIconButton(
-                                onClick = { context.shareEvent(event.originalEvent, userTimeZone) },
+                                onClick = { showShare = true },
                                 modifier = Modifier.size(48.dp)) {
                                   Icon(
                                       imageVector = Icons.Filled.Share,

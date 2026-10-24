@@ -149,6 +149,10 @@
     <string name="go_to_today">Aller à aujourd’hui</string>
     <string name="edit">Modifier</string>
     <string name="share_event">Partager</string>
+    <string name="share_qr_hint">Visez avec l\'appareil photo pour ajouter l\'événement à Google Agenda</string>
+    <string name="copy_link">Copier le lien</string>
+    <string name="link_copied">Copié</string>
+    <string name="share_send">Envoyer</string>
     <string name="repeat_event">Encore une fois</string>
     <string name="details">Détails</string>
     <string name="calendar_access_title">Accès au calendrier</string>

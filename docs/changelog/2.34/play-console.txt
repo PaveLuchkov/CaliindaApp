@@ -1,6 +1,6 @@
 <en-US>
 • New Dark theme setting in Appearance: system, light or dark
-• Share an event: a text summary plus a calendar file, so friends can add it in one tap
+• Share an event with a QR code: a friend scans it and adds the event to their calendar. Or copy the link, or send it as text with a calendar file
 • The date bar slides sideways with the screen when you switch between projects and days
 • Project cards bounce when you flip months, just like days
 • Month paging no longer gets stuck halfway
@@ -8,7 +8,7 @@
 </en-US>
 <ru-RU>
 • Новая настройка «Тёмная тема» в «Оформлении»: как в системе, светлая или тёмная
-• Кнопка «Поделиться»: событие уходит текстом и файлом — друг добавит его к себе в календарь одним тапом
+• «Поделиться» с QR-кодом: друг наводит камеру и добавляет событие к себе. Или скопируйте ссылку, или отправьте текстом с файлом календаря
 • Шапка с датой уезжает вбок вместе с экраном при переходе между проектами и днями
 • Карточки проектов пружинят при листании месяцев, как у дней
 • Листание месяцев больше не застревает на полпути
@@ -16,7 +16,7 @@
 </ru-RU>
 <de-DE>
 • Neue Einstellung „Dunkles Design“ unter „Darstellung“: System, hell oder dunkel
-• Termin teilen: als Text und Kalenderdatei – Freunde fügen ihn mit einem Tipp hinzu
+• Termin per QR-Code teilen: scannen und in den eigenen Kalender übernehmen. Oder Link kopieren bzw. als Text mit Kalenderdatei senden
 • Die Datumsleiste gleitet beim Wechsel zwischen Projekten und Tagen seitlich mit
 • Projektkarten federn beim Blättern der Monate, wie bei Tagen
 • Das Blättern der Monate bleibt nicht mehr auf halbem Weg hängen
@@ -24,7 +24,7 @@
 </de-DE>
 <es-ES>
 • Nuevo ajuste «Tema oscuro» en Apariencia: sistema, claro u oscuro
-• Comparte un evento: texto y archivo de calendario para añadirlo con un toque
+• Comparte un evento con un código QR: tu amigo lo escanea y lo añade a su calendario. O copia el enlace, o envíalo como texto con archivo
 • La barra de fecha se desliza de lado con la pantalla al pasar entre proyectos y días
 • Las tarjetas de proyectos rebotan al pasar los meses, como las de días
 • Pasar los meses ya no se queda atascado a medias
@@ -32,7 +32,7 @@
 </es-ES>
 <fr-FR>
 • Nouveau réglage « Thème sombre » dans Apparence : système, clair ou sombre
-• Partagez un événement : texte et fichier d'agenda, à ajouter d'un toucher
+• Partagez un événement par QR code : un ami le scanne et l'ajoute à son agenda. Ou copiez le lien, ou envoyez-le en texte avec un fichier
 • La barre de date glisse sur le côté avec l'écran entre projets et jours
 • Les cartes de projets rebondissent quand on change de mois, comme les jours
 • Le défilement des mois ne reste plus bloqué à mi-chemin
@@ -40,7 +40,7 @@
 </fr-FR>
 <hi-IN>
 • «रूप-रंग» में नई सेटिंग «डार्क थीम»: सिस्टम के अनुसार, लाइट या डार्क
-• इवेंट शेयर करें: टेक्स्ट और कैलेंडर फ़ाइल — दोस्त एक टैप में अपने कैलेंडर में जोड़ लें
+• QR कोड से इवेंट शेयर करें: दोस्त स्कैन करके अपने कैलेंडर में जोड़ ले। या लिंक कॉपी करें, या कैलेंडर फ़ाइल के साथ टेक्स्ट भेजें
 • प्रोजेक्ट और दिनों के बीच जाने पर तारीख वाली पट्टी स्क्रीन के साथ बगल में खिसकती है
 • महीने बदलने पर प्रोजेक्ट कार्ड उछलते हैं, जैसे दिनों में
 • महीने पलटना अब बीच में नहीं अटकता

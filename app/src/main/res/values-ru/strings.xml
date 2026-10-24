@@ -150,6 +150,10 @@
     <string name="go_to_today">Перейти к сегодня</string>
     <string name="edit">Изменить</string>
     <string name="share_event">Поделиться</string>
+    <string name="share_qr_hint">Наведите камеру — событие добавится в Google Календарь</string>
+    <string name="copy_link">Копировать ссылку</string>
+    <string name="link_copied">Скопировано</string>
+    <string name="share_send">Отправить</string>
     <string name="repeat_event">Ещё раз</string>
     <string name="details">Подробнее</string>
     <string name="calendar_access_title">Доступ к календарю</string>
