@@ -425,6 +425,10 @@
     <string name="description_collapse">कम दिखाएँ</string>
     <string name="notice_created_on">%1$s के लिए बनाया गया</string>
     <string name="notice_moved_to">%1$s पर ले जाया गया</string>
+    <string name="dark_mode_title">डार्क थीम</string>
+    <string name="dark_mode_system">सिस्टम के अनुसार</string>
+    <string name="dark_mode_light">लाइट</string>
+    <string name="dark_mode_dark">डार्क</string>
     <string name="vibrant_colors">चटकीले रंग</string>
     <string name="vibrant_colors_summary">ज़्यादा चमकीले रंग और कार्ड</string>
 </resources>

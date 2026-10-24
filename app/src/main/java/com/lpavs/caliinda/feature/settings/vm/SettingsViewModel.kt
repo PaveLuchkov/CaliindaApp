@@ -3,7 +3,11 @@ package com.lpavs.caliinda.feature.settings.vm
 import kotlinx.coroutines.flow.map
 import com.lpavs.caliinda.feature.reminders.GoogleCalendarApp
 import com.lpavs.caliinda.core.data.model.ThemeMode
+import android.app.UiModeManager
+import android.content.Context
 import android.util.Log
+import com.lpavs.caliinda.core.data.model.DarkMode
+import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
@@ -23,6 +27,7 @@ import javax.inject.Inject
 class SettingsViewModel
 @Inject
 constructor(
+    @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
     private val liveEventNotifier: LiveEventNotifier,
@@ -89,6 +94,21 @@ constructor(
 
   fun setVibrantColors(enabled: Boolean) {
     viewModelScope.launch { settingsRepository.saveVibrantColors(enabled) }
+  }
+
+  val darkMode: StateFlow<DarkMode> =
+      settingsRepository.darkModeFlow.stateIn(
+          viewModelScope, SharingStarted.WhileSubscribed(5000), DarkMode.SYSTEM)
+
+  /**
+   * Режим отдаём системе, а не только в CaliindaTheme: тогда за ним идут и сплэш, и системные
+   * панели, и все isSystemInDarkTheme(). Система сама хранит его между запусками.
+   */
+  fun setDarkMode(mode: DarkMode) {
+    viewModelScope.launch {
+      settingsRepository.saveDarkMode(mode)
+      context.getSystemService(UiModeManager::class.java).setApplicationNightMode(mode.uiMode)
+    }
   }
 
   // 2. Обновление темы

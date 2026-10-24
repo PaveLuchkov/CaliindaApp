@@ -448,6 +448,10 @@
     <string name="description_collapse">Show less</string>
     <string name="notice_created_on">Created for %1$s</string>
     <string name="notice_moved_to">Moved to %1$s</string>
+    <string name="dark_mode_title">Dark theme</string>
+    <string name="dark_mode_system">System default</string>
+    <string name="dark_mode_light">Light</string>
+    <string name="dark_mode_dark">Dark</string>
     <string name="vibrant_colors">Vibrant colors</string>
     <string name="vibrant_colors_summary">Brighter accents and cards</string>
 </resources>

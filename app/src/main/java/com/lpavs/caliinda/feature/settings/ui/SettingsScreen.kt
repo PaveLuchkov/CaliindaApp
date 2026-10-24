@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
@@ -101,6 +102,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lpavs.caliinda.BuildConfig
 import com.lpavs.caliinda.R
 import com.lpavs.caliinda.core.data.calendar.model.DeviceCalendar
+import com.lpavs.caliinda.core.data.model.DarkMode
 import com.lpavs.caliinda.core.data.model.ThemeMode
 import com.lpavs.caliinda.core.ui.theme.cuid
 import com.lpavs.caliinda.core.ui.theme.themeColorScheme
@@ -133,6 +135,8 @@ fun SettingsScreen(
 ) {
   val themeMode by settingsViewModel.themeMode.collectAsStateWithLifecycle()
   val vibrant by settingsViewModel.vibrantColors.collectAsStateWithLifecycle()
+  val darkMode by settingsViewModel.darkMode.collectAsStateWithLifecycle()
+  var showDarkModePicker by rememberSaveable { mutableStateOf(false) }
   val calendars by settingsViewModel.calendars.collectAsStateWithLifecycle()
   val defaultCalendarId by settingsViewModel.defaultCalendarId.collectAsStateWithLifecycle()
   val savedZone by settingsViewModel.timeZone.collectAsStateWithLifecycle()
@@ -216,6 +220,22 @@ fun SettingsScreen(
         onDismiss = { reminderPicker = null })
   }
 
+  if (showDarkModePicker) {
+    ChoiceDialog(
+        icon = Icons.Rounded.DarkMode,
+        title = stringResource(R.string.dark_mode_title),
+        message = null,
+        options =
+            DarkMode.entries.map { mode ->
+              ChoiceOption(darkModeLabel(mode), selected = mode == darkMode) {
+                showDarkModePicker = false
+                settingsViewModel.setDarkMode(mode)
+              }
+            },
+        cancelText = stringResource(R.string.cancel),
+        onDismiss = { showDarkModePicker = false })
+  }
+
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
   Scaffold(
       modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -244,13 +264,23 @@ fun SettingsScreen(
                 }
                 item {
                   SegmentedListItem(
+                      onClick = { showDarkModePicker = true },
+                      shapes = settingsShapes(index = 0, count = 2),
+                      colors = settingsItemColors(),
+                      leadingContent = { Icon(Icons.Rounded.DarkMode, contentDescription = null) },
+                      supportingContent = { Text(darkModeLabel(darkMode)) },
+                      modifier = Modifier.padding(top = 8.dp)) {
+                        Text(stringResource(R.string.dark_mode_title))
+                      }
+                }
+                item {
+                  SegmentedListItem(
                       onClick = { settingsViewModel.setVibrantColors(!vibrant) },
-                      shapes = settingsShapes(index = 0, count = 1),
+                      shapes = settingsShapes(index = 1, count = 2),
                       colors = settingsItemColors(),
                       leadingContent = { Icon(Icons.Rounded.Palette, contentDescription = null) },
                       trailingContent = { Switch(checked = vibrant, onCheckedChange = null) },
-                      supportingContent = { Text(stringResource(R.string.vibrant_colors_summary)) },
-                      modifier = Modifier.padding(top = 8.dp)) {
+                      supportingContent = { Text(stringResource(R.string.vibrant_colors_summary)) }) {
                         Text(stringResource(R.string.vibrant_colors))
                       }
                 }
@@ -529,6 +559,15 @@ fun SettingsScreen(
 internal fun settingsShapes(index: Int, count: Int): ListItemShapes =
     if (count == 1) ListItemDefaults.shapes().copy(shape = MaterialTheme.shapes.large)
     else ListItemDefaults.segmentedShapes(index = index, count = count)
+
+@Composable
+private fun darkModeLabel(mode: DarkMode): String =
+    stringResource(
+        when (mode) {
+          DarkMode.SYSTEM -> R.string.dark_mode_system
+          DarkMode.LIGHT -> R.string.dark_mode_light
+          DarkMode.DARK -> R.string.dark_mode_dark
+        })
 
 /** Подложка строк — как у выбора темы, чтобы группы читались на фоне экрана. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
