@@ -148,6 +148,10 @@
     <string name="go_to_today">Zu heute</string>
     <string name="edit">Bearbeiten</string>
     <string name="share_event">Teilen</string>
+    <string name="share_qr_hint">Kamera darauf richten, um den Termin in Google Kalender zu übernehmen</string>
+    <string name="copy_link">Link kopieren</string>
+    <string name="link_copied">Kopiert</string>
+    <string name="share_send">Senden</string>
     <string name="repeat_event">Noch einmal</string>
     <string name="details">Details</string>
     <string name="calendar_access_title">Kalenderzugriff</string>

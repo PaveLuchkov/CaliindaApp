@@ -21,10 +21,10 @@ import java.util.Date
 import java.util.TimeZone
 
 /**
- * Поделиться событием: текст — чтобы прочитать прямо в мессенджере, и .ics — чтобы получатель
- * добавил событие в свой календарь одним тапом.
+ * Отправить событие через системную шторку: текст со ссылкой — прочитать прямо в мессенджере, и
+ * .ics — чтобы получатель без Google Календаря тоже добавил событие одним тапом.
  */
-fun Context.shareEvent(event: EventDto, zoneId: ZoneId) {
+fun Context.sendEvent(event: EventDto, zoneId: ZoneId, link: String) {
   val title = event.displayTitle(this)
   val dir = File(cacheDir, SHARE_DIR).apply { mkdirs() }
   // Имя файла видно получателю — по названию события; старые файлы не копим.
@@ -38,7 +38,7 @@ fun Context.shareEvent(event: EventDto, zoneId: ZoneId) {
           // text/calendar: в списке появляются и календари — сразу добавить к себе.
           .setType("text/calendar")
           .putExtra(Intent.EXTRA_SUBJECT, title)
-          .putExtra(Intent.EXTRA_TEXT, shareText(event, title, zoneId))
+          .putExtra(Intent.EXTRA_TEXT, shareText(event, title, zoneId, link))
           .putExtra(Intent.EXTRA_STREAM, uri)
           .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
   // Без ClipData разрешение на файл не доходит до приложения, выбранного в шторке.
@@ -48,8 +48,18 @@ fun Context.shareEvent(event: EventDto, zoneId: ZoneId) {
   } catch (_: ActivityNotFoundException) {}
 }
 
-/** «Название / дата и время / место» и короткое описание — длинные приглашения не тащим. */
-private fun Context.shareText(event: EventDto, title: String, zoneId: ZoneId): String {
+/** «Название / дата и время / место», короткое описание — длинные приглашения не тащим — и ссылка. */
+private fun Context.shareText(event: EventDto, title: String, zoneId: ZoneId, link: String): String {
+  val description =
+      event.description
+          ?.let(::readableDescription)
+          ?.takeIf { it.isNotBlank() && it.length <= MAX_DESCRIPTION }
+  return listOfNotNull(title, eventWhenText(event, zoneId), event.location?.trim()?.takeIf { it.isNotEmpty() })
+      .joinToString("\n") + (description?.let { "\n\n$it" } ?: "") + "\n\n$link"
+}
+
+/** «Суббота, 24 октября · 18:00 – 19:30» — время в формате системы (12/24 ч). */
+fun Context.eventWhenText(event: EventDto, zoneId: ZoneId): String {
   val locale = resources.configuration.locales[0]
   val today = LocalDate.now(zoneId)
   fun date(d: LocalDate) =
@@ -64,19 +74,12 @@ private fun Context.shareText(event: EventDto, title: String, zoneId: ZoneId): S
   val end =
       if (event.isAllDay) event.endTime.minus(1, ChronoUnit.DAYS).atZone(zoneId).toLocalDate()
       else event.endTime.minusMillis(1).atZone(zoneId).toLocalDate()
-  val whenText =
-      when {
-        event.isAllDay && start == end -> date(start)
-        event.isAllDay -> "${date(start)} – ${date(end)}"
-        start == end -> "${date(start)} · ${time(event.startTime)} – ${time(event.endTime)}"
-        else -> "${date(start)}, ${time(event.startTime)} – ${date(end)}, ${time(event.endTime)}"
-      }
-  val description =
-      event.description
-          ?.let(::readableDescription)
-          ?.takeIf { it.isNotBlank() && it.length <= MAX_DESCRIPTION }
-  return listOfNotNull(title, whenText, event.location?.trim()?.takeIf { it.isNotEmpty() })
-      .joinToString("\n") + (description?.let { "\n\n$it" } ?: "")
+  return when {
+    event.isAllDay && start == end -> date(start)
+    event.isAllDay -> "${date(start)} – ${date(end)}"
+    start == end -> "${date(start)} · ${time(event.startTime)} – ${time(event.endTime)}"
+    else -> "${date(start)}, ${time(event.startTime)} – ${date(end)}, ${time(event.endTime)}"
+  }
 }
 
 private const val SHARE_DIR = "shared"
