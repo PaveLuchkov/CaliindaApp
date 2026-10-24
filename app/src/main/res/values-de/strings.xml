@@ -426,6 +426,10 @@
     <string name="description_collapse">Weniger anzeigen</string>
     <string name="notice_created_on">Erstellt für %1$s</string>
     <string name="notice_moved_to">Verschoben auf %1$s</string>
+    <string name="dark_mode_title">Dunkles Design</string>
+    <string name="dark_mode_system">Systemstandard</string>
+    <string name="dark_mode_light">Hell</string>
+    <string name="dark_mode_dark">Dunkel</string>
     <string name="vibrant_colors">Kräftige Farben</string>
     <string name="vibrant_colors_summary">Leuchtendere Akzente und Karten</string>
 </resources>

@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.lpavs.caliinda.core.data.model.DarkMode
 import com.lpavs.caliinda.core.data.model.ThemeMode
 import java.io.IOException
 import java.time.ZoneId
@@ -26,6 +27,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
   private object PreferencesKeys {
     val TIME_ZONE = stringPreferencesKey("time_zone")
     val THEME_MODE = stringPreferencesKey("theme_mode")
+    val DARK_MODE = stringPreferencesKey("dark_mode")
     val INTRO_COMPLETED = booleanPreferencesKey("introduction")
     val DEFAULT_CALENDAR_ID = longPreferencesKey("default_calendar_id")
     val LIVE_NOTIFICATION = booleanPreferencesKey("live_notification")
@@ -187,6 +189,20 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
       val id = calendarId.toString()
       prefs[PreferencesKeys.HIDDEN_CALENDARS] = if (hidden) current + id else current - id
     }
+  }
+
+  /**
+   * Светлая/тёмная тема. Хранится для экрана настроек: саму тему держит система
+   * (UiModeManager.setApplicationNightMode), но прочитать её обратно оттуда нельзя.
+   */
+  val darkModeFlow: Flow<DarkMode> =
+      dataStore.data.map { prefs ->
+        prefs[PreferencesKeys.DARK_MODE]?.let { name -> DarkMode.entries.firstOrNull { it.name == name } }
+            ?: DarkMode.SYSTEM
+      }
+
+  suspend fun saveDarkMode(mode: DarkMode) {
+    dataStore.edit { prefs -> prefs[PreferencesKeys.DARK_MODE] = mode.name }
   }
 
   /** Насыщенные цвета (палитра Vibrant) вместо стандартных приглушённых. */

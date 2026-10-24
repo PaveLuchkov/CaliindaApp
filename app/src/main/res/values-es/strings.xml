@@ -439,6 +439,10 @@
     <string name="description_collapse">Ver menos</string>
     <string name="notice_created_on">Creado para el %1$s</string>
     <string name="notice_moved_to">Movido al %1$s</string>
+    <string name="dark_mode_title">Tema oscuro</string>
+    <string name="dark_mode_system">Predeterminado del sistema</string>
+    <string name="dark_mode_light">Claro</string>
+    <string name="dark_mode_dark">Oscuro</string>
     <string name="vibrant_colors">Colores vivos</string>
     <string name="vibrant_colors_summary">Acentos y tarjetas más intensos</string>
 </resources>
