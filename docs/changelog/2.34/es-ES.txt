@@ -1,0 +1,5 @@
+• Nuevo ajuste «Tema oscuro» en Apariencia: sistema, claro u oscuro
+• La barra de fecha se desliza de lado con la pantalla al pasar entre proyectos y días
+• Las tarjetas de proyectos rebotan al pasar los meses, como las de días
+• Pasar los meses ya no se queda atascado a medias
+• Corrección de errores y mejor rendimiento
